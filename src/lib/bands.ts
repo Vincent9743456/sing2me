@@ -224,6 +224,117 @@ export async function deleteBandMessage(
   if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
 }
 
+/* ------------------------------------------------------------------ */
+/* Annuaire des musiciens + invitations avec acceptation (directory.sql) */
+/* ------------------------------------------------------------------ */
+
+export interface DirectoryPerson {
+  user_id: string;
+  name: string;
+  photo: string;
+  instrument: string;
+}
+
+export interface PendingInvite {
+  id: string;
+  band_id: string;
+  band_name: string;
+  from_name: string;
+  created_at: string;
+}
+
+/** Publie/actualise sa fiche d'annuaire (pour être trouvable). Best-effort. */
+export async function upsertProfile(
+  s: AuthSession,
+  name: string,
+  photo: string,
+  instrument: string,
+): Promise<void> {
+  const res = await sbAuthed(s, '/rest/v1/rpc/upsert_profile', {
+    method: 'POST',
+    body: JSON.stringify({
+      p_name: name,
+      p_photo: photo,
+      p_instrument: instrument,
+    }),
+  });
+  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+}
+
+/** Recherche un musicien dans l'annuaire (par nom). */
+export async function searchProfiles(
+  s: AuthSession,
+  query: string,
+): Promise<DirectoryPerson[]> {
+  const res = await sbAuthed(s, '/rest/v1/rpc/search_profiles', {
+    method: 'POST',
+    body: JSON.stringify({ p_query: query }),
+  });
+  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+  const rows = (await res.json()) as DirectoryPerson[];
+  return Array.isArray(rows) ? rows : [];
+}
+
+/** Invite un musicien de l'annuaire dans un groupe (il devra accepter). */
+export async function inviteToBand(
+  s: AuthSession,
+  cloudId: string,
+  userId: string,
+): Promise<void> {
+  const res = await sbAuthed(s, '/rest/v1/rpc/invite_to_band', {
+    method: 'POST',
+    body: JSON.stringify({ p_band: cloudId, p_user: userId }),
+  });
+  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+  const body = (await res.json()) as { ok?: boolean; error?: string };
+  if (body.error) throw new Error(body.error);
+}
+
+/** Mes invitations de groupe en attente (best-effort : [] si indisponible). */
+export async function fetchMyInvites(
+  s: AuthSession,
+): Promise<PendingInvite[]> {
+  try {
+    const res = await sbAuthed(s, '/rest/v1/rpc/my_invites', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) return [];
+    const rows = (await res.json()) as PendingInvite[];
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Répond à une invitation : accepter (= rejoindre) ou refuser. */
+export async function respondInvite(
+  s: AuthSession,
+  inviteId: string,
+  accept: boolean,
+  name: string,
+  instrument: string,
+): Promise<{ band?: string; name?: string }> {
+  const res = await sbAuthed(s, '/rest/v1/rpc/respond_invite', {
+    method: 'POST',
+    body: JSON.stringify({
+      p_invite: inviteId,
+      p_accept: accept,
+      p_name: name,
+      p_instrument: instrument,
+    }),
+  });
+  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+  const body = (await res.json()) as {
+    ok?: boolean;
+    error?: string;
+    band?: string;
+    name?: string;
+  };
+  if (body.error) throw new Error(body.error);
+  return { band: body.band, name: body.name };
+}
+
 /** Retire un membre (créateur) ou quitte le groupe (membre). */
 export async function removeBandMember(
   s: AuthSession,

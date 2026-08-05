@@ -2,10 +2,13 @@
  * Onglet Groupes : tous tes groupes au premier niveau — leur fiche,
  * leur espace de discussion, et la création en un geste.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
+import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
 import { Empty, Field, TopBar } from '../components/ui';
+import { getValidSession } from '../lib/auth';
+import { fetchMyInvites, PendingInvite, respondInvite } from '../lib/bands';
 import { creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -13,8 +16,56 @@ import { emptyBand } from '../types';
 
 export function Bands() {
   const { bands, artist, prefs, saveBand } = useStore();
+  const account = useAccount();
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [invites, setInvites] = useState<PendingInvite[]>([]);
+  const [inviteBusy, setInviteBusy] = useState('');
+
+  // Invitations reçues (annuaire) : acceptation obligatoire.
+  useEffect(() => {
+    if (account?.email == null) return;
+    let cancelled = false;
+    void (async () => {
+      const s = await getValidSession();
+      if (!s || cancelled) return;
+      const list = await fetchMyInvites(s);
+      if (!cancelled) setInvites(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [account?.email]);
+
+  async function respond(inv: PendingInvite, accept: boolean) {
+    setInviteBusy(inv.id);
+    try {
+      const s = await getValidSession();
+      if (!s) return;
+      await respondInvite(
+        s,
+        inv.id,
+        accept,
+        prefs.userName || artist.name || 'Moi',
+        '',
+      );
+      // Accepter = rejoindre : on crée le groupe en local (le répertoire
+      // partagé se synchronise ensuite tout seul).
+      if (accept && !bands.some((b) => b.cloudId === inv.band_id)) {
+        saveBand({
+          ...emptyBand(),
+          name: inv.band_name || 'Groupe',
+          cloudId: inv.band_id,
+          members: [creatorMember(artist, prefs.userName)],
+        });
+      }
+      setInvites((list) => list.filter((x) => x.id !== inv.id));
+    } catch {
+      // best-effort
+    } finally {
+      setInviteBusy('');
+    }
+  }
 
   function cancelCreate() {
     setCreating(false);
@@ -36,6 +87,43 @@ export function Bands() {
     <>
       <TopBar title="Groupes" />
       <div className="page">
+        {invites.length > 0 && (
+          <>
+            <h2 className="pagetitle" style={{ marginTop: 0 }}>
+              Invitations reçues
+            </h2>
+            {invites.map((inv) => (
+              <div
+                className="card"
+                key={inv.id}
+                style={{ padding: '10px 12px', marginBottom: 8 }}
+              >
+                <div>
+                  <strong>{inv.from_name || 'Un musicien'}</strong> t'invite à
+                  rejoindre{' '}
+                  <strong>« {inv.band_name || 'un groupe'} »</strong>.
+                </div>
+                <div className="rowactions">
+                  <button
+                    className="btn"
+                    disabled={inviteBusy === inv.id}
+                    onClick={() => void respond(inv, true)}
+                  >
+                    Accepter
+                  </button>
+                  <button
+                    className="btn ghost"
+                    disabled={inviteBusy === inv.id}
+                    onClick={() => void respond(inv, false)}
+                  >
+                    Refuser
+                  </button>
+                </div>
+              </div>
+            ))}
+            <div className="spacer" />
+          </>
+        )}
         {bands.length === 0 && !creating ? (
           <Empty>
             Joue à plusieurs : crée ton groupe (tu en seras le premier

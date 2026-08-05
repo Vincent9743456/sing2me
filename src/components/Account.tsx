@@ -30,7 +30,7 @@ import {
   signOut,
   takeAuthError,
 } from '../lib/auth';
-import { pullBandLibrary, pushBandLibrary } from '../lib/bands';
+import { pullBandLibrary, pushBandLibrary, upsertProfile } from '../lib/bands';
 import {
   applyBandData,
   BandData,
@@ -252,6 +252,20 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         setStatus('ok');
         // Répertoires de groupes (étape 2b), après la bibliothèque perso
         void syncBands(valid);
+        // Annuaire : publie sa fiche (nom + photo) pour être trouvable.
+        void (async () => {
+          try {
+            const st = JSON.parse(stateRef.current) as SyncState;
+            await upsertProfile(
+              valid,
+              st.artist?.name || st.prefs?.userName || '',
+              st.artist?.photo ?? '',
+              '',
+            );
+          } catch {
+            // annuaire non configuré (directory.sql non appliqué) : ignoré
+          }
+        })();
       } catch (e) {
         if (!cancelled) {
           setStatus('error');

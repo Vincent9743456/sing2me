@@ -11,13 +11,16 @@ import { GearEditor } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { LinkPreviews } from '../components/LinkPreviews';
 import { ShareModal } from '../components/ShareModal';
-import { Field, TopBar } from '../components/ui';
+import { Field, Modal, TopBar } from '../components/ui';
 import { getValidSession } from '../lib/auth';
 import {
   CloudMember,
+  DirectoryPerson,
   ensureCloudBand,
   fetchBandMembers,
+  inviteToBand,
   removeBandMember,
+  searchProfiles,
 } from '../lib/bands';
 import { bandToProfile, notesForShare } from '../lib/model';
 import { resizePhoto } from '../lib/photo';
@@ -98,6 +101,13 @@ export function BandEdit({ id }: { id: string }) {
   // Vue par défaut = fiche mise en forme ; « Modifier » ouvre le formulaire.
   const [editing, setEditing] = useState(false);
   const [myId, setMyId] = useState('');
+  // Ajout d'un membre : recherche dans l'annuaire ou repli lien/email.
+  const [addOpen, setAddOpen] = useState(false);
+  const [dirQuery, setDirQuery] = useState('');
+  const [dirResults, setDirResults] = useState<DirectoryPerson[]>([]);
+  const [dirBusy, setDirBusy] = useState(false);
+  const [dirMsg, setDirMsg] = useState<string | null>(null);
+  const [invited, setInvited] = useState<Set<string>>(new Set());
 
   // Membres réels (comptes) du groupe publié
   useEffect(() => {
@@ -140,6 +150,71 @@ export function BandEdit({ id }: { id: string }) {
     } finally {
       setInviteBusy(false);
       setInvite(true);
+    }
+  }
+
+  /** Ouvre l'ajout de membre : publie le groupe (pour l'annuaire + le jeton). */
+  async function openAddMember() {
+    if (!band) return;
+    setInviteBusy(true);
+    try {
+      if (account?.email != null) {
+        const s = await getValidSession();
+        if (s) {
+          const ref = await ensureCloudBand(s, band.id, band.name);
+          setCloudRef(ref);
+          if (band.cloudId !== ref.cloudId) {
+            saveBand({ ...band, cloudId: ref.cloudId });
+          }
+        }
+      }
+    } catch {
+      // sans cloud : seul l'invite par lien/carte reste possible
+    } finally {
+      setInviteBusy(false);
+      setDirMsg(null);
+      setDirResults([]);
+      setDirQuery('');
+      setAddOpen(true);
+    }
+  }
+
+  async function doSearch() {
+    if (dirQuery.trim().length < 2 || dirBusy) return;
+    setDirBusy(true);
+    setDirMsg(null);
+    try {
+      const s = await getValidSession();
+      if (!s) {
+        setDirMsg('Connecte-toi (Profil artiste) pour chercher dans l’annuaire.');
+        return;
+      }
+      const rows = await searchProfiles(s, dirQuery.trim());
+      setDirResults(rows);
+      if (rows.length === 0) setDirMsg('Aucun musicien trouvé pour ce nom.');
+    } catch {
+      setDirMsg("L'annuaire n'est pas disponible pour le moment.");
+      setDirResults([]);
+    } finally {
+      setDirBusy(false);
+    }
+  }
+
+  async function invitePerson(person: DirectoryPerson) {
+    const cid = band?.cloudId;
+    if (!cid) {
+      setDirMsg(
+        'Publie d’abord le groupe (invite par lien) avant d’inviter depuis l’annuaire.',
+      );
+      return;
+    }
+    try {
+      const s = await getValidSession();
+      if (!s) return;
+      await inviteToBand(s, cid, person.user_id);
+      setInvited((prev) => new Set(prev).add(person.user_id));
+    } catch (e) {
+      setDirMsg(e instanceof Error ? e.message : 'Invitation impossible.');
     }
   }
 
@@ -331,8 +406,8 @@ export function BandEdit({ id }: { id: string }) {
             <button
               className="btn ghost block"
               disabled={inviteBusy}
-              onClick={() => void openInvite()}
-              title="Inviter un musicien : lien ou email (il rejoint avec son compte = acceptation)"
+              onClick={() => void openAddMember()}
+              title="Inviter un musicien : annuaire, lien ou email (il rejoint avec son compte = acceptation)"
             >
               {inviteBusy ? '…' : '＋ Ajouter un membre'}
             </button>
@@ -663,6 +738,76 @@ export function BandEdit({ id }: { id: string }) {
         )}
       </div>
 
+      {addOpen && (
+        <Modal title="Ajouter un membre" onClose={() => setAddOpen(false)}>
+          <p className="help" style={{ marginTop: 0 }}>
+            Cherche un musicien qui a déjà Sing2Me (il devra accepter), ou
+            envoie-lui un lien / email.
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              value={dirQuery}
+              placeholder="Nom du musicien…"
+              autoFocus
+              onChange={(e) => setDirQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void doSearch();
+              }}
+            />
+            <button
+              className="btn"
+              style={{ flexShrink: 0 }}
+              disabled={dirQuery.trim().length < 2 || dirBusy}
+              onClick={() => void doSearch()}
+            >
+              {dirBusy ? '…' : 'Chercher'}
+            </button>
+          </div>
+          {dirMsg && <p className="help">{dirMsg}</p>}
+          {dirResults.length > 0 && (
+            <div className="list">
+              {dirResults.map((person) => (
+                <div
+                  className="row"
+                  key={person.user_id}
+                  style={{ cursor: 'default' }}
+                >
+                  <Avatar name={person.name} photo={person.photo} />
+                  <div className="grow">
+                    <div className="title">{person.name || '(sans nom)'}</div>
+                    {person.instrument !== '' && (
+                      <div className="sub">{person.instrument}</div>
+                    )}
+                  </div>
+                  {invited.has(person.user_id) ? (
+                    <span style={{ color: 'var(--accent)', fontWeight: 650 }}>
+                      ✓ Invité
+                    </span>
+                  ) : (
+                    <button
+                      className="btn ghost small"
+                      onClick={() => void invitePerson(person)}
+                    >
+                      Inviter
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="spacer" />
+          <button
+            className="btn ghost block"
+            onClick={() => {
+              setAddOpen(false);
+              setInvite(true);
+            }}
+          >
+            🔗 Inviter par lien / email
+          </button>
+        </Modal>
+      )}
       {invite && invitePayload && (
         <ShareModal
           title={`Inviter dans « ${band.name} »`}
