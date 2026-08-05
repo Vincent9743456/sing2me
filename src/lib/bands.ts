@@ -15,6 +15,8 @@ export interface CloudMember {
   name: string;
   instrument: string;
   joined_at: string;
+  /** Photo de profil du membre (si l'annuaire cloud la fournit) */
+  photo?: string;
 }
 
 /**

@@ -37,6 +37,43 @@ const LINK_PRESETS = [
   'Site web',
 ];
 
+/** Pastille membre : photo de profil si disponible, sinon initiales. */
+function Avatar({ name, photo }: { name: string; photo?: string }) {
+  const initials =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || '?';
+  const base = {
+    width: 40,
+    height: 40,
+    borderRadius: '50%',
+    flexShrink: 0,
+  } as const;
+  return photo && photo !== '' ? (
+    <img src={photo} alt="" style={{ ...base, objectFit: 'cover' }} />
+  ) : (
+    <div
+      style={{
+        ...base,
+        background: 'var(--surface-high)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 700,
+        fontSize: '0.85rem',
+        color: 'var(--text-dim)',
+      }}
+    >
+      {initials}
+    </div>
+  );
+}
+
 export function BandEdit({ id }: { id: string }) {
   const {
     bands,
@@ -60,6 +97,7 @@ export function BandEdit({ id }: { id: string }) {
   const [inviteBusy, setInviteBusy] = useState(false);
   // Vue par défaut = fiche mise en forme ; « Modifier » ouvre le formulaire.
   const [editing, setEditing] = useState(false);
+  const [myId, setMyId] = useState('');
 
   // Membres réels (comptes) du groupe publié
   useEffect(() => {
@@ -70,6 +108,7 @@ export function BandEdit({ id }: { id: string }) {
       try {
         const s = await getValidSession();
         if (!s || cancelled) return;
+        if (!cancelled) setMyId(s.userId);
         const members = await fetchBandMembers(s, cid);
         if (!cancelled) setCloudMembers(members);
       } catch {
@@ -248,17 +287,28 @@ export function BandEdit({ id }: { id: string }) {
               </button>
             )}
             <h2 className="pagetitle">Musiciens</h2>
-            {cloudMembers.length === 0 && band.members.length === 0 ? (
-              <button className="slot" onClick={() => setEditing(true)}>
-                ＋ Ajoute les musiciens du groupe
-              </button>
-            ) : (
+            {(cloudMembers.length > 0 || band.members.length > 0) && (
               <div className="list">
                 {cloudMembers.map((m) => (
-                  <div className="row" key={m.user_id} style={{ cursor: 'default' }}>
-                    <span style={{ color: 'var(--accent)' }}>✓</span>
+                  <div
+                    className="row"
+                    key={m.user_id}
+                    style={{ cursor: 'default' }}
+                  >
+                    <Avatar
+                      name={m.name}
+                      photo={
+                        m.photo ||
+                        (m.user_id === myId ? band.photo || artist.photo : '')
+                      }
+                    />
                     <div className="grow">
-                      <div className="title">{m.name || '(sans nom)'}</div>
+                      <div className="title">
+                        {m.name || '(sans nom)'}{' '}
+                        <span style={{ color: 'var(--accent)' }} title="Compte Sing2Me">
+                          ✓
+                        </span>
+                      </div>
                       {m.instrument !== '' && (
                         <div className="sub">{m.instrument}</div>
                       )}
@@ -267,6 +317,7 @@ export function BandEdit({ id }: { id: string }) {
                 ))}
                 {band.members.map((m) => (
                   <div className="row" key={m.id} style={{ cursor: 'default' }}>
+                    <Avatar name={m.name} />
                     <div className="grow">
                       <div className="title">{m.name || '(sans nom)'}</div>
                       {m.instrument !== '' && (
@@ -277,6 +328,14 @@ export function BandEdit({ id }: { id: string }) {
                 ))}
               </div>
             )}
+            <button
+              className="btn ghost block"
+              disabled={inviteBusy}
+              onClick={() => void openInvite()}
+              title="Inviter un musicien : lien ou email (il rejoint avec son compte = acceptation)"
+            >
+              {inviteBusy ? '…' : '＋ Ajouter un membre'}
+            </button>
             <div className="rowactions">
               <button className="btn" onClick={() => setEditing(true)}>
                 Modifier
@@ -286,13 +345,6 @@ export function BandEdit({ id }: { id: string }) {
                 onClick={() => navigate(`/band/${band.id}/chat`)}
               >
                 <Icon name="message" size={15} /> Discussion
-              </button>
-              <button
-                className="btn ghost"
-                disabled={inviteBusy}
-                onClick={() => void openInvite()}
-              >
-                {inviteBusy ? '…' : '📨 Inviter'}
               </button>
               <button
                 className="btn ghost"

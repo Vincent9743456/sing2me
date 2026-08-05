@@ -69,6 +69,42 @@ export function ShareModal({
     }
   }
 
+  /**
+   * Lien « mailto » pré-rempli. Pour une invitation de groupe, le texte
+   * met en avant l'intérêt de Sing2Me pour donner envie de télécharger
+   * l'appli et de créer son compte (l'adhésion vaut acceptation).
+   */
+  function mailtoHref(): string {
+    const inv = payload.invite;
+    let subject: string;
+    let body: string;
+    if (inv) {
+      subject = `${inv.from} t'invite à rejoindre ${inv.band} sur Sing2Me 🎸`;
+      body =
+        `Salut !\n\n` +
+        `${inv.from} t'invite à rejoindre le groupe « ${inv.band} » sur ` +
+        `Sing2Me.\n\n` +
+        `Sing2Me réunit tout ton répertoire au même endroit : paroles + ` +
+        `accords, transposition et capo automatiques, un mode scène pour ` +
+        `jouer sans stress, tes setlists, et un espace de groupe pour ` +
+        `préparer répètes et concerts ensemble.\n\n` +
+        `👉 Rejoins le groupe (compte gratuit, 30 secondes) :\n${url}\n\n` +
+        `En rejoignant, tu récupères tout de suite le répertoire partagé du ` +
+        `groupe. C'est gratuit, et tout fonctionne aussi hors-ligne.\n\n` +
+        `À très vite sur scène 🎤`;
+    } else {
+      subject = 'Un morceau partagé avec toi depuis Sing2Me 🎶';
+      body =
+        `Je te partage ça — ouvre simplement ce lien, aucune appli requise :` +
+        `\n${url}\n\n` +
+        `Partagé avec Sing2Me, le songbook des musiciens : paroles, accords, ` +
+        `transposition, mode scène. C'est gratuit — n'hésite pas à l'essayer.`;
+    }
+    return `mailto:?subject=${encodeURIComponent(
+      subject,
+    )}&body=${encodeURIComponent(body)}`;
+  }
+
   return (
     <Modal title={title} onClose={onClose}>
       {children}
@@ -86,9 +122,18 @@ export function ShareModal({
         )}
         {url && (
           <>
-            <button className="btn" onClick={copy}>
-              {copied ? '✓ Lien copié !' : 'Copier le lien'}
-            </button>
+            <div className="hstack" style={{ gap: 8, justifyContent: 'center' }}>
+              <button className="btn" onClick={copy}>
+                {copied ? '✓ Lien copié !' : 'Copier le lien'}
+              </button>
+              <a
+                className="btn ghost"
+                href={mailtoHref()}
+                style={{ textDecoration: 'none' }}
+              >
+                ✉️ Envoyer par email
+              </a>
+            </div>
             <div className="linkbox">{url}</div>
             <p className="help" style={{ textAlign: 'center' }}>
               Le destinataire n'a besoin d'aucune application : le lien ouvre

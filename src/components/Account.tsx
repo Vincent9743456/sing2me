@@ -347,21 +347,6 @@ export function AccountSection() {
   }
 
   if (account.email !== null) {
-    const syncLabel =
-      account.status === 'ok'
-        ? `synchronisé${
-            account.lastSync
-              ? ` · ${new Date(account.lastSync).toLocaleTimeString('fr-FR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}`
-              : ''
-          }`
-        : account.status === 'sync'
-          ? 'synchronisation…'
-          : account.status === 'error'
-            ? '⚠ synchro à réessayer'
-            : '';
     return (
       <div
         className="hstack"
@@ -372,7 +357,6 @@ export function AccountSection() {
         </span>
         <span className="help" style={{ flex: 1, minWidth: 0, margin: 0 }}>
           {account.email}
-          {syncLabel !== '' ? ` · ${syncLabel}` : ''}
         </span>
         <button className="btn ghost small" onClick={account.logout}>
           Se déconnecter
