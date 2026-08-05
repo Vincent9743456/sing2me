@@ -7,8 +7,10 @@
 
 ## 1. Direction artistique
 
-**Conservé** : dark-first assumé (identité scène), accent ambre unique,
-accords en cyan, rayons généreux, sobriété sans froideur, logo actuel.
+**Conservé** : dark-first assumé (identité scène), accent unique,
+accords en cyan, rayons généreux, sobriété sans froideur.
+**Identité (b52)** : accent **corail** (`#ff6f61`), logo « bulle qui
+chante » (bulle de parole + note), favicon partagé app + site.
 **Ajusté** : icônes SVG au lieu des emojis, échelle typographique
 formalisée, micro-labels unifiés, contrastes relevés, tokens complets.
 **Supprimé** : dialogues natifs du navigateur, couches CSS redondantes,
@@ -39,19 +41,19 @@ accumulation de cartes, animations gratuites, couleurs sans signification.
   --text: #f5f5f7;
   --text-dim: #9a9aac;       /* relevé (ex-#8f8f9f) — AA sur bg et surface */
   --text-faint: #6b6b7e;     /* placeholders, décoratif non essentiel */
-  --on-accent: #16120a;      /* texte sur fond ambre */
+  --on-accent: #16120a;      /* texte sur fond corail */
 
-  /* Accent (une seule famille) */
-  --accent: #f6a833;
-  --accent-strong: #ee9418;
-  --accent-soft: rgba(246, 168, 51, 0.12);
-  --accent-dark: #8a5a10;
+  /* Accent (une seule famille) — corail */
+  --accent: #ff6f61;
+  --accent-strong: #fa5545;
+  --accent-soft: rgba(255, 111, 97, 0.12);
+  --accent-dark: #8a2f26;
 
   /* Fonctionnelles */
   --chord: #62c9f2;          /* accords — jamais utilisé pour autre chose */
   --danger: #e05555;
-  --live: #ff4545;           /* direct uniquement */
-  --heart: #ff8f8f;          /* cœurs du public (remplace 3 roses) */
+  --live: #ff1f1f;           /* direct uniquement — rouge pur, ≠ corail */
+  --heart: #ffa3c0;          /* cœurs du public (rose, ≠ accent corail) */
 
   /* Pastilles de groupe (Library, à terme partout) */
   --band-1: #fbbf24; --band-2: #60a5fa; --band-3: #34d399;
@@ -65,6 +67,11 @@ Règles :
   token ; s'il manque, on l'ajoute ici d'abord.
 - `--live` = exclusivement l'état « en direct ». `--danger` = destructif.
   `--accent` = action/valorisation. `--chord` = accords, rien d'autre.
+- **Live = point clignotant + texte, jamais la couleur seule.** Un
+  élément « en direct » (ON AIR) s'identifie toujours par son point
+  clignotant **et** son libellé, jamais par sa seule teinte : `--live`
+  (rouge) et `--accent` (corail) sont proches et ne doivent pas être le
+  seul signal distinctif. Ne jamais coder un état sur la couleur seule.
 - Mode clair : non planifié à court terme (décision actée — voir audit
   G7). Si un jour : dupliquer ce bloc sous `[data-theme='light']`,
   aucune couleur en dur ne doit l'empêcher.

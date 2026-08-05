@@ -23,18 +23,18 @@
   --text-faint: #6b6b7e;
   --on-accent: #16120a;
   /* Accent */
-  --accent: #f6a833;
-  --accent-strong: #ee9418;
-  --accent-soft: rgba(246, 168, 51, 0.12);
-  --accent-dark: #8a5a10;
+  --accent: #ff6f61;
+  --accent-strong: #fa5545;
+  --accent-soft: rgba(255, 111, 97, 0.12);
+  --accent-dark: #8a2f26;
   /* Fonctionnelles */
   --chord: #62c9f2;
   --danger: #e05555;
-  --live: #ff4545;
+  --live: #ff1f1f;
   --live-soft: #ffb4b4;
   --ok: #34d399;
   --ok-soft: rgba(52, 211, 153, 0.14);
-  --heart: #ff8f8f;
+  --heart: #ffa3c0;
   /* Pastilles de groupe */
   --band-1: #fbbf24;
   --band-2: #60a5fa;
@@ -81,7 +81,7 @@ body {
 body {
   background-image: radial-gradient(
     1200px 500px at 50% -220px,
-    rgba(246, 168, 51, 0.05),
+    rgba(255, 111, 97, 0.05),
     transparent 70%
   );
 }
@@ -209,7 +209,7 @@ button {
   cursor: pointer;
   background: linear-gradient(180deg, var(--accent), var(--accent-strong));
   color: var(--on-accent);
-  box-shadow: 0 2px 10px rgba(246, 168, 51, 0.18);
+  box-shadow: 0 2px 10px rgba(255, 111, 97, 0.18);
   transition:
     transform var(--transition),
     box-shadow var(--transition),
@@ -218,7 +218,7 @@ button {
 }
 .btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(246, 168, 51, 0.26);
+  box-shadow: 0 4px 16px rgba(255, 111, 97, 0.26);
 }
 .btn:active {
   transform: translateY(0);
@@ -1381,14 +1381,14 @@ h2.pagetitle {
   color: var(--on-accent);
   font-weight: 750;
   text-decoration: none;
-  box-shadow: 0 2px 10px rgba(246, 168, 51, 0.18);
+  box-shadow: 0 2px 10px rgba(255, 111, 97, 0.18);
   transition:
     transform var(--transition),
     box-shadow var(--transition);
 }
 .tipbtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(246, 168, 51, 0.28);
+  box-shadow: 0 4px 16px rgba(255, 111, 97, 0.28);
 }
 .tipbtn.free {
   background: none;
