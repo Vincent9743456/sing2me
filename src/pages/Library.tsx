@@ -1021,7 +1021,7 @@ function SongPreview({
           <Icon name="edit" size={14} /> Modifier
         </button>
         <button
-          className="btn ghost small"
+          className="btn ai small"
           onClick={() => setUgOpen(true)}
           title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
         >

@@ -664,7 +664,7 @@ export function SongView({
             <option value="__new__">＋ Nouvelle version…</option>
           </select>
           <button
-            className="btn ghost small"
+            className="btn ai small"
             title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
             onClick={() => setUgUpgrade(true)}
           >
