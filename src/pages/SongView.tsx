@@ -7,7 +7,7 @@ import { NoteModal } from '../components/NoteModal';
 import { Icon } from '../components/Icon';
 import { ShareModal } from '../components/ShareModal';
 import { SongBody } from '../components/SongBody';
-import { Empty, Field, TopBar } from '../components/ui';
+import { Empty, Field, Modal, TopBar } from '../components/ui';
 import {
   detectKeyFromChords,
   semitonesBetween,
@@ -152,6 +152,8 @@ export function SongView({
   // null = fermé · 'new' = nouvelle note · sinon la note à modifier
   const [noteModal, setNoteModal] = useState<'new' | SongNote | null>(null);
   const [ugUpgrade, setUgUpgrade] = useState(false);
+  // Éditeur « Ajouter à un groupe / une setlist » (à la demande).
+  const [assocOpen, setAssocOpen] = useState(false);
   const [keyBusy, setKeyBusy] = useState(false);
   const [keyMsg, setKeyMsg] = useState<string | null>(null);
   const scroll = useAutoScroll(undefined, song?.id);
@@ -363,6 +365,11 @@ export function SongView({
   const bandsWithoutVersion = bands.filter(
     (b) => !song.versions.some((v) => v.bandId === b.id),
   );
+  // Appartenances actuelles (pour l'état compact).
+  const memberBands = bands.filter((b) => versionForBand(song, b.id) !== null);
+  const memberSetlists = setlists.filter((sl) =>
+    sl.items.some((it) => it.songId === song.id),
+  );
 
   /** Applique une partition UG mieux notée : remplace ou nouvelle version. */
   function applyUgTab(text: string, mode: 'replace' | 'version') {
@@ -549,95 +556,53 @@ export function SongView({
           )}
         </div>
 
-        {bands.length > 0 && (
-          <div
-            className="hstack"
-            style={{ marginBottom: 8, flexWrap: 'wrap', gap: 6 }}
-          >
-            <span className="help">Groupes :</span>
-            {bands.map((b, i) => {
-              const active = versionForBand(song, b.id) !== null;
-              return (
-                <button
-                  key={b.id}
-                  className={`chip ${active ? '' : 'off'}`}
-                  title={
-                    active
-                      ? `« ${song.title} » est dans le répertoire de ${b.name || 'ce groupe'} — cliquer pour l'en retirer`
-                      : `Ajouter « ${song.title} » au répertoire de ${b.name || 'ce groupe'} (partagé avec tous les membres)`
-                  }
-                  onClick={() => toggleBand(b)}
-                >
-                  <span aria-hidden="true" style={{ marginRight: 2 }}>
-                    {active ? '✓' : '＋'}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      display: 'inline-block',
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      background: BAND_COLORS[i % BAND_COLORS.length],
-                      marginRight: 2,
-                    }}
-                  />
-                  {b.name || 'Groupe sans nom'}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {/* Appartenances : état compact (où le morceau EST) + éditeur à la
+            demande pour l'ajouter/retirer d'un groupe ou d'une setlist. */}
         <div
           className="hstack"
-          style={{ marginBottom: 8, flexWrap: 'wrap', gap: 6 }}
+          style={{
+            marginBottom: 8,
+            flexWrap: 'wrap',
+            gap: 6,
+            alignItems: 'center',
+          }}
         >
-          <span className="help">Setlists :</span>
-          {[...setlists]
-            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-            .map((sl) => {
-              const has = sl.items.some((it) => it.songId === song.id);
-              return (
-                <button
-                  key={sl.id}
-                  className={`chip ${has ? '' : 'off'}`}
-                  title={
-                    has
-                      ? `« ${song.title} » est dans « ${sl.name || 'cette setlist'} » — cliquer pour l'en retirer`
-                      : `Ajouter « ${song.title} » à « ${sl.name || 'cette setlist'} »`
-                  }
-                  onClick={() => toggleSetlist(sl)}
-                >
-                  <span aria-hidden="true" style={{ marginRight: 2 }}>
-                    {has ? '✓' : '＋'}
-                  </span>
-                  {sl.name || '(sans nom)'}
-                </button>
-              );
-            })}
+          <span className="help">Dans :</span>
+          {memberBands.length === 0 && memberSetlists.length === 0 && (
+            <span className="help" style={{ margin: 0 }}>
+              aucun groupe ni setlist
+            </span>
+          )}
+          {memberBands.map((b) => (
+            <span key={b.id} className="chip static">
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background:
+                    BAND_COLORS[
+                      bands.findIndex((x) => x.id === b.id) % BAND_COLORS.length
+                    ],
+                  marginRight: 4,
+                }}
+              />
+              {b.name || 'Groupe sans nom'}
+            </span>
+          ))}
+          {memberSetlists.map((sl) => (
+            <span key={sl.id} className="chip static">
+              {sl.name || '(sans nom)'}
+            </span>
+          ))}
           <button
             className="chip off"
-            title="Créer une nouvelle setlist avec ce morceau"
-            onClick={() => {
-              const name = prompt('Nom de la nouvelle setlist');
-              if (name === null || name.trim() === '') return;
-              const sl: Setlist = {
-                ...emptySetlist(),
-                name: name.trim(),
-                items: [
-                  {
-                    id: makeId(),
-                    songId: song.id,
-                    note: '',
-                    keyOverride: '',
-                    versionId: '',
-                  },
-                ],
-              };
-              saveSetlist(sl);
-            }}
+            title="Ajouter ce morceau à un groupe ou une setlist"
+            onClick={() => setAssocOpen(true)}
           >
-            ＋ Nouvelle…
+            ＋ Ajouter à…
           </button>
         </div>
 
@@ -727,6 +692,110 @@ export function SongView({
             onApply={applyUgTab}
             onClose={() => setUgUpgrade(false)}
           />
+        )}
+
+        {assocOpen && (
+          <Modal
+            title="Ajouter à un groupe ou une setlist"
+            onClose={() => setAssocOpen(false)}
+          >
+            {bands.length > 0 && (
+              <div className="field">
+                <label>Groupes</label>
+                <div className="hstack" style={{ flexWrap: 'wrap', gap: 6 }}>
+                  {bands.map((b, i) => {
+                    const active = versionForBand(song, b.id) !== null;
+                    return (
+                      <button
+                        key={b.id}
+                        className={`chip ${active ? '' : 'off'}`}
+                        title={
+                          active
+                            ? `Retirer « ${song.title} » du répertoire de ${b.name || 'ce groupe'}`
+                            : `Ajouter « ${song.title} » au répertoire de ${b.name || 'ce groupe'} (partagé avec tous les membres)`
+                        }
+                        onClick={() => toggleBand(b)}
+                      >
+                        <span aria-hidden="true" style={{ marginRight: 2 }}>
+                          {active ? '✓' : '＋'}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            display: 'inline-block',
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: BAND_COLORS[i % BAND_COLORS.length],
+                            marginRight: 2,
+                          }}
+                        />
+                        {b.name || 'Groupe sans nom'}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <div className="field">
+              <label>Setlists</label>
+              <div className="hstack" style={{ flexWrap: 'wrap', gap: 6 }}>
+                {[...setlists]
+                  .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+                  .map((sl) => {
+                    const has = sl.items.some((it) => it.songId === song.id);
+                    return (
+                      <button
+                        key={sl.id}
+                        className={`chip ${has ? '' : 'off'}`}
+                        title={
+                          has
+                            ? `Retirer « ${song.title} » de « ${sl.name || 'cette setlist'} »`
+                            : `Ajouter « ${song.title} » à « ${sl.name || 'cette setlist'} »`
+                        }
+                        onClick={() => toggleSetlist(sl)}
+                      >
+                        <span aria-hidden="true" style={{ marginRight: 2 }}>
+                          {has ? '✓' : '＋'}
+                        </span>
+                        {sl.name || '(sans nom)'}
+                      </button>
+                    );
+                  })}
+                <button
+                  className="chip off"
+                  title="Créer une nouvelle setlist avec ce morceau"
+                  onClick={() => {
+                    const name = prompt('Nom de la nouvelle setlist');
+                    if (name === null || name.trim() === '') return;
+                    const sl: Setlist = {
+                      ...emptySetlist(),
+                      name: name.trim(),
+                      items: [
+                        {
+                          id: makeId(),
+                          songId: song.id,
+                          note: '',
+                          keyOverride: '',
+                          versionId: '',
+                        },
+                      ],
+                    };
+                    saveSetlist(sl);
+                  }}
+                >
+                  ＋ Nouvelle…
+                </button>
+              </div>
+            </div>
+            <div className="spacer" />
+            <button
+              className="btn ghost block"
+              onClick={() => setAssocOpen(false)}
+            >
+              Fermer
+            </button>
+          </Modal>
         )}
 
 
