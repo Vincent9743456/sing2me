@@ -266,6 +266,8 @@ export function applyBandData(
   localBandId: string,
   /** Titres supprimés localement : ne pas les ré-importer du groupe */
   skipKeys?: Set<string>,
+  /** Setlists supprimées localement (ids) : ne pas les ré-créer du groupe */
+  skipSetlistIds?: Set<string>,
 ): { songs: Song[]; setlists: Setlist[]; changed: boolean } {
   let changed = false;
   const byKey = new Map(songs.map((s) => [normalizeTitle(s.title), s]));
@@ -447,6 +449,8 @@ export function applyBandData(
   // Setlists du groupe
   const nextSetlists = [...setlists];
   for (const e of cloud.setlists) {
+    // Setlist supprimée localement : ne pas la ressusciter depuis le groupe.
+    if (skipSetlistIds?.has(e.id)) continue;
     const resolveItems = () =>
       e.items
         .map((it) => {

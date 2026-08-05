@@ -188,12 +188,18 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
               .map((t) => t.key)
               .filter((k): k is string => typeof k === 'string' && k !== ''),
           );
+          // Setlists supprimées localement (par id) : à ne pas ressusciter
+          // depuis le répertoire du groupe.
+          const skipSetlistIds = new Set(
+            (st.deleted ?? []).map((t) => t.id),
+          );
           const applied = applyBandData(
             merged,
             songs,
             setlists,
             band.id,
             skipKeys,
+            skipSetlistIds,
           );
           songs = applied.songs;
           setlists = applied.setlists;
