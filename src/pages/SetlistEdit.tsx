@@ -587,7 +587,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
           );
         })}
 
-        <button className="btn ghost block" onClick={() => setPicker(true)}>
+        <button
+          className="btn block addsticky"
+          onClick={() => setPicker(true)}
+        >
           <Icon name="plus" size={16} /> Ajouter un morceau
         </button>
 
