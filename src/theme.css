@@ -684,26 +684,6 @@ textarea.mono {
 /* Bibliothèque : bouton « Ajouter un morceau » toujours visible sur mobile
    (barre fixe au-dessus de la barre d'onglets). Sur ordinateur, le bouton
    « ＋ Ajouter » de la barre du haut suffit → barre masquée. */
-.libaddbar {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(70px + env(safe-area-inset-bottom));
-  max-width: 820px;
-  margin: 0 auto;
-  z-index: 8;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
-}
-.libaddbar-spacer {
-  height: calc(64px + env(safe-area-inset-bottom));
-}
-@media (min-width: 900px) {
-  .libaddbar,
-  .libaddbar-spacer {
-    display: none;
-  }
-}
-
 /* ---------- Encarts de setlists (par groupe / solo / IA) ---------- */
 /* Chaque encart est un panneau « en creux » (nuance de noir) : les
    groupes de setlists se distinguent d'un coup d'œil, et les cartes

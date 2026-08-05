@@ -841,14 +841,6 @@ export function Library() {
             onPickSetlist={(id) => setPickerFor(id)}
           />
         </div>
-        {/* Bouton d'ajout TOUJOURS visible sur mobile (barre fixe en bas). */}
-        <div className="libaddbar-spacer" />
-        <button
-          className="btn block libaddbar"
-          onClick={() => navigate('/import')}
-        >
-          <Icon name="plus" size={17} /> Ajouter un morceau
-        </button>
       </div>
 
       {pickerFor !== null && (
