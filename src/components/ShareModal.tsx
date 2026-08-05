@@ -74,7 +74,7 @@ export function ShareModal({
    * met en avant l'intérêt de Sing2Me pour donner envie de télécharger
    * l'appli et de créer son compte (l'adhésion vaut acceptation).
    */
-  function mailtoHref(): string {
+  function inviteMessage(): { subject: string; body: string } {
     const inv = payload.invite;
     let subject: string;
     let body: string;
@@ -105,9 +105,20 @@ export function ShareModal({
         `Partagé avec Sing2Me, le songbook des musiciens : paroles, accords, ` +
         `transposition, mode scène. C'est gratuit — n'hésite pas à l'essayer.`;
     }
+    return { subject, body };
+  }
+
+  function mailtoHref(): string {
+    const { subject, body } = inviteMessage();
     return `mailto:?subject=${encodeURIComponent(
       subject,
     )}&body=${encodeURIComponent(body)}`;
+  }
+
+  /** Lien WhatsApp pré-rempli (un seul champ : accroche + message). */
+  function whatsappHref(): string {
+    const { subject, body } = inviteMessage();
+    return `https://wa.me/?text=${encodeURIComponent(`${subject}\n\n${body}`)}`;
   }
 
   return (
@@ -136,7 +147,16 @@ export function ShareModal({
                 href={mailtoHref()}
                 style={{ textDecoration: 'none' }}
               >
-                ✉️ Envoyer par email
+                ✉️ Email
+              </a>
+              <a
+                className="btn ghost"
+                href={whatsappHref()}
+                target="_blank"
+                rel="noreferrer"
+                style={{ textDecoration: 'none' }}
+              >
+                💬 WhatsApp
               </a>
             </div>
             <div className="linkbox">{url}</div>
