@@ -16,6 +16,13 @@ function unescapeHtml(s) {
 // Types non importables en texte
 const EXCLUDED_TYPES = ['Pro', 'Power', 'Official', 'Video', 'Video Lesson'];
 
+/** Retire les accents/diacritiques : « Un autre Finistère » → « Un autre
+ *  Finistere ». La source indexe souvent les titres sans accents ; une
+ *  recherche accentuée peut alors ne rien matcher (404). */
+function stripAccents(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 /** Récupère et parse une page de résultats UG (best-effort). */
 async function fetchResultsPage(q, pageNum) {
   const url =
@@ -46,6 +53,42 @@ async function fetchResultsPage(q, pageNum) {
   }
 }
 
+// Nombre de résultats importables (texte) dans une page.
+const usable = (p) =>
+  p.results.filter(
+    (r) =>
+      r &&
+      typeof r.type === 'string' &&
+      !EXCLUDED_TYPES.includes(r.type) &&
+      typeof r.tab_url === 'string',
+  ).length;
+
+/**
+ * Recherche paginée pour UNE requête. Plusieurs pages, mais EN SÉQUENCE
+ * et en s'arrêtant poliment : le parallèle déclenchait la limite de débit
+ * (429). On garde ce qu'on a déjà si une page suivante est refusée.
+ */
+async function searchPaged(q) {
+  const pages = [];
+  let good = 0;
+  for (let n = 1; n <= 4; n++) {
+    let p = await fetchResultsPage(q, n);
+    if (p.status === 429 && n === 1) {
+      // Seule la première page mérite une seconde chance (3 s)
+      await new Promise((r) => setTimeout(r, 3000));
+      p = await fetchResultsPage(q, 1);
+    }
+    pages.push(p);
+    good += usable(p);
+    if (p.status === 429) break; // la source sature : on rend ce qu'on a
+    // Assez de versions texte ? Inutile d'insister — chaque page en moins
+    // ménage la limite de débit.
+    if (good >= 15) break;
+    if (n < 4) await new Promise((r) => setTimeout(r, 250));
+  }
+  return { pages, good };
+}
+
 export default async function handler(req, res) {
   try {
     const q = req.query?.q;
@@ -53,33 +96,19 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'Paramètre q manquant' });
       return;
     }
-    // Plusieurs pages, mais EN SÉQUENCE et en s'arrêtant poliment :
-    // le parallèle déclenchait la limite de débit d'UG (429). On garde
-    // ce qu'on a déjà si une page suivante est refusée.
-    const usable = (p) =>
-      p.results.filter(
-        (r) =>
-          r &&
-          typeof r.type === 'string' &&
-          !EXCLUDED_TYPES.includes(r.type) &&
-          typeof r.tab_url === 'string',
-      ).length;
-    const pages = [];
-    let good = 0;
-    for (let n = 1; n <= 4; n++) {
-      let p = await fetchResultsPage(q.trim(), n);
-      if (p.status === 429 && n === 1) {
-        // Seule la première page mérite une seconde chance (3 s)
-        await new Promise((r) => setTimeout(r, 3000));
-        p = await fetchResultsPage(q.trim(), 1);
+    const query = q.trim();
+    let { pages, good } = await searchPaged(query);
+    // Repli sans accents : la source indexe souvent les titres sans
+    // diacritiques (« Finistère » rangé sous « Finistere »). Si la
+    // recherche accentuée ne ramène rien d'importable, on retente une
+    // version sans accents avant de renoncer.
+    const flat = stripAccents(query);
+    if (good === 0 && flat !== query) {
+      const alt = await searchPaged(flat);
+      if (alt.good > 0 || pages.every((p) => !p.ok)) {
+        pages = alt.pages;
+        good = alt.good;
       }
-      pages.push(p);
-      good += usable(p);
-      if (p.status === 429) break; // UG sature : on rend ce qu'on a
-      // Assez de versions texte ? Inutile d'insister — chaque page en
-      // moins ménage la limite de débit d'UG.
-      if (good >= 15) break;
-      if (n < 4) await new Promise((r) => setTimeout(r, 250));
     }
     if (!pages.some((p) => p.ok)) {
       const status = pages[0]?.status ?? 502;
