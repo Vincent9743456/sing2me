@@ -2,10 +2,10 @@
  * Onglet Groupes : tous tes groupes au premier niveau — leur fiche,
  * leur espace de discussion, et la création en un geste.
  */
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Icon } from '../components/Icon';
-import { Empty, TopBar } from '../components/ui';
+import { Empty, Field, TopBar } from '../components/ui';
 import { creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -13,14 +13,22 @@ import { emptyBand } from '../types';
 
 export function Bands() {
   const { bands, artist, prefs, saveBand } = useStore();
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
 
-  function createBand() {
+  function cancelCreate() {
+    setCreating(false);
+    setNewName('');
+  }
+
+  function confirmCreate() {
     const b = {
       ...emptyBand(),
-      name: 'Mon groupe',
+      name: newName.trim() || 'Mon groupe',
       members: [creatorMember(artist, prefs.userName)],
     };
     saveBand(b);
+    cancelCreate();
     navigate(`/band/${b.id}`);
   }
 
@@ -28,7 +36,7 @@ export function Bands() {
     <>
       <TopBar title="Groupes" />
       <div className="page">
-        {bands.length === 0 ? (
+        {bands.length === 0 && !creating ? (
           <Empty>
             Joue à plusieurs : crée ton groupe (tu en seras le premier
             musicien), invite les autres par lien ou QR — chacun avec son
@@ -91,9 +99,35 @@ export function Bands() {
           </div>
         )}
         <div className="spacer" />
-        <button className="btn block" onClick={createBand}>
-          ＋ Créer un groupe
-        </button>
+        {creating ? (
+          <div>
+            <Field label="Nom du groupe">
+              <input
+                type="text"
+                value={newName}
+                placeholder="Mon groupe"
+                autoFocus
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') confirmCreate();
+                  else if (e.key === 'Escape') cancelCreate();
+                }}
+              />
+            </Field>
+            <div className="rowactions">
+              <button className="btn" onClick={confirmCreate}>
+                Créer le groupe
+              </button>
+              <button className="btn ghost" onClick={cancelCreate}>
+                Annuler
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn block" onClick={() => setCreating(true)}>
+            ＋ Créer un groupe
+          </button>
+        )}
         <p className="help" style={{ textAlign: 'center' }}>
           Le créateur en est automatiquement le premier musicien (avec son
           matériel). Les invitations s'envoient depuis la fiche du groupe.
