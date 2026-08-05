@@ -680,8 +680,8 @@ export function Import() {
                 </button>
               </div>
               <p className="help" style={{ marginTop: 4 }}>
-                Résultats fournis par Ultimate Guitar — choisis ensuite la
-                version (accords, tablature, basse, ukulélé…).
+                Choisis ensuite la version qui te convient (accords, tablature,
+                basse, ukulélé…).
               </p>
             </div>
           </>
@@ -742,10 +742,9 @@ export function Import() {
                 </button>
               </div>
               <p className="help" style={{ marginTop: 4 }}>
-                Les liens Ultimate Guitar sont importés directement. Pour un
-                autre site, ouvre la page, copie son texte et colle-le
-                ci-dessous : l'analyse (et l'IA si besoin) reconstruit la
-                partition.
+                Un lien reconnu est importé automatiquement. Sinon, ouvre la
+                page, copie son texte et colle-le ci-dessous : l'analyse (et
+                l'IA si besoin) reconstruit la partition.
               </p>
             </div>
             <div className="spacer" />
