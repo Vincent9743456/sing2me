@@ -72,9 +72,16 @@ export function Setlists() {
         key={sl.id}
         onClick={() => navigate(`/setlist/${sl.id}`)}
       >
-        <div className="grow">
+        <div className="grow" style={{ minWidth: 0 }}>
           <div className="title">{sl.name || '(sans nom)'}</div>
-          <div className="sub">
+          <div
+            className="sub"
+            style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {[
               `${info.count} morceau${info.count > 1 ? 'x' : ''}`,
               info.sec > 0 ? `${info.estimated ? '≈ ' : ''}${formatDuration(info.sec)}` : '',
