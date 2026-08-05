@@ -767,25 +767,40 @@ function SongPreview({
 
   // Mêmes réglages de lecture que la fiche : tonalité/capo mémorisés
   // par morceau + version (sur cet appareil).
-  const viewPref = useMemo(() => {
-    if (!song) return null;
+  // Transpose des formes + capo, éditables et mémorisés par appareil.
+  const [shift, setShift] = useState(0);
+  const [viewCapo, setViewCapo] = useState(0);
+  useEffect(() => {
+    if (!song) return;
     try {
       const raw = localStorage.getItem(
         `sing2me/viewkey/${song.id}/${song.activeVersionId}`,
       );
-      if (raw === null) return null;
-      const v = JSON.parse(raw) as { shift?: number; capo?: number };
-      return {
-        shift:
-          typeof v.shift === 'number' ? ((v.shift % 12) + 12) % 12 : 0,
-        capo: typeof v.capo === 'number' ? v.capo : song.capo,
-      };
+      if (raw !== null) {
+        const v = JSON.parse(raw) as { shift?: number; capo?: number };
+        setShift(typeof v.shift === 'number' ? v.shift : 0);
+        setViewCapo(typeof v.capo === 'number' ? v.capo : song.capo);
+      } else {
+        setShift(0);
+        setViewCapo(song.capo);
+      }
     } catch {
-      return null;
+      setShift(0);
+      setViewCapo(song?.capo ?? 0);
     }
-  }, [song, song?.id, song?.activeVersionId]);
-  const shift = viewPref?.shift ?? 0;
-  const viewCapo = viewPref?.capo ?? song?.capo ?? 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [song?.id, song?.activeVersionId]);
+  useEffect(() => {
+    if (!song) return;
+    try {
+      const key = `sing2me/viewkey/${song.id}/${song.activeVersionId}`;
+      if (shift === 0 && viewCapo === song.capo) localStorage.removeItem(key);
+      else localStorage.setItem(key, JSON.stringify({ shift, capo: viewCapo }));
+    } catch {
+      /* stockage indisponible */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shift, viewCapo]);
   const displayReal = localStorage.getItem('sing2me/showRealKey') === '1';
   // song.key = tonalité des formes ; tonalité réelle = formes + capo.
   const shapeKeyShown =
@@ -895,12 +910,7 @@ function SongPreview({
       <div className="hstack" style={{ marginBottom: 10 }}>
         <span className="help">
           {[
-            shapeKeyShown !== ''
-              ? `Accords ${shapeKeyShown}${shift !== 0 ? ' (transposé)' : ''}`
-              : '',
             song.tempo > 0 ? `${song.tempo} BPM` : '',
-            !displayReal && viewCapo > 0 ? `Capo ${viewCapo}` : '',
-            viewCapo > 0 && realKeyShown !== '' ? `sonne en ${realKeyShown}` : '',
             formatDuration(song.durationSec),
           ]
             .filter((x) => x !== '')
@@ -1002,6 +1012,59 @@ function SongPreview({
               </button>
             );
           })}
+        </div>
+      )}
+      {!displayReal && song.key !== '' && (
+        <div className="transpose" style={{ marginBottom: 10 }}>
+          <span className="lbl">Accords</span>
+          <div className="stepper">
+            <button
+              title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
+              onClick={() => {
+                setShift((s) => s - 1);
+                setViewCapo((c) => Math.min(11, c + 1));
+              }}
+            >
+              ♭
+            </button>
+            <span>{shapeKeyShown || '—'}</span>
+            <button
+              title="Accords plus haut (capo −1)"
+              onClick={() => {
+                setShift((s) => s + 1);
+                if (viewCapo > 0) setViewCapo((c) => c - 1);
+              }}
+            >
+              ♯
+            </button>
+          </div>
+          <span className="lbl">Capo</span>
+          <div className="stepper">
+            <button onClick={() => setViewCapo((c) => Math.max(0, c - 1))}>
+              −
+            </button>
+            <span>{viewCapo}</span>
+            <button onClick={() => setViewCapo((c) => Math.min(11, c + 1))}>
+              ＋
+            </button>
+          </div>
+          {realKeyShown !== '' && (
+            <span className="help" style={{ margin: 0, whiteSpace: 'nowrap' }}>
+              🔊 sonne en{' '}
+              <strong style={{ color: 'var(--text)' }}>{realKeyShown}</strong>
+            </span>
+          )}
+          {(shift !== 0 || viewCapo !== song.capo) && (
+            <button
+              className="btn ghost small"
+              onClick={() => {
+                setShift(0);
+                setViewCapo(song.capo);
+              }}
+            >
+              Réinitialiser
+            </button>
+          )}
         </div>
       )}
       <SongBody
