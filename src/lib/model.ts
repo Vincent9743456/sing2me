@@ -307,6 +307,7 @@ export function addSongAsVersion(
   existing: Song,
   imported: Song,
   name: string,
+  activate = true,
 ): Song {
   const version: SongVersion = {
     id: makeId(),
@@ -318,10 +319,15 @@ export function addSongAsVersion(
     structure: imported.structure.map((r) => ({ ...r, id: makeId() })),
     lyrics: imported.lyrics,
   };
-  return switchVersion(
-    { ...existing, versions: [...existing.versions, version] },
-    version.id,
-  );
+  const withVersion: Song = {
+    ...existing,
+    versions: [...existing.versions, version],
+    updatedAt: new Date().toISOString(),
+  };
+  // `activate` : bascule sur la version importée (import à l'unité, pour la
+  // voir tout de suite) ; en masse on n'active pas (on ne détourne pas la
+  // version par défaut des morceaux).
+  return activate ? switchVersion(withVersion, version.id) : withVersion;
 }
 
 /** Supprime une version (jamais la dernière) ; bascule sur la première restante si besoin. */

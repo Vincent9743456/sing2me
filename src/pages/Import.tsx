@@ -8,6 +8,7 @@ import {
   findDuplicate,
   findSameSong,
   importText,
+  lyricsSimilarity,
   normalizeTitle,
 } from '../lib/importer';
 import {
@@ -536,12 +537,36 @@ export function Import() {
               message: '🔧 mis à jour (accords récupérés)',
             };
           } else {
-            items[i] = {
-              ...items[i],
-              status: 'dup',
-              title: song.title,
-              message: `déjà présent (« ${existing.title} »)`,
-            };
+            // Doublon : si le contenu diffère des versions déjà présentes,
+            // on l'ajoute comme NOUVELLE VERSION (sans détourner la version
+            // par défaut) ; s'il est identique, on l'ignore.
+            const identical = existing.versions.some(
+              (v) => lyricsSimilarity(song.lyrics, v.lyrics) >= 0.95,
+            );
+            if (identical) {
+              items[i] = {
+                ...items[i],
+                status: 'dup',
+                title: song.title,
+                message: `déjà présent (« ${existing.title} »)`,
+              };
+            } else {
+              const merged = addSongAsVersion(
+                existing,
+                song,
+                'Version importée',
+                false,
+              );
+              saveSong(merged);
+              const ki = known.findIndex((s) => s.id === existing.id);
+              if (ki !== -1) known[ki] = merged;
+              items[i] = {
+                ...items[i],
+                status: 'ok',
+                title: existing.title,
+                message: '➕ ajouté comme nouvelle version',
+              };
+            }
           }
         } else {
           if (asIdea) song.idea = true;
