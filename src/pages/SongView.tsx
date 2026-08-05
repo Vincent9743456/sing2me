@@ -376,10 +376,10 @@ export function SongView({
           </select>
           <button
             className="btn ghost small"
-            title="Sing2Me cherche sur Ultimate Guitar l'équivalent le mieux noté de cette partition"
+            title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
             onClick={() => setUgUpgrade(true)}
           >
-            ★ Mieux sur UG ?
+            ★ Meilleure version ?
           </button>
           {song.versions.length > 1 && (
             <>

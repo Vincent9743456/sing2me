@@ -854,9 +854,9 @@ function SongPreview({
         <button
           className="btn ghost small"
           onClick={() => setUgOpen(true)}
-          title="Sing2Me cherche sur Ultimate Guitar l'équivalent le mieux noté de cette partition"
+          title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
         >
-          ★ Mieux sur UG ?
+          ★ Meilleure version ?
         </button>
         <button
           className="btn ghost small"

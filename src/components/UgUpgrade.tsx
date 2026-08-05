@@ -1,8 +1,8 @@
 /**
- * « Meilleure version sur UG ? » — depuis la fiche d'un morceau, propose
- * automatiquement l'équivalent le mieux noté sur Ultimate Guitar
- * (recherche titre + artiste, tri note × votes), avec aperçu, puis
- * remplacement de la partition OU ajout comme nouvelle version.
+ * « Chercher une meilleure version » — depuis la fiche d'un morceau, propose
+ * automatiquement l'équivalent le mieux noté (recherche titre + artiste sur
+ * Ultimate Guitar, tri note × votes), avec aperçu, puis remplacement de la
+ * partition OU ajout comme nouvelle version.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -67,7 +67,7 @@ export function applyUgTextToSong(
     }
     return out;
   }
-  let s2 = duplicateVersion(song, 'Version UG');
+  let s2 = duplicateVersion(song, 'Version importée');
   s2 = {
     ...s2,
     ...patch(s2),
@@ -185,9 +185,9 @@ export function UgUpgradeModal({
   }
 
   return (
-    <Modal title="Meilleure version sur UG ?" onClose={onClose}>
+    <Modal title="Chercher une meilleure version" onClose={onClose}>
       {results === null && error === null && (
-        <p className="help">Recherche sur Ultimate Guitar…</p>
+        <p className="help">Recherche de la meilleure version…</p>
       )}
       {error && (
         <div className="card" style={{ borderColor: 'var(--danger)' }}>

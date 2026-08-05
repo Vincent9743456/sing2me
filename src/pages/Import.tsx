@@ -22,7 +22,7 @@ import { parseUgTabHtml } from '../lib/ugHtml';
 import { navigate } from '../router';
 import { useStore } from '../store';
 
-type AddMethod = 'ug' | 'link' | 'doc' | 'bulk';
+type AddMethod = 'ug' | 'doc' | 'bulk';
 
 interface BulkItem {
   url: string;
@@ -192,9 +192,9 @@ export function Import() {
         const tab = parseUgTabHtml(await file.text());
         if (!tab) {
           setError(
-            "Cette page enregistrée ne contient pas de partition UG lisible " +
-              "— pour une LISTE de partitions (My tabs), passe par " +
-              '« 4 · Plusieurs liens ».',
+            'Cette page enregistrée ne contient pas de partition Ultimate ' +
+              'Guitar lisible — pour une LISTE de partitions (My tabs), passe ' +
+              'par « 3 · Import en masse ».',
           );
           return;
         }
@@ -312,7 +312,7 @@ export function Import() {
             // Sinon : page de LISTE (My tabs, favoris) → liens
             const links = extractUgLinks(html);
             if (links.length === 0)
-              failed.push(`${f.name} (ni partition ni lien UG)`);
+              failed.push(`${f.name} (ni partition ni lien Ultimate Guitar)`);
             else linksFound.push(...links);
           }
         } else if (lower.endsWith('.docx')) {
@@ -378,7 +378,7 @@ export function Import() {
     const known = [...songs];
     // Titres supprimés volontairement de Sing2Me : on ne les réimporte pas
     // (même garde-fou que la synchro de groupe). L'utilisateur peut toujours
-    // les récupérer explicitement via « 2 · Coller un lien ».
+    // les récupérer explicitement via « 2 · Document ou lien ».
     const removedTitles = new Set(
       deleted.map((t) => t.key).filter((k): k is string => !!k),
     );
@@ -412,15 +412,15 @@ export function Import() {
               ) {
                 throw msg.includes('429')
                   ? new Error(
-                      'UG limite le débit — relance l’import dans quelques ' +
-                        'minutes, les morceaux déjà importés seront ignorés',
+                      'Ultimate Guitar limite le débit — relance l’import dans ' +
+                        'quelques minutes, les morceaux déjà importés seront ignorés',
                     )
                   : e;
               }
               const wait = [5, 15, 30][attempt] ?? 30;
               items[i] = {
                 ...items[i],
-                message: `⏳ UG demande une pause — nouvel essai dans ${wait} s`,
+                message: `⏳ Ultimate Guitar demande une pause — nouvel essai dans ${wait} s`,
               };
               setBulkItems([...items]);
               await new Promise((r) => setTimeout(r, wait * 1000));
@@ -467,7 +467,7 @@ export function Import() {
             status: 'skip',
             title: song.title,
             message:
-              'supprimé de Sing2Me — non réimporté (passe par « Coller un lien » pour le récupérer)',
+              'supprimé de Sing2Me — non réimporté (passe par « Document ou lien » pour le récupérer)',
           };
         } else if (existing && garbled) {
           // Le PDF est brouillé et le morceau (tout aussi brouillé) est
@@ -630,54 +630,61 @@ export function Import() {
             className={`chip ${method === 'ug' ? '' : 'off'}`}
             onClick={() => setMethod('ug')}
           >
-            1 · Chercher la chanson
-          </button>
-          <button
-            className={`chip ${method === 'link' ? '' : 'off'}`}
-            onClick={() => setMethod('link')}
-          >
-            2 · Coller un lien
+            1 · Rechercher une chanson
           </button>
           <button
             className={`chip ${method === 'doc' ? '' : 'off'}`}
             onClick={() => setMethod('doc')}
           >
-            3 · Document / texte
+            2 · Document ou lien
           </button>
           <button
             className={`chip ${method === 'bulk' ? '' : 'off'}`}
             onClick={() => setMethod('bulk')}
           >
-            4 · Plusieurs liens
+            3 · Import en masse
           </button>
         </div>
 
         {method === 'ug' && (
-          <div className="field">
-            <label>Titre de la chanson (et artiste)</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="text"
-                value={ugQuery}
-                placeholder="Ex. Angie Rolling Stones"
-                onChange={(e) => setUgQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') void onUgSearch();
-                }}
-              />
-              <button
-                className="btn"
-                onClick={() => void onUgSearch()}
-                disabled={ugQuery.trim() === '' || ugSearching}
-              >
-                {ugSearching ? '…' : 'Chercher'}
-              </button>
+          <>
+            <div
+              className="card"
+              style={{ borderColor: 'var(--accent)', marginBottom: 12 }}
+            >
+              <div className="title">✨ Trouve ta chanson en un instant</div>
+              <div className="help" style={{ marginTop: 4 }}>
+                Tape un titre (et l'artiste) : Sing2Me trouve la meilleure
+                version et importe accords, paroles et structure. La façon la
+                plus simple d'ajouter un morceau.
+              </div>
             </div>
-            <p className="help" style={{ marginTop: 4 }}>
-              Recherche sur Ultimate Guitar — choisis ensuite la version
-              (Chords, Tab, Bass, Ukulélé…).
-            </p>
-          </div>
+            <div className="field">
+              <label>Titre de la chanson (et artiste)</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  value={ugQuery}
+                  placeholder="Ex. Angie Rolling Stones"
+                  onChange={(e) => setUgQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void onUgSearch();
+                  }}
+                />
+                <button
+                  className="btn"
+                  onClick={() => void onUgSearch()}
+                  disabled={ugQuery.trim() === '' || ugSearching}
+                >
+                  {ugSearching ? '…' : 'Chercher'}
+                </button>
+              </div>
+              <p className="help" style={{ marginTop: 4 }}>
+                Résultats fournis par Ultimate Guitar — choisis ensuite la
+                version (accords, tablature, basse, ukulélé…).
+              </p>
+            </div>
+          </>
         )}
 
         {method === 'ug' && ugResults !== null && ugResults.length > 0 && (
@@ -715,34 +722,33 @@ export function Import() {
           </div>
         )}
 
-        {method === 'link' && (
-          <div className="field">
-            <label>Lien de la partition (Ultimate Guitar)</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="url"
-                value={ugUrl}
-                placeholder="https://tabs.ultimate-guitar.com/tab/…"
-                onChange={(e) => setUgUrl(e.target.value)}
-              />
-              <button
-                className="btn"
-                onClick={() => void loadUgUrl(ugUrl.trim())}
-                disabled={ugUrl.trim() === '' || ugLoading}
-              >
-                {ugLoading ? '…' : 'Récupérer'}
-              </button>
-            </div>
-            <p className="help" style={{ marginTop: 4 }}>
-              D'autres sites seront reconnus progressivement — en attendant,
-              copie le texte de la page et passe par « Document / texte » :
-              l'analyse (et l'IA si besoin) reconstruira la partition.
-            </p>
-          </div>
-        )}
-
         {method === 'doc' && (
           <>
+            <div className="field">
+              <label>Coller un lien vers la partition</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="url"
+                  value={ugUrl}
+                  placeholder="https://…"
+                  onChange={(e) => setUgUrl(e.target.value)}
+                />
+                <button
+                  className="btn"
+                  onClick={() => void loadUgUrl(ugUrl.trim())}
+                  disabled={ugUrl.trim() === '' || ugLoading}
+                >
+                  {ugLoading ? '…' : 'Récupérer'}
+                </button>
+              </div>
+              <p className="help" style={{ marginTop: 4 }}>
+                Les liens Ultimate Guitar sont importés directement. Pour un
+                autre site, ouvre la page, copie son texte et colle-le
+                ci-dessous : l'analyse (et l'IA si besoin) reconstruit la
+                partition.
+              </p>
+            </div>
+            <div className="spacer" />
             <button
               className="btn ghost block"
               onClick={() => fileRef.current?.click()}
@@ -790,7 +796,8 @@ export function Import() {
               onClick={() => bulkFileRef.current?.click()}
               disabled={bulkRunning}
             >
-              Déposer des fichiers — page UG enregistrée (.html) ou partitions
+              Déposer des fichiers — page Ultimate Guitar enregistrée (.html) ou
+              partitions
             </button>
             <input
               ref={bulkFileRef}
@@ -812,7 +819,8 @@ export function Import() {
               pages, enregistre chacune : tu peux déposer tous les fichiers
               .html en une fois, les liens s'additionnent sans doublons.{' '}
               <strong>Tablatures personnelles (« Personal tabs »)</strong> :
-              ouvre chaque tablature sur UG et enregistre sa page (Ctrl+S) —
+              ouvre chaque tablature sur Ultimate Guitar et enregistre sa page
+              (Ctrl+S) —
               dépose ces .html ici, la partition est extraite directement du
               fichier, sans passer par le serveur. Tu peux aussi déposer
               plusieurs fichiers de partitions exportés d'une autre
