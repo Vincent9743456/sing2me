@@ -301,6 +301,8 @@ export interface ArtistProfile {
   gear?: GearItem[];
   /** Ce que voit le public sur l'écran du QR (tout actif par défaut) */
   publicScreen?: Partial<PublicScreen>;
+  /** Dernière modification — sert à fusionner le profil entre appareils */
+  updatedAt?: string;
 }
 
 /** Contenu d'un lien de partage public (encodé dans l'URL). */

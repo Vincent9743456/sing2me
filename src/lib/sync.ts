@@ -60,8 +60,29 @@ export function mergeStates(
   cloud: Partial<SyncState> | null,
 ): SyncState {
   if (!cloud) return local;
-  const artist: ArtistProfile =
-    local.artist.name !== '' ? local.artist : (cloud.artist ?? local.artist);
+  // Profil artiste : le plus récemment modifié gagne (updatedAt). Pour les
+  // données existantes sans horodatage, on UNIT les champs (le non-vide
+  // gagne) afin que photo/liens/bio ajoutés sur un appareil se propagent —
+  // l'ancien « tout-ou-rien selon le nom » perdait ces ajouts.
+  const artist: ArtistProfile = (() => {
+    const la = local.artist;
+    const ca = cloud.artist;
+    if (!ca) return la;
+    const lu = la.updatedAt ?? '';
+    const cu = ca.updatedAt ?? '';
+    if (lu !== '' || cu !== '') return cu > lu ? ca : la;
+    return {
+      ...ca,
+      ...la,
+      name: la.name || ca.name,
+      bio: la.bio || ca.bio,
+      photo: la.photo || ca.photo,
+      tipUrl: la.tipUrl || ca.tipUrl,
+      links: la.links.length > 0 ? la.links : (ca.links ?? []),
+      gear: la.gear && la.gear.length > 0 ? la.gear : ca.gear,
+      publicScreen: la.publicScreen ?? ca.publicScreen,
+    };
+  })();
   const prefs: Prefs = {
     defaultView: local.prefs.defaultView,
     userName: pick(local.prefs.userName, cloud.prefs?.userName),

@@ -206,7 +206,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const saveArtist = useCallback((artist: ArtistProfile) => {
-    setState((prev) => ({ ...prev, artist }));
+    setState((prev) => ({
+      ...prev,
+      artist: { ...artist, updatedAt: new Date().toISOString() },
+    }));
   }, []);
 
   const savePrefs = useCallback((prefs: Prefs) => {
