@@ -429,7 +429,7 @@ export function emptySong(): Song {
     versions: [
       {
         id: versionId,
-        name: 'Version 1',
+        name: 'Original',
         bandId: '',
         key: '',
         tempo: 0,

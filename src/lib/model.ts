@@ -250,7 +250,7 @@ export function splitVersion(
     versions: [
       {
         id: vid,
-        name: 'Version 1',
+        name: 'Original',
         bandId: '',
         key: v.key,
         tempo: v.tempo,
@@ -411,7 +411,7 @@ export function migrateSong(raw: unknown): Song {
       versions: [
         {
           id: versionId,
-          name: 'Version 1',
+          name: 'Original',
           bandId: '',
           key: base.key ?? '',
           tempo: base.tempo ?? 0,
@@ -427,6 +427,18 @@ export function migrateSong(raw: unknown): Song {
     !base.versions.some((v) => v.id === base.activeVersionId)
   ) {
     base = { ...base, activeVersionId: base.versions[0].id };
+  }
+
+  // La version maîtresse (bibliothèque) s'appelle désormais « Original ».
+  // On renomme l'ancien libellé par défaut « Version 1 » sans toucher aux
+  // noms personnalisés.
+  if (base.versions[0] && base.versions[0].name === 'Version 1') {
+    base = {
+      ...base,
+      versions: base.versions.map((v, i) =>
+        i === 0 ? { ...v, name: 'Original' } : v,
+      ),
+    };
   }
 
   // Notes de répétition : l'ancien champ texte devient une note générale.

@@ -335,7 +335,7 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
     versions: [
       {
         id: versionId,
-        name: 'Version 1',
+        name: 'Original',
         bandId: '',
         key: meta.key ?? '',
         tempo: meta.tempo ?? 0,

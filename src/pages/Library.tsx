@@ -856,6 +856,8 @@ function SongPreview({
   const song = id ? songs.find((s) => s.id === id) : undefined;
   const paneRef = useRef<HTMLElement | null>(null);
   const [ugOpen, setUgOpen] = useState(false);
+  // Éditeur « Ajouter à un groupe / une setlist » (à la demande).
+  const [assocOpen, setAssocOpen] = useState(false);
 
   // Mêmes réglages de lecture que la fiche : tonalité/capo mémorisés
   // par morceau + version (sur cet appareil).
@@ -971,9 +973,15 @@ function SongPreview({
   useEffect(() => {
     if (paneRef.current) paneRef.current.scrollTop = 0;
     setUgOpen(false);
+    setAssocOpen(false);
   }, [id]);
 
   if (!song) return null;
+  // Appartenances actuelles (pour l'état compact).
+  const memberBands = bands.filter((b) => versionForBand(song, b.id) !== null);
+  const memberSetlists = setlists.filter((sl) =>
+    sl.items.some((it) => it.songId === song.id),
+  );
   return (
     <aside className="libpreview" ref={paneRef}>
       {ugOpen && (
@@ -1093,119 +1101,181 @@ function SongPreview({
           </select>
         )}
       </div>
-      {bands.length > 0 && (
-        <div
-          className="hstack"
-          style={{ marginBottom: 10, flexWrap: 'wrap', gap: 6 }}
-        >
-          <span className="help">Groupes :</span>
-          {bands.map((b, i) => {
-            const v = versionForBand(song, b.id);
-            const active = v !== null;
-            return (
-              <button
-                key={b.id}
-                className={`chip ${active ? '' : 'off'}`}
-                title={
-                  active
-                    ? `« ${song.title} » est dans le répertoire de ${b.name || 'ce groupe'} — cliquer pour l'en retirer`
-                    : `Ajouter « ${song.title} » au répertoire de ${b.name || 'ce groupe'} (partagé avec tous les membres)`
-                }
-                onClick={() => {
-                  if (active && v) {
-                    if (
-                      song.versions.length <= 1 ||
-                      !confirm(
-                        `Retirer « ${song.title} » du répertoire de ` +
-                          `${b.name || 'ce groupe'} ? Le morceau sortira du ` +
-                          'répertoire du groupe pour TOUS les membres — ' +
-                          'chacun garde la partition dans sa bibliothèque ' +
-                          'personnelle.',
-                      )
-                    )
-                      return;
-                    saveSong(removeVersion(song, v.id));
-                    // Retrait PROPAGÉ : le morceau sort du répertoire du
-                    // groupe pour tous les membres (chacun garde sa
-                    // partition en personnel).
-                    recordBandRemoval(b.id, normalizeTitle(song.title));
-                  } else {
-                    // Version créée en arrière-plan : le morceau RESTE sur
-                    // sa version affichée (pas de bascule surprise).
-                    const prev = song.activeVersionId;
-                    saveSong(
-                      switchVersion(
-                        duplicateVersion(song, b.name || 'Groupe', b.id),
-                        prev,
-                      ),
-                    );
-                    // Ré-intégration : on annule un éventuel retrait
-                    clearBandRemoval(b.id, normalizeTitle(song.title));
-                    // Le groupe est informé (best-effort si publié + connecté)
-                    void announceBandSong(
-                      b.cloudId,
-                      author,
-                      song.title,
-                      song.artist,
-                    );
-                  }
-                }}
-              >
-                <span aria-hidden="true" style={{ marginRight: 2 }}>
-                  {active ? '✓' : '＋'}
-                </span>
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: 'inline-block',
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: BAND_COLORS[i % BAND_COLORS.length],
-                    marginRight: 2,
-                  }}
-                />
-                {b.name || 'Groupe sans nom'}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Appartenances : état compact (où le morceau EST) + éditeur à la
+          demande pour l'ajouter/retirer d'un groupe ou d'une setlist. */}
       <div
         className="hstack"
-        style={{ marginBottom: 10, flexWrap: 'wrap', gap: 6 }}
+        style={{
+          marginBottom: 10,
+          flexWrap: 'wrap',
+          gap: 6,
+          alignItems: 'center',
+        }}
       >
-        <span className="help">Setlists :</span>
-        {[...setlists]
-          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-          .map((sl) => {
-            const has = sl.items.some((it) => it.songId === song.id);
-            return (
-              <button
-                key={sl.id}
-                className={`chip ${has ? '' : 'off'}`}
-                title={
-                  has
-                    ? `« ${song.title} » est dans « ${sl.name || 'cette setlist'} » — cliquer pour l'en retirer`
-                    : `Ajouter « ${song.title} » à « ${sl.name || 'cette setlist'} »`
-                }
-                onClick={() => toggleSetlist(sl)}
-              >
-                <span aria-hidden="true" style={{ marginRight: 2 }}>
-                  {has ? '✓' : '＋'}
-                </span>
-                {sl.name || '(sans nom)'}
-              </button>
-            );
-          })}
+        <span className="help">Dans :</span>
+        {memberBands.length === 0 && memberSetlists.length === 0 && (
+          <span className="help" style={{ margin: 0 }}>
+            aucun groupe ni setlist
+          </span>
+        )}
+        {memberBands.map((b) => (
+          <span key={b.id} className="chip static">
+            <span
+              aria-hidden="true"
+              style={{
+                display: 'inline-block',
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background:
+                  BAND_COLORS[
+                    bands.findIndex((x) => x.id === b.id) % BAND_COLORS.length
+                  ],
+                marginRight: 4,
+              }}
+            />
+            {b.name || 'Groupe sans nom'}
+          </span>
+        ))}
+        {memberSetlists.map((sl) => (
+          <span key={sl.id} className="chip static">
+            {sl.name || '(sans nom)'}
+          </span>
+        ))}
         <button
           className="chip off"
-          title="Créer une nouvelle setlist avec ce morceau"
-          onClick={() => onPickSetlist(song.id)}
+          title="Ajouter ce morceau à un groupe ou une setlist"
+          onClick={() => setAssocOpen(true)}
         >
-          ＋ Nouvelle…
+          ＋ Ajouter à…
         </button>
       </div>
+
+      {assocOpen && (
+        <Modal
+          title="Ajouter à un groupe ou une setlist"
+          onClose={() => setAssocOpen(false)}
+        >
+          {bands.length > 0 && (
+            <div className="field">
+              <label>Groupes</label>
+              <div className="hstack" style={{ flexWrap: 'wrap', gap: 6 }}>
+                {bands.map((b, i) => {
+                  const v = versionForBand(song, b.id);
+                  const active = v !== null;
+                  return (
+                    <button
+                      key={b.id}
+                      className={`chip ${active ? '' : 'off'}`}
+                      title={
+                        active
+                          ? `Retirer « ${song.title} » du répertoire de ${b.name || 'ce groupe'}`
+                          : `Ajouter « ${song.title} » au répertoire de ${b.name || 'ce groupe'} (partagé avec tous les membres)`
+                      }
+                      onClick={() => {
+                        if (active && v) {
+                          if (
+                            song.versions.length <= 1 ||
+                            !confirm(
+                              `Retirer « ${song.title} » du répertoire de ` +
+                                `${b.name || 'ce groupe'} ? Le morceau sortira du ` +
+                                'répertoire du groupe pour TOUS les membres — ' +
+                                'chacun garde la partition dans sa bibliothèque ' +
+                                'personnelle.',
+                            )
+                          )
+                            return;
+                          saveSong(removeVersion(song, v.id));
+                          // Retrait PROPAGÉ : le morceau sort du répertoire du
+                          // groupe pour tous les membres (chacun garde sa
+                          // partition en personnel).
+                          recordBandRemoval(b.id, normalizeTitle(song.title));
+                        } else {
+                          // Version créée en arrière-plan : le morceau RESTE sur
+                          // sa version affichée (pas de bascule surprise).
+                          const prev = song.activeVersionId;
+                          saveSong(
+                            switchVersion(
+                              duplicateVersion(song, b.name || 'Groupe', b.id),
+                              prev,
+                            ),
+                          );
+                          // Ré-intégration : on annule un éventuel retrait
+                          clearBandRemoval(b.id, normalizeTitle(song.title));
+                          // Le groupe est informé (best-effort si publié + connecté)
+                          void announceBandSong(
+                            b.cloudId,
+                            author,
+                            song.title,
+                            song.artist,
+                          );
+                        }
+                      }}
+                    >
+                      <span aria-hidden="true" style={{ marginRight: 2 }}>
+                        {active ? '✓' : '＋'}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          display: 'inline-block',
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: BAND_COLORS[i % BAND_COLORS.length],
+                          marginRight: 2,
+                        }}
+                      />
+                      {b.name || 'Groupe sans nom'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <div className="field">
+            <label>Setlists</label>
+            <div className="hstack" style={{ flexWrap: 'wrap', gap: 6 }}>
+              {[...setlists]
+                .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+                .map((sl) => {
+                  const has = sl.items.some((it) => it.songId === song.id);
+                  return (
+                    <button
+                      key={sl.id}
+                      className={`chip ${has ? '' : 'off'}`}
+                      title={
+                        has
+                          ? `Retirer « ${song.title} » de « ${sl.name || 'cette setlist'} »`
+                          : `Ajouter « ${song.title} » à « ${sl.name || 'cette setlist'} »`
+                      }
+                      onClick={() => toggleSetlist(sl)}
+                    >
+                      <span aria-hidden="true" style={{ marginRight: 2 }}>
+                        {has ? '✓' : '＋'}
+                      </span>
+                      {sl.name || '(sans nom)'}
+                    </button>
+                  );
+                })}
+              <button
+                className="chip off"
+                title="Créer une nouvelle setlist avec ce morceau"
+                onClick={() => onPickSetlist(song.id)}
+              >
+                ＋ Nouvelle…
+              </button>
+            </div>
+          </div>
+          <div className="spacer" />
+          <button
+            className="btn ghost block"
+            onClick={() => setAssocOpen(false)}
+          >
+            Fermer
+          </button>
+        </Modal>
+      )}
       {!displayReal && (
         <div className="transpose" style={{ marginBottom: 10 }}>
           <span className="lbl">Accords</span>
