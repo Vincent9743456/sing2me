@@ -83,13 +83,21 @@ export default async function handler(req, res) {
     }
     if (!pages.some((p) => p.ok)) {
       const status = pages[0]?.status ?? 502;
+      // 404 = recherche sans résultat côté source : ce n'est pas une
+      // panne. On renvoie une liste vide pour que l'app affiche
+      // « Aucune version trouvée » plutôt qu'une erreur alarmante.
+      if (status === 404) {
+        res.setHeader('Cache-Control', 's-maxage=3600');
+        res.status(200).json({ results: [] });
+        return;
+      }
       res.status(502).json({
         error:
           status === 429
             ? 'Ultimate Guitar limite le débit (trop de requêtes rapprochées) — attends une minute et réessaie.'
             : status === 422
               ? 'Format de page de recherche non reconnu'
-              : `Ultimate Guitar a répondu ${status}`,
+              : `Le service de recherche a répondu ${status}`,
       });
       return;
     }
