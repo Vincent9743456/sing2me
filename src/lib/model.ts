@@ -79,6 +79,18 @@ export function versionForBand(song: Song, bandId: string): SongVersion | null {
   return song.versions.find((v) => (v.bandId ?? '') === bandId) ?? null;
 }
 
+/**
+ * Version à ouvrir par défaut selon le contexte d'ouverture d'un morceau :
+ * - depuis un groupe → la version de ce groupe si elle existe ;
+ * - depuis la bibliothèque / solo (bandId '') → la version originale.
+ * Repli : version originale, sinon la première version.
+ */
+export function contextVersionId(song: Song, bandId: string): string {
+  const v =
+    versionForBand(song, bandId) ?? versionForBand(song, '') ?? song.versions[0];
+  return v?.id ?? song.activeVersionId;
+}
+
 /** Notes visibles dans un contexte de groupe : générales + celles du groupe. */
 export function notesForBand(notes: SongNote[], bandId: string): SongNote[] {
   return notes.filter(

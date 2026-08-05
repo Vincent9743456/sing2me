@@ -130,6 +130,7 @@ import { fetchLive } from '../lib/live';
 import { spellingForKey, transposeKeyName } from '../lib/chords';
 import { normalizeTitle } from '../lib/importer';
 import {
+  contextVersionId,
   duplicateVersion,
   removeVersion,
   switchVersion,
@@ -137,7 +138,7 @@ import {
 } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { emptySetlist, formatDuration, makeId, Setlist } from '../types';
+import { emptySetlist, formatDuration, makeId, Setlist, Song } from '../types';
 import { Modal } from '../components/ui';
 
 /**
@@ -221,7 +222,7 @@ function isRecent(createdAt: string): boolean {
 }
 
 export function Library() {
-  const { songs, deleteSong, bands, setlists } = useStore();
+  const { songs, deleteSong, bands, setlists, saveSong } = useStore();
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
   // null = tous · '' = solo (aucun groupe) · sinon id du groupe
@@ -361,11 +362,22 @@ export function Library() {
     return groups;
   }, [filtered]);
 
+  // Ouvrir un morceau applique par défaut la version du contexte courant :
+  // dans un filtre groupe → la version du groupe ; sinon (toutes / solo) →
+  // la version originale. Comme SongView/SongEdit et les notes suivent la
+  // version active, commentaires et modifications visent la bonne version.
+  function openWithContext(song: Song) {
+    const bid = bandFilter && bandFilter !== '' ? bandFilter : '';
+    const vid = contextVersionId(song, bid);
+    if (vid !== song.activeVersionId) saveSong(switchVersion(song, vid));
+  }
+
   const renderRow = (song: (typeof filtered)[number]) => (
                   <div
                     className={`row ${selectedId === song.id ? 'selected' : ''}`}
                     key={song.id}
                     onClick={() => {
+                      openWithContext(song);
                       if (isSplitScreen()) setSelectedId(song.id);
                       else navigate(`/song/${song.id}`);
                     }}
