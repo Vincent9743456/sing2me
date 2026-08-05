@@ -71,7 +71,14 @@ const TABS: { route: string; match: Route['name'][]; ico: IconName; label: strin
   { route: '/artist', match: ['artist'], ico: 'user', label: 'Artiste' },
 ];
 
-export function TabBar({ current }: { current: Route['name'] }) {
+export function TabBar({
+  current,
+  bandsBadge = 0,
+}: {
+  current: Route['name'];
+  /** Pastille de notifications sur l'onglet Groupes. */
+  bandsBadge?: number;
+}) {
   return (
     <nav className="tabbar">
       <div className="brand">
@@ -85,6 +92,11 @@ export function TabBar({ current }: { current: Route['name'] }) {
         >
           <span className="ico">
             <Icon name={tab.ico} size={19} />
+            {tab.route === '/bands' && bandsBadge > 0 && (
+              <span className="tabbadge" aria-label={`${bandsBadge} notification${bandsBadge > 1 ? 's' : ''}`}>
+                {bandsBadge > 9 ? '9+' : bandsBadge}
+              </span>
+            )}
           </span>
           {tab.label}
         </button>

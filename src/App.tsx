@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 
 import { AccountProvider } from './components/Account';
+import { NotificationsProvider, useNotifications } from './components/Notifications';
 import { OnAirButton, OnAirProvider } from './components/OnAir';
 import { TabBar } from './components/ui';
 import { Artist } from './pages/Artist';
@@ -26,6 +27,7 @@ import { StoreProvider } from './store';
 
 function Screen() {
   const route = useRoute();
+  const { badge } = useNotifications();
 
   // Chaque page s'ouvre en haut. Les pages à mémoire de position (la
   // bibliothèque) restaurent ensuite leur propre défilement par-dessus.
@@ -119,7 +121,7 @@ function Screen() {
   return (
     <div className="app">
       {page}
-      <TabBar current={route.name} />
+      <TabBar current={route.name} bandsBadge={badge} />
       <OnAirButton />
     </div>
   );
@@ -129,9 +131,11 @@ export default function App() {
   return (
     <StoreProvider>
       <AccountProvider>
-        <OnAirProvider>
-          <Screen />
-        </OnAirProvider>
+        <NotificationsProvider>
+          <OnAirProvider>
+            <Screen />
+          </OnAirProvider>
+        </NotificationsProvider>
       </AccountProvider>
     </StoreProvider>
   );

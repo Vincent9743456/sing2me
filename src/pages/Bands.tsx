@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 
 import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
+import { useNotifications } from '../components/Notifications';
 import { Empty, Field, TopBar } from '../components/ui';
 import { getValidSession } from '../lib/auth';
 import { fetchMyInvites, PendingInvite, respondInvite } from '../lib/bands';
@@ -17,10 +18,20 @@ import { emptyBand } from '../types';
 export function Bands() {
   const { bands, artist, prefs, saveBand } = useStore();
   const account = useAccount();
+  const notifications = useNotifications();
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [inviteBusy, setInviteBusy] = useState('');
+
+  // Ouvrir l'onglet Groupes = « j'ai vu les arrivées » : on efface cette
+  // partie de la pastille (les invitations restent tant qu'on n'a pas répondu).
+  const memberNews = notifications.memberNews;
+  useEffect(() => {
+    if (memberNews.length > 0) notifications.acknowledgeMembers();
+    // au montage uniquement
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Invitations reçues (annuaire) : acceptation obligatoire.
   useEffect(() => {
@@ -60,6 +71,7 @@ export function Bands() {
         });
       }
       setInvites((list) => list.filter((x) => x.id !== inv.id));
+      notifications.refresh();
     } catch {
       // best-effort
     } finally {
@@ -87,6 +99,25 @@ export function Bands() {
     <>
       <TopBar title="Groupes" />
       <div className="page">
+        {memberNews.length > 0 && (
+          <>
+            {memberNews.map((n) => (
+              <div
+                className="card"
+                key={n.key}
+                style={{
+                  padding: '10px 12px',
+                  marginBottom: 8,
+                  borderColor: 'var(--accent)',
+                }}
+              >
+                🎉 <strong>{n.memberName}</strong> a rejoint{' '}
+                <strong>« {n.bandName} »</strong>.
+              </div>
+            ))}
+            <div className="spacer" />
+          </>
+        )}
         {invites.length > 0 && (
           <>
             <h2 className="pagetitle" style={{ marginTop: 0 }}>
