@@ -5,7 +5,9 @@ import { gearIcon } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { StagePlan } from '../components/StagePlan';
 import { Field, Modal, TopBar } from '../components/ui';
+import { announceBandSong } from '../lib/bands';
 import { semitonesBetween, spellingForKey, transposeContent, transposeKeyName } from '../lib/chords';
+import { normalizeTitle } from '../lib/importer';
 import {
   creatorMember,
   duplicateVersion,
@@ -40,6 +42,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
     bands,
     saveBand,
     saveSong,
+    clearBandRemoval,
     artist,
     prefs,
   } = useStore();
@@ -168,6 +171,41 @@ export function SetlistEdit({ id }: { id: string | null }) {
     if (added.length > 0) {
       updateSetup({ positions: [...setup.positions, ...added] });
     }
+  }
+
+  /**
+   * Ajoute un morceau à la setlist. Si la setlist appartient à un GROUPE et
+   * que le morceau n'y est pas encore, il entre automatiquement au
+   * répertoire du groupe (version de groupe créée + annonce + propagation).
+   */
+  function addSongToSetlist(song: Song) {
+    const bandId = draft.bandId ?? '';
+    let versionId = versionForBand(song, bandId)?.id ?? '';
+    if (bandId !== '' && versionId === '') {
+      const b = bands.find((x) => x.id === bandId);
+      const prev = song.activeVersionId;
+      const updated = switchVersion(
+        duplicateVersion(song, b?.name || 'Groupe', bandId),
+        prev,
+      );
+      saveSong(updated);
+      clearBandRemoval(bandId, normalizeTitle(song.title));
+      void announceBandSong(
+        b?.cloudId,
+        prefs.userName || artist.name || 'Moi',
+        song.title,
+        song.artist,
+      );
+      versionId = versionForBand(updated, bandId)?.id ?? '';
+    }
+    setDraft((d) => ({
+      ...d,
+      items: [
+        ...d.items,
+        { id: makeId(), songId: song.id, note: '', keyOverride: '', versionId },
+      ],
+    }));
+    setPicker(false);
   }
 
   function moveItem(from: number, to: number) {
@@ -744,24 +782,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
               <div
                 className="row"
                 key={song.id}
-                onClick={() => {
-                  setDraft((d) => ({
-                    ...d,
-                    items: [
-                      ...d.items,
-                      {
-                        id: makeId(),
-                        songId: song.id,
-                        note: '',
-                        keyOverride: '',
-                        // Version du groupe de la setlist si elle existe
-                        versionId:
-                          versionForBand(song, d.bandId ?? '')?.id ?? '',
-                      },
-                    ],
-                  }));
-                  setPicker(false);
-                }}
+                onClick={() => addSongToSetlist(song)}
               >
                 <div className="grow">
                   <div className="title">{song.title}</div>

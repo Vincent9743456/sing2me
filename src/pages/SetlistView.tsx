@@ -109,6 +109,7 @@ export function SetlistView({ id }: { id: string }) {
                 formatDuration(songSeconds(raw)),
                 raw.durationSec <= 0 ? '(estimée)' : '',
                 song.tempo > 0 ? `${song.tempo} BPM` : '',
+                raw.hearts > 0 ? `❤ ${raw.hearts}` : '',
               ]
                 .filter((x) => x !== '')
                 .join(' · ')}
