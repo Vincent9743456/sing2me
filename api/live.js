@@ -44,8 +44,27 @@ export default async function handler(req, res) {
     const base = process.env.SUPABASE_URL.replace(/\/$/, '');
 
     if (req.method === 'GET') {
+      // Récupération à la demande de la setlist complète (parcours public).
+      if (req.query?.setlist === '1' || req.query?.setlist === 'true') {
+        const r = await fetch(
+          `${base}/rest/v1/live_state?id=eq.live&select=status,mode,setlist`,
+          { headers: sbHeaders() },
+        );
+        if (!r.ok) {
+          res.status(502).json({ error: `Supabase a répondu ${r.status}` });
+          return;
+        }
+        const rows = await r.json();
+        const row = Array.isArray(rows) && rows[0] ? rows[0] : {};
+        // La setlist n'est visible que pendant un concert actif.
+        const visible = row.status !== 'off' && row.mode !== 'repet';
+        res.status(200).json({
+          setlist: visible && Array.isArray(row.setlist) ? row.setlist : [],
+        });
+        return;
+      }
       const r = await fetch(
-        `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,updated_at`,
+        `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at`,
         { headers: sbHeaders() },
       );
       if (!r.ok) {
@@ -62,6 +81,8 @@ export default async function handler(req, res) {
         hearts: row.hearts ?? 0,
         bandSong: row.band_song ?? null,
         concert: row.concert ?? null,
+        setlistCount:
+          typeof row.setlist_count === 'number' ? row.setlist_count : 0,
         updatedAt: row.updated_at ?? null,
       });
       return;
@@ -73,12 +94,39 @@ export default async function handler(req, res) {
         res.status(403).json({ error: 'Clé On Air incorrecte' });
         return;
       }
+      // Nettoyage de la setlist diffusée (limites de taille anti-abus).
+      const sanitizeSetlist = (v) =>
+        Array.isArray(v)
+          ? v.slice(0, 60).map((s) => ({
+              title: typeof s?.title === 'string' ? s.title.slice(0, 200) : '',
+              artist:
+                typeof s?.artist === 'string' ? s.artist.slice(0, 200) : '',
+              lyrics:
+                typeof s?.lyrics === 'string' ? s.lyrics.slice(0, 8000) : '',
+            }))
+          : [];
+
       // Mise à jour du suivi de groupe seul (sans toucher au direct public)
       if (!('status' in (req.body ?? {})) && 'bandSong' in (req.body ?? {})) {
         const u = await fetch(`${base}/rest/v1/live_state?id=eq.live`, {
           method: 'PATCH',
           headers: sbHeaders(),
           body: JSON.stringify({ band_song: req.body.bandSong ?? null }),
+        });
+        if (!u.ok) {
+          res.status(502).json({ error: `Supabase a répondu ${u.status}` });
+          return;
+        }
+        res.status(200).json({ ok: true });
+        return;
+      }
+      // Mise à jour de la setlist diffusée seule.
+      if (!('status' in (req.body ?? {})) && 'setlist' in (req.body ?? {})) {
+        const list = sanitizeSetlist(req.body.setlist);
+        const u = await fetch(`${base}/rest/v1/live_state?id=eq.live`, {
+          method: 'PATCH',
+          headers: sbHeaders(),
+          body: JSON.stringify({ setlist: list, setlist_count: list.length }),
         });
         if (!u.ok) {
           res.status(502).json({ error: `Supabase a répondu ${u.status}` });
@@ -97,9 +145,18 @@ export default async function handler(req, res) {
         status,
         updated_at: new Date().toISOString(),
       };
-      if (status === 'off') patch.concert = null;
+      if (status === 'off') {
+        patch.concert = null;
+        patch.setlist = null;
+        patch.setlist_count = 0;
+      }
       if (req.body?.mode === 'repet' || req.body?.mode === 'concert') {
         patch.mode = req.body.mode;
+      }
+      if (status !== 'off' && 'setlist' in (req.body ?? {})) {
+        const list = sanitizeSetlist(req.body.setlist);
+        patch.setlist = list;
+        patch.setlist_count = list.length;
       }
       if ('song' in (req.body ?? {})) patch.song = req.body.song ?? null;
       if ('artist' in (req.body ?? {})) patch.artist = req.body.artist ?? null;

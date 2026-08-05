@@ -14,12 +14,29 @@ import {
   semitonesBetween,
   transposeContent,
 } from '../lib/chords';
-import { fetchLive, LiveState, sendHearts, sendMessage } from '../lib/live';
+import {
+  fetchLive,
+  fetchLiveSetlist,
+  LivePublicSong,
+  LiveState,
+  sendHearts,
+  sendMessage,
+} from '../lib/live';
 import { decodeHtmlEntities, repairChordedLyrics } from '../lib/textRepair';
 import { useWakeLock } from '../lib/wakelock';
 import { defaultPublicScreen } from '../types';
 
 const POLL_MS = 4000;
+
+/** Liens de recherche du morceau sur les plateformes (souvenir de concert). */
+function streamLinks(title: string, artist: string) {
+  const q = encodeURIComponent(`${title} ${artist}`.trim());
+  return [
+    { name: 'Spotify', url: `https://open.spotify.com/search/${q}` },
+    { name: 'Apple Music', url: `https://music.apple.com/search?term=${q}` },
+    { name: 'Deezer', url: `https://www.deezer.com/search/${q}` },
+  ];
+}
 
 function MessageBox({ songTitle = '' }: { songTitle?: string }) {
   const [name, setName] = useState(
@@ -281,6 +298,13 @@ export function Live() {
   const [error, setError] = useState<string | null>(null);
   const [floats, setFloats] = useState<{ id: number; x: number }[]>([]);
   const [localHearts, setLocalHearts] = useState(0);
+  // Parcours libre de la setlist par le public + souvenir (playlist).
+  const [browseOpen, setBrowseOpen] = useState(false);
+  const [browseSetlist, setBrowseSetlist] = useState<LivePublicSong[] | null>(
+    null,
+  );
+  const [browseIdx, setBrowseIdx] = useState<number | null>(null);
+  const [souvenir, setSouvenir] = useState(false);
   const lastTitle = useRef('');
   const pending = useRef(0);
   const flushTimer = useRef<number | null>(null);
@@ -354,6 +378,16 @@ export function Live() {
     (state.status === 'pause' || (state.status === 'on' && !state.song));
   // L'artiste choisit ce qui s'affiche (réglages « Écran public »).
   const ps = { ...defaultPublicScreen(), ...(state.artist?.publicScreen ?? {}) };
+  const canBrowse = publicSession && state.setlistCount > 0;
+
+  async function openBrowse() {
+    setBrowseIdx(null);
+    setSouvenir(false);
+    setBrowseOpen(true);
+    if (browseSetlist === null) {
+      setBrowseSetlist(await fetchLiveSetlist());
+    }
+  }
 
   return (
     <div className="public">
@@ -365,6 +399,13 @@ export function Live() {
             onClick={() => switchRole('musicien')}
           >
             🎸 Tu es musicien ? Vue partition
+          </button>
+        </div>
+      )}
+      {role === 'public' && canBrowse && (
+        <div style={{ textAlign: 'center', margin: '0 0 12px' }}>
+          <button className="btn small" onClick={() => void openBrowse()}>
+            📋 Voir la setlist ({state.setlistCount})
           </button>
         </div>
       )}
@@ -445,6 +486,124 @@ export function Live() {
             </p>
           )}
         </>
+      )}
+      {browseOpen && (
+        <div
+          className="stagelist"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setBrowseOpen(false);
+          }}
+        >
+          <div className="inner">
+            {browseSetlist === null ? (
+              <p className="help" style={{ textAlign: 'center' }}>
+                Chargement de la setlist…
+              </p>
+            ) : browseIdx !== null && browseSetlist[browseIdx] ? (
+              <>
+                <button
+                  className="btn ghost small"
+                  onClick={() => setBrowseIdx(null)}
+                >
+                  ◀ La setlist
+                </button>
+                <h2 className="livetitle" style={{ marginTop: 10 }}>
+                  {browseSetlist[browseIdx].title}
+                </h2>
+                {browseSetlist[browseIdx].artist !== '' && (
+                  <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
+                    {browseSetlist[browseIdx].artist}
+                  </p>
+                )}
+                <div className="livelyrics">
+                  {decodeHtmlEntities(browseSetlist[browseIdx].lyrics) ||
+                    '(paroles non disponibles)'}
+                </div>
+                <div className="rowactions" style={{ justifyContent: 'center' }}>
+                  <button
+                    className="btn ghost small"
+                    disabled={browseIdx <= 0}
+                    onClick={() => setBrowseIdx((i) => Math.max(0, (i ?? 0) - 1))}
+                  >
+                    ‹ Précédent
+                  </button>
+                  <button
+                    className="btn ghost small"
+                    disabled={browseIdx >= browseSetlist.length - 1}
+                    onClick={() =>
+                      setBrowseIdx((i) =>
+                        Math.min(browseSetlist.length - 1, (i ?? 0) + 1),
+                      )
+                    }
+                  >
+                    Suivant ›
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
+                  La setlist du concert — tape un morceau pour lire les paroles.
+                </p>
+                {browseSetlist.length === 0 && (
+                  <p className="help" style={{ textAlign: 'center' }}>
+                    Setlist momentanément indisponible.
+                  </p>
+                )}
+                {browseSetlist.map((s, i) => (
+                  <button
+                    key={i}
+                    className="remoterow"
+                    onClick={() => setBrowseIdx(i)}
+                  >
+                    <span className="num">{i + 1}</span>
+                    <span className="grow">
+                      <span className="rtitle">{s.title || '(sans titre)'}</span>
+                      {s.artist !== '' && (
+                        <span className="rsub">{s.artist}</span>
+                      )}
+                    </span>
+                    {souvenir && (
+                      <span
+                        style={{ display: 'flex', gap: 6 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {streamLinks(s.title, s.artist).map((l) => (
+                          <a
+                            key={l.name}
+                            href={l.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn ghost small"
+                            title={`Chercher sur ${l.name}`}
+                          >
+                            {l.name[0]}
+                          </a>
+                        ))}
+                      </span>
+                    )}
+                  </button>
+                ))}
+                {browseSetlist.length > 0 && (
+                  <button
+                    className={`btn ${souvenir ? '' : 'ghost'} block`}
+                    style={{ marginTop: 8 }}
+                    onClick={() => setSouvenir((v) => !v)}
+                  >
+                    🎧 {souvenir ? 'Masquer' : 'Garder un souvenir'} — écouter sur
+                    Spotify / Apple / Deezer
+                  </button>
+                )}
+                <button
+                  className="btn ghost block"
+                  onClick={() => setBrowseOpen(false)}
+                >
+                  Fermer
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       )}
       {/* Invitation discrète, seulement hors morceau (pause / fin de live) */}
       {!liveNow && role === 'public' && ps.appInvite && (

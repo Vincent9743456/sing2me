@@ -75,3 +75,13 @@ alter table live_messages add column if not exists concert_title text not null d
 -- chords (paroles avec accords), chordKey, playedKey.
 -- ------------------------------------------------------------
 alter table live_state add column if not exists mode text not null default 'concert';
+
+-- ------------------------------------------------------------
+-- Setlist diffusée au public (concert) : le public peut la parcourir
+-- lui-même (paroles de chaque morceau) et en garder un souvenir
+-- (liens Spotify/Apple/Deezer). setlist = [{title, artist, lyrics}].
+-- setlist_count (léger) est renvoyé dans l'état à chaque sondage ;
+-- la setlist complète se récupère à la demande (GET /api/live?setlist=1).
+-- ------------------------------------------------------------
+alter table live_state add column if not exists setlist jsonb;
+alter table live_state add column if not exists setlist_count int not null default 0;

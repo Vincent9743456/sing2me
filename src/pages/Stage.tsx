@@ -5,7 +5,8 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { useOnAirSong } from '../components/OnAir';
+import { useOnAirSetlist, useOnAirSong } from '../components/OnAir';
+import { LivePublicSong } from '../lib/live';
 import { SongBody } from '../components/SongBody';
 import { NoteModal } from '../components/NoteModal';
 import { DndHint } from '../components/ui';
@@ -102,6 +103,21 @@ export function Stage({
       : null,
     item ? (item.keyOverride !== '' ? item.keyOverride : item.song.key) : '',
   );
+
+  // Diffusion de la setlist au public (concert) : il peut la parcourir
+  // lui-même. Uniquement pour une vraie setlist (pas un morceau isolé).
+  const publicSetlist = useMemo<LivePublicSong[] | null>(
+    () =>
+      setlistId && items.length > 0
+        ? items.map((it) => ({
+            title: it.song.title,
+            artist: it.song.artist,
+            lyrics: stripChords(it.song.lyrics),
+          }))
+        : null,
+    [setlistId, items],
+  );
+  useOnAirSetlist(publicSetlist);
 
   // Anti-veille (Wake Lock) pendant toute la durée du mode scène.
   useEffect(() => {

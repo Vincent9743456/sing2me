@@ -30,6 +30,13 @@ export interface BandSong {
   key: string;
 }
 
+/** Morceau de la setlist diffusée au public (paroles seules). */
+export interface LivePublicSong {
+  title: string;
+  artist: string;
+  lyrics: string;
+}
+
 export interface LiveState {
   status: LiveStatus;
   mode: LiveMode;
@@ -37,6 +44,8 @@ export interface LiveState {
   artist: ArtistProfile | null;
   hearts: number;
   bandSong: BandSong | null;
+  /** Nombre de morceaux dans la setlist diffusée (0 = aucune). */
+  setlistCount: number;
   updatedAt: string | null;
 }
 
@@ -90,8 +99,39 @@ export async function fetchLive(): Promise<LiveState> {
     artist: body.artist ?? null,
     hearts: typeof body.hearts === 'number' ? body.hearts : 0,
     bandSong: body.bandSong ?? null,
+    setlistCount: typeof body.setlistCount === 'number' ? body.setlistCount : 0,
     updatedAt: body.updatedAt ?? null,
   };
+}
+
+/** Récupère la setlist diffusée (parcours public). Best-effort → []. */
+export async function fetchLiveSetlist(): Promise<LivePublicSong[]> {
+  try {
+    const res = await fetch('/api/live?setlist=1');
+    const type = res.headers.get('content-type') ?? '';
+    if (!type.includes('application/json')) return [];
+    const body = await res.json();
+    return Array.isArray(body.setlist) ? body.setlist : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Diffuse (ou efface) la setlist au public. Silencieux en cas d'échec. */
+export async function pushSetlist(
+  key: string,
+  setlist: LivePublicSong[] | null,
+): Promise<void> {
+  if (key.trim() === '') return;
+  try {
+    await fetch('/api/live', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-live-key': key },
+      body: JSON.stringify({ setlist: setlist ?? [] }),
+    });
+  } catch {
+    // best-effort : jamais bloquant pour celui qui joue
+  }
 }
 
 /** Diffuse le morceau en cours aux musiciens (suivi de groupe). */
@@ -207,6 +247,7 @@ export async function pushLive(
     artist?: ArtistProfile | null;
     concert?: LiveConcertRef | null;
     bandSong?: BandSong | null;
+    setlist?: LivePublicSong[] | null;
   },
 ): Promise<void> {
   if (key.trim() === '') {

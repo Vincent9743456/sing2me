@@ -19,12 +19,14 @@ import {
   fetchMessages,
   heartTotals,
   LiveMode,
+  LivePublicSong,
   LiveSong,
   LiveStatus,
   liveUrl,
   messagesBySong,
   pushBandSong,
   pushLive,
+  pushSetlist,
 } from '../lib/live';
 import { bandToProfile } from '../lib/model';
 import { navigate } from '../router';
@@ -35,6 +37,8 @@ interface OnAirValue {
   status: LiveStatus;
   /** La page courante déclare ce que voit le chanteur. */
   setCurrent: (song: LiveSong | null, meta?: { key: string }) => void;
+  /** Une page de setlist déclare la setlist à diffuser au public. */
+  setSetlist: (songs: LivePublicSong[] | null) => void;
 }
 
 const OnAirContext = createContext<OnAirValue | null>(null);
@@ -91,8 +95,21 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const currentRef = useRef<LiveSong | null>(null);
+  const setlistRef = useRef<LivePublicSong[] | null>(null);
   const statusRef = useRef(status);
   statusRef.current = status;
+
+  // Une page de setlist (mode scène) déclare la setlist à diffuser : le
+  // public peut alors la parcourir lui-même. Poussée si le direct est actif.
+  const setSetlist = useCallback(
+    (songs: LivePublicSong[] | null) => {
+      setlistRef.current = songs;
+      if (statusRef.current === 'on') {
+        void pushSetlist(prefs.liveKey, songs);
+      }
+    },
+    [prefs.liveKey],
+  );
 
   useEffect(() => {
     localStorage.setItem('sing2me/onair', status);
@@ -204,6 +221,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         mode,
         song: next === 'off' ? null : currentRef.current,
         bandSong: next === 'off' ? null : lastMetaRef.current,
+        setlist: next === 'off' ? null : setlistRef.current,
         artist: performer,
         concert:
           next === 'off'
@@ -239,7 +257,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <OnAirContext.Provider value={{ status, setCurrent }}>
+    <OnAirContext.Provider value={{ status, setCurrent, setSetlist }}>
       <StatusContext.Provider
         value={{ status, hearts, openPanel: () => setPanel(true) }}
       >
@@ -428,4 +446,24 @@ export function useOnAirSong(song: LiveSong | null, songKey = '') {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setCurrent, key]);
+}
+
+/**
+ * À appeler depuis le mode scène : déclare la setlist jouée, pour que le
+ * public puisse la parcourir lui-même (diffusée seulement si le direct est
+ * actif). Effacée en quittant.
+ */
+export function useOnAirSetlist(songs: LivePublicSong[] | null) {
+  const ctx = useContext(OnAirContext);
+  const setSetlist = ctx?.setSetlist;
+  const key = songs
+    ? `${songs.length}#${songs.map((s) => s.title).join('|')}`
+    : '';
+  useEffect(() => {
+    if (setSetlist) setSetlist(songs && songs.length > 0 ? songs : null);
+    return () => {
+      if (setSetlist) setSetlist(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setSetlist, key]);
 }
