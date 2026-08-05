@@ -322,20 +322,7 @@ export function Setlists() {
         {/* Capsule IA : dépliable comme les autres. */}
         <div className={`stgroup stgroup-ai ${open.has('ai') ? 'open' : ''}`}>
           <button className="capsule-head" onClick={() => toggle('ai')}>
-            <span
-              aria-hidden="true"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
-                background: 'var(--accent-soft)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.3rem',
-                flexShrink: 0,
-              }}
-            >
+            <span className="capsule-ai-badge" aria-hidden="true">
               ✨
             </span>
             <div className="grow" style={{ minWidth: 0 }}>

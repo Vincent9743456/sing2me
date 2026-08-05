@@ -688,7 +688,24 @@ textarea.mono {
 .stgroup-ai,
 .stgroup-ai.open {
   background: var(--accent-soft);
-  border-color: transparent;
+  border: 1px solid var(--accent);
+}
+.stgroup-ai .capsule-title {
+  color: var(--accent);
+}
+/* Pastille de l'IA : orange plein pour ressortir nettement. */
+.capsule-ai-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+  color: var(--on-accent);
+  box-shadow: 0 2px 14px var(--accent-soft);
 }
 
 /* Tête de capsule : photo + nom + nombre de setlists, cliquable. */
