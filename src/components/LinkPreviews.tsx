@@ -26,7 +26,9 @@ export function spotifyEmbed(
     );
   if (!m) return null;
   return {
-    src: `https://open.spotify.com/embed/${m[1]}/${m[2]}`,
+    // `utm_source=generator` = format d'embed Spotify actuel ; sans lui, le
+    // lecteur reste noir/vide.
+    src: `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator`,
     height: m[1] === 'track' ? 152 : 352,
   };
 }
@@ -70,8 +72,9 @@ export function LinkPreviews({
           <iframe
             src={sp.src}
             title="Écoute Spotify"
-            allow="encrypted-media"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
+            style={{ borderRadius: 12 }}
           />
         </div>
       )}
