@@ -366,11 +366,15 @@ export function AccountSection() {
         className="hstack"
         style={{ gap: 8, flexWrap: 'wrap', padding: '2px 0' }}
       >
-        <span style={{ color: 'var(--accent)', fontWeight: 650, flexShrink: 0 }}>
+        <span
+          style={{
+            color: 'var(--accent)',
+            fontWeight: 650,
+            flexShrink: 0,
+            flex: 1,
+          }}
+        >
           ☁ Connecté
-        </span>
-        <span className="help" style={{ flex: 1, minWidth: 0, margin: 0 }}>
-          {account.email}
         </span>
         <button className="btn ghost small" onClick={account.logout}>
           Se déconnecter

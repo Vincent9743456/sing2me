@@ -74,9 +74,9 @@ export function SetlistView({ id }: { id: string }) {
     }
     const song = resolveVersion(raw, item.versionId ?? '');
     const shownKey = item.keyOverride !== '' ? item.keyOverride : song.key;
-    const structureRows = song.structure.filter(
-      (r) => r.label.trim() !== '' || r.comment.trim() !== '',
-    );
+    // Setlist imprimable : on garde uniquement les commentaires — pas les
+    // accords ni la structure (Intro/Couplet…), qui alourdiraient la vue.
+    const comments = song.structure.filter((r) => r.comment.trim() !== '');
     const persoNotes = showPerso
       ? song.rehearsalNotes.filter((n) => n.visibility === 'privee')
       : [];
@@ -107,23 +107,10 @@ export function SetlistView({ id }: { id: string }) {
           {item.note.trim() !== '' && (
             <div className="slv-note">▸ {item.note}</div>
           )}
-          {song.structureNotes && song.structureNotes.trim() !== '' && (
-            <div className="slv-struct">{song.structureNotes}</div>
-          )}
-          {structureRows.length > 0 && (
+          {comments.length > 0 && (
             <ul className="slv-struct-list">
-              {structureRows.map((r) => (
-                <li key={r.id}>
-                  {r.label.trim() !== '' && (
-                    <strong>{r.label}</strong>
-                  )}
-                  {r.chords.trim() !== '' && (
-                    <span className="slv-chords"> {r.chords}</span>
-                  )}
-                  {r.comment.trim() !== '' && (
-                    <span className="slv-rowcomment"> — {r.comment}</span>
-                  )}
-                </li>
+              {comments.map((r) => (
+                <li key={r.id}>{r.comment}</li>
               ))}
             </ul>
           )}
