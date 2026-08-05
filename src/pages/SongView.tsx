@@ -149,16 +149,36 @@ export function SongView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromSetlist?.index, song?.activeVersionId]);
 
-  const targetKey = useMemo(
-    () => (song && song.key !== '' ? transposeKeyName(song.key, shift) : ''),
-    [song, shift],
+  // Modèle tonalité : song.key = tonalité des FORMES écrites (accords posés).
+  //   Tonalité réelle (ce qui sonne) = formes + capo.
+  //   shift = transposition des formes ; capo = capodastre (choix perso).
+  // Vue « réelle » (sans capo) : préférence du musicien (ex. bassiste), locale.
+  const [displayReal, setDisplayReal] = useState(
+    () => localStorage.getItem('sing2me/showRealKey') === '1',
   );
-  const preferFlat = useMemo(() => spellingForKey(targetKey), [targetKey]);
-
-  const capoSuggestion = useMemo(
-    () => (targetKey !== '' ? suggestCapo(targetKey) : null),
-    [targetKey],
-  );
+  function toggleReal() {
+    setDisplayReal((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem('sing2me/showRealKey', next ? '1' : '0');
+      } catch {
+        /* stockage indisponible */
+      }
+      return next;
+    });
+  }
+  const shownShapeKey =
+    song && song.key !== '' ? transposeKeyName(song.key, shift) : '';
+  const realKeyShown =
+    song && song.key !== '' ? transposeKeyName(song.key, shift + capo) : '';
+  // Décalage réellement appliqué aux accords affichés : formes seules, ou
+  // formes + capo quand on demande la tonalité réelle (sans capo).
+  const displayShift = displayReal ? shift + capo : shift;
+  const shownKey = displayReal ? realKeyShown : shownShapeKey;
+  const preferFlat = spellingForKey(shownKey);
+  // Suggestion « accords faciles » : capo qui donne des formes ouvertes pour
+  // la tonalité réelle (sans changer ce qui sonne).
+  const easyShapes = realKeyShown !== '' ? suggestCapo(realKeyShown) : null;
 
   // Ce que voit le chanteur → publié si la session est active
   // (paroles pour le public, accords pour la vue musicien du QR)
@@ -170,24 +190,28 @@ export function SongView({
           lyrics: stripChords(song.lyrics),
           chords: song.lyrics,
           chordKey: song.key,
-          playedKey: targetKey !== '' ? targetKey : song.key,
+          playedKey: realKeyShown !== '' ? realKeyShown : song.key,
         }
       : null,
-    targetKey !== '' ? targetKey : (song?.key ?? ''),
+    realKeyShown !== '' ? realKeyShown : (song?.key ?? ''),
   );
 
   const payload = useMemo<SharePayload | null>(() => {
     if (!song || share === null) return null;
     const kind = share === 'groupe' ? 'groupe' : 'public';
     const bandId = activeVersion(song).bandId;
+    // On partage en tonalité RÉELLE (ce qui sonne), sans capo : la partition
+    // reçue est autonome, chacun remettra le capo qu'il veut.
+    const realShift = shift + capo;
+    const preferFlatReal = spellingForKey(realKeyShown);
     const baked: Song = {
       ...song,
-      key: targetKey !== '' ? targetKey : song.key,
-      capo,
-      lyrics: transposeContent(song.lyrics, shift, preferFlat),
+      key: realKeyShown !== '' ? realKeyShown : song.key,
+      capo: 0,
+      lyrics: transposeContent(song.lyrics, realShift, preferFlatReal),
       structure: song.structure.map((r) => ({
         ...r,
-        chords: transposeChordSequence(r.chords, shift, preferFlat),
+        chords: transposeChordSequence(r.chords, realShift, preferFlatReal),
         comment: share === 'groupe' ? r.comment : '',
       })),
       versions: [],
@@ -205,7 +229,7 @@ export function SongView({
       view: share === 'groupe' ? 'complete' : 'paroles',
       song: baked,
     };
-  }, [song, share, shift, capo, preferFlat, targetKey]);
+  }, [song, share, shift, capo, realKeyShown]);
 
   if (!song) {
     return (
@@ -443,46 +467,84 @@ export function SongView({
 
         {showTranspose && (
           <div className="transpose">
-            <span className="lbl">Tonalité</span>
+            {/* Accords affichés (formes) : transposer bouge les formes ;
+                le capo se recale pour garder la tonalité réelle. */}
+            <span className="lbl">Accords</span>
             <div className="stepper">
-              <button onClick={() => setShift((s) => (s + 11) % 12)}>♭</button>
+              <button
+                title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
+                onClick={() => {
+                  setShift((s) => s - 1);
+                  setCapo((c) => Math.min(11, c + 1));
+                }}
+              >
+                ♭
+              </button>
               <span>
-                {targetKey !== ''
-                  ? targetKey
+                {shownKey !== ''
+                  ? shownKey
                   : shift === 0
                     ? '—'
                     : `${shift > 6 ? shift - 12 : shift} ½t`}
               </span>
-              <button onClick={() => setShift((s) => (s + 1) % 12)}>♯</button>
+              <button
+                title="Accords plus haut (capo −1)"
+                onClick={() => {
+                  setShift((s) => s + 1);
+                  if (capo > 0) setCapo((c) => c - 1);
+                }}
+              >
+                ♯
+              </button>
             </div>
-            {view === 'complete' && (
+            {!displayReal && (
               <>
                 <span className="lbl">Capo</span>
                 <div className="stepper">
-                  <button onClick={() => setCapo((c) => Math.max(0, c - 1))}>
+                  <button
+                    title="Le capo change ce qui sonne, pas les accords affichés"
+                    onClick={() => setCapo((c) => Math.max(0, c - 1))}
+                  >
                     −
                   </button>
                   <span>{capo}</span>
-                  <button onClick={() => setCapo((c) => Math.min(9, c + 1))}>
+                  <button onClick={() => setCapo((c) => Math.min(11, c + 1))}>
                     ＋
                   </button>
                 </div>
-                {capoSuggestion && capo !== capoSuggestion.capo && (
-                  <button
-                    className="btn ghost small"
-                    title={
-                      `Suggestion : avec un capo en ${capoSuggestion.capo}, tu joues des ` +
-                      `formes ouvertes de ${capoSuggestion.shapeKey} tout en sonnant en ` +
-                      `${targetKey}. Clique pour l'appliquer.`
-                    }
-                    onClick={() => setCapo(capoSuggestion.capo)}
-                  >
-                    💡 Essayer capo {capoSuggestion.capo} (formes{' '}
-                    {capoSuggestion.shapeKey})
-                  </button>
-                )}
               </>
             )}
+            {realKeyShown !== '' && (
+              <span
+                className="help"
+                style={{ margin: 0, whiteSpace: 'nowrap' }}
+              >
+                🔊 sonne en{' '}
+                <strong style={{ color: 'var(--text)' }}>{realKeyShown}</strong>
+              </span>
+            )}
+            {easyShapes && !displayReal && (
+              <button
+                className="btn ghost small"
+                title={`Capo ${easyShapes.capo} pour des formes ouvertes de ${easyShapes.shapeKey} — ça sonne toujours en ${realKeyShown}`}
+                onClick={() => {
+                  const sh = semitonesBetween(song.key, easyShapes.shapeKey);
+                  if (sh === null) return;
+                  setShift(sh);
+                  setCapo(easyShapes.capo);
+                }}
+              >
+                💡 accords faciles
+              </button>
+            )}
+            <button
+              className="btn ghost small"
+              style={displayReal ? { color: 'var(--accent)' } : undefined}
+              title="Voir les accords dans la tonalité réelle (sans capo) — pratique pour la basse"
+              onClick={toggleReal}
+            >
+              {displayReal ? '✓ Tonalité réelle' : 'Tonalité réelle'}
+            </button>
             {(shift !== 0 || capo !== song.capo) && (
               <button
                 className="btn ghost small"
@@ -497,19 +559,18 @@ export function SongView({
           </div>
         )}
 
-        {view === 'complete' && capo > 0 && targetKey !== '' && (
+        {view === 'complete' && !displayReal && capo > 0 && realKeyShown !== '' && (
           <p className="help" style={{ marginTop: -8 }}>
-            🎸 Capo {capo} : formes {transposeKeyName(targetKey, -capo)} — ça
-            sonne en {targetKey}. (Le bassiste et les autres voient les accords
-            réels dans la vue Accords.)
+            🎸 Capo {capo} : tu joues des formes de {shownShapeKey} — ça sonne
+            en {realKeyShown}.
           </p>
         )}
 
         <SongBody
           song={{ ...song, rehearsalNotes: contextNotes }}
           view={view}
-          semitones={shift}
-          capo={view === 'complete' ? capo : 0}
+          semitones={displayShift}
+          capo={0}
           preferFlat={preferFlat}
           fontSize={fontSize}
         />
