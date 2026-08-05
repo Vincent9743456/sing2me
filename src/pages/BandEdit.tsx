@@ -296,6 +296,18 @@ export function BandEdit({ id }: { id: string }) {
     if (band) saveBand({ ...band, ...patch });
   }
 
+  const meKey = (prefs.userName || artist.name || '').trim().toLowerCase();
+  const cloudNames = new Set(
+    cloudMembers
+      .map((m) => m.name.trim().toLowerCase())
+      .filter((n) => n !== ''),
+  );
+  // Membres manuels non déjà représentés par un compte (dé-doublonnage :
+  // évite le créateur affiché deux fois quand il devient membre cloud).
+  const manualMembers = band.members.filter(
+    (m) => m.name.trim() === '' || !cloudNames.has(m.name.trim().toLowerCase()),
+  );
+
   return (
     <>
       <TopBar
@@ -362,45 +374,62 @@ export function BandEdit({ id }: { id: string }) {
               </button>
             )}
             <h2 className="pagetitle">Musiciens</h2>
-            {(cloudMembers.length > 0 || band.members.length > 0) && (
+            {(cloudMembers.length > 0 || manualMembers.length > 0) && (
               <div className="list">
-                {cloudMembers.map((m) => (
-                  <div
-                    className="row"
-                    key={m.user_id}
-                    style={{ cursor: 'default' }}
-                  >
-                    <Avatar
-                      name={m.name}
-                      photo={
-                        m.photo ||
-                        (m.user_id === myId ? band.photo || artist.photo : '')
-                      }
-                    />
-                    <div className="grow">
-                      <div className="title">
-                        {m.name || '(sans nom)'}{' '}
-                        <span style={{ color: 'var(--accent)' }} title="Compte Sing2Me">
-                          ✓
-                        </span>
+                {cloudMembers.map((m) => {
+                  const isMe = m.user_id === myId;
+                  return (
+                    <div
+                      className="row"
+                      key={m.user_id}
+                      onClick={isMe ? () => navigate('/artist') : undefined}
+                      style={{ cursor: isMe ? 'pointer' : 'default' }}
+                      title={isMe ? 'Voir mon profil artiste' : undefined}
+                    >
+                      <Avatar
+                        name={m.name}
+                        photo={isMe ? artist.photo || m.photo : m.photo}
+                      />
+                      <div className="grow">
+                        <div className="title">
+                          {m.name || '(sans nom)'}{' '}
+                          <span
+                            style={{ color: 'var(--accent)' }}
+                            title="Compte Sing2Me"
+                          >
+                            ✓
+                          </span>
+                        </div>
+                        {m.instrument !== '' && (
+                          <div className="sub">{m.instrument}</div>
+                        )}
                       </div>
-                      {m.instrument !== '' && (
-                        <div className="sub">{m.instrument}</div>
-                      )}
                     </div>
-                  </div>
-                ))}
-                {band.members.map((m) => (
-                  <div className="row" key={m.id} style={{ cursor: 'default' }}>
-                    <Avatar name={m.name} />
-                    <div className="grow">
-                      <div className="title">{m.name || '(sans nom)'}</div>
-                      {m.instrument !== '' && (
-                        <div className="sub">{m.instrument}</div>
-                      )}
+                  );
+                })}
+                {manualMembers.map((m) => {
+                  const isMe =
+                    m.verified === true &&
+                    meKey !== '' &&
+                    m.name.trim().toLowerCase() === meKey;
+                  return (
+                    <div
+                      className="row"
+                      key={m.id}
+                      onClick={isMe ? () => navigate('/artist') : undefined}
+                      style={{ cursor: isMe ? 'pointer' : 'default' }}
+                      title={isMe ? 'Voir mon profil artiste' : undefined}
+                    >
+                      <Avatar name={m.name} photo={isMe ? artist.photo : ''} />
+                      <div className="grow">
+                        <div className="title">{m.name || '(sans nom)'}</div>
+                        {m.instrument !== '' && (
+                          <div className="sub">{m.instrument}</div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             <button
