@@ -222,6 +222,22 @@
   .pillar .big { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--accent); margin-bottom: 8px; }
   .pillar p { color: var(--dim); font-size: 0.92rem; }
 
+  /* ---------- Tarifs ---------- */
+  .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 820px) { .pricing { grid-template-columns: 1fr; } }
+  .pricecard { padding: 30px 26px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); display: flex; flex-direction: column; }
+  .pricecard.feat { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft); }
+  .pricecard h3 { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.25rem; margin-bottom: 4px; }
+  .pricecard .price { color: var(--accent); font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 16px; }
+  .pricecard .soon { display: inline-block; margin-left: 8px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 3px 9px; vertical-align: middle; font-family: 'Sora', sans-serif; font-weight: 700; }
+  .pricecard ul { list-style: none; padding: 0; margin: 0; }
+  .pricecard li { color: var(--dim); font-size: 0.92rem; padding: 6px 0 6px 24px; position: relative; }
+  .pricecard li::before { content: '✓'; color: var(--accent); position: absolute; left: 0; font-weight: 700; }
+  .pricecard .keep { margin-top: 14px; color: var(--text); font-size: 0.9rem; font-style: italic; }
+  .pricebanner { margin-top: 26px; background: var(--accent-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 26px; text-align: center; }
+  .pricebanner p { color: var(--text); font-size: 1.02rem; margin: 0; line-height: 1.55; }
+  .pricebanner .small { color: var(--dim); font-size: 0.86rem; margin-top: 10px; }
+
   /* ---------- FAQ ---------- */
   .faq { max-width: 720px; margin: 0 auto; }
   .faq details {
@@ -263,6 +279,7 @@
       <a href="#etapes">Comment ça marche</a>
       <a href="#fonctions">Fonctionnalités</a>
       <a href="#onair">En concert</a>
+      <a href="#tarifs">Tarifs</a>
       <a href="#faq">Questions</a>
     </nav>
     <a class="btn" href="https://sing2me-three.vercel.app/">Ouvrir l'app</a>
@@ -474,6 +491,55 @@
   </div>
 </section>
 
+<section id="tarifs" style="padding-top: 0;">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>Un prix simple, pensé pour les musiciens</h2>
+      <p>Pendant le lancement, tout Sing2Me est gratuit et illimité. Voici ce qui arrivera ensuite — sans mauvaise surprise.</p>
+    </div>
+    <div class="pricing">
+      <div class="pricecard feat">
+        <h3>Gratuit — pour toujours</h3>
+        <div class="price">0 €</div>
+        <ul>
+          <li>Morceaux illimités, import en masse</li>
+          <li>Mode scène, transposition</li>
+          <li>Partages &amp; QR code</li>
+          <li>3 setlists</li>
+          <li>Synchro cloud simple</li>
+        </ul>
+        <div class="keep">Tu ne perds jamais l'accès à tes morceaux.</div>
+      </div>
+      <div class="pricecard">
+        <h3>Solo <span class="soon">à venir</span></h3>
+        <div class="price">~3 €/mois</div>
+        <ul>
+          <li>Setlists illimitées</li>
+          <li>Synchro multi-appareils en continu</li>
+          <li>Nettoyage IA illimité</li>
+          <li>Page publique sans mention Sing2Me</li>
+          <li>Statistiques de concert</li>
+        </ul>
+      </div>
+      <div class="pricecard">
+        <h3>Groupe <span class="soon">à venir</span></h3>
+        <div class="price">~7 €/mois pour tout le groupe</div>
+        <ul>
+          <li>Payé une fois, tous les musiciens en profitent</li>
+          <li>Groupes et membres illimités</li>
+          <li>Espace de discussion</li>
+          <li>Plan de scène</li>
+          <li>Stats du groupe</li>
+        </ul>
+      </div>
+    </div>
+    <div class="pricebanner">
+      <p>🎁 Chaque nouveau compte démarre avec 90 jours d'essai complet, sans carte bancaire — le temps de faire tes répéts et tes premiers concerts. Ton premier concert ON AIR et chaque musicien parrainé prolongent ton essai d'un mois. À la fin, tu passes en Gratuit : rien n'est supprimé, jamais.</p>
+      <div class="small">Les comptes créés pendant la phase de lancement garderont un statut Fondateur avantageux.</div>
+    </div>
+  </div>
+</section>
+
 <section id="faq" style="padding-top: 0;">
   <div class="wrap">
     <div class="sechead">
@@ -498,7 +564,7 @@
       </details>
       <details>
         <summary>Combien ça coûte ?</summary>
-        <p>Rien. Sing2Me est gratuit pendant sa phase de lancement. À terme, le modèle envisagé reste gratuit pour les musiciens — seule une commission sur les pourboires reçus est à l'étude.</p>
+        <p>Pendant le lancement, tout est gratuit et illimité. Ensuite : un socle gratuit à vie (tout pour jouer, 3 setlists), un abonnement Solo ~3 €/mois (setlists illimitées, synchro multi-appareils, IA illimitée) et un abonnement Groupe ~7 €/mois payé une fois pour tout le groupe. Chaque nouveau compte bénéficiera de 90 jours d'essai complet, et quoi qu'il arrive tes morceaux restent accessibles gratuitement.</p>
       </details>
     </div>
   </div>
