@@ -189,6 +189,23 @@ h3 {
   font-size: 1.15rem;
   position: relative;
 }
+/* Compteur inline (ex. messages non lus sur le bouton Discussion). */
+.pillcount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: var(--live);
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 /* Pastille de notifications (onglet Groupes). */
 .tabbadge {
   position: absolute;

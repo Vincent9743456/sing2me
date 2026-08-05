@@ -75,12 +75,25 @@ interface StoreValue extends AppState {
 
 const StoreContext = createContext<StoreValue | null>(null);
 
+/**
+ * Renseigne automatiquement la clé du direct (ON AIR) depuis la variable de
+ * build VITE_LIVE_KEY quand l'utilisateur ne l'a pas saisie : plus rien à
+ * copier à la main. (Doit valoir la même chose que LIVE_KEY côté serveur.)
+ */
+function withEmbeddedLiveKey(state: AppState): AppState {
+  const embedded = import.meta.env.VITE_LIVE_KEY;
+  if (embedded && state.prefs.liveKey.trim() === '') {
+    return { ...state, prefs: { ...state.prefs, liveKey: embedded } };
+  }
+  return state;
+}
+
 function loadState(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<AppState>;
-      return {
+      return withEmbeddedLiveKey({
         // migration automatique de l'ancien modèle à sections
         songs: (Array.isArray(parsed.songs) ? parsed.songs : []).map(migrateSong),
         setlists: (Array.isArray(parsed.setlists) ? parsed.setlists : []).map(
@@ -102,12 +115,12 @@ function loadState(): AppState {
         bandRemovals: Array.isArray(parsed.bandRemovals)
           ? parsed.bandRemovals
           : [],
-      };
+      });
     }
   } catch {
     // stockage illisible : on repart des données de démo
   }
-  return {
+  return withEmbeddedLiveKey({
     songs: seedSongs(),
     setlists: [],
     concerts: [],
@@ -116,7 +129,7 @@ function loadState(): AppState {
     prefs: defaultPrefs(),
     deleted: [],
     bandRemovals: [],
-  };
+  });
 }
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {

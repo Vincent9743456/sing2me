@@ -15,9 +15,62 @@ import React, {
 } from 'react';
 
 import { getValidSession } from '../lib/auth';
-import { fetchBandMembers, fetchMyInvites } from '../lib/bands';
+import {
+  CloudMember,
+  fetchBandMembers,
+  fetchBandMessages,
+  fetchMyInvites,
+} from '../lib/bands';
 import { useStore } from '../store';
+import { BandMember, makeId } from '../types';
 import { useAccount } from './Account';
+
+/** Signature stable de la liste de membres (par nom) pour comparer sans churn. */
+function membersSignature(members: { name: string }[]): string {
+  return members
+    .map((m) => m.name.trim().toLowerCase())
+    .filter((n) => n !== '')
+    .sort()
+    .join('|');
+}
+
+/**
+ * Fusionne les membres réels (comptes, cloud_band_members) dans la liste
+ * locale du groupe : les comptes deviennent des membres « vérifiés », les
+ * membres manuels non représentés par un compte sont conservés. Dé-doublonne
+ * par nom (le créateur ne doit pas apparaître deux fois).
+ */
+function mergeCloudMembers(
+  local: BandMember[],
+  cloud: CloudMember[],
+): BandMember[] {
+  const cloudNames = new Set(
+    cloud.map((m) => m.name.trim().toLowerCase()).filter((n) => n !== ''),
+  );
+  const fromCloud: BandMember[] = cloud.map((m) => {
+    const existing = local.find(
+      (l) => l.name.trim().toLowerCase() === m.name.trim().toLowerCase(),
+    );
+    return existing
+      ? {
+          ...existing,
+          name: m.name || existing.name,
+          instrument: m.instrument || existing.instrument,
+          verified: true,
+        }
+      : {
+          id: makeId(),
+          name: m.name || 'Musicien',
+          instrument: m.instrument,
+          verified: true,
+        };
+  });
+  const keptManual = local.filter(
+    (m) =>
+      m.name.trim() === '' || !cloudNames.has(m.name.trim().toLowerCase()),
+  );
+  return [...fromCloud, ...keptManual];
+}
 
 export interface MemberNews {
   key: string;
@@ -30,11 +83,17 @@ interface NotificationsValue {
   inviteCount: number;
   /** Musiciens qui viennent de rejoindre l'un de mes groupes. */
   memberNews: MemberNews[];
+  /** Messages de groupe non lus, par groupe (clé = cloudId). */
+  unreadByBand: Record<string, number>;
+  /** Total des messages de groupe non lus. */
+  messageUnread: number;
   /** Total pour la pastille de l'onglet Groupes. */
   badge: number;
   refresh: () => void;
   /** Marque les arrivées comme vues (efface la partie « acceptations »). */
   acknowledgeMembers: () => void;
+  /** Marque le fil d'un groupe comme lu (appelé à l'ouverture de la discussion). */
+  markMessagesSeen: (cloudId: string) => void;
 }
 
 const Ctx = createContext<NotificationsValue | null>(null);
@@ -44,9 +103,12 @@ export function useNotifications(): NotificationsValue {
     useContext(Ctx) ?? {
       inviteCount: 0,
       memberNews: [],
+      unreadByBand: {},
+      messageUnread: 0,
       badge: 0,
       refresh: () => {},
       acknowledgeMembers: () => {},
+      markMessagesSeen: () => {},
     }
   );
 }
@@ -54,6 +116,27 @@ export function useNotifications(): NotificationsValue {
 const SEEN_KEY = 'sing2me/seenMembers';
 const INIT_KEY = 'sing2me/initBands';
 const NEWS_KEY = 'sing2me/memberNews';
+const MSG_SEEN_KEY = 'sing2me/msgSeen'; // { [cloudId]: dernier créé_at vu }
+const MSG_INIT_KEY = 'sing2me/msgInit'; // groupes déjà « baselinés »
+
+function loadMap(key: string): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(key);
+    const obj = raw ? (JSON.parse(raw) as unknown) : {};
+    return obj && typeof obj === 'object'
+      ? (obj as Record<string, string>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+function saveMap(key: string, m: Record<string, string>): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(m));
+  } catch {
+    // stockage indisponible
+  }
+}
 
 function loadSet(key: string): Set<string> {
   try {
@@ -94,11 +177,14 @@ export function NotificationsProvider({
   children: React.ReactNode;
 }) {
   const account = useAccount();
-  const { bands } = useStore();
+  const { bands, saveBand } = useStore();
   const [inviteCount, setInviteCount] = useState(0);
   const [memberNews, setMemberNews] = useState<MemberNews[]>(() => loadNews());
+  const [unreadByBand, setUnreadByBand] = useState<Record<string, number>>({});
   const bandsRef = useRef(bands);
   bandsRef.current = bands;
+  const saveBandRef = useRef(saveBand);
+  saveBandRef.current = saveBand;
   const busy = useRef(false);
 
   const poll = useCallback(async () => {
@@ -116,10 +202,14 @@ export function NotificationsProvider({
         // annuaire indisponible : on garde la valeur précédente
       }
 
-      // 2) Nouvelles arrivées dans mes groupes publiés (acceptations).
+      // 2) Nouvelles arrivées dans mes groupes publiés (acceptations) +
+      //    messages de groupe non lus.
       const seen = loadSet(SEEN_KEY);
       const initBands = loadSet(INIT_KEY);
+      const msgSeen = loadMap(MSG_SEEN_KEY);
+      const msgInit = loadSet(MSG_INIT_KEY);
       const fresh: MemberNews[] = [];
+      const unread: Record<string, number> = {};
       for (const band of bandsRef.current) {
         const cid = band.cloudId;
         if (!cid) continue;
@@ -142,12 +232,40 @@ export function NotificationsProvider({
             }
           }
           initBands.add(cid);
+          // Tenir la liste locale des membres à jour, pour que le décompte
+          // (« X musiciens ») soit correct partout — pas seulement dans la
+          // fiche du groupe.
+          const merged = mergeCloudMembers(band.members, members);
+          if (membersSignature(merged) !== membersSignature(band.members)) {
+            saveBandRef.current({ ...band, members: merged });
+          }
         } catch {
           // groupe injoignable : on réessaiera au prochain cycle
+        }
+        // Messages de groupe non lus (hors les miens).
+        try {
+          const msgs = await fetchBandMessages(s, cid);
+          const newest = msgs.length ? msgs[msgs.length - 1].created_at : '';
+          if (!msgInit.has(cid)) {
+            // Première observation : on établit la base sans tout marquer non lu.
+            if (newest) msgSeen[cid] = newest;
+            msgInit.add(cid);
+          } else {
+            const since = msgSeen[cid] ?? '';
+            const count = msgs.filter(
+              (m) => m.user_id !== s.userId && m.created_at > since,
+            ).length;
+            if (count > 0) unread[cid] = count;
+          }
+        } catch {
+          // fil injoignable : on réessaiera
         }
       }
       saveSet(SEEN_KEY, seen);
       saveSet(INIT_KEY, initBands);
+      saveMap(MSG_SEEN_KEY, msgSeen);
+      saveSet(MSG_INIT_KEY, msgInit);
+      setUnreadByBand(unread);
       if (fresh.length > 0) {
         setMemberNews((prev) => {
           const known = new Set(prev.map((n) => n.key));
@@ -164,6 +282,7 @@ export function NotificationsProvider({
   useEffect(() => {
     if (account?.email == null) {
       setInviteCount(0);
+      setUnreadByBand({});
       return;
     }
     void poll();
@@ -176,12 +295,34 @@ export function NotificationsProvider({
     saveNews([]);
   }, []);
 
+  // À l'ouverture d'une discussion : on marque le fil lu (base = maintenant),
+  // et on retire ce groupe du compteur non lu.
+  const markMessagesSeen = useCallback((cloudId: string) => {
+    if (!cloudId) return;
+    const map = loadMap(MSG_SEEN_KEY);
+    map[cloudId] = new Date().toISOString();
+    saveMap(MSG_SEEN_KEY, map);
+    const init = loadSet(MSG_INIT_KEY);
+    init.add(cloudId);
+    saveSet(MSG_INIT_KEY, init);
+    setUnreadByBand((prev) => {
+      if (!prev[cloudId]) return prev;
+      const next = { ...prev };
+      delete next[cloudId];
+      return next;
+    });
+  }, []);
+
+  const messageUnread = Object.values(unreadByBand).reduce((a, b) => a + b, 0);
   const value: NotificationsValue = {
     inviteCount,
     memberNews,
-    badge: inviteCount + memberNews.length,
+    unreadByBand,
+    messageUnread,
+    badge: inviteCount + memberNews.length + messageUnread,
     refresh: () => void poll(),
     acknowledgeMembers,
+    markMessagesSeen,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

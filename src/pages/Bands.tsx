@@ -205,6 +205,12 @@ export function Bands() {
                   onClick={() => navigate(`/band/${band.id}/chat`)}
                 >
                   <Icon name="message" size={15} /> Discussion
+                  {band.cloudId != null &&
+                    (notifications.unreadByBand[band.cloudId] ?? 0) > 0 && (
+                      <span className="pillcount">
+                        {notifications.unreadByBand[band.cloudId]}
+                      </span>
+                    )}
                 </button>
                 <span
                   className="chevron"

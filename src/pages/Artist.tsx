@@ -821,17 +821,26 @@ export function Artist() {
         <div className="spacer" />
 
         <h2 className="pagetitle">Mode ON AIR</h2>
-        <p className="help">
-          Ta clé secrète du direct — identique à la variable LIVE_KEY
-          configurée sur Vercel. Elle autorise ton appareil à piloter le
-          direct (bouton ON AIR).
-        </p>
-        <input
-          type="text"
-          value={prefs.liveKey}
-          placeholder="ma-cle-secrete"
-          onChange={(e) => savePrefs({ ...prefs, liveKey: e.target.value })}
-        />
+        {import.meta.env.VITE_LIVE_KEY ? (
+          <p className="help">
+            Le direct est configuré automatiquement — rien à saisir. Touche le
+            bouton ON AIR pour lancer le partage avec le public.
+          </p>
+        ) : (
+          <>
+            <p className="help">
+              Ta clé secrète du direct — identique à la variable LIVE_KEY
+              configurée sur Vercel. Elle autorise ton appareil à piloter le
+              direct (bouton ON AIR).
+            </p>
+            <input
+              type="text"
+              value={prefs.liveKey}
+              placeholder="ma-cle-secrete"
+              onChange={(e) => savePrefs({ ...prefs, liveKey: e.target.value })}
+            />
+          </>
+        )}
         <div className="spacer" />
 
         <h2 className="pagetitle">Statistiques des directs</h2>

@@ -8,6 +8,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Icon } from '../components/Icon';
+import { useNotifications } from '../components/Notifications';
 import { Modal, TopBar } from '../components/ui';
 import { getValidSession } from '../lib/auth';
 import {
@@ -75,6 +76,7 @@ export function BandChat({ id }: { id: string }) {
   const cloudIdRef = useRef(band?.cloudId ?? '');
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const author = prefs.userName || artist.name || 'Moi';
+  const { markMessagesSeen } = useNotifications();
 
   const load = useCallback(async () => {
     if (!band) return;
@@ -94,6 +96,8 @@ export function BandChat({ id }: { id: string }) {
         saveBand({ ...band, cloudId: ref.cloudId });
       }
       setMessages(await fetchBandMessages(s, cloudIdRef.current));
+      // Ouvrir/consulter la discussion = fil lu : on efface le compteur.
+      markMessagesSeen(cloudIdRef.current);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Chargement impossible.');
