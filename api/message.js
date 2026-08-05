@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       } catch {
         // sans contexte, le message part quand même
       }
-      const r = await fetch(`${base}/rest/v1/live_messages`, {
+      let r = await fetch(`${base}/rest/v1/live_messages`, {
         method: 'POST',
         headers: sbHeaders(true),
         body: JSON.stringify({
@@ -60,6 +60,15 @@ export default async function handler(req, res) {
           concert_title,
         }),
       });
+      // Repli si les colonnes de contexte n'existent pas encore (migration
+      // live.sql pas à jour) : on n'envoie que l'essentiel (auteur + message).
+      if (r.status === 400) {
+        r = await fetch(`${base}/rest/v1/live_messages`, {
+          method: 'POST',
+          headers: sbHeaders(true),
+          body: JSON.stringify({ author, body: text }),
+        });
+      }
       if (!r.ok) {
         res.status(502).json({ error: `Supabase a répondu ${r.status}` });
         return;

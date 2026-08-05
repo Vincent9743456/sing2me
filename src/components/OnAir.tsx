@@ -101,13 +101,34 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const statusRef = useRef(status);
   statusRef.current = status;
 
-  // Une page de setlist (mode scène) déclare la setlist à diffuser : le
-  // public peut alors la parcourir lui-même. Poussée si le direct est actif.
+  // Une page de setlist (mode scène ou lecture d'un morceau de la setlist)
+  // déclare la setlist à diffuser : le public peut alors la parcourir
+  // lui-même. Poussée si le direct est actif. L'effacement est différé pour
+  // ne pas clignoter quand on passe d'un morceau à l'autre de la setlist.
+  const setlistClearTimer = useRef<number | null>(null);
   const setSetlist = useCallback(
     (songs: LivePublicSong[] | null) => {
       setlistRef.current = songs;
-      if (statusRef.current === 'on') {
+      if (statusRef.current !== 'on') return;
+      if (songs && songs.length > 0) {
+        if (setlistClearTimer.current !== null) {
+          window.clearTimeout(setlistClearTimer.current);
+          setlistClearTimer.current = null;
+        }
         void pushSetlist(prefs.liveKey, songs);
+      } else {
+        if (setlistClearTimer.current !== null) {
+          window.clearTimeout(setlistClearTimer.current);
+        }
+        setlistClearTimer.current = window.setTimeout(() => {
+          setlistClearTimer.current = null;
+          if (
+            (setlistRef.current?.length ?? 0) === 0 &&
+            statusRef.current === 'on'
+          ) {
+            void pushSetlist(prefs.liveKey, null);
+          }
+        }, 900);
       }
     },
     [prefs.liveKey],

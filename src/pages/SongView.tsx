@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { AutoScrollFab, useAutoScroll } from '../components/AutoScroll';
-import { useOnAirSong } from '../components/OnAir';
+import { useOnAirSetlist, useOnAirSong } from '../components/OnAir';
+import { LivePublicSong } from '../lib/live';
 import { NoteModal } from '../components/NoteModal';
 import { Icon } from '../components/Icon';
 import { ShareModal } from '../components/ShareModal';
@@ -220,6 +221,24 @@ export function SongView({
     `${shownShapeKey || song?.key || ''}:${capo}`,
   );
 
+  // Lecture d'un morceau DANS une setlist : on diffuse aussi la setlist au
+  // public (il peut la parcourir), comme en mode scène.
+  const publicSetlist = useMemo<LivePublicSong[] | null>(
+    () =>
+      ctxSetlist
+        ? ctxSetlist.items
+            .map((it) => songs.find((s) => s.id === it.songId))
+            .filter((s): s is Song => s != null)
+            .map((s) => ({
+              title: s.title,
+              artist: s.artist,
+              lyrics: stripChords(s.lyrics),
+            }))
+        : null,
+    [ctxSetlist, songs],
+  );
+  useOnAirSetlist(publicSetlist);
+
   const payload = useMemo<SharePayload | null>(() => {
     if (!song || share === null) return null;
     const kind = share === 'groupe' ? 'groupe' : 'public';
@@ -421,13 +440,32 @@ export function SongView({
           ctxSetlist ? navigate(`/setlist/${ctxSetlist.id}`) : navigate('/')
         }
         right={
-          <button
-            className="btn small"
-            title="Modifier la partition (paroles, accords, structure…)"
-            onClick={() => navigate(`/song/${song.id}/edit`)}
-          >
-            <Icon name="edit" size={15} /> Modifier
-          </button>
+          <>
+            <button
+              className="btn small"
+              title={
+                ctxSetlist
+                  ? 'Mode scène — la setlist entière (le public peut la suivre)'
+                  : 'Mode scène (plein écran)'
+              }
+              onClick={() =>
+                navigate(
+                  ctxSetlist
+                    ? `/stage/${ctxSetlist.id}`
+                    : `/stage/song/${song.id}`,
+                )
+              }
+            >
+              <Icon name="play" size={14} /> Scène
+            </button>
+            <button
+              className="btn ghost small"
+              title="Modifier la partition (paroles, accords, structure…)"
+              onClick={() => navigate(`/song/${song.id}/edit`)}
+            >
+              <Icon name="edit" size={15} /> Modifier
+            </button>
+          </>
         }
       />
       <div className="page">

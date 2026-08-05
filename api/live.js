@@ -176,7 +176,7 @@ export default async function handler(req, res) {
         const songChanged = 'song' in patch && nextTitle !== prevTitle;
         if (row && prevTitle !== '' && (songChanged || status === 'off')) {
           if ((row.hearts ?? 0) > 0) {
-            await fetch(`${base}/rest/v1/live_stats`, {
+            let ins = await fetch(`${base}/rest/v1/live_stats`, {
               method: 'POST',
               headers: sbHeaders(),
               body: JSON.stringify({
@@ -188,6 +188,20 @@ export default async function handler(req, res) {
                 played_at: new Date().toISOString(),
               }),
             });
+            // Repli si colonnes de contexte absentes (migration pas à jour) :
+            // on archive au moins le morceau et ses cœurs.
+            if (ins.status === 400) {
+              ins = await fetch(`${base}/rest/v1/live_stats`, {
+                method: 'POST',
+                headers: sbHeaders(),
+                body: JSON.stringify({
+                  song_title: prevTitle,
+                  song_artist: row.song?.artist ?? '',
+                  hearts: row.hearts ?? 0,
+                  played_at: new Date().toISOString(),
+                }),
+              });
+            }
           }
           patch.hearts = 0;
         }
