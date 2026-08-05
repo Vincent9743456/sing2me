@@ -8,7 +8,7 @@
 <meta property="og:title" content="Sing2Me — Tes partitions, ton groupe, ta scène" />
 <meta property="og:description" content="Importe tes partitions, prépare tes setlists, joue en mode scène. Gratuit, sans installation, même hors connexion." />
 <meta property="og:type" content="website" />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -265,16 +265,23 @@
   .final .btn { font-size: 1.12rem; padding: 18px 40px; position: relative; }
   .final .note { margin-top: 18px; font-size: 0.85rem; color: var(--faint); }
 
-  footer { border-top: 1px solid var(--border); padding: 30px 0 40px; color: var(--faint); font-size: 0.85rem; }
-  .footrow { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-  .footrow a:hover { color: var(--text); }
+  footer { border-top: 1px solid var(--border); padding: 54px 0 44px; color: var(--dim); }
+  .footmain { text-align: center; max-width: 640px; margin: 0 auto; }
+  .footbig { font-family: 'Sora', sans-serif; font-weight: 800; font-size: clamp(1.4rem, 3.6vw, 1.7rem); color: var(--text); margin: 0 0 12px; line-height: 1.2; }
+  .footbig .hl { color: var(--accent); }
+  .footsub { color: var(--dim); font-size: 1.02rem; margin: 0; }
+  .footlinks { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; margin: 28px 0; font-size: 0.94rem; }
+  .footlinks a { color: var(--dim); }
+  .footlinks a:hover { color: var(--accent); }
+  .footlinks .sep { color: var(--border-strong); }
+  .footbase { border-top: 1px solid var(--border); padding-top: 22px; text-align: center; font-size: 0.82rem; color: var(--faint); display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
 
 <header>
   <div class="wrap nav">
-    <a class="logo" href="#top">🎸 Sing<span class="amp">2</span>Me</a>
+    <a class="logo" href="#top"><svg width="26" height="26" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 6h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H22l-9 8v-8H8a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z" fill="none" stroke="#f6a833" stroke-width="3" stroke-linejoin="round"/><circle cx="19" cy="27" r="4" fill="#f5f5f7"/><rect x="21.6" y="13" width="2.6" height="14" rx="1.3" fill="#f5f5f7"/><path d="M24.2 13c4.5 0.5 7 2.5 8.5 5.5" stroke="#f5f5f7" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span>Sing<span class="amp">2</span>Me</span></a>
     <nav class="navlinks">
       <a href="#etapes">Comment ça marche</a>
       <a href="#fonctions">Fonctionnalités</a>
@@ -580,9 +587,24 @@
 </div>
 
 <footer>
-  <div class="wrap footrow">
-    <span>🎸 Sing2Me — le compagnon des musiciens, des groupes et de leurs concerts.</span>
-    <span><a href="https://sing2me-three.vercel.app/#/cgu">Conditions d'utilisation</a></span>
+  <div class="wrap">
+    <div class="footmain">
+      <p class="footbig">La musique se joue <span class="hl">en vrai</span>.</p>
+      <p class="footsub">Sing2Me est là pour tout le reste — les partitions, les setlists, la scène, et ton public.</p>
+    </div>
+    <div class="footlinks">
+      <a href="https://sing2me-three.vercel.app/">Ouvrir l'app</a>
+      <span class="sep">·</span>
+      <a href="#tarifs">Tarifs</a>
+      <span class="sep">·</span>
+      <a href="https://sing2me-three.vercel.app/#/cgu">CGU</a>
+      <span class="sep">·</span>
+      <a href="mailto:vtessier6@gmail.com">Contact</a>
+    </div>
+    <div class="footbase">
+      <svg width="16" height="16" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 6h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H22l-9 8v-8H8a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z" fill="none" stroke="#f6a833" stroke-width="3" stroke-linejoin="round"/><circle cx="19" cy="27" r="4" fill="#f5f5f7"/><rect x="21.6" y="13" width="2.6" height="14" rx="1.3" fill="#f5f5f7"/><path d="M24.2 13c4.5 0.5 7 2.5 8.5 5.5" stroke="#f5f5f7" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg>
+      Fait avec ❤ (et beaucoup de répéts) — du garage au festival.
+    </div>
   </div>
 </footer>
 

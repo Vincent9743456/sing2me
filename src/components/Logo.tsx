@@ -1,6 +1,7 @@
 /**
- * Logo Sing2Me : deux croches liées dont les têtes sont des cœurs.
- * La musique, le duo (groupe ↔ public), l'émotion — en un signe.
+ * Logo Sing2Me : la « bulle qui chante » — une bulle de parole (le partage,
+ * le public) d'où sort une note (la musique). Identité commune app + site +
+ * favicon.
  */
 import React from 'react';
 
@@ -9,27 +10,23 @@ export function LogoMark({ size = 28 }: { size?: number }) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 48 48"
       role="img"
       aria-label="Sing2Me"
     >
-      <defs>
-        <linearGradient id="s2m-tile" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#f8bc4f" />
-          <stop offset="1" stopColor="#e8890f" />
-        </linearGradient>
-      </defs>
-      <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#s2m-tile)" />
-      <g fill="#1a1206">
-        {/* barre de liaison */}
-        <path d="M22 13.5 L46.5 8.5 L46.5 15.5 L22 20.5 Z" />
-        {/* hampes */}
-        <rect x="22" y="15" width="4.2" height="30" rx="2" />
-        <rect x="42.3" y="10.5" width="4.2" height="29.5" rx="2" />
-        {/* têtes en cœur */}
-        <path d="M23.8 44.6 c -2.7 -3.1 -7.9 -1.7 -7.9 2.3 c 0 3.5 4.5 5.8 7.9 8.1 c 3.4 -2.3 7.9 -4.6 7.9 -8.1 c 0 -4 -5.2 -5.4 -7.9 -2.3 Z" />
-        <path d="M44.1 39.9 c -2.7 -3.1 -7.9 -1.7 -7.9 2.3 c 0 3.5 4.5 5.8 7.9 8.1 c 3.4 -2.3 7.9 -4.6 7.9 -8.1 c 0 -4 -5.2 -5.4 -7.9 -2.3 Z" />
-      </g>
+      <path
+        d="M8 6h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H22l-9 8v-8H8a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z"
+        fill="#f6a833"
+      />
+      <circle cx="19" cy="27" r="4" fill="#16120a" />
+      <rect x="21.6" y="13" width="2.6" height="14" rx="1.3" fill="#16120a" />
+      <path
+        d="M24.2 13c4.5 0.5 7 2.5 8.5 5.5"
+        stroke="#16120a"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        fill="none"
+      />
     </svg>
   );
 }
