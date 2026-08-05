@@ -24,6 +24,7 @@ import {
   switchVersion,
   transposeChordSequence,
 } from '../lib/model';
+import { announceBandSong } from '../lib/bands';
 import { stripChords } from '../lib/chordpro';
 import { normalizeTitle } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
@@ -65,6 +66,7 @@ export function SongView({
     songs,
     bands,
     prefs,
+    artist,
     saveSong,
     deleteSong,
     setlists,
@@ -240,6 +242,13 @@ export function SongView({
       const bid = value.slice('__band__:'.length);
       const b = bands.find((x) => x.id === bid);
       saveSong(duplicateVersion(song, b?.name ?? 'Groupe', bid));
+      // Le groupe est informé (best-effort si publié + connecté)
+      void announceBandSong(
+        b?.cloudId,
+        prefs.userName || artist.name || 'Moi',
+        song.title,
+        song.artist,
+      );
     } else {
       saveSong(switchVersion(song, value));
     }

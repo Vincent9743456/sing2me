@@ -125,6 +125,7 @@ function SetlistPicker({
     </Modal>
   );
 }
+import { announceBandSong } from '../lib/bands';
 import { fetchLive } from '../lib/live';
 import { spellingForKey, transposeKeyName } from '../lib/chords';
 import { normalizeTitle } from '../lib/importer';
@@ -740,12 +741,14 @@ function SongPreview({
   const {
     songs,
     prefs,
+    artist,
     saveSong,
     deleteSong,
     bands,
     recordBandRemoval,
     clearBandRemoval,
   } = useStore();
+  const author = prefs.userName || artist.name || 'Moi';
   const song = id ? songs.find((s) => s.id === id) : undefined;
   const paneRef = useRef<HTMLElement | null>(null);
   const [ugOpen, setUgOpen] = useState(false);
@@ -961,6 +964,13 @@ function SongPreview({
                     );
                     // Ré-intégration : on annule un éventuel retrait
                     clearBandRemoval(b.id, normalizeTitle(song.title));
+                    // Le groupe est informé (best-effort si publié + connecté)
+                    void announceBandSong(
+                      b.cloudId,
+                      author,
+                      song.title,
+                      song.artist,
+                    );
                   }
                 }}
               >

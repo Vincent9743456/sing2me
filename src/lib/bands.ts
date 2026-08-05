@@ -3,7 +3,7 @@
  * cloud, invitation par jeton, adhésion en un clic, liste des membres
  * vérifiés. Nécessite d'être connecté (voir auth.ts) et supabase/bands.sql.
  */
-import { AuthSession, sbAuthed } from './auth';
+import { AuthSession, getValidSession, sbAuthed } from './auth';
 
 export interface CloudBandRef {
   cloudId: string;
@@ -182,6 +182,33 @@ export async function postBandMessage(
     }),
   });
   if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+}
+
+/**
+ * Annonce best-effort, dans le chat du groupe, qu'une chanson vient de
+ * rejoindre son répertoire (bascule « sur un groupe » depuis la bibliothèque
+ * ou la fiche chanson). Ne fait rien si le groupe n'est pas publié dans le
+ * cloud (groupe purement local : personne à prévenir) ou si l'utilisateur
+ * n'est pas connecté — l'association locale, elle, reste faite.
+ */
+export async function announceBandSong(
+  cloudId: string | undefined,
+  author: string,
+  title: string,
+  artist: string,
+): Promise<void> {
+  if (cloudId == null || cloudId === '') return;
+  try {
+    const s = await getValidSession();
+    if (!s) return;
+    await postBandMessage(s, cloudId, {
+      author,
+      kind: 'chanson',
+      text: `${title || '(sans titre)'}${artist !== '' ? ` — ${artist}` : ''}`,
+    });
+  } catch {
+    // best-effort : la chanson reste associée localement
+  }
 }
 
 /** Supprime un message (auteur, ou créateur du groupe — RLS). */
