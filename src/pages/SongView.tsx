@@ -23,6 +23,7 @@ import {
   splitVersion,
   switchVersion,
   transposeChordSequence,
+  versionForBand,
 } from '../lib/model';
 import { announceBandSong } from '../lib/bands';
 import { findSongKey } from '../lib/ug';
@@ -32,12 +33,26 @@ import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
+  emptySetlist,
   formatDuration,
+  makeId,
   SharePayload,
+  Setlist,
   Song,
   SongNote,
   ViewMode,
 } from '../types';
+
+/** Couleur de repérage par groupe (identique à la bibliothèque). */
+const BAND_COLORS = [
+  'var(--band-1)',
+  'var(--band-2)',
+  'var(--band-3)',
+  'var(--band-4)',
+  'var(--band-5)',
+  'var(--band-6)',
+  'var(--band-7)',
+];
 
 /** « aujourd'hui », « hier », sinon la date courte. */
 function relativeDay(iso: string): string {
@@ -71,7 +86,9 @@ export function SongView({
     saveSong,
     deleteSong,
     setlists,
+    saveSetlist,
     recordBandRemoval,
+    clearBandRemoval,
     deleteNote,
   } = useStore();
 
@@ -315,6 +332,62 @@ export function SongView({
     setShift(0);
   }
 
+  // Ajoute / retire le morceau du répertoire d'un groupe, en un clic.
+  function toggleBand(b: (typeof bands)[number]) {
+    if (!song) return;
+    const v = versionForBand(song, b.id);
+    if (v) {
+      if (
+        song.versions.length <= 1 ||
+        !confirm(
+          `Retirer « ${song.title} » du répertoire de ${b.name || 'ce groupe'} ? ` +
+            'Le morceau sortira du répertoire du groupe pour TOUS les membres — ' +
+            'chacun garde la partition dans sa bibliothèque personnelle.',
+        )
+      )
+        return;
+      saveSong(removeVersion(song, v.id));
+      recordBandRemoval(b.id, normalizeTitle(song.title));
+    } else {
+      // Version de groupe créée en arrière-plan : on RESTE sur la version
+      // affichée (pas de bascule surprise).
+      const prev = song.activeVersionId;
+      saveSong(
+        switchVersion(duplicateVersion(song, b.name || 'Groupe', b.id), prev),
+      );
+      clearBandRemoval(b.id, normalizeTitle(song.title));
+      void announceBandSong(
+        b.cloudId,
+        prefs.userName || artist.name || 'Moi',
+        song.title,
+        song.artist,
+      );
+    }
+  }
+
+  // Ajoute / retire le morceau d'une setlist, en un clic.
+  function toggleSetlist(sl: Setlist) {
+    if (!song) return;
+    const has = sl.items.some((it) => it.songId === song.id);
+    saveSetlist(
+      has
+        ? { ...sl, items: sl.items.filter((it) => it.songId !== song.id) }
+        : {
+            ...sl,
+            items: [
+              ...sl.items,
+              {
+                id: makeId(),
+                songId: song.id,
+                note: '',
+                keyOverride: '',
+                versionId: versionForBand(song, sl.bandId ?? '')?.id ?? '',
+              },
+            ],
+          },
+    );
+  }
+
   return (
     <>
       <TopBar
@@ -398,6 +471,98 @@ export function SongView({
               ❤ {song.hearts}
             </span>
           )}
+        </div>
+
+        {bands.length > 0 && (
+          <div
+            className="hstack"
+            style={{ marginBottom: 8, flexWrap: 'wrap', gap: 6 }}
+          >
+            <span className="help">Groupes :</span>
+            {bands.map((b, i) => {
+              const active = versionForBand(song, b.id) !== null;
+              return (
+                <button
+                  key={b.id}
+                  className={`chip ${active ? '' : 'off'}`}
+                  title={
+                    active
+                      ? `« ${song.title} » est dans le répertoire de ${b.name || 'ce groupe'} — cliquer pour l'en retirer`
+                      : `Ajouter « ${song.title} » au répertoire de ${b.name || 'ce groupe'} (partagé avec tous les membres)`
+                  }
+                  onClick={() => toggleBand(b)}
+                >
+                  <span aria-hidden="true" style={{ marginRight: 2 }}>
+                    {active ? '✓' : '＋'}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      display: 'inline-block',
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: BAND_COLORS[i % BAND_COLORS.length],
+                      marginRight: 2,
+                    }}
+                  />
+                  {b.name || 'Groupe sans nom'}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <div
+          className="hstack"
+          style={{ marginBottom: 8, flexWrap: 'wrap', gap: 6 }}
+        >
+          <span className="help">Setlists :</span>
+          {[...setlists]
+            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+            .map((sl) => {
+              const has = sl.items.some((it) => it.songId === song.id);
+              return (
+                <button
+                  key={sl.id}
+                  className={`chip ${has ? '' : 'off'}`}
+                  title={
+                    has
+                      ? `« ${song.title} » est dans « ${sl.name || 'cette setlist'} » — cliquer pour l'en retirer`
+                      : `Ajouter « ${song.title} » à « ${sl.name || 'cette setlist'} »`
+                  }
+                  onClick={() => toggleSetlist(sl)}
+                >
+                  <span aria-hidden="true" style={{ marginRight: 2 }}>
+                    {has ? '✓' : '＋'}
+                  </span>
+                  {sl.name || '(sans nom)'}
+                </button>
+              );
+            })}
+          <button
+            className="chip off"
+            title="Créer une nouvelle setlist avec ce morceau"
+            onClick={() => {
+              const name = prompt('Nom de la nouvelle setlist');
+              if (name === null || name.trim() === '') return;
+              const sl: Setlist = {
+                ...emptySetlist(),
+                name: name.trim(),
+                items: [
+                  {
+                    id: makeId(),
+                    songId: song.id,
+                    note: '',
+                    keyOverride: '',
+                    versionId: '',
+                  },
+                ],
+              };
+              saveSetlist(sl);
+            }}
+          >
+            ＋ Nouvelle…
+          </button>
         </div>
 
         <div className="versionbar">
