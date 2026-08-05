@@ -1342,6 +1342,14 @@ h2.pagetitle {
     margin-left: auto;
     margin-right: auto;
   }
+  /* Réserver le coin haut-droit au bouton ON AIR (fixe) pour qu'il ne
+     chevauche jamais l'action de droite de la barre (ex. « Ajouter »). */
+  .topbar {
+    padding-right: 112px;
+  }
+  .topbar .side.right {
+    min-width: 0;
+  }
   .onair {
     top: 14px;
     right: 18px;
