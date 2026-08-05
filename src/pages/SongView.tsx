@@ -8,6 +8,7 @@ import { ShareModal } from '../components/ShareModal';
 import { SongBody } from '../components/SongBody';
 import { Empty, Field, TopBar } from '../components/ui';
 import {
+  detectKeyFromChords,
   semitonesBetween,
   spellingForKey,
   suggestCapo,
@@ -317,6 +318,23 @@ export function SongView({
       setKeyMsg(e instanceof Error ? e.message : 'Recherche impossible.');
     } finally {
       setKeyBusy(false);
+    }
+  }
+
+  /** Corrige la tonalité d'après les accords réellement écrits. */
+  function detectKey() {
+    if (!song) return;
+    const k = detectKeyFromChords(song.lyrics);
+    if (k === '') {
+      setKeyMsg('Aucun accord détecté.');
+      return;
+    }
+    if (k !== song.key) {
+      saveSong({ ...song, key: k });
+      setShift(0);
+      setKeyMsg(`Tonalité corrigée d'après les accords : ${k}`);
+    } else {
+      setKeyMsg(`Tonalité confirmée : ${k}`);
     }
   }
 
@@ -694,6 +712,15 @@ export function SongView({
                 onClick={() => void findKey()}
               >
                 {keyBusy ? 'Recherche…' : '🔎 Trouver la tonalité'}
+              </button>
+            )}
+            {song.lyrics.includes('[') && (
+              <button
+                className="btn ghost small"
+                title="Corrige la tonalité affichée d'après les accords réellement écrits"
+                onClick={detectKey}
+              >
+                🎯 D'après les accords
               </button>
             )}
             {keyMsg && (

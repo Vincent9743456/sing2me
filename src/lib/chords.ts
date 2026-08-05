@@ -130,6 +130,42 @@ export function transposeKeyName(key: string, semitones: number): string {
   return canon[next] + (parsed.minor ? 'm' : '');
 }
 
+/**
+ * Devine la tonalité d'un morceau d'après ses accords écrits. Heuristique
+ * simple et prévisible : le premier accord est presque toujours la tonique
+ * (à défaut, le plus fréquent), avec son mode (majeur / mineur). Sert à
+ * corriger une tonalité importée erronée. Renvoie '' si aucun accord.
+ */
+export function detectKeyFromChords(content: string): string {
+  const syms = [...content.matchAll(/\[([^\]\n]+)\]/g)].map((m) => m[1].trim());
+  const parsed = syms
+    .map((s) => {
+      const m = CHORD_SYM.exec(s);
+      if (!m) return null;
+      const idx = noteIndex(m[1]);
+      if (idx === null) return null;
+      const minor = /^(m|min|-)(?!aj)/i.test(m[2] ?? '');
+      return { idx, minor };
+    })
+    .filter((x): x is { idx: number; minor: boolean } => x !== null);
+  if (parsed.length === 0) return '';
+  // Compte des occurrences par (note, mode) pour départager en cas de doute.
+  const tally = new Map<string, number>();
+  for (const p of parsed) {
+    const k = `${p.idx}|${p.minor ? 'm' : ''}`;
+    tally.set(k, (tally.get(k) ?? 0) + 1);
+  }
+  const first = parsed[0];
+  const last = parsed[parsed.length - 1];
+  const count = (p: { idx: number; minor: boolean }) =>
+    tally.get(`${p.idx}|${p.minor ? 'm' : ''}`) ?? 0;
+  // Le premier accord fait foi, sauf si le dernier (résolution) est plus
+  // présent — un signal fort de tonique.
+  const pick = count(last) > count(first) ? last : first;
+  const canon = pick.minor ? MINOR_KEY_CANON : MAJOR_KEY_CANON;
+  return canon[pick.idx] + (pick.minor ? 'm' : '');
+}
+
 /** Nombre de demi-tons entre deux tonalités (de from vers to, 0..11). */
 export function semitonesBetween(from: string, to: string): number | null {
   const a = parseKey(from);
