@@ -237,6 +237,30 @@ export function Library() {
   const account = useAccount();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  // Barre d'outils figée : on mesure l'en-tête + la barre pour la caler
+  // juste sous l'en-tête, et positionner le volet d'aperçu en dessous.
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = toolbarRef.current;
+    const apply = () => {
+      const tb = document.querySelector('.topbar');
+      const topH = tb ? Math.round(tb.getBoundingClientRect().height) : 60;
+      const barH = el ? Math.round(el.getBoundingClientRect().height) : 0;
+      const root = document.documentElement.style;
+      root.setProperty('--topbar-h', `${topH}px`);
+      root.setProperty('--lib-sticky-top', `${topH + barH}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    if (el) ro.observe(el);
+    const tb = document.querySelector('.topbar');
+    if (tb) ro.observe(tb);
+    window.addEventListener('resize', apply);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', apply);
+    };
+  }, []);
   // Réserve d'« idées » : morceaux importés non encore validés
   const [showIdeas, setShowIdeas] = useState(false);
   const ideaCount = useMemo(
@@ -600,6 +624,9 @@ export function Library() {
             </button>
           </div>
         )}
+        {/* Barre d'outils figée : recherche + tri + filtres toujours
+            accessibles pendant le défilement de la bibliothèque. */}
+        <div className="libtoolbar" ref={toolbarRef}>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             type="text"
@@ -759,6 +786,7 @@ export function Library() {
             )}
           </>
         )}
+        </div>
         {allTags.length > 0 && (
           <>
             <div className="spacer" />

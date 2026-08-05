@@ -1901,6 +1901,19 @@ h2.pagetitle {
 }
 
 /* Bibliothèque : liste + volet du morceau sélectionné (ordinateur) */
+/* Barre d'outils de la bibliothèque (recherche + tri + filtres) : figée
+   sous l'en-tête pour rester accessible pendant le défilement. La hauteur
+   de l'en-tête est mesurée (--topbar-h) avec un repli sûr. */
+.libtoolbar {
+  position: sticky;
+  top: var(--topbar-h, 60px);
+  z-index: 8;
+  background: var(--bg);
+  margin: 0 calc(-1 * var(--sp-4));
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  border-bottom: 1px solid var(--border-soft);
+}
+
 .libsplit {
   display: block;
 }
@@ -1930,8 +1943,9 @@ h2.pagetitle {
     flex: 1 1 auto;
     min-width: 0;
     position: sticky;
-    top: 76px;
-    max-height: calc(100dvh - 96px);
+    /* Sous la barre d'outils figée (en-tête + toolbar mesurés). */
+    top: var(--lib-sticky-top, 76px);
+    max-height: calc(100dvh - var(--lib-sticky-top, 76px) - 20px);
     overflow-y: auto;
     overflow-x: auto;
     background: var(--surface);
