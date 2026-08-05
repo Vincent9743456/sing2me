@@ -212,6 +212,13 @@ function bandInitials(name: string): string {
     .toUpperCase();
 }
 
+/** Une partition « nouvelle » : ajoutée à la bibliothèque dans les 7 jours. */
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+function isRecent(createdAt: string): boolean {
+  const t = Date.parse(createdAt);
+  return Number.isFinite(t) && Date.now() - t < WEEK_MS;
+}
+
 export function Library() {
   const { songs, deleteSong, bands, setlists } = useStore();
   const [query, setQuery] = useState('');
@@ -226,6 +233,12 @@ export function Library() {
   const [showIdeas, setShowIdeas] = useState(false);
   const ideaCount = useMemo(
     () => songs.filter((s) => s.idea === true).length,
+    [songs],
+  );
+  // Nouveautés : partitions ajoutées dans la semaine (repérage rapide)
+  const [showNew, setShowNew] = useState(false);
+  const newCount = useMemo(
+    () => songs.filter((s) => s.idea !== true && isRecent(s.createdAt)).length,
     [songs],
   );
   const [nudgeHidden, setNudgeHidden] = useState(
@@ -318,6 +331,7 @@ export function Library() {
         return byTitle(a, b);
       })
       .filter((s) => (showIdeas ? s.idea === true : s.idea !== true))
+      .filter((s) => (showNew ? isRecent(s.createdAt) : true))
       .filter((s) => (tag ? s.tags.includes(tag) : true))
       .filter((s) => {
         if (bandFilter === null) return true;
@@ -332,7 +346,7 @@ export function Library() {
           s.artist.toLowerCase().includes(q) ||
           s.tags.some((t) => t.toLowerCase().includes(q)),
       );
-  }, [songs, query, tag, sort, bandFilter, membership, showIdeas]);
+  }, [songs, query, tag, sort, bandFilter, membership, showIdeas, showNew]);
 
   // Regroupement par artiste (tri « artiste » uniquement)
   const artistGroups = useMemo(() => {
@@ -368,6 +382,11 @@ export function Library() {
                           .join(' · ') || ' '}
                       </div>
                     </div>
+                    {song.idea !== true && isRecent(song.createdAt) && (
+                      <span className="newtag" title="Ajoutée cette semaine">
+                        Nouveau
+                      </span>
+                    )}
                     {[...(membership.bandsBySong.get(song.id) ?? [])].map((bid) => {
                       const idx = bandIndex.get(bid) ?? 0;
                       const b = bands[idx];
@@ -533,26 +552,41 @@ export function Library() {
             <option value="recent">Tri : récents</option>
           </select>
         </div>
-        {(bands.length > 0 || ideaCount > 0) && (
+        {(bands.length > 0 || ideaCount > 0 || newCount > 0) && (
           <>
             <div className="spacer" />
             <div className="chips filterchips">
               <button
-                className={`chip ${bandFilter === null && !showIdeas ? '' : 'off'}`}
+                className={`chip ${bandFilter === null && !showIdeas && !showNew ? '' : 'off'}`}
                 onClick={() => {
                   setBandFilter(null);
                   setShowIdeas(false);
+                  setShowNew(false);
                 }}
               >
                 Toutes les partitions
               </button>
+              {newCount > 0 && (
+                <button
+                  className={`chip ${showNew ? '' : 'off'}`}
+                  title="Partitions ajoutées dans la semaine"
+                  onClick={() => {
+                    setShowNew(!showNew);
+                    setBandFilter(null);
+                    setShowIdeas(false);
+                  }}
+                >
+                  ✨ Nouveautés ({newCount})
+                </button>
+              )}
               {bands.length > 0 && (
                 <button
-                  className={`chip ${bandFilter === '' && !showIdeas ? '' : 'off'}`}
+                  className={`chip ${bandFilter === '' && !showIdeas && !showNew ? '' : 'off'}`}
                   title="Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)"
                   onClick={() => {
                     setBandFilter('');
                     setShowIdeas(false);
+                    setShowNew(false);
                   }}
                 >
                   <Icon name="mic" size={12} /> Solo
@@ -561,10 +595,11 @@ export function Library() {
               {bands.map((b, i) => (
                 <button
                   key={b.id}
-                  className={`chip ${bandFilter === b.id && !showIdeas ? '' : 'off'}`}
+                  className={`chip ${bandFilter === b.id && !showIdeas && !showNew ? '' : 'off'}`}
                   onClick={() => {
                     setBandFilter(bandFilter === b.id ? null : b.id);
                     setShowIdeas(false);
+                    setShowNew(false);
                   }}
                 >
                   {/* La couleur du groupe = un point discret, pas une
@@ -590,6 +625,7 @@ export function Library() {
                   onClick={() => {
                     setShowIdeas(!showIdeas);
                     setBandFilter(null);
+                    setShowNew(false);
                   }}
                 >
                   💡 Idées ({ideaCount})
@@ -603,7 +639,13 @@ export function Library() {
                 valider ✓ ou le supprimer.
               </p>
             )}
-            {!showIdeas && bandFilter !== null && (
+            {showNew && (
+              <p className="help" style={{ margin: '6px 0 0' }}>
+                Partitions ajoutées cette semaine — {filtered.length} morceau
+                {filtered.length > 1 ? 'x' : ''}.
+              </p>
+            )}
+            {!showIdeas && !showNew && bandFilter !== null && (
               <p className="help" style={{ margin: '6px 0 0' }}>
                 Filtre actif :{' '}
                 <strong style={{ color: 'var(--accent)' }}>

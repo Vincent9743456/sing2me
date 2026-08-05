@@ -1389,6 +1389,22 @@ h2.pagetitle {
   flex-shrink: 0;
   opacity: 0.8;
 }
+/* Pastille « Nouveau » : partitions ajoutées dans la semaine */
+.newtag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 
 /* ---------- Structure repliable (vue complète) ---------- */
 .stfold {
