@@ -53,6 +53,14 @@ import { AppState, useStore } from '../store';
 import { emptyBand, makeId } from '../types';
 import { Field } from './ui';
 
+/**
+ * Boutons OAuth (Google / Facebook) : masqués tant que ces fournisseurs ne
+ * sont pas activés dans Supabase — sinon le clic renvoie une erreur 400
+ * « provider is not enabled ». Le lien magique par email fonctionne toujours.
+ * Pour les réactiver une fois configurés : VITE_OAUTH_ENABLED=1 (Vercel).
+ */
+const OAUTH_ENABLED = import.meta.env.VITE_OAUTH_ENABLED === '1';
+
 /** Valide la forme d'une bibliothèque de groupe venant du cloud. */
 function sanitizeBand(raw: unknown): BandData {
   if (!raw || typeof raw !== 'object') return emptyBandData();
@@ -537,29 +545,31 @@ export function AccountSection() {
           </div>
         </Field>
       )}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button
-          className="btn ghost"
-          onClick={() => account.loginWith('google')}
-        >
-          Continuer avec Google
-        </button>
-        <button
-          className="btn ghost"
-          onClick={() => account.loginWith('facebook')}
-        >
-          Continuer avec Facebook
-        </button>
-      </div>
+      {OAUTH_ENABLED && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            className="btn ghost"
+            onClick={() => account.loginWith('google')}
+          >
+            Continuer avec Google
+          </button>
+          <button
+            className="btn ghost"
+            onClick={() => account.loginWith('facebook')}
+          >
+            Continuer avec Facebook
+          </button>
+        </div>
+      )}
       {(localError ?? account.error) && (
         <p style={{ color: 'var(--danger)', marginBottom: 0 }}>
           {localError ?? account.error}
         </p>
       )}
       <p className="help" style={{ marginBottom: 0 }}>
-        Le lien magique fonctionne sans mot de passe. Google et Facebook
-        nécessitent d'être activés dans Supabase (voir README). En créant un
-        compte, tu acceptes les{' '}
+        Entre ton email et touche « Recevoir mon lien » : le lien magique te
+        connecte (et crée ton compte si besoin), sans mot de passe. En créant
+        un compte, tu acceptes les{' '}
         <a href="#/cgu" style={{ color: 'var(--accent)' }}>
           conditions d'utilisation
         </a>

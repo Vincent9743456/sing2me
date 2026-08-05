@@ -7,6 +7,8 @@
 interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_ANON_KEY?: string;
+  /** '1' pour afficher Google/Facebook (une fois activés dans Supabase). */
+  readonly VITE_OAUTH_ENABLED?: string;
 }
 
 interface ImportMeta {
