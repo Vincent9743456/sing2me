@@ -246,7 +246,20 @@ export function Library() {
   // Nouveautés : partitions ajoutées dans la semaine (repérage rapide)
   const [showNew, setShowNew] = useState(false);
   const newCount = useMemo(
-    () => songs.filter((s) => s.idea !== true && isRecent(s.createdAt)).length,
+    () =>
+      songs.filter(
+        (s) =>
+          s.idea !== true &&
+          (s.pendingBandId ?? '') === '' &&
+          isRecent(s.createdAt),
+      ).length,
+    [songs],
+  );
+  // Propositions de groupe en attente d'acceptation (non importées tant
+  // qu'on ne les a pas acceptées d'un clic).
+  const [showPending, setShowPending] = useState(false);
+  const pendingCount = useMemo(
+    () => songs.filter((s) => (s.pendingBandId ?? '') !== '').length,
     [songs],
   );
   const [nudgeHidden, setNudgeHidden] = useState(
@@ -338,7 +351,14 @@ export function Library() {
         }
         return byTitle(a, b);
       })
-      .filter((s) => (showIdeas ? s.idea === true : s.idea !== true))
+      .filter((s) => {
+        // Vue « Propositions » : uniquement les propositions en attente.
+        if (showPending) return (s.pendingBandId ?? '') !== '';
+        // Partout ailleurs, une proposition non acceptée reste invisible
+        // dans la bibliothèque personnelle.
+        if ((s.pendingBandId ?? '') !== '') return false;
+        return showIdeas ? s.idea === true : s.idea !== true;
+      })
       .filter((s) => (showNew ? isRecent(s.createdAt) : true))
       .filter((s) => (tag ? s.tags.includes(tag) : true))
       .filter((s) => {
@@ -354,7 +374,17 @@ export function Library() {
           s.artist.toLowerCase().includes(q) ||
           s.tags.some((t) => t.toLowerCase().includes(q)),
       );
-  }, [songs, query, tag, sort, bandFilter, membership, showIdeas, showNew]);
+  }, [
+    songs,
+    query,
+    tag,
+    sort,
+    bandFilter,
+    membership,
+    showIdeas,
+    showNew,
+    showPending,
+  ]);
 
   // Regroupement par artiste (tri « artiste » uniquement)
   const artistGroups = useMemo(() => {
@@ -450,6 +480,19 @@ export function Library() {
                       >
                         <Icon name="message" size={12} /> {song.fanMessages.length}
                       </span>
+                    )}
+                    {(song.pendingBandId ?? '') !== '' && (
+                      <button
+                        className="btn small"
+                        title={`Accepter « ${song.title || 'ce morceau'} » dans ta bibliothèque`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          saveSong({ ...song, pendingBandId: undefined });
+                          if (pendingCount <= 1) setShowPending(false);
+                        }}
+                      >
+                        ✓ Accepter
+                      </button>
                     )}
                     <button
                       className="btn ghost small"
@@ -571,20 +614,38 @@ export function Library() {
             <option value="recent">Tri : récents</option>
           </select>
         </div>
-        {(bands.length > 0 || ideaCount > 0 || newCount > 0) && (
+        {(bands.length > 0 ||
+          ideaCount > 0 ||
+          newCount > 0 ||
+          pendingCount > 0) && (
           <>
             <div className="spacer" />
             <div className="chips filterchips">
               <button
-                className={`chip ${bandFilter === null && !showIdeas && !showNew ? '' : 'off'}`}
+                className={`chip ${bandFilter === null && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
                 onClick={() => {
                   setBandFilter(null);
                   setShowIdeas(false);
                   setShowNew(false);
+                  setShowPending(false);
                 }}
               >
                 Toutes les partitions
               </button>
+              {pendingCount > 0 && (
+                <button
+                  className={`chip ${showPending ? '' : 'off'}`}
+                  title="Morceaux proposés par un groupe — à accepter avant qu'ils rejoignent ta bibliothèque"
+                  onClick={() => {
+                    setShowPending(!showPending);
+                    setBandFilter(null);
+                    setShowIdeas(false);
+                    setShowNew(false);
+                  }}
+                >
+                  📥 Propositions ({pendingCount})
+                </button>
+              )}
               {newCount > 0 && (
                 <button
                   className={`chip ${showNew ? '' : 'off'}`}
@@ -593,6 +654,7 @@ export function Library() {
                     setShowNew(!showNew);
                     setBandFilter(null);
                     setShowIdeas(false);
+                    setShowPending(false);
                   }}
                 >
                   ✨ Nouveautés ({newCount})
@@ -600,12 +662,13 @@ export function Library() {
               )}
               {bands.length > 0 && (
                 <button
-                  className={`chip ${bandFilter === '' && !showIdeas && !showNew ? '' : 'off'}`}
+                  className={`chip ${bandFilter === '' && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
                   title="Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)"
                   onClick={() => {
                     setBandFilter('');
                     setShowIdeas(false);
                     setShowNew(false);
+                    setShowPending(false);
                   }}
                 >
                   <Icon name="mic" size={12} /> Solo
@@ -614,11 +677,12 @@ export function Library() {
               {bands.map((b, i) => (
                 <button
                   key={b.id}
-                  className={`chip ${bandFilter === b.id && !showIdeas && !showNew ? '' : 'off'}`}
+                  className={`chip ${bandFilter === b.id && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
                   onClick={() => {
                     setBandFilter(bandFilter === b.id ? null : b.id);
                     setShowIdeas(false);
                     setShowNew(false);
+                    setShowPending(false);
                   }}
                 >
                   {/* La couleur du groupe = un point discret, pas une
@@ -645,6 +709,7 @@ export function Library() {
                     setShowIdeas(!showIdeas);
                     setBandFilter(null);
                     setShowNew(false);
+                    setShowPending(false);
                   }}
                 >
                   💡 Idées ({ideaCount})
@@ -656,6 +721,13 @@ export function Library() {
                 Réserve à travailler : jouables partout, mais pas encore
                 validées dans la bibliothèque — ouvre un morceau pour le
                 valider ✓ ou le supprimer.
+              </p>
+            )}
+            {showPending && (
+              <p className="help" style={{ margin: '6px 0 0' }}>
+                Morceaux proposés par tes groupes : ils n'entreront dans ta
+                bibliothèque qu'une fois acceptés. Accepte d'un clic ✓ ceux
+                que tu veux garder — les autres restent ici sans t'encombrer.
               </p>
             )}
             {showNew && (

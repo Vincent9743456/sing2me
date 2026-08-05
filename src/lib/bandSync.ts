@@ -325,7 +325,10 @@ export function applyBandData(
       undefined;
     if (!local && skipKeys?.has(e.key)) continue; // supprimé chez moi
     if (!local) {
-      // Nouveau morceau apporté par un autre membre
+      // Nouveau morceau apporté par un autre membre : PROPOSITION en
+      // attente. On le rattache au groupe (pendingBandId) pour ne pas
+      // envahir la bibliothèque personnelle — il n'y apparaîtra qu'après
+      // acceptation d'un clic. Il reste dispo pour les setlists du groupe.
       const vid = makeId();
       const song: Song = {
         id: makeId(),
@@ -338,6 +341,7 @@ export function applyBandData(
         tags: [...e.tags],
         structure: e.version.structure,
         lyrics: e.version.lyrics,
+        pendingBandId: localBandId,
         versions: [
           {
             id: vid,

@@ -57,6 +57,12 @@
     propage aux versions qui suivaient les mêmes valeurs ;
   - retirer un morceau du répertoire d'un groupe est un acte de niveau
     groupe propagé à tous (chacun garde sa copie personnelle) ;
+  - un morceau ajouté au répertoire d'un groupe arrive chez les autres
+    membres comme **proposition en attente** (`pendingBandId`) : il
+    n'entre pas d'office dans leur bibliothèque personnelle (anti-
+    pollution), reste dispo pour les setlists du groupe (non bloquant),
+    et s'accepte d'un clic (chip « 📥 Propositions » dans la
+    bibliothèque) ;
   - un morceau supprimé n'est jamais réimporté par l'import en masse
     (tombstones) ;
   - navigation : les boutons ← des pages vont vers un parent explicite

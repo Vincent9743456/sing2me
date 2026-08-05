@@ -93,6 +93,16 @@ export interface Song {
    */
   idea?: boolean;
   /**
+   * Proposition de groupe en attente d'acceptation. Quand un autre membre
+   * ajoute un morceau au répertoire du groupe, il arrive chez moi marqué
+   * de l'id (local) du groupe : il n'apparaît PAS encore dans ma
+   * bibliothèque personnelle (pour éviter d'être submergé de partitions),
+   * mais reste disponible pour les setlists du groupe (non bloquant).
+   * J'accepte l'ajout d'un clic → le champ est effacé et le morceau
+   * rejoint ma bibliothèque. Personnel — jamais partagé.
+   */
+  pendingBandId?: string;
+  /**
    * Par défaut, tout morceau est jouable en Solo. true = déqualifié
    * manuellement du répertoire solo (l'utilisateur estime ne pas pouvoir
    * le jouer seul). Personnel — jamais inclus dans les partages.
