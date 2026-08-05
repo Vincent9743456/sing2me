@@ -1,0 +1,102 @@
+/**
+ * Fusion bibliothèque locale ↔ sauvegarde cloud (étape 1 des comptes).
+ * Règle : par élément (id), la version la plus récemment modifiée gagne
+ * (updatedAt) ; sans horodatage, la version locale gagne. Les éléments
+ * présents d'un seul côté sont conservés — rien n'est perdu.
+ */
+import {
+  ArtistProfile,
+  Band,
+  BandRemoval,
+  Concert,
+  Prefs,
+  Setlist,
+  Song,
+  Tombstone,
+} from '../types';
+
+export interface SyncState {
+  songs: Song[];
+  setlists: Setlist[];
+  concerts: Concert[];
+  bands: Band[];
+  artist: ArtistProfile;
+  prefs: Prefs;
+  /** Suppressions à propager (pierres tombales) */
+  deleted?: Tombstone[];
+  /** Retraits de morceaux des répertoires de groupes (propagés) */
+  bandRemovals?: BandRemoval[];
+}
+
+interface WithId {
+  id: string;
+  updatedAt?: string;
+}
+
+/** Fusionne deux collections par id ; le plus récent (updatedAt) gagne. */
+export function mergeById<T extends WithId>(local: T[], cloud: T[]): T[] {
+  const result = new Map<string, T>();
+  for (const item of cloud) result.set(item.id, item);
+  for (const item of local) {
+    const other = result.get(item.id);
+    if (!other) {
+      result.set(item.id, item);
+      continue;
+    }
+    const a = item.updatedAt ?? '';
+    const b = other.updatedAt ?? '';
+    // Égalité ou absence d'horodatage : la version locale gagne.
+    result.set(item.id, b > a ? other : item);
+  }
+  return [...result.values()];
+}
+
+function pick(local: string, cloud: string | undefined): string {
+  return local !== '' ? local : (cloud ?? '');
+}
+
+export function mergeStates(
+  local: SyncState,
+  cloud: Partial<SyncState> | null,
+): SyncState {
+  if (!cloud) return local;
+  const artist: ArtistProfile =
+    local.artist.name !== '' ? local.artist : (cloud.artist ?? local.artist);
+  const prefs: Prefs = {
+    defaultView: local.prefs.defaultView,
+    userName: pick(local.prefs.userName, cloud.prefs?.userName),
+    liveKey: pick(local.prefs.liveKey, cloud.prefs?.liveKey),
+  };
+  // Pierres tombales : une suppression sur UN appareil vaut partout.
+  // (la clé — titre normalisé — est CONSERVÉE : anti-résurrection groupe)
+  const tombs = new Map<string, Tombstone>();
+  for (const t of [...(local.deleted ?? []), ...(cloud.deleted ?? [])]) {
+    const cur = tombs.get(t.id);
+    if (!cur || t.at > cur.at) {
+      tombs.set(t.id, cur?.key && !t.key ? { ...t, key: cur.key } : t);
+    }
+  }
+  // Retraits de répertoires de groupes : union, le plus récent gagne.
+  const removals = new Map<string, BandRemoval>();
+  for (const r of [...(local.bandRemovals ?? []), ...(cloud.bandRemovals ?? [])]) {
+    const k = `${r.bandId}|${r.key}`;
+    const cur = removals.get(k);
+    if (!cur || r.at > cur.at) removals.set(k, r);
+  }
+  const alive = <T extends { id: string }>(items: T[]): T[] =>
+    items.filter((x) => !tombs.has(x.id));
+  return {
+    songs: alive(mergeById(local.songs, cloud.songs ?? [])),
+    setlists: alive(mergeById(local.setlists, cloud.setlists ?? [])),
+    concerts: alive(mergeById(local.concerts, cloud.concerts ?? [])),
+    bands: alive(mergeById(local.bands, cloud.bands ?? [])),
+    artist,
+    prefs,
+    deleted: [...tombs.values()]
+      .sort((a, b) => a.at.localeCompare(b.at))
+      .slice(-500),
+    bandRemovals: [...removals.values()]
+      .sort((a, b) => a.at.localeCompare(b.at))
+      .slice(-500),
+  };
+}

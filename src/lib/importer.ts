@@ -1,0 +1,556 @@
+/**
+ * Import intelligent de partitions texte vers le format Sing2Me.
+ *
+ * Formats reconnus automatiquement :
+ * 1. « Accords au-dessus des paroles » (le plus courant)
+ * 2. ChordPro : {title:…}, accords inline [Am], {soc}/{eoc}, {comment:…}
+ * 3. OnSong : en-têtes "Title:", "Key:", "Capo:"… puis sections "Verse 1:"
+ * 4. En-têtes de sections ([Couplet 1], Refrain:, Chorus…) → transformés en
+ *    résumé de structure en tête de partition ; les paroles restent un bloc
+ *    continu.
+ */
+import { extractChordSequence } from './model';
+import { makeId, parseDuration, Song, StructureRow } from '../types';
+
+const CHORD_TOKEN =
+  /^\(?[A-G](?:#|b)?(?:maj|min|dim|aug|sus|add|m|M|\+|°|ø)?\d*(?:(?:sus|add|maj)\d+)?(?:\/[A-G](?:#|b)?)?\)?$/;
+
+const NOISE_TOKEN = /^(\||%|-|–|—|x\d+|\(x\d+\)|N\.?C\.?|\.|,)$/i;
+
+const INLINE_CHORD = /\[[A-G](?:#|b)?[^\]\n]*\]/;
+
+// Les en-têtes de sections prennent toutes les formes : [Couplet 1],
+// Refrain:, (couplet 1), Verse 2, PONT… — crochets, parenthèses ou rien.
+const HEADER_RE =
+  /^\s*[\[(]?\s*(intro|couplet|verse|strophe|refrain|chorus|pont|bridge|pre[- ]?chorus|pr[eé][- ]?refrain|solo|instrumental|interlude|outro|coda|final)\s*(\d*)\s*[\])]?\s*:?\s*$/i;
+
+const LABEL_MAP: { [k: string]: string } = {
+  intro: 'Intro',
+  couplet: 'Couplet',
+  verse: 'Couplet',
+  strophe: 'Couplet',
+  refrain: 'Refrain',
+  chorus: 'Refrain',
+  pont: 'Pont',
+  bridge: 'Pont',
+  prechorus: 'Pré-refrain',
+  prerefrain: 'Pré-refrain',
+  prérefrain: 'Pré-refrain',
+  solo: 'Solo',
+  instrumental: 'Instrumental',
+  interlude: 'Interlude',
+  outro: 'Outro',
+  coda: 'Coda',
+  final: 'Final',
+};
+
+export function isChordLine(line: string): boolean {
+  if (INLINE_CHORD.test(line)) return false;
+  const tokens = line.trim().split(/\s+/).filter((t) => t !== '');
+  if (tokens.length === 0) return false;
+  let chords = 0;
+  for (const t of tokens) {
+    if (CHORD_TOKEN.test(t)) chords++;
+    else if (!NOISE_TOKEN.test(t)) return false;
+  }
+  return chords > 0;
+}
+
+export function mergeChordLyric(chordLine: string, lyricLine: string): string {
+  const inserts: { col: number; chord: string }[] = [];
+  const re = /\S+/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(chordLine)) !== null) {
+    const token = m[0];
+    if (CHORD_TOKEN.test(token)) {
+      inserts.push({ col: m.index, chord: token.replace(/^\(|\)$/g, '') });
+    }
+  }
+  let result = lyricLine;
+  const maxCol = inserts.length > 0 ? inserts[inserts.length - 1].col : 0;
+  if (result.length < maxCol) {
+    result = result + ' '.repeat(maxCol - result.length);
+  }
+  for (let i = inserts.length - 1; i >= 0; i--) {
+    const { col, chord } = inserts[i];
+    const c = Math.min(col, result.length);
+    result = result.slice(0, c) + '[' + chord + ']' + result.slice(c);
+  }
+  return result;
+}
+
+export function chordLineToGrid(line: string): string {
+  return line
+    .trim()
+    .split(/\s+/)
+    .map((t) =>
+      CHORD_TOKEN.test(t) ? '[' + t.replace(/^\(|\)$/g, '') + ']' : t,
+    )
+    .join(' ');
+}
+
+interface Meta {
+  title?: string;
+  artist?: string;
+  key?: string;
+  tempo?: number;
+  capo?: number;
+  durationSec?: number;
+  tags: string[];
+  comments: string[];
+}
+
+/** Directives ChordPro {x:y} et en-têtes OnSong "Key: G" (début de fichier). */
+function extractMeta(lines: string[]): {
+  lines: string[];
+  meta: Meta;
+  markers: Map<number, 'soc' | 'eoc' | 'sov' | 'eov'>;
+} {
+  const meta: Meta = { tags: [], comments: [] };
+  const kept: string[] = [];
+  const markers = new Map<number, 'soc' | 'eoc' | 'sov' | 'eov'>();
+  const DIRECTIVE_RE = /^\s*\{\s*([^:}]+?)\s*(?::\s*(.*?))?\s*\}\s*$/;
+  const ONSONG_RE =
+    /^\s*(title|titre|artist|artiste|author|key|tonalit[eé]|capo|tempo|bpm|time|duration|dur[eé]e|tags?)\s*:\s*(.+)\s*$/i;
+
+  let inHeader = true;
+
+  function applyMeta(name: string, value: string): boolean {
+    switch (name) {
+      case 'title':
+      case 'titre':
+      case 't':
+        meta.title = value;
+        return true;
+      case 'artist':
+      case 'artiste':
+      case 'author':
+      case 'subtitle':
+      case 'st':
+        meta.artist = value;
+        return true;
+      case 'key':
+      case 'tonalite':
+      case 'tonalité':
+        meta.key = value;
+        return true;
+      case 'tempo':
+      case 'bpm':
+        meta.tempo = parseInt(value, 10) || 0;
+        return true;
+      case 'capo':
+        meta.capo = parseInt(value, 10) || 0;
+        return true;
+      case 'duration':
+      case 'duree':
+      case 'durée':
+        meta.durationSec = parseDuration(value);
+        return true;
+      case 'tag':
+      case 'tags':
+        meta.tags.push(
+          ...value.split(/[,;]/).map((t) => t.trim()).filter((t) => t !== ''),
+        );
+        return true;
+      case 'comment':
+      case 'c':
+      case 'ci':
+      case 'comment_italic':
+        meta.comments.push(value);
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  for (const line of lines) {
+    const d = DIRECTIVE_RE.exec(line);
+    if (d) {
+      const name = d[1].toLowerCase();
+      const value = (d[2] ?? '').trim();
+      if (applyMeta(name, value)) continue;
+      switch (name) {
+        case 'start_of_chorus':
+        case 'soc':
+          markers.set(kept.length, 'soc');
+          continue;
+        case 'end_of_chorus':
+        case 'eoc':
+          markers.set(kept.length, 'eoc');
+          continue;
+        case 'start_of_verse':
+        case 'sov':
+          markers.set(kept.length, 'sov');
+          continue;
+        case 'end_of_verse':
+        case 'eov':
+          markers.set(kept.length, 'eov');
+          continue;
+        default:
+          continue;
+      }
+    }
+    if (inHeader) {
+      const o = ONSONG_RE.exec(line);
+      if (o && !HEADER_RE.test(line)) {
+        applyMeta(o[1].toLowerCase(), o[2].trim());
+        continue;
+      }
+      if (line.trim() !== '') inHeader = false;
+    }
+    kept.push(line);
+  }
+  return { lines: kept, meta, markers };
+}
+
+export interface ImportStats {
+  structureRows: number;
+  mergedChordLines: number;
+  hadMeta: boolean;
+  /** Le titre / l'artiste étaient présents dans le fichier importé */
+  hadTitle: boolean;
+  hadArtist: boolean;
+}
+
+export interface ImportOutcome {
+  song: Song;
+  stats: ImportStats;
+}
+
+export function importText(raw: string, fallbackTitle: string): ImportOutcome {
+  const normalized = raw
+    .replace(/\r\n?/g, '\n')
+    .replace(/\t/g, '    ')
+    .replace(/\u00a0/g, ' ');
+  const { lines, meta, markers } = extractMeta(normalized.split('\n'));
+
+  // Une "zone" par en-tête rencontré ; les paroles restent continues.
+  interface Zone {
+    label: string;
+    lines: string[];
+  }
+  const zones: Zone[] = [];
+  const counters: { [k: string]: number } = {};
+  let current: Zone | null = null;
+  let mergedChordLines = 0;
+
+  function openZone(baseLabel: string, num: string) {
+    if (num !== '') {
+      counters[baseLabel] = parseInt(num, 10);
+    } else {
+      counters[baseLabel] = (counters[baseLabel] ?? 0) + 1;
+    }
+    const needsNumber = baseLabel === 'Couplet' || counters[baseLabel] > 1;
+    current = {
+      label: baseLabel + (needsNumber ? ` ${counters[baseLabel]}` : ''),
+      lines: [],
+    };
+    zones.push(current);
+  }
+
+  function currentHasContent(): boolean {
+    return current !== null && current.lines.length > 0;
+  }
+
+  function appendLine(text: string) {
+    let zone = current;
+    if (!zone) {
+      zone = { label: '', lines: [] };
+      zones.push(zone);
+      current = zone;
+    }
+    zone.lines.push(text);
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const marker = markers.get(i);
+    if (marker === 'soc') openZone('Refrain', '');
+    else if (marker === 'sov') openZone('Couplet', '');
+    else if (marker === 'eoc' || marker === 'eov') current = null;
+
+    const line = lines[i];
+    const header = HEADER_RE.exec(line);
+    if (header) {
+      const base = LABEL_MAP[header[1].toLowerCase().replace(/[- ]/g, '')];
+      openZone(base, header[2]);
+      continue;
+    }
+
+    if (line.trim() === '') {
+      if (currentHasContent()) appendLine('');
+      continue;
+    }
+
+    if (isChordLine(line)) {
+      const next = i + 1 < lines.length ? lines[i + 1] : '';
+      const nextUsable =
+        next.trim() !== '' &&
+        !isChordLine(next) &&
+        !HEADER_RE.test(next) &&
+        !markers.has(i + 1);
+      if (nextUsable) {
+        appendLine(mergeChordLyric(line, next));
+        mergedChordLines++;
+        i++;
+      } else {
+        appendLine(chordLineToGrid(line));
+      }
+      continue;
+    }
+
+    appendLine(line);
+  }
+
+  // Structure = résumé des zones nommées ; paroles = tout, en continu.
+  const namedZones = zones.filter((z) => z.label !== '');
+  const structure: StructureRow[] =
+    namedZones.length > 0
+      ? namedZones.map((z) => ({
+          id: makeId(),
+          label: z.label,
+          chords: extractChordSequence(z.lines.join('\n')),
+          comment: '',
+        }))
+      : [];
+
+  const lyrics = zones
+    .map((z) => z.lines.join('\n').replace(/\n+$/g, ''))
+    .filter((c) => c.trim() !== '')
+    .join('\n\n')
+    .replace(/\n{3,}/g, '\n\n');
+
+  const now = new Date().toISOString();
+  const versionId = makeId();
+  const song: Song = {
+    id: makeId(),
+    title: (meta.title ?? fallbackTitle).trim() || 'Chanson importée',
+    artist: meta.artist ?? '',
+    key: meta.key ?? '',
+    tempo: meta.tempo ?? 0,
+    capo: meta.capo ?? 0,
+    durationSec: meta.durationSec ?? 0,
+    tags: meta.tags,
+    structure,
+    lyrics,
+    versions: [
+      {
+        id: versionId,
+        name: 'Version 1',
+        bandId: '',
+        key: meta.key ?? '',
+        tempo: meta.tempo ?? 0,
+        capo: meta.capo ?? 0,
+        structure,
+        lyrics,
+      },
+    ],
+    activeVersionId: versionId,
+    hearts: 0,
+    fanMessages: [],
+    rehearsalNotes: meta.comments
+      .filter((c) => c.trim() !== '')
+      .map((c) => ({
+        id: makeId(),
+        target: '',
+        bandId: '',
+        text: c,
+        author: '',
+        visibility: 'groupe' as const,
+        createdAt: now,
+      })),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return {
+    song,
+    stats: {
+      structureRows: structure.length,
+      mergedChordLines,
+      hadMeta: meta.title !== undefined || meta.artist !== undefined,
+      hadTitle: meta.title !== undefined,
+      hadArtist: meta.artist !== undefined,
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Analyse de la qualité d'un import                                   */
+/* ------------------------------------------------------------------ */
+
+export interface ImportIssue {
+  /** 'warn' = l'IA peut probablement aider ; 'info' = simple remarque */
+  severity: 'warn' | 'info';
+  text: string;
+}
+
+/** Ligne de tablature : e|--3--0--… (non convertible en accords sans IA). */
+const TAB_LINE_RE = /^\s*[eEBGDAbgda]\s*\|[-0-9hpbrxs/\\~.^()\s|]{6,}$/;
+
+/**
+ * Analyse le résultat d'un import et liste ce qui mérite attention.
+ * Les problèmes 'warn' justifient de proposer le nettoyage IA ;
+ * les 'info' sont de simples remarques (rien de bloquant).
+ */
+export function analyzeImport(
+  raw: string,
+  outcome: ImportOutcome,
+): ImportIssue[] {
+  const issues: ImportIssue[] = [];
+  const { song, stats } = outcome;
+  const rawLines = raw.replace(/\r\n?/g, '\n').split('\n');
+
+  // Encodage abîmé (caractère de remplacement �)
+  if (raw.includes('�')) {
+    issues.push({
+      severity: 'warn',
+      text: 'caractères illisibles détectés (problème d’encodage du fichier)',
+    });
+  }
+
+  // Tablatures : elles ne deviennent pas des accords toutes seules
+  const tabLines = rawLines.filter((l) => TAB_LINE_RE.test(l)).length;
+  if (tabLines >= 2) {
+    issues.push({
+      severity: 'warn',
+      text: `tablatures détectées (${tabLines} lignes) — elles ne sont pas converties en accords`,
+    });
+  }
+
+  const inlineChords = (song.lyrics.match(/\[[A-G](?:#|b)?[^\]\n]*\]/g) ?? [])
+    .length;
+  const lyricLines = song.lyrics.split('\n');
+  const gridOnly = lyricLines.filter(
+    (l) => l.includes('[') && l.replace(/\[[^\]\n]*\]/g, '').trim() === '',
+  ).length;
+  const wordLines = lyricLines.filter(
+    (l) => !l.includes('[') && /[a-zà-ÿ]{3,}/i.test(l),
+  ).length;
+
+  if (inlineChords === 0 && stats.mergedChordLines === 0) {
+    const chordish = rawLines.filter((l) => isChordLine(l)).length;
+    if (chordish > 0) {
+      issues.push({
+        severity: 'warn',
+        text: 'des accords semblent présents mais n’ont pas été reconnus',
+      });
+    } else if (tabLines < 2) {
+      issues.push({
+        severity: 'info',
+        text: 'aucun accord détecté — paroles seules',
+      });
+    }
+  } else if (gridOnly >= 3 && stats.mergedChordLines === 0 && wordLines > gridOnly) {
+    issues.push({
+      severity: 'warn',
+      text: 'les accords n’ont pas pu être alignés sur les paroles',
+    });
+  }
+
+  if (stats.structureRows === 0) {
+    issues.push({
+      severity: 'info',
+      text: 'pas de sections détectées ([Couplet], Refrain:…) — la structure restera à saisir',
+    });
+  }
+  if (!stats.hadArtist) {
+    issues.push({
+      severity: 'info',
+      text: 'artiste non détecté — complète le champ Artiste',
+    });
+  }
+  return issues;
+}
+
+/** Normalisation pour la détection de doublons. */
+export function normalizeTitle(title: string): string {
+  return (
+    title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      // Apostrophes SUPPRIMÉES (pas remplacées par un espace) :
+      // « Ain't » et « Aint » doivent donner le même titre.
+      .replace(/['’`]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+  );
+}
+
+/** Cherche un doublon probable dans la bibliothèque. */
+export function findDuplicate(songs: Song[], title: string): Song | null {
+  const norm = normalizeTitle(title);
+  if (norm === '') return null;
+  return songs.find((s) => normalizeTitle(s.title) === norm) ?? null;
+}
+
+/** Mots significatifs des paroles (accords retirés, accents ignorés). */
+function lyricsTokens(lyrics: string): Set<string> {
+  return new Set(
+    lyrics
+      .replace(/\[[^\]\n]*\]/g, '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/['’`]/g, '')
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 2),
+  );
+}
+
+/** Similarité de paroles (0…1, indice de Jaccard sur les mots). */
+export function lyricsSimilarity(a: string, b: string): number {
+  const ta = lyricsTokens(a);
+  const tb = lyricsTokens(b);
+  if (ta.size === 0 || tb.size === 0) return 0;
+  let inter = 0;
+  for (const w of ta) if (tb.has(w)) inter++;
+  return inter / (ta.size + tb.size - inter);
+}
+
+/**
+ * Reconnaissance renforcée : même chanson si le titre est identique, OU si
+ * les titres se contiennent (« Imagine » ⊂ « Imagine John Lennon ») avec
+ * des paroles proches, OU si les paroles sont quasi identiques.
+ */
+export function findSameSong(
+  songs: Song[],
+  title: string,
+  lyrics: string,
+  artist?: string,
+): Song | null {
+  const exact = findDuplicate(songs, title);
+  if (exact) return exact;
+  const nt = normalizeTitle(title);
+  const na = normalizeTitle(artist ?? '');
+  // « Aint No Sunshine Bill Withers » = « Ain't No Sunshine » + artiste :
+  // on compare aussi les titres débarrassés du nom d'artiste.
+  const stripArtist = (t: string, a: string): string => {
+    if (a === '' || t === a) return t;
+    if (t.endsWith(' ' + a)) return t.slice(0, t.length - a.length).trim();
+    if (t.startsWith(a + ' ')) return t.slice(a.length).trim();
+    return t;
+  };
+  for (const s of songs) {
+    const ns = normalizeTitle(s.title);
+    const nsa = normalizeTitle(s.artist ?? '');
+    // Artistes connus et clairement différents → jamais le même morceau
+    const artistsClash =
+      na !== '' &&
+      nsa !== '' &&
+      na !== nsa &&
+      !na.includes(nsa) &&
+      !nsa.includes(na);
+    const ntStripped = [nt, stripArtist(nt, na), stripArtist(nt, nsa)];
+    const nsStripped = [ns, stripArtist(ns, nsa), stripArtist(ns, na)];
+    const sameTitle = ntStripped.some(
+      (a) => a !== '' && nsStripped.includes(a),
+    );
+    if (sameTitle && nt !== ns && !artistsClash) return s;
+    const contains =
+      nt !== '' && ns !== '' && (nt.includes(ns) || ns.includes(nt));
+    const sim = lyricsSimilarity(lyrics, s.lyrics);
+    if ((contains && sim >= 0.7) || sim >= 0.92) return s;
+  }
+  return null;
+}

@@ -1,0 +1,632 @@
+/**
+ * Page publique : reconstruite entièrement depuis le lien de partage.
+ * Aucune application ni compte requis pour le destinataire.
+ */
+import React, { useEffect, useState } from 'react';
+
+import { useAccount } from '../components/Account';
+import { LinkPreviews } from '../components/LinkPreviews';
+import { LogoMark } from '../components/Logo';
+import { ShareModal } from '../components/ShareModal';
+import { StagePlan } from '../components/StagePlan';
+import { SongBody } from '../components/SongBody';
+import { TipBox } from '../components/TipBox';
+import { findSameSong } from '../lib/importer';
+import { migrateSong } from '../lib/model';
+import { getValidSession } from '../lib/auth';
+import { joinBand } from '../lib/bands';
+import { decodeShare, fetchSharedPayload } from '../lib/share';
+import { useWakeLock } from '../lib/wakelock';
+import { DndHint } from '../components/ui';
+import { navigate } from '../router';
+import { useStore } from '../store';
+import { emptyBand, makeId, SharePayload, ViewMode } from '../types';
+
+function DateLine({
+  c,
+}: {
+  c: {
+    title: string;
+    date: string;
+    time: string;
+    venue: string;
+    venueUrl?: string;
+    eventUrl?: string;
+  };
+}) {
+  const label =
+    c.date !== ''
+      ? new Date(`${c.date}T${c.time || '00:00'}`).toLocaleDateString('fr-FR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : '';
+  return (
+    <div className="row" style={{ cursor: 'default' }}>
+      <div className="grow">
+        <div className="title">{c.title}</div>
+        <div className="sub">
+          {[label, c.time].filter((x) => x !== '').join(' · ')}
+          {c.venue !== '' && (
+            <>
+              {label !== '' || c.time !== '' ? ' · ' : ''}
+              {c.venueUrl ? (
+                <a href={c.venueUrl} target="_blank" rel="noreferrer">
+                  📍 {c.venue}
+                </a>
+              ) : (
+                c.venue
+              )}
+            </>
+          )}
+        </div>
+      </div>
+      {c.eventUrl ? (
+        <a
+          className="btn ghost small"
+          href={c.eventUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          📅 Événement
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+function ArtistHead({ payload }: { payload: SharePayload }) {
+  const artist = payload.artist;
+  if (!artist || artist.name === '') return null;
+  return (
+    <div className="artisthead">
+      {artist.photo !== '' && <img src={artist.photo} alt={artist.name} />}
+      <h1 style={{ margin: '10px 0 4px' }}>{artist.name}</h1>
+      {artist.bio !== '' && (
+        <p className="help" style={{ whiteSpace: 'pre-wrap' }}>
+          {artist.bio}
+        </p>
+      )}
+      {artist.links.length > 0 && <LinkPreviews links={artist.links} />}
+    </div>
+  );
+}
+
+export function SharePage({
+  data,
+  shortId,
+}: {
+  data: string;
+  /** Lien court : contenu chargé depuis le serveur */
+  shortId?: string;
+}) {
+  const { songs, saveSong, bands, saveBand, artist, prefs } = useStore();
+  const account = useAccount();
+  const [payload, setPayload] = useState<SharePayload | null>(null);
+  const [error, setError] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [card, setCard] = useState<SharePayload | null>(null);
+  const [memberDone, setMemberDone] = useState<string | null>(null);
+  const [joinBusy, setJoinBusy] = useState(false);
+  const [joined, setJoined] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  /** Invité connecté : rejoint le groupe en un clic (adhésion réelle). */
+  async function joinCloudBand() {
+    const inv = payload?.invite;
+    if (!inv?.cloudId || !inv.token || joinBusy) return;
+    setJoinBusy(true);
+    setJoinError(null);
+    try {
+      const s = await getValidSession();
+      if (!s) {
+        setJoinError(
+          'Connecte-toi d’abord (onglet Artiste → Mon compte), puis rouvre ce lien.',
+        );
+        return;
+      }
+      let name = (artist.name || prefs.userName).trim();
+      if (name === '') {
+        const asked = prompt("Ton nom d'artiste (visible par le groupe)");
+        if (asked === null || asked.trim() === '') return;
+        name = asked.trim();
+      }
+      const instrument = (
+        prompt('Ton instrument (facultatif — chant, guitare, basse…)') ?? ''
+      ).trim();
+      const bandName = await joinBand(s, inv.cloudId, inv.token, name, instrument);
+      // Le groupe existe désormais aussi dans MON application, relié au
+      // cloud : le répertoire partagé se synchronisera automatiquement.
+      if (!bands.some((b) => b.cloudId === inv.cloudId)) {
+        saveBand({
+          ...emptyBand(),
+          name: bandName || inv.band,
+          cloudId: inv.cloudId,
+          members: [
+            {
+              id: makeId(),
+              name,
+              instrument,
+              verified: true,
+              gear: artist.gear ? artist.gear.map((g) => ({ ...g })) : [],
+            },
+          ],
+        });
+      }
+      setJoined(bandName || inv.band);
+    } catch (e) {
+      setJoinError(
+        e instanceof Error ? e.message : "L'adhésion a échoué — réessaie.",
+      );
+    } finally {
+      setJoinBusy(false);
+    }
+  }
+
+  // Un musicien qui suit sa partition depuis le lien : écran toujours allumé
+  useWakeLock(payload?.view === 'complete');
+
+  /** Côté musicien invité : construit sa carte à renvoyer au groupe. */
+  function makeCard() {
+    if (!payload?.invite) return;
+    let name = (artist.name || prefs.userName).trim();
+    if (name === '') {
+      const asked = prompt(
+        "Ton nom d'artiste (il remplacera ton nom dans le groupe)",
+      );
+      if (asked === null || asked.trim() === '') return;
+      name = asked.trim();
+    }
+    const instrument = (
+      prompt('Ton instrument (facultatif — chant, guitare, basse…)') ?? ''
+    ).trim();
+    setCard({
+      v: 1,
+      type: 'member',
+      view: 'paroles',
+      member: {
+        bandId: payload.invite.bandId ?? '',
+        bandName: payload.invite.band,
+        name,
+        instrument,
+      },
+    });
+  }
+
+  function addToLibrary() {
+    if (!payload) return;
+    const list =
+      payload.type === 'song' && payload.song
+        ? [payload.song]
+        : (payload.songs ?? []);
+    let count = 0;
+    let skipped = 0;
+    for (const s of list) {
+      if (findSameSong(songs, s.title, s.lyrics)) {
+        skipped++;
+        continue;
+      }
+      saveSong(migrateSong({ ...s, id: makeId() }));
+      count++;
+    }
+    setAdded(true);
+    alert(
+      `${count} morceau${count > 1 ? 'x' : ''} ajouté${count > 1 ? 's' : ''} à ta bibliothèque` +
+        (skipped > 0 ? ` (${skipped} déjà présent${skipped > 1 ? 's' : ''})` : '') +
+        '.',
+    );
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    const load =
+      shortId !== undefined && shortId !== ''
+        ? fetchSharedPayload(shortId)
+        : decodeShare(data);
+    load
+      .then((p) => {
+        // compatibilité anciens liens + migration du modèle des morceaux
+        if (p.view === undefined) {
+          p.view = p.withChords ? 'complete' : 'paroles';
+        }
+        if (p.song) p.song = migrateSong(p.song);
+        if (p.songs) p.songs = p.songs.map(migrateSong);
+        if (!cancelled) setPayload(p);
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [data, shortId]);
+
+  if (error) {
+    return (
+      <div className="public">
+        <p style={{ textAlign: 'center' }}>
+          Ce lien de partage est invalide ou incomplet.
+        </p>
+      </div>
+    );
+  }
+  if (!payload) {
+    return (
+      <div className="public">
+        <p className="help" style={{ textAlign: 'center' }}>
+          Ouverture…
+        </p>
+      </div>
+    );
+  }
+
+  const cardBand =
+    payload.type === 'member' && payload.member
+      ? (bands.find((b) => b.id === payload.member?.bandId) ??
+        bands.find((b) => b.name === payload.member?.bandName) ??
+        null)
+      : null;
+
+  return (
+    <div className="public">
+      {payload.view === 'complete' && <DndHint />}
+      <ArtistHead payload={payload} />
+
+      {payload.type === 'member' && payload.member && (
+        <div className="card" style={{ textAlign: 'center' }}>
+          <h1 style={{ marginBottom: 2 }}>🎸 {payload.member.name}</h1>
+          <p className="help" style={{ marginTop: 4 }}>
+            a créé son profil Sing2Me
+            {payload.member.instrument !== ''
+              ? ` — ${payload.member.instrument}`
+              : ''}
+            {payload.member.bandName !== ''
+              ? ` · groupe « ${payload.member.bandName} »`
+              : ''}
+          </p>
+          {memberDone !== null ? (
+            <p style={{ color: 'var(--accent)' }}>✓ {memberDone}</p>
+          ) : cardBand ? (
+            <div style={{ textAlign: 'left' }}>
+              <p className="help">
+                Remplace un musicien de « {cardBand.name} » par ce profil, ou
+                ajoute-le :
+              </p>
+              {cardBand.members.map((m) => (
+                <div
+                  key={m.id}
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'center',
+                    marginBottom: 6,
+                  }}
+                >
+                  <span style={{ flex: 1 }}>
+                    {m.name || '(sans nom)'}
+                    {m.instrument !== '' && (
+                      <span className="stauthor"> · {m.instrument}</span>
+                    )}
+                  </span>
+                  <button
+                    className="btn ghost small"
+                    onClick={() => {
+                      const member = payload.member;
+                      if (!member) return;
+                      saveBand({
+                        ...cardBand,
+                        members: cardBand.members.map((x) =>
+                          x.id === m.id
+                            ? {
+                                ...x,
+                                name: member.name,
+                                instrument:
+                                  member.instrument || x.instrument,
+                                verified: true,
+                              }
+                            : x,
+                        ),
+                      });
+                      setMemberDone(
+                        `${m.name || '(sans nom)'} → ${member.name}`,
+                      );
+                    }}
+                  >
+                    Remplacer
+                  </button>
+                </div>
+              ))}
+              <button
+                className="btn ghost block"
+                onClick={() => {
+                  const member = payload.member;
+                  if (!member) return;
+                  saveBand({
+                    ...cardBand,
+                    members: [
+                      ...cardBand.members,
+                      {
+                        id: makeId(),
+                        name: member.name,
+                        instrument: member.instrument,
+                        verified: true,
+                      },
+                    ],
+                  });
+                  setMemberDone(`${member.name} ajouté au groupe`);
+                }}
+              >
+                ＋ Ajouter comme nouveau musicien
+              </button>
+            </div>
+          ) : (
+            <p className="help">
+              Cette carte répond à une invitation de groupe : ouvre ce lien sur
+              l'appareil où le groupe
+              {payload.member.bandName !== ''
+                ? ` « ${payload.member.bandName} »`
+                : ''}{' '}
+              est géré pour mettre à jour ses musiciens.
+            </p>
+          )}
+        </div>
+      )}
+
+      {payload.type === 'song' && payload.song && (
+        <>
+          <h1 style={{ marginBottom: 2 }}>{payload.song.title}</h1>
+          <p className="help" style={{ marginTop: 0 }}>
+            {[
+              payload.song.artist,
+              payload.view !== 'paroles' && payload.song.key !== ''
+                ? `Tonalité ${payload.song.key}`
+                : '',
+              payload.view !== 'paroles' && payload.song.capo > 0
+                ? `Capo ${payload.song.capo}`
+                : '',
+            ]
+              .filter((x) => x !== '')
+              .join(' · ')}
+          </p>
+          {payload.view === 'complete' &&
+            payload.song.rehearsalNotes.some((n) => n.target === '') && (
+              <div className="notesbox">
+                <div className="label">Notes de répétition</div>
+                {payload.song.rehearsalNotes
+                  .filter((n) => n.target === '')
+                  .map((n) => (
+                    <div key={n.id}>
+                      💬 {n.text}
+                      {n.author !== '' && <em className="stauthor"> — {n.author}</em>}
+                    </div>
+                  ))}
+              </div>
+            )}
+          <SongBody song={payload.song} view={payload.view as ViewMode} />
+        </>
+      )}
+
+      {payload.type === 'setlist' && (
+        <>
+          <h1 style={{ marginBottom: 2, textAlign: 'center' }}>
+            {payload.setlist?.name}
+          </h1>
+          {payload.setlist?.comment !== '' && (
+            <p className="help" style={{ textAlign: 'center' }}>
+              {payload.setlist?.comment}
+            </p>
+          )}
+          {payload.view === 'complete' && payload.setlist?.setup && (
+            <details className="stfold" style={{ margin: '10px 0 16px' }}>
+              <summary>Sono &amp; scène</summary>
+              <div className="spacer" />
+              {payload.setlist.setup.positions.length > 0 && (
+                <StagePlan
+                  positions={payload.setlist.setup.positions}
+                  readOnly
+                />
+              )}
+              {payload.setlist.setup.gear !== '' && (
+                <div className="notesbox" style={{ marginTop: 10 }}>
+                  <div className="label">Matériel</div>
+                  {payload.setlist.setup.gear}
+                </div>
+              )}
+              {payload.setlist.setup.wiring !== '' && (
+                <div className="notesbox">
+                  <div className="label">Branchements</div>
+                  {payload.setlist.setup.wiring}
+                </div>
+              )}
+              {payload.setlist.setup.sound !== '' && (
+                <div className="notesbox">
+                  <div className="label">Effets &amp; réglages sono</div>
+                  {payload.setlist.setup.sound}
+                </div>
+              )}
+            </details>
+          )}
+          {(payload.songs ?? []).map((song, i) => (
+            <details key={song.id} className="card">
+              <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+                {i + 1}. {song.title}
+                {song.artist !== '' && (
+                  <span className="stauthor"> — {song.artist}</span>
+                )}
+                {payload.view !== 'paroles' && payload.itemKeys?.[i]
+                  ? ` · ${payload.itemKeys[i]}`
+                  : ''}
+                {payload.itemNotes?.[i] ? (
+                  <span style={{ color: 'var(--accent)' }}>
+                    {' '}
+                    · {payload.itemNotes[i]}
+                  </span>
+                ) : null}
+              </summary>
+              <div className="spacer" />
+              {payload.view === 'complete' &&
+                song.rehearsalNotes.some((n) => n.target === '') && (
+                  <div className="notesbox">
+                    <div className="label">Notes de répétition</div>
+                    {song.rehearsalNotes
+                      .filter((n) => n.target === '')
+                      .map((n) => (
+                        <div key={n.id}>
+                          💬 {n.text}
+                          {n.author !== '' && (
+                            <em className="stauthor"> — {n.author}</em>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              <SongBody song={song} view={payload.view as ViewMode} />
+            </details>
+          ))}
+        </>
+      )}
+
+      {payload.view === 'complete' &&
+        (payload.type === 'song' || payload.type === 'setlist') && (
+          <div className="joinbox">
+            <div>
+              <strong>
+                {payload.invite
+                  ? `${payload.invite.from} t'invite à rejoindre « ${payload.invite.band} » sur Sing2Me 🎸`
+                  : 'Tu joues dans le groupe ?'}
+              </strong>
+              <p className="help" style={{ margin: '4px 0 0' }}>
+                Récupère {payload.type === 'song' ? 'ce morceau' : 'ces morceaux'}{' '}
+                dans ton propre Sing2Me (gratuit) : répertoire chez toi,
+                transposition, notes personnelles…
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {payload.invite?.cloudId &&
+                payload.invite.token &&
+                account?.email != null &&
+                (joined !== null ? (
+                  <span style={{ color: 'var(--accent)', alignSelf: 'center' }}>
+                    ✓ Tu fais partie de « {joined} » !
+                  </span>
+                ) : (
+                  <button
+                    className="btn"
+                    disabled={joinBusy}
+                    onClick={() => void joinCloudBand()}
+                  >
+                    {joinBusy ? '…' : `🤝 Rejoindre « ${payload.invite.band} »`}
+                  </button>
+                ))}
+              {added ? (
+                <>
+                  {payload.invite && !payload.invite.cloudId && (
+                    <button className="btn" onClick={makeCard}>
+                      📇 Ma carte pour le groupe
+                    </button>
+                  )}
+                  <button className="btn ghost" onClick={() => navigate('/')}>
+                    Ouvrir ma bibliothèque
+                  </button>
+                </>
+              ) : (
+                <button
+                  className={`btn ${payload.invite?.cloudId ? 'ghost' : ''}`}
+                  onClick={addToLibrary}
+                >
+                  ➕ Ajouter à ma bibliothèque
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+      {joinError && (
+        <p style={{ color: 'var(--danger)', textAlign: 'center' }}>{joinError}</p>
+      )}
+      {payload.invite?.cloudId && account?.email == null && (
+        <p className="help" style={{ textAlign: 'center' }}>
+          💡 Avec un compte Sing2Me (gratuit, onglet Artiste → Mon compte), tu
+          rejoindrais ce groupe en un clic.
+        </p>
+      )}
+      {added && payload.invite && !payload.invite.cloudId && (
+        <p className="help" style={{ textAlign: 'center' }}>
+          📇 Renvoie ta carte de musicien à celui qui t'a invité : ton nom
+          d'artiste remplacera ton nom dans le groupe.
+        </p>
+      )}
+
+      {payload.event &&
+        (payload.event.venueUrl !== '' || payload.event.eventUrl !== '') && (
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              margin: '10px 0',
+            }}
+          >
+            {payload.event.venueUrl !== '' && (
+              <a
+                className="btn ghost"
+                href={payload.event.venueUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                📍 {payload.event.venue || 'Le lieu'}
+              </a>
+            )}
+            {payload.event.eventUrl !== '' && (
+              <a
+                className="btn ghost"
+                href={payload.event.eventUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                📅 L'événement
+              </a>
+            )}
+          </div>
+        )}
+
+      {payload.view === 'paroles' && payload.type !== 'member' && (
+        <TipBox artist={payload.artist ?? null} />
+      )}
+
+      {payload.concerts && payload.concerts.length > 0 && (
+        <>
+          <h2 className="pagetitle" style={{ textAlign: 'center' }}>
+            Prochaines dates
+          </h2>
+          {payload.concerts.map((c, i) => (
+            <DateLine key={i} c={c} />
+          ))}
+        </>
+      )}
+
+      <div className="footer">
+        <a className="ctabanner" href={location.origin + location.pathname}>
+          <LogoMark size={22} /> Téléchargez <strong>Sing2Me</strong> — votre
+          songbook, gratuit
+        </a>
+        <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
+          <a href="#/cgu" style={{ color: 'var(--text-dim)' }}>
+            Conditions d'utilisation · signaler un contenu
+          </a>
+        </p>
+      </div>
+
+      {card && (
+        <ShareModal
+          title="Ma carte de musicien — à envoyer au groupe"
+          payload={card}
+          onClose={() => setCard(null)}
+        />
+      )}
+    </div>
+  );
+}
