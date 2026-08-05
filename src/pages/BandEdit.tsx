@@ -27,6 +27,7 @@ import {
   bandToProfile,
   duplicateVersion,
   notesForShare,
+  removeVersion,
   switchVersion,
   versionForBand,
 } from '../lib/model';
@@ -94,6 +95,7 @@ export function BandEdit({ id }: { id: string }) {
     songs,
     saveSong,
     clearBandRemoval,
+    recordBandRemoval,
     concerts,
     prefs,
     artist,
@@ -140,6 +142,36 @@ export function BandEdit({ id }: { id: string }) {
       song.title,
       song.artist,
     );
+  }
+
+  /**
+   * Retire un morceau du répertoire du groupe. Acte de niveau groupe :
+   * il sort du répertoire pour TOUS les membres (chacun garde sa copie
+   * personnelle).
+   */
+  function removeFromRepertoire(song: Song) {
+    if (!band) return;
+    const v = versionForBand(song, band.id);
+    if (!v) return;
+    if (
+      !confirm(
+        `Retirer « ${song.title} » du répertoire de ${band.name || 'ce groupe'} ? ` +
+          'Le morceau sortira du répertoire du groupe pour TOUS les membres — ' +
+          'chacun garde sa partition dans sa bibliothèque personnelle.',
+      )
+    )
+      return;
+    saveSong(
+      song.versions.length > 1
+        ? removeVersion(song, v.id)
+        : {
+            ...song,
+            versions: song.versions.map((x) =>
+              x.id === v.id ? { ...x, bandId: '' } : x,
+            ),
+          },
+    );
+    recordBandRemoval(band.id, normalizeTitle(song.title));
   }
 
   // Membres réels (comptes) du groupe publié
@@ -925,17 +957,20 @@ export function BandEdit({ id }: { id: string }) {
                 <div
                   className="row"
                   key={song.id}
-                  onClick={() => {
-                    if (!inRep) addToRepertoire(song);
-                  }}
-                  style={{ cursor: inRep ? 'default' : 'pointer' }}
+                  onClick={() =>
+                    inRep ? removeFromRepertoire(song) : addToRepertoire(song)
+                  }
+                  style={{ cursor: 'pointer' }}
                 >
                   <div className="grow">
                     <div className="title">{song.title || '(sans titre)'}</div>
                     <div className="sub">{song.artist}</div>
                   </div>
                   {inRep ? (
-                    <span style={{ color: 'var(--accent)', fontWeight: 700 }}>
+                    <span
+                      title="Cliquer pour retirer du répertoire du groupe"
+                      style={{ color: 'var(--accent)', fontWeight: 700 }}
+                    >
                       ✓ Au répertoire
                     </span>
                   ) : (
