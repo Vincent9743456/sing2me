@@ -250,6 +250,8 @@ export interface Concert {
   eventUrl: string;
   description: string;
   setlistId: string;
+  /** Qui joue : '' = solo, sinon l'id du groupe. */
+  bandId?: string;
   visibility: 'public' | 'prive';
   createdAt: string;
   updatedAt: string;

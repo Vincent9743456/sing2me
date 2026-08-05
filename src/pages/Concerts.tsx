@@ -83,6 +83,15 @@ export function Concerts() {
 }
 
 function ConcertRow({ concert }: { concert: Concert }) {
+  const { bands, artist, prefs } = useStore();
+  const who =
+    (concert.bandId ?? '') !== ''
+      ? (bands.find((b) => b.id === concert.bandId)?.name ?? 'Groupe')
+      : `Solo${
+          prefs.userName || artist.name
+            ? ` · ${prefs.userName || artist.name}`
+            : ''
+        }`;
   return (
     <div
       className="row"
@@ -91,7 +100,12 @@ function ConcertRow({ concert }: { concert: Concert }) {
       <div className="grow">
         <div className="title">{concert.title || '(sans titre)'}</div>
         <div className="sub">
-          {[concertDateLabel(concert), concert.venue, concert.visibility === 'prive' ? '🔒 privé' : '']
+          {[
+            concertDateLabel(concert),
+            who,
+            concert.venue,
+            concert.visibility === 'prive' ? '🔒 privé' : '',
+          ]
             .filter((x) => x !== '')
             .join(' · ')}
         </div>
@@ -126,8 +140,16 @@ function ConcertRow({ concert }: { concert: Concert }) {
 }
 
 export function ConcertEdit({ id }: { id: string | null }) {
-  const { concerts, setlists, songs, artist, saveConcert, deleteConcert, prefs } =
-    useStore();
+  const {
+    concerts,
+    setlists,
+    songs,
+    artist,
+    bands,
+    saveConcert,
+    deleteConcert,
+    prefs,
+  } = useStore();
   const [inter, setInter] = useState<{
     stats: LiveStat[];
     messages: LiveMessage[];
@@ -220,6 +242,21 @@ export function ConcertEdit({ id }: { id: string | null }) {
             onChange={(e) => update({ title: e.target.value })}
           />
         </Field>
+        <Field label="Qui joue ?">
+          <select
+            value={draft.bandId ?? ''}
+            onChange={(e) => update({ bandId: e.target.value })}
+          >
+            <option value="">
+              Solo{artist.name !== '' ? ` — ${artist.name}` : ''}
+            </option>
+            {bands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name || 'Groupe sans nom'}
+              </option>
+            ))}
+          </select>
+        </Field>
         <div style={{ display: 'flex', gap: 8 }}>
           <Field label="Date">
             <input
@@ -309,14 +346,30 @@ export function ConcertEdit({ id }: { id: string | null }) {
         <Field label="Setlist">
           <select
             value={draft.setlistId}
-            onChange={(e) => update({ setlistId: e.target.value })}
+            onChange={(e) => {
+              const setlistId = e.target.value;
+              const sl = setlists.find((s) => s.id === setlistId);
+              // Choisir une setlist de groupe précise « qui joue ».
+              update(
+                sl && (sl.bandId ?? '') !== ''
+                  ? { setlistId, bandId: sl.bandId }
+                  : { setlistId },
+              );
+            }}
           >
             <option value="">— Aucune —</option>
-            {setlists.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
+            {setlists.map((s) => {
+              const bn =
+                (s.bandId ?? '') !== ''
+                  ? (bands.find((b) => b.id === s.bandId)?.name ?? '')
+                  : 'Solo';
+              return (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {bn !== '' ? ` · ${bn}` : ''}
+                </option>
+              );
+            })}
           </select>
         </Field>
         <Field label="Visibilité">

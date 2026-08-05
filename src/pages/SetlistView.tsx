@@ -74,11 +74,17 @@ export function SetlistView({ id }: { id: string }) {
     }
     const song = resolveVersion(raw, item.versionId ?? '');
     const shownKey = item.keyOverride !== '' ? item.keyOverride : song.key;
-    // Setlist imprimable : on garde uniquement les commentaires — pas les
-    // accords ni la structure (Intro/Couplet…), qui alourdiraient la vue.
+    // Setlist imprimable : on garde les COMMENTAIRES — pas les accords ni
+    // la structure (Intro/Couplet…), qui alourdiraient la vue.
+    // Commentaires fixes de structure + notes de répétition partagées.
     const comments = song.structure.filter((r) => r.comment.trim() !== '');
+    const groupNotes = song.rehearsalNotes.filter(
+      (n) => n.visibility === 'groupe' && n.text.trim() !== '',
+    );
     const persoNotes = showPerso
-      ? song.rehearsalNotes.filter((n) => n.visibility === 'privee')
+      ? song.rehearsalNotes.filter(
+          (n) => n.visibility === 'privee' && n.text.trim() !== '',
+        )
       : [];
     return (
       <div className="slv-item" key={item.id}>
@@ -113,6 +119,16 @@ export function SetlistView({ id }: { id: string }) {
                 <li key={r.id}>{r.comment}</li>
               ))}
             </ul>
+          )}
+          {groupNotes.length > 0 && (
+            <div className="slv-perso">
+              {groupNotes.map((n) => (
+                <div key={n.id}>
+                  ✎ {n.target !== '' ? `${n.target} — ` : ''}
+                  {n.text}
+                </div>
+              ))}
+            </div>
           )}
           {persoNotes.length > 0 && (
             <div className="slv-perso">

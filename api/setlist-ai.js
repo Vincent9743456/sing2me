@@ -86,7 +86,7 @@ export default async function handler(req, res) {
       'tonalités, regrouper ce qui va ensemble, garder les temps forts pour ' +
       'la fin, coller à l\'ambiance demandée.\n' +
       'Réponds STRICTEMENT en JSON, sans texte autour, au format :\n' +
-      '{"name": "titre court de la setlist", "comment": "1 phrase d\'intention", "order": [indices dans l\'ordre de jeu]}\n\n' +
+      '{"name": "titre court (2-4 mots)", "comment": "intention TRÈS courte, 6 mots max", "order": [indices dans l\'ordre de jeu]}\n\n' +
       '--- BIBLIOTHÈQUE ---\n' +
       catalog;
 
@@ -136,7 +136,7 @@ export default async function handler(req, res) {
     res.status(200).json({
       name: typeof parsed.name === 'string' ? parsed.name.slice(0, 80) : '',
       comment:
-        typeof parsed.comment === 'string' ? parsed.comment.slice(0, 200) : '',
+        typeof parsed.comment === 'string' ? parsed.comment.slice(0, 80) : '',
       order,
     });
   } catch {

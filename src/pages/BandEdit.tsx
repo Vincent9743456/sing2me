@@ -322,29 +322,40 @@ export function BandEdit({ id }: { id: string }) {
                 <img
                   src={band.photo}
                   alt={band.name}
+                  title="Changer la photo du groupe"
                   style={{
                     width: 112,
                     height: 112,
                     borderRadius: '50%',
                     objectFit: 'cover',
                     border: '2px solid var(--border)',
+                    cursor: 'pointer',
                   }}
+                  onClick={() => setEditing(true)}
                 />
               ) : (
-                <div
+                <button
+                  title="Ajouter une photo du groupe"
+                  onClick={() => setEditing(true)}
                   style={{
                     width: 112,
                     height: 112,
                     borderRadius: '50%',
                     background: 'var(--surface-high)',
+                    border: '1px dashed var(--border-strong)',
                     display: 'inline-flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '2.4rem',
+                    fontSize: '2rem',
+                    cursor: 'pointer',
+                    color: 'var(--text-dim)',
+                    gap: 2,
                   }}
                 >
                   👥
-                </div>
+                  <span style={{ fontSize: '0.7rem' }}>＋ photo</span>
+                </button>
               )}
               <h1 style={{ margin: '12px 0 2px', fontSize: '1.4rem' }}>
                 {band.name || 'Groupe'}

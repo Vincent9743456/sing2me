@@ -42,7 +42,7 @@ const PARTY_PRESETS = [
 ];
 
 export function Setlists() {
-  const { setlists, songs, bands, saveSetlist } = useStore();
+  const { setlists, songs, bands, saveSetlist, deleteSetlist } = useStore();
   const songById = new Map(songs.map((s) => [s.id, s]));
 
   // Durée « jouée » (hors réserve), estimée à 5 min si non renseignée.
@@ -116,6 +116,20 @@ export function Setlists() {
             </button>
           </>
         )}
+        <button
+          className="btn ghost small"
+          style={{ color: 'var(--danger)' }}
+          title="Supprimer cette setlist"
+          aria-label="Supprimer cette setlist"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm(`Supprimer « ${sl.name || 'cette setlist'} » ?`)) {
+              deleteSetlist(sl.id);
+            }
+          }}
+        >
+          <Icon name="trash" size={15} />
+        </button>
       </div>
     );
   };

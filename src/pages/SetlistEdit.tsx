@@ -173,7 +173,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
       return;
     }
     saveSetlist(draft);
-    navigate(`/setlist/${draft.id}`);
+    navigate('/setlists');
   }
 
   /**
@@ -678,6 +678,16 @@ export function SetlistEdit({ id }: { id: string | null }) {
           </button>
           {draft.items.length > 0 && (
             <>
+              <button
+                className="btn ghost"
+                title="Vue d'ensemble propre et imprimable"
+                onClick={() => {
+                  saveSetlist(draft);
+                  navigate(`/setlist/${draft.id}/apercu`);
+                }}
+              >
+                <Icon name="clipboard" size={15} /> Vue d'ensemble
+              </button>
               <button
                 className="btn ghost"
                 onClick={() => {

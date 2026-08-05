@@ -43,7 +43,6 @@ export function parseHash(hash: string): Route {
     case 'setlists':
       return { name: 'setlists' };
     case 'setlist':
-      // Nouvelle setlist / édition → éditeur ; sinon vue synthétique.
       if (parts[1] === 'new') return { name: 'setlistEdit', id: null };
       // Lecture d'un morceau DANS sa setlist : #/setlist/:id/song/:index
       if (parts[1] && parts[2] === 'song' && parts[3] !== undefined) {
@@ -53,10 +52,12 @@ export function parseHash(hash: string): Route {
           index: Math.max(0, parseInt(parts[3], 10) || 0),
         };
       }
-      if (parts[1] && parts[2] === 'edit') {
-        return { name: 'setlistEdit', id: parts[1] };
+      // Vue d'ensemble imprimable : #/setlist/:id/apercu
+      if (parts[1] && parts[2] === 'apercu') {
+        return { name: 'setlist', id: parts[1] };
       }
-      if (parts[1]) return { name: 'setlist', id: parts[1] };
+      // Par défaut, ouvrir une setlist = l'éditer directement.
+      if (parts[1]) return { name: 'setlistEdit', id: parts[1] };
       return { name: 'setlists' };
     case 'stage':
       if (parts[1] === 'song' && parts[2])
