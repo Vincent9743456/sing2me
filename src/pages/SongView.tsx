@@ -409,23 +409,40 @@ export function SongView({
   function toggleSetlist(sl: Setlist) {
     if (!song) return;
     const has = sl.items.some((it) => it.songId === song.id);
-    saveSetlist(
-      has
-        ? { ...sl, items: sl.items.filter((it) => it.songId !== song.id) }
-        : {
-            ...sl,
-            items: [
-              ...sl.items,
-              {
-                id: makeId(),
-                songId: song.id,
-                note: '',
-                keyOverride: '',
-                versionId: versionForBand(song, sl.bandId ?? '')?.id ?? '',
-              },
-            ],
-          },
-    );
+    if (has) {
+      saveSetlist({
+        ...sl,
+        items: sl.items.filter((it) => it.songId !== song.id),
+      });
+      return;
+    }
+    const bandId = sl.bandId ?? '';
+    let versionId = versionForBand(song, bandId)?.id ?? '';
+    // Ajout à une setlist de GROUPE = entrée automatique au répertoire.
+    if (bandId !== '' && versionId === '') {
+      const b = bands.find((x) => x.id === bandId);
+      const prev = song.activeVersionId;
+      const updated = switchVersion(
+        duplicateVersion(song, b?.name || 'Groupe', bandId),
+        prev,
+      );
+      saveSong(updated);
+      clearBandRemoval(bandId, normalizeTitle(song.title));
+      void announceBandSong(
+        b?.cloudId,
+        prefs.userName || artist.name || 'Moi',
+        song.title,
+        song.artist,
+      );
+      versionId = versionForBand(updated, bandId)?.id ?? '';
+    }
+    saveSetlist({
+      ...sl,
+      items: [
+        ...sl.items,
+        { id: makeId(), songId: song.id, note: '', keyOverride: '', versionId },
+      ],
+    });
   }
 
   return (
