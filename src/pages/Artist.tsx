@@ -108,6 +108,9 @@ export function Artist() {
   }));
   const [share, setShare] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Vue par défaut = profil mis en forme (ce que voit le public) ; « Modifier »
+  // ouvre le formulaire complet. Profil vide → « Créer le profil artiste ».
+  const [editing, setEditing] = useState(false);
   const [stats, setStats] = useState<LiveStat[] | null>(null);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [messages, setMessages] = useState<LiveMessage[] | null>(null);
@@ -233,12 +236,130 @@ export function Artist() {
     <>
       <TopBar title="Profil artiste" />
       <div className="page">
-        <h2 className="pagetitle" style={{ marginTop: 0 }}>
-          ☁ Mon compte
-        </h2>
         <AccountSection />
         <div className="spacer" />
-        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+
+        {editing && (
+          <button
+            className="btn ghost small"
+            onClick={() => {
+              saveArtist(draft);
+              setSaved(true);
+              setEditing(false);
+            }}
+          >
+            ← Enregistrer et revenir au profil
+          </button>
+        )}
+
+        {!editing && artist.name.trim() === '' && (
+          <div className="empty">
+            Ton profil artiste n'est pas encore créé.
+            <br />
+            Ta photo, ta bio et tes liens apparaîtront sur ta page publique
+            (QR).
+            <div className="spacer" />
+            <button className="btn" onClick={() => setEditing(true)}>
+              Créer le profil artiste
+            </button>
+          </div>
+        )}
+
+        {!editing && artist.name.trim() !== '' && (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              {artist.photo !== '' ? (
+                <img
+                  src={artist.photo}
+                  alt={artist.name}
+                  style={{
+                    width: 112,
+                    height: 112,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid var(--border)',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 112,
+                    height: 112,
+                    borderRadius: '50%',
+                    background: 'var(--surface-high)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2.4rem',
+                  }}
+                >
+                  ◉
+                </div>
+              )}
+              <h1 style={{ margin: '12px 0 2px', fontSize: '1.4rem' }}>
+                {artist.name}
+              </h1>
+              {artist.bio !== '' && (
+                <p
+                  className="help"
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    maxWidth: 480,
+                    margin: '4px auto 0',
+                  }}
+                >
+                  {artist.bio}
+                </p>
+              )}
+            </div>
+            {artist.links.some((l) => l.url.trim() !== '') && (
+              <LinkPreviews links={artist.links} showChips />
+            )}
+            {upcomingPublic.length > 0 && (
+              <>
+                <h2 className="pagetitle">Prochains concerts</h2>
+                <div className="list">
+                  {upcomingPublic.map((c) => (
+                    <div
+                      className="row"
+                      key={c.id}
+                      style={{ cursor: 'default' }}
+                    >
+                      <div className="grow">
+                        <div className="title">{c.title}</div>
+                        <div className="sub">
+                          {c.date}
+                          {c.time !== '' ? ` · ${c.time}` : ''}
+                          {c.venue !== '' ? ` · ${c.venue}` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            <div className="spacer" />
+            <div className="rowactions">
+              <button className="btn" onClick={() => setEditing(true)}>
+                Modifier
+              </button>
+              <button
+                className="btn ghost"
+                disabled={payload === null}
+                onClick={() => {
+                  saveArtist(draft);
+                  setShare(true);
+                }}
+              >
+                Page publique / QR
+              </button>
+            </div>
+          </>
+        )}
+
+        {editing && (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
           {draft.photo !== '' ? (
             <img
               src={draft.photo}
@@ -889,6 +1010,7 @@ export function Artist() {
             onClick={() => {
               saveArtist(draft);
               setSaved(true);
+              setEditing(false);
             }}
           >
             {saved ? '✓ Enregistré' : 'Enregistrer'}
@@ -909,6 +1031,8 @@ export function Artist() {
           tes prochains concerts publics. Partage-la avec ton public via le QR
           code ou le lien.
         </p>
+          </>
+        )}
         <p
           className="help"
           style={{ textAlign: 'center', opacity: 0.6, marginTop: 24 }}

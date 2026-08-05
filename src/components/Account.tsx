@@ -347,39 +347,36 @@ export function AccountSection() {
   }
 
   if (account.email !== null) {
+    const syncLabel =
+      account.status === 'ok'
+        ? `synchronisé${
+            account.lastSync
+              ? ` · ${new Date(account.lastSync).toLocaleTimeString('fr-FR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}`
+              : ''
+          }`
+        : account.status === 'sync'
+          ? 'synchronisation…'
+          : account.status === 'error'
+            ? '⚠ synchro à réessayer'
+            : '';
     return (
-      <div className="card" style={{ borderColor: 'var(--accent-dark)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ flex: 1 }}>
-            <strong style={{ color: 'var(--accent)', fontSize: '1.05rem' }}>
-              ✓ Connecté
-            </strong>{' '}
-            — <strong>{account.email}</strong>
-            <br />
-            <span className="help">
-              {account.status === 'ok' &&
-                `Bibliothèque synchronisée ✓${
-                  account.lastSync
-                    ? ` (${new Date(account.lastSync).toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })})`
-                    : ''
-                }`}
-              {account.status === 'sync' && 'Synchronisation en cours…'}
-              {account.status === 'error' &&
-                `⚠ ${account.error ?? 'Synchronisation impossible — nouvel essai à la prochaine modification.'}`}
-            </span>
-          </span>
-          <button className="btn ghost small" onClick={account.logout}>
-            Se déconnecter
-          </button>
-        </div>
-        <p className="help" style={{ marginBottom: 0 }}>
-          Ta bibliothèque est sauvegardée dans le cloud et te suit sur tous
-          tes appareils : connecte-toi avec le même compte sur ton téléphone.
-          Sans réseau, tout continue de fonctionner en local.
-        </p>
+      <div
+        className="hstack"
+        style={{ gap: 8, flexWrap: 'wrap', padding: '2px 0' }}
+      >
+        <span style={{ color: 'var(--accent)', fontWeight: 650, flexShrink: 0 }}>
+          ☁ Connecté
+        </span>
+        <span className="help" style={{ flex: 1, minWidth: 0, margin: 0 }}>
+          {account.email}
+          {syncLabel !== '' ? ` · ${syncLabel}` : ''}
+        </span>
+        <button className="btn ghost small" onClick={account.logout}>
+          Se déconnecter
+        </button>
       </div>
     );
   }
