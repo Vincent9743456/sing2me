@@ -88,6 +88,11 @@ export function ShareModal({
         `accords, transposition et capo automatiques, un mode scène pour ` +
         `jouer sans stress, tes setlists, et un espace de groupe pour ` +
         `préparer répètes et concerts ensemble.\n\n` +
+        `Et surtout, son mode « Partage avec le public » change l'expérience ` +
+        `en concert : la salle scanne un QR et suit les paroles EN DIRECT sur ` +
+        `son téléphone, envoie des ❤ morceau par morceau, te laisse un mot et ` +
+        `peut même te soutenir d'un pourboire. Une vraie interaction avec le ` +
+        `public — ça, aucun autre songbook ne le fait.\n\n` +
         `👉 Rejoins le groupe (compte gratuit, 30 secondes) :\n${url}\n\n` +
         `En rejoignant, tu récupères tout de suite le répertoire partagé du ` +
         `groupe. C'est gratuit, et tout fonctionne aussi hors-ligne.\n\n` +
