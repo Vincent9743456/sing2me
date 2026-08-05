@@ -13,6 +13,7 @@ import {
   spellingForKey,
   semitonesBetween,
   transposeContent,
+  transposeKeyName,
 } from '../lib/chords';
 import {
   fetchLive,
@@ -199,17 +200,27 @@ function MusicianLive({
   onPublic: () => void;
 }) {
   const [fontSize, setFontSize] = useState(1.05);
+  // 'shapes' = les formes du leader (+ capo) ; 'real' = les vrais accords.
+  const [chordMode, setChordMode] = useState<'shapes' | 'real'>('shapes');
   const song = state.song;
   const active = state.status === 'on' || state.status === 'pause';
 
+  const capo = song?.capo ?? 0;
+  // Tonalité des formes que joue le leader.
+  const shapeKey = song?.playedKey ?? '';
+  // Tonalité réelle (ce qui sonne) = formes + capo.
+  const realKey = shapeKey !== '' ? transposeKeyName(shapeKey, capo) : '';
+  const showReal = chordMode === 'real' && capo > 0;
+
   const semis = useMemo(() => {
-    if (!song?.chordKey || !song.playedKey) return 0;
-    if (song.chordKey === '' || song.playedKey === '') return 0;
-    return semitonesBetween(song.chordKey, song.playedKey) ?? 0;
-  }, [song]);
+    if (!song?.chordKey || !shapeKey) return showReal ? capo : 0;
+    if (song.chordKey === '' || shapeKey === '') return showReal ? capo : 0;
+    const toShapes = semitonesBetween(song.chordKey, shapeKey) ?? 0;
+    return toShapes + (showReal ? capo : 0);
+  }, [song, shapeKey, showReal, capo]);
   const preferFlat = useMemo(() => {
-    return spellingForKey(song?.playedKey ?? '');
-  }, [song]);
+    return spellingForKey(showReal ? realKey : shapeKey);
+  }, [showReal, realKey, shapeKey]);
   const lines = useMemo(() => {
     if (!song) return [];
     if (song.chords && song.chords !== '') {
@@ -246,12 +257,33 @@ function MusicianLive({
           <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
             {[
               song.artist,
-              song.playedKey ? `Tonalité ${song.playedKey}` : '',
-              semis !== 0 ? 'transposé automatiquement' : '',
+              showReal
+                ? realKey !== ''
+                  ? `Accords réels · ${realKey}`
+                  : 'Accords réels'
+                : shapeKey !== ''
+                  ? capo > 0
+                    ? `Formes ${shapeKey} · Capo ${capo} (sonne en ${realKey})`
+                    : `Tonalité ${shapeKey}`
+                  : '',
             ]
               .filter((x) => x !== '')
               .join(' · ')}
           </p>
+          {capo > 0 && (
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <button
+                className="btn ghost small"
+                onClick={() =>
+                  setChordMode((m) => (m === 'real' ? 'shapes' : 'real'))
+                }
+              >
+                {showReal
+                  ? `🎸 Voir comme le leader (${shapeKey}, capo ${capo})`
+                  : `🎸 Voir les vrais accords (${realKey})`}
+              </button>
+            </div>
+          )}
           <div style={{ fontSize: `${fontSize}rem`, padding: '0 4px' }}>
             {lines.map((line, i) => (
               <ChordLine key={i} line={line} />

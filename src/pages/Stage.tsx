@@ -103,6 +103,7 @@ export function Stage({
           chords: item.song.lyrics,
           chordKey: item.song.key,
           playedKey: item.keyOverride !== '' ? item.keyOverride : item.song.key,
+          capo: item.song.capo,
         }
       : null,
     item ? (item.keyOverride !== '' ? item.keyOverride : item.song.key) : '',

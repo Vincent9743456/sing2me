@@ -19,8 +19,12 @@ export interface LiveSong {
   chords?: string;
   /** Tonalité dans laquelle les accords ci-dessus sont écrits */
   chordKey?: string;
-  /** Tonalité réellement jouée (le lecteur transpose chordKey → playedKey) */
+  /** Tonalité des FORMES jouées par le leader (le lecteur transpose
+   *  chordKey → playedKey). La tonalité réelle = playedKey + capo. */
   playedKey?: string;
+  /** Capo posé par le leader (0 = aucun). La tonalité réelle (ce qui sonne)
+   *  = playedKey transposé de `capo` demi-tons. */
+  capo?: number;
 }
 
 /** Morceau en cours côté groupe (titre + tonalité, rien de plus). */

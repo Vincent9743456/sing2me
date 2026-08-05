@@ -211,10 +211,13 @@ export function SongView({
           lyrics: stripChords(song.lyrics),
           chords: song.lyrics,
           chordKey: song.key,
-          playedKey: realKeyShown !== '' ? realKeyShown : song.key,
+          // Formes affichées (le musicien voit ça) ; la tonalité réelle se
+          // déduit avec le capo, côté vue musicien.
+          playedKey: shownShapeKey !== '' ? shownShapeKey : song.key,
+          capo,
         }
       : null,
-    realKeyShown !== '' ? realKeyShown : (song?.key ?? ''),
+    `${shownShapeKey || song?.key || ''}:${capo}`,
   );
 
   const payload = useMemo<SharePayload | null>(() => {
