@@ -279,7 +279,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
     <>
       <TopBar
         title={isNew ? 'Nouvelle setlist' : draft.name || 'Setlist'}
-        onBack={() => history.back()}
+        onBack={() => navigate('/setlists')}
       />
       <div className="page">
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
@@ -492,7 +492,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
 
         <div className="spacer" />
         <details className="stfold" open={isNew}>
-          <summary>Infos de la setlist — nom, commentaire, groupe</summary>
+          <summary>
+            Infos de la setlist — groupe :{' '}
+            {bandName(draft.bandId ?? '') || 'aucun'}
+          </summary>
           <div className="spacer" />
         <Field label="Nom">
           <input

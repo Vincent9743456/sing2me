@@ -13,9 +13,20 @@ export function totalDuration(setlist: Setlist, durations: Map<string, number>):
   );
 }
 
+/** Couleurs des pastilles de groupe (tokens --band-*, stables par ordre). */
+const BAND_COLORS = [
+  'var(--band-1)',
+  'var(--band-2)',
+  'var(--band-3)',
+  'var(--band-4)',
+  'var(--band-5)',
+  'var(--band-6)',
+  'var(--band-7)',
+];
+
 export function Setlists() {
   const { setlists, songs, bands } = useStore();
-  const bandName = new Map(bands.map((b) => [b.id, b.name]));
+  const bandIndex = new Map(bands.map((b, i) => [b.id, i]));
   const durations = new Map(songs.map((s) => [s.id, s.durationSec]));
   const sorted = [...setlists].sort((a, b) =>
     b.updatedAt.localeCompare(a.updatedAt),
@@ -55,6 +66,12 @@ export function Setlists() {
           <div className="list">
           {sorted.map((sl) => {
             const total = totalDuration(sl, durations);
+            const bIdx = bandIndex.get(sl.bandId);
+            const band = bIdx !== undefined ? bands[bIdx] : undefined;
+            const color =
+              bIdx !== undefined
+                ? BAND_COLORS[bIdx % BAND_COLORS.length]
+                : 'var(--muted)';
             return (
               <div
                 className="row"
@@ -64,8 +81,11 @@ export function Setlists() {
                 <div className="grow">
                   <div className="title">{sl.name || '(sans nom)'}</div>
                   <div className="sub">
+                    <span style={{ color }} title="Groupe de la setlist">
+                      ● {band ? band.name || 'Groupe sans nom' : 'Aucun groupe'}
+                    </span>
+                    {' · '}
                     {[
-                      bandName.get(sl.bandId) ?? '',
                       `${sl.items.length} morceau${sl.items.length > 1 ? 'x' : ''}`,
                       total > 0 ? `≈ ${formatDuration(total)}` : '',
                       sl.comment,
