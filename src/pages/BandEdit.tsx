@@ -14,6 +14,7 @@ import { ShareModal } from '../components/ShareModal';
 import { Field, Modal, TopBar } from '../components/ui';
 import { getValidSession } from '../lib/auth';
 import {
+  announceBandSong,
   CloudMember,
   DirectoryPerson,
   ensureCloudBand,
@@ -22,11 +23,18 @@ import {
   removeBandMember,
   searchProfiles,
 } from '../lib/bands';
-import { bandToProfile, notesForShare } from '../lib/model';
+import {
+  bandToProfile,
+  duplicateVersion,
+  notesForShare,
+  switchVersion,
+  versionForBand,
+} from '../lib/model';
+import { normalizeTitle } from '../lib/importer';
 import { resizePhoto } from '../lib/photo';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { makeId, SharePayload } from '../types';
+import { makeId, SharePayload, Song } from '../types';
 import { isUpcoming } from './Concerts';
 
 const LINK_PRESETS = [
@@ -84,6 +92,8 @@ export function BandEdit({ id }: { id: string }) {
     deleteBand,
     setlists,
     songs,
+    saveSong,
+    clearBandRemoval,
     concerts,
     prefs,
     artist,
@@ -108,6 +118,29 @@ export function BandEdit({ id }: { id: string }) {
   const [dirBusy, setDirBusy] = useState(false);
   const [dirMsg, setDirMsg] = useState<string | null>(null);
   const [invited, setInvited] = useState<Set<string>>(new Set());
+  // Répertoire : ajout de morceaux au groupe (bouton dédié, hors discussion).
+  const [repOpen, setRepOpen] = useState(false);
+
+  /**
+   * Ajoute un morceau du répertoire personnel au répertoire du groupe :
+   * on lui crée sa version « groupe » (sans changer la version affichée) ;
+   * le fil de discussion reçoit une annonce automatique et la synchro le
+   * propage aux autres membres (en proposition à accepter).
+   */
+  function addToRepertoire(song: Song) {
+    if (!band || versionForBand(song, band.id)) return;
+    const prev = song.activeVersionId;
+    saveSong(
+      switchVersion(duplicateVersion(song, band.name || 'Groupe', band.id), prev),
+    );
+    clearBandRemoval(band.id, normalizeTitle(song.title));
+    void announceBandSong(
+      band.cloudId,
+      prefs.userName || artist.name || 'Moi',
+      song.title,
+      song.artist,
+    );
+  }
 
   // Membres réels (comptes) du groupe publié
   useEffect(() => {
@@ -454,6 +487,13 @@ export function BandEdit({ id }: { id: string }) {
             <div className="rowactions">
               <button className="btn" onClick={() => setEditing(true)}>
                 Modifier
+              </button>
+              <button
+                className="btn ghost"
+                title="Ajouter des morceaux de ton répertoire au répertoire du groupe"
+                onClick={() => setRepOpen(true)}
+              >
+                <Icon name="music" size={15} /> Répertoire
               </button>
               <button
                 className="btn ghost"
@@ -861,6 +901,59 @@ export function BandEdit({ id }: { id: string }) {
           payload={publicPayload}
           onClose={() => setShare(false)}
         />
+      )}
+      {repOpen && (
+        <Modal
+          title={`Répertoire — ${band.name || 'groupe'}`}
+          onClose={() => setRepOpen(false)}
+        >
+          <p className="help" style={{ marginTop: 0 }}>
+            Ajoute des morceaux de ta bibliothèque au répertoire du groupe. Ils
+            arrivent chez les autres membres en proposition à accepter, et le
+            fil de discussion en est informé.
+          </p>
+          {songs.filter((s) => s.idea !== true && (s.pendingBandId ?? '') === '')
+            .length === 0 && (
+            <p className="help">Ta bibliothèque est vide pour l'instant.</p>
+          )}
+          {[...songs]
+            .filter((s) => s.idea !== true && (s.pendingBandId ?? '') === '')
+            .sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+            .map((song) => {
+              const inRep = versionForBand(song, band.id) !== null;
+              return (
+                <div
+                  className="row"
+                  key={song.id}
+                  onClick={() => {
+                    if (!inRep) addToRepertoire(song);
+                  }}
+                  style={{ cursor: inRep ? 'default' : 'pointer' }}
+                >
+                  <div className="grow">
+                    <div className="title">{song.title || '(sans titre)'}</div>
+                    <div className="sub">{song.artist}</div>
+                  </div>
+                  {inRep ? (
+                    <span style={{ color: 'var(--accent)', fontWeight: 700 }}>
+                      ✓ Au répertoire
+                    </span>
+                  ) : (
+                    <span className="chevron">
+                      <Icon name="plus" size={16} />
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          <div className="spacer" />
+          <button
+            className="btn ghost block"
+            onClick={() => setRepOpen(false)}
+          >
+            Fermer
+          </button>
+        </Modal>
       )}
     </>
   );
