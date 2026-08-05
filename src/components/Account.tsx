@@ -276,15 +276,17 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         // Répertoires de groupes (étape 2b), après la bibliothèque perso
         void syncBands(valid);
         // Annuaire : publie sa fiche (nom + photo) pour être trouvable.
+        // À défaut de nom d'artiste, on publie le début de l'email (souvent
+        // le prénom) pour qu'un compte tout neuf soit quand même trouvable.
         void (async () => {
           try {
             const st = JSON.parse(stateRef.current) as SyncState;
-            await upsertProfile(
-              valid,
-              st.artist?.name || st.prefs?.userName || '',
-              st.artist?.photo ?? '',
-              '',
-            );
+            const dirName =
+              st.artist?.name ||
+              st.prefs?.userName ||
+              (valid.email ?? '').split('@')[0] ||
+              '';
+            await upsertProfile(valid, dirName, st.artist?.photo ?? '', '');
           } catch {
             // annuaire non configuré (directory.sql non appliqué) : ignoré
           }
@@ -364,6 +366,29 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.userId]);
+
+  // Re-publier la fiche d'annuaire dès que le nom (ou la photo) change, pour
+  // être trouvable tout de suite après avoir renseigné son profil — sans
+  // attendre la prochaine connexion.
+  const dirName = store.artist.name || store.prefs.userName || '';
+  const dirPhoto = store.artist.photo || '';
+  useEffect(() => {
+    if (!session) return;
+    const t = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const valid = await getValidSession();
+          if (!valid) return;
+          const name = dirName || (valid.email ?? '').split('@')[0] || '';
+          await upsertProfile(valid, name, dirPhoto, '');
+        } catch {
+          // annuaire indisponible : ignoré
+        }
+      })();
+    }, 1500);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.userId, dirName, dirPhoto]);
 
   // À chaque modification : pousser (debounce 3 s), best-effort.
   useEffect(() => {

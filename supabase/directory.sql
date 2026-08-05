@@ -56,6 +56,10 @@ end $$;
 grant execute on function public.upsert_profile to authenticated;
 
 -- Recherche par nom (≥ 2 caractères), hors soi-même, 20 résultats max.
+-- Correspondance TOLÉRANTE et bidirectionnelle : « Damien » retrouve un
+-- profil nommé « Dam » (le nom stocké est contenu dans la requête) ET
+-- inversement « Dam » retrouve « Damien ». On garde aussi une correspondance
+-- mot à mot (chaque mot de la requête cherché séparément) pour « prénom nom ».
 create or replace function public.search_profiles(p_query text)
 returns table (user_id uuid, name text, photo text, instrument text)
 language sql security definer set search_path = public as $$
@@ -63,8 +67,20 @@ language sql security definer set search_path = public as $$
   from public.musician_directory p
   where p.searchable
     and p.user_id <> auth.uid()
-    and length(coalesce(p_query, '')) >= 2
-    and p.name ilike '%' || p_query || '%'
+    and coalesce(p.name, '') <> ''
+    and length(trim(coalesce(p_query, ''))) >= 2
+    and (
+      -- le nom contient la requête (« Damien Tessier » ↔ « Damien »)
+      p.name ilike '%' || trim(p_query) || '%'
+      -- ou la requête contient le nom (« Damien » ↔ « Dam »)
+      or trim(p_query) ilike '%' || p.name || '%'
+      -- ou l'un des mots de la requête est contenu dans le nom
+      or exists (
+        select 1
+        from unnest(string_to_array(trim(p_query), ' ')) as w(word)
+        where length(word) >= 2 and p.name ilike '%' || word || '%'
+      )
+    )
   order by p.name
   limit 20;
 $$;
