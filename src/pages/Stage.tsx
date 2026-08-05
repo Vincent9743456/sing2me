@@ -329,6 +329,37 @@ export function Stage({
         <button className="btn ghost" aria-label="Quitter le mode scène" onClick={() => history.back()}>
           <Icon name="x" size={18} />
         </button>
+        {items.length > 1 && (
+          <>
+            <button
+              className="btn ghost"
+              title="Morceau précédent"
+              aria-label="Morceau précédent"
+              disabled={clamped <= 0}
+              onClick={() => setIndex((i) => Math.max(0, i - 1))}
+            >
+              <Icon name="chevron-left" size={20} />
+            </button>
+            <button
+              className="btn ghost"
+              title="Voir la setlist / choisir un morceau"
+              onClick={() => setShowList(true)}
+            >
+              <Icon name="list" size={17} /> {clamped + 1}/{items.length}
+            </button>
+            <button
+              className="btn ghost"
+              title="Morceau suivant"
+              aria-label="Morceau suivant"
+              disabled={clamped >= items.length - 1}
+              onClick={() =>
+                setIndex((i) => Math.min(items.length - 1, i + 1))
+              }
+            >
+              <Icon name="chevron-right" size={20} />
+            </button>
+          </>
+        )}
         <button
           className={`btn ${scroll ? '' : 'ghost'}`}
           title="Défilement automatique"

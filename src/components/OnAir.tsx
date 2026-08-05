@@ -153,6 +153,10 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     null,
   );
 
+  // Diffusion différée de « plus aucune chanson » : évite un clignotement
+  // vers l'écran d'accueil quand on passe simplement d'une chanson à une autre.
+  const clearTimer = useRef<number | null>(null);
+
   const setCurrent = useCallback(
     (song: LiveSong | null, meta?: { key: string }) => {
       currentRef.current = song;
@@ -162,16 +166,30 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
           artist: song.artist,
           key: meta?.key ?? '',
         };
-      }
-      if (statusRef.current === 'on' && song) {
-        pushLive(prefs.liveKey, { status: 'on', song }).catch(() => {
-          // publication silencieuse : l'erreur détaillée apparaît dans le panneau
-        });
-      }
-      // Synchro du groupe : automatique, toujours active (best-effort).
-      // Sans réseau, chaque musicien garde la main sur sa bibliothèque locale.
-      if (song) {
+        if (clearTimer.current !== null) {
+          window.clearTimeout(clearTimer.current);
+          clearTimer.current = null;
+        }
+        if (statusRef.current === 'on') {
+          pushLive(prefs.liveKey, { status: 'on', song }).catch(() => {
+            // publication silencieuse : l'erreur détaillée apparaît dans le panneau
+          });
+        }
+        // Synchro du groupe : automatique, toujours active (best-effort).
+        // Sans réseau, chaque musicien garde la main sur sa bibliothèque locale.
         void pushBandSong(prefs.liveKey, lastMetaRef.current);
+      } else {
+        // Aucune chanson affichée : RÈGLE — tout le monde voit alors l'écran
+        // d'accueil. Publié après un court délai (annulé si une nouvelle
+        // chanson arrive) pour ne pas clignoter entre deux morceaux.
+        if (clearTimer.current !== null) window.clearTimeout(clearTimer.current);
+        clearTimer.current = window.setTimeout(() => {
+          clearTimer.current = null;
+          if (currentRef.current === null && statusRef.current === 'on') {
+            pushLive(prefs.liveKey, { status: 'on', song: null }).catch(() => {});
+            void pushBandSong(prefs.liveKey, null);
+          }
+        }, 600);
       }
     },
     [prefs.liveKey],
@@ -402,6 +420,12 @@ export function useOnAirSong(song: LiveSong | null, songKey = '') {
     : '';
   useEffect(() => {
     if (setCurrent) setCurrent(song, { key: songKey });
+    // En quittant une page de partition, plus aucune chanson n'est affichée
+    // → l'écran d'accueil est diffusé (règle : c'est la chanson affichée qui
+    // est vue par tous ; sinon l'accueil).
+    return () => {
+      if (setCurrent) setCurrent(null);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setCurrent, key]);
 }
