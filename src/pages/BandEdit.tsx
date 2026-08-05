@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAccount } from '../components/Account';
 import { GearEditor } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
+import { LinkPreviews } from '../components/LinkPreviews';
 import { ShareModal } from '../components/ShareModal';
 import { Field, TopBar } from '../components/ui';
 import { getValidSession } from '../lib/auth';
@@ -57,6 +58,8 @@ export function BandEdit({ id }: { id: string }) {
   } | null>(null);
   const [cloudMembers, setCloudMembers] = useState<CloudMember[]>([]);
   const [inviteBusy, setInviteBusy] = useState(false);
+  // Vue par défaut = fiche mise en forme ; « Modifier » ouvre le formulaire.
+  const [editing, setEditing] = useState(false);
 
   // Membres réels (comptes) du groupe publié
   useEffect(() => {
@@ -186,6 +189,124 @@ export function BandEdit({ id }: { id: string }) {
         onBack={() => navigate('/bands')}
       />
       <div className="page">
+        {!editing && (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              {band.photo !== '' ? (
+                <img
+                  src={band.photo}
+                  alt={band.name}
+                  style={{
+                    width: 112,
+                    height: 112,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid var(--border)',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 112,
+                    height: 112,
+                    borderRadius: '50%',
+                    background: 'var(--surface-high)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2.4rem',
+                  }}
+                >
+                  👥
+                </div>
+              )}
+              <h1 style={{ margin: '12px 0 2px', fontSize: '1.4rem' }}>
+                {band.name || 'Groupe'}
+              </h1>
+              {band.bio !== '' ? (
+                <p
+                  className="help"
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    maxWidth: 480,
+                    margin: '4px auto 0',
+                  }}
+                >
+                  {band.bio}
+                </p>
+              ) : (
+                <button className="slot" onClick={() => setEditing(true)}>
+                  ＋ Ajoute une bio du groupe
+                </button>
+              )}
+            </div>
+            {band.links.some((l) => l.url.trim() !== '') ? (
+              <LinkPreviews links={band.links} showChips />
+            ) : (
+              <button className="slot" onClick={() => setEditing(true)}>
+                ＋ Ajoute les liens du groupe (Spotify, Instagram, YouTube…)
+              </button>
+            )}
+            <h2 className="pagetitle">Musiciens</h2>
+            {cloudMembers.length === 0 && band.members.length === 0 ? (
+              <button className="slot" onClick={() => setEditing(true)}>
+                ＋ Ajoute les musiciens du groupe
+              </button>
+            ) : (
+              <div className="list">
+                {cloudMembers.map((m) => (
+                  <div className="row" key={m.user_id} style={{ cursor: 'default' }}>
+                    <span style={{ color: 'var(--accent)' }}>✓</span>
+                    <div className="grow">
+                      <div className="title">{m.name || '(sans nom)'}</div>
+                      {m.instrument !== '' && (
+                        <div className="sub">{m.instrument}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {band.members.map((m) => (
+                  <div className="row" key={m.id} style={{ cursor: 'default' }}>
+                    <div className="grow">
+                      <div className="title">{m.name || '(sans nom)'}</div>
+                      {m.instrument !== '' && (
+                        <div className="sub">{m.instrument}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="rowactions">
+              <button className="btn" onClick={() => setEditing(true)}>
+                Modifier
+              </button>
+              <button
+                className="btn ghost"
+                onClick={() => navigate(`/band/${band.id}/chat`)}
+              >
+                <Icon name="message" size={15} /> Discussion
+              </button>
+              <button
+                className="btn ghost"
+                disabled={inviteBusy}
+                onClick={() => void openInvite()}
+              >
+                {inviteBusy ? '…' : '📨 Inviter'}
+              </button>
+              <button
+                className="btn ghost"
+                disabled={publicPayload === null}
+                onClick={() => setShare(true)}
+              >
+                Page publique / QR
+              </button>
+            </div>
+          </>
+        )}
+
+        {editing && (
+          <>
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           {band.photo !== '' ? (
             <img
@@ -479,6 +600,15 @@ export function BandEdit({ id }: { id: string }) {
           en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa
           « carte de musicien » (l'ouvrir ici met à jour la liste manuelle).
         </p>
+        <div className="spacer" />
+        <button
+          className="btn ghost small"
+          onClick={() => setEditing(false)}
+        >
+          ← Terminer
+        </button>
+          </>
+        )}
       </div>
 
       {invite && invitePayload && (

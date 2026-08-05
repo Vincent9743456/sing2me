@@ -1385,6 +1385,29 @@ h2.pagetitle {
   flex-shrink: 0;
   opacity: 0.8;
 }
+/* Emplacement vide à remplir (profil) : invite discrète, cliquable */
+.slot {
+  display: block;
+  width: 100%;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text-faint);
+  padding: 12px 14px;
+  margin: 8px 0;
+  text-align: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    border-color var(--transition),
+    color var(--transition);
+}
+.slot:hover,
+.slot:focus-visible {
+  border-color: var(--accent);
+  color: var(--text-dim);
+}
+
 /* Pastille « Nouveau » : partitions ajoutées dans la semaine */
 .newtag {
   display: inline-flex;

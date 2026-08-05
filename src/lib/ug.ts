@@ -5,6 +5,12 @@
  */
 import { decodeHtmlEntities } from './textRepair';
 
+/** Titre/artiste des résultats UG : entités HTML restées en clair décodées
+ *  (« Je L&#039;aime &Agrave; Mourir » → « Je L'aime À Mourir »). */
+function cleanMeta(s: unknown): string {
+  return typeof s === 'string' ? decodeHtmlEntities(s) : '';
+}
+
 export interface UgTab {
   title: string;
   artist: string;
@@ -67,7 +73,12 @@ export async function searchUgTabs(query: string): Promise<UgSearchResult[]> {
   }
   const body = await readJson(res);
   if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
-  return Array.isArray(body.results) ? body.results : [];
+  const rows = Array.isArray(body.results) ? body.results : [];
+  return rows.map((r: UgSearchResult) => ({
+    ...r,
+    title: cleanMeta(r.title),
+    artist: cleanMeta(r.artist),
+  }));
 }
 
 /** Nettoyage de partition par IA (si configurée côté serveur).
@@ -114,8 +125,8 @@ export async function fetchUgTab(url: string): Promise<UgTab> {
     throw new Error(body.error ?? `Erreur ${res.status}`);
   }
   return {
-    title: body.title ?? '',
-    artist: body.artist ?? '',
+    title: cleanMeta(body.title),
+    artist: cleanMeta(body.artist),
     key: body.key ?? '',
     capo: body.capo ?? 0,
     content: body.content ?? '',

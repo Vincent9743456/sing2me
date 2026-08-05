@@ -299,7 +299,7 @@ export function Artist() {
               <h1 style={{ margin: '12px 0 2px', fontSize: '1.4rem' }}>
                 {artist.name}
               </h1>
-              {artist.bio !== '' && (
+              {artist.bio !== '' ? (
                 <p
                   className="help"
                   style={{
@@ -310,10 +310,23 @@ export function Artist() {
                 >
                   {artist.bio}
                 </p>
+              ) : (
+                <button className="slot" onClick={() => setEditing(true)}>
+                  ＋ Ajoute une bio pour te présenter au public
+                </button>
               )}
             </div>
-            {artist.links.some((l) => l.url.trim() !== '') && (
+            {artist.links.some((l) => l.url.trim() !== '') ? (
               <LinkPreviews links={artist.links} showChips />
+            ) : (
+              <button className="slot" onClick={() => setEditing(true)}>
+                ＋ Ajoute tes liens (Spotify, Instagram, YouTube…)
+              </button>
+            )}
+            {upcomingPublic.length === 0 && (
+              <button className="slot" onClick={() => navigate('/concerts')}>
+                ＋ Annonce tes prochains concerts
+              </button>
             )}
             {upcomingPublic.length > 0 && (
               <>
