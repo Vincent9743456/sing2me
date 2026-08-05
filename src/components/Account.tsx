@@ -30,7 +30,14 @@ import {
   signOut,
   takeAuthError,
 } from '../lib/auth';
-import { pullBandLibrary, pushBandLibrary, upsertProfile } from '../lib/bands';
+import {
+  clearPendingInvite,
+  joinBand,
+  peekPendingInvite,
+  pullBandLibrary,
+  pushBandLibrary,
+  upsertProfile,
+} from '../lib/bands';
 import {
   applyBandData,
   BandData,
@@ -41,7 +48,9 @@ import {
 } from '../lib/bandSync';
 import { migrateSong } from '../lib/model';
 import { mergeStates, SyncState } from '../lib/sync';
+import { navigate } from '../router';
 import { AppState, useStore } from '../store';
+import { emptyBand, makeId } from '../types';
 import { Field } from './ui';
 
 /** Valide la forme d'une bibliothèque de groupe venant du cloud. */
@@ -284,6 +293,67 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.userId]);
+
+  // Invitation en attente : dès qu'un compte est disponible (typiquement au
+  // retour du lien magique), on termine l'adhésion tout seul → « crée ton
+  // compte » suffit pour devenir membre du groupe.
+  const invitedRef = useRef(false);
+  useEffect(() => {
+    if (!session || invitedRef.current) return;
+    const pending = peekPendingInvite();
+    if (!pending) return;
+    invitedRef.current = true;
+    void (async () => {
+      try {
+        const valid = await getValidSession();
+        if (!valid) {
+          invitedRef.current = false;
+          return;
+        }
+        const st = JSON.parse(stateRef.current) as SyncState;
+        const name = (
+          st.artist?.name ||
+          st.prefs?.userName ||
+          (session.email ?? '').split('@')[0] ||
+          'Musicien'
+        ).trim();
+        const bandName = await joinBand(
+          valid,
+          pending.cloudId,
+          pending.token,
+          name,
+          '',
+        );
+        clearPendingInvite();
+        const already = (st.bands ?? []).some(
+          (b) => b.cloudId === pending.cloudId,
+        );
+        if (!already) {
+          store.saveBand({
+            ...emptyBand(),
+            name: bandName || pending.band,
+            cloudId: pending.cloudId,
+            members: [
+              {
+                id: makeId(),
+                name,
+                instrument: '',
+                verified: true,
+                gear: store.artist.gear
+                  ? store.artist.gear.map((g) => ({ ...g }))
+                  : [],
+              },
+            ],
+          });
+        }
+        navigate('/bands');
+      } catch {
+        // échec passager : on retentera au prochain cycle de session
+        invitedRef.current = false;
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.userId]);
 

@@ -14,7 +14,7 @@ import { TipBox } from '../components/TipBox';
 import { findSameSong } from '../lib/importer';
 import { migrateSong } from '../lib/model';
 import { getValidSession } from '../lib/auth';
-import { joinBand } from '../lib/bands';
+import { joinBand, savePendingInvite } from '../lib/bands';
 import { decodeShare, fetchSharedPayload } from '../lib/share';
 import { useWakeLock } from '../lib/wakelock';
 import { DndHint } from '../components/ui';
@@ -113,7 +113,12 @@ export function SharePage({
   const [joined, setJoined] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
 
-  /** Invité connecté : rejoint le groupe en un clic (adhésion réelle). */
+  /**
+   * Rejoint le groupe. Si l'invité n'est pas connecté, on mémorise
+   * l'invitation et on l'envoie créer son compte : l'adhésion se termine
+   * ensuite toute seule (voir AccountProvider). Sans clic supplémentaire,
+   * sans saisie : on utilise le nom du compte.
+   */
   async function joinCloudBand() {
     const inv = payload?.invite;
     if (!inv?.cloudId || !inv.token || joinBusy) return;
@@ -122,21 +127,23 @@ export function SharePage({
     try {
       const s = await getValidSession();
       if (!s) {
-        setJoinError(
-          'Connecte-toi d’abord (onglet Artiste → Mon compte), puis rouvre ce lien.',
-        );
+        // Pas encore de compte : on mémorise l'invitation et on dirige vers
+        // la création de compte (lien magique). L'adhésion sera automatique.
+        savePendingInvite({
+          cloudId: inv.cloudId,
+          token: inv.token,
+          band: inv.band,
+        });
+        navigate('/artist');
         return;
       }
-      let name = (artist.name || prefs.userName).trim();
-      if (name === '') {
-        const asked = prompt("Ton nom d'artiste (visible par le groupe)");
-        if (asked === null || asked.trim() === '') return;
-        name = asked.trim();
-      }
-      const instrument = (
-        prompt('Ton instrument (facultatif — chant, guitare, basse…)') ?? ''
+      const name = (
+        artist.name ||
+        prefs.userName ||
+        (account?.email ?? '').split('@')[0] ||
+        'Musicien'
       ).trim();
-      const bandName = await joinBand(s, inv.cloudId, inv.token, name, instrument);
+      const bandName = await joinBand(s, inv.cloudId, inv.token, name, '');
       // Le groupe existe désormais aussi dans MON application, relié au
       // cloud : le répertoire partagé se synchronisera automatiquement.
       if (!bands.some((b) => b.cloudId === inv.cloudId)) {
@@ -148,7 +155,7 @@ export function SharePage({
             {
               id: makeId(),
               name,
-              instrument,
+              instrument: '',
               verified: true,
               gear: artist.gear ? artist.gear.map((g) => ({ ...g })) : [],
             },
@@ -273,6 +280,79 @@ export function SharePage({
     <div className="public">
       {payload.view === 'complete' && <DndHint />}
       <ArtistHead payload={payload} />
+
+      {payload.type === 'invite' && payload.invite && (
+        <div
+          className="card"
+          style={{
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+            padding: 'var(--sp-5)',
+          }}
+        >
+          <LogoMark size={48} />
+          <h1 style={{ margin: 0 }}>
+            {payload.invite.from} t'invite à rejoindre «&nbsp;
+            {payload.invite.band}&nbsp;»
+          </h1>
+          <p className="help" style={{ margin: 0 }}>
+            Sing2Me réunit ton répertoire — paroles + accords, transposition et
+            capo automatiques, mode scène, setlists — et un espace de groupe
+            pour préparer répètes et concerts. En rejoignant, tu récupères tout
+            de suite le répertoire partagé du groupe. C'est gratuit.
+          </p>
+          {joined !== null ? (
+            <p style={{ color: 'var(--accent)', fontWeight: 700, margin: 0 }}>
+              ✓ Tu fais partie de «&nbsp;{joined}&nbsp;» ! Ouvre ton onglet
+              Groupes.
+            </p>
+          ) : !payload.invite.cloudId ? (
+            <p className="help" style={{ margin: 0 }}>
+              Pour rejoindre en un clic, demande à {payload.invite.from}{' '}
+              d'ouvrir l'invitation en étant connecté(e) à son compte, puis de
+              te renvoyer le lien.
+            </p>
+          ) : account?.email != null ? (
+            <button
+              className="btn block"
+              disabled={joinBusy}
+              onClick={() => void joinCloudBand()}
+            >
+              {joinBusy ? '…' : `🤝 Rejoindre « ${payload.invite.band} »`}
+            </button>
+          ) : (
+            <>
+              <button
+                className="btn block"
+                onClick={() => {
+                  const inv = payload.invite;
+                  if (inv?.cloudId && inv.token) {
+                    savePendingInvite({
+                      cloudId: inv.cloudId,
+                      token: inv.token,
+                      band: inv.band,
+                    });
+                  }
+                  navigate('/artist');
+                }}
+              >
+                Créer mon compte gratuit pour rejoindre
+              </button>
+              <p className="help" style={{ margin: 0 }}>
+                Tu deviens membre du groupe <strong>automatiquement</strong>{' '}
+                après la création de ton compte. Déjà inscrit(e) ? Le même
+                bouton te connecte.
+              </p>
+            </>
+          )}
+          {joinError && (
+            <p style={{ color: 'var(--danger)', margin: 0 }}>{joinError}</p>
+          )}
+        </div>
+      )}
 
       {payload.type === 'member' && payload.member && (
         <div className="card" style={{ textAlign: 'center' }}>
@@ -546,12 +626,14 @@ export function SharePage({
       {joinError && (
         <p style={{ color: 'var(--danger)', textAlign: 'center' }}>{joinError}</p>
       )}
-      {payload.invite?.cloudId && account?.email == null && (
-        <p className="help" style={{ textAlign: 'center' }}>
-          💡 Avec un compte Sing2Me (gratuit, onglet Artiste → Mon compte), tu
-          rejoindrais ce groupe en un clic.
-        </p>
-      )}
+      {payload.type !== 'invite' &&
+        payload.invite?.cloudId &&
+        account?.email == null && (
+          <p className="help" style={{ textAlign: 'center' }}>
+            💡 Avec un compte Sing2Me (gratuit, onglet Artiste → Mon compte), tu
+            rejoindrais ce groupe en un clic.
+          </p>
+        )}
       {added && payload.invite && !payload.invite.cloudId && (
         <p className="help" style={{ textAlign: 'center' }}>
           📇 Renvoie ta carte de musicien à celui qui t'a invité : ton nom
@@ -593,9 +675,9 @@ export function SharePage({
           </div>
         )}
 
-      {payload.view === 'paroles' && payload.type !== 'member' && (
-        <TipBox artist={payload.artist ?? null} />
-      )}
+      {payload.view === 'paroles' &&
+        payload.type !== 'member' &&
+        payload.type !== 'invite' && <TipBox artist={payload.artist ?? null} />}
 
       {payload.concerts && payload.concerts.length > 0 && (
         <>

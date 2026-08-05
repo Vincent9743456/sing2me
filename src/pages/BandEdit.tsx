@@ -26,7 +26,6 @@ import {
 import {
   bandToProfile,
   duplicateVersion,
-  notesForShare,
   removeVersion,
   switchVersion,
   versionForBand,
@@ -285,23 +284,13 @@ export function BandEdit({ id }: { id: string }) {
 
   const invitePayload = useMemo<SharePayload | null>(() => {
     if (!band) return null;
-    const bandSetlists = setlists.filter((sl) => sl.bandId === band.id);
-    const ids = new Set(
-      bandSetlists.flatMap((sl) => sl.items.map((i) => i.songId)),
-    );
-    const source = ids.size > 0 ? songs.filter((s) => ids.has(s.id)) : songs;
-    const included = source.map((s) => ({
-      ...s,
-      versions: [],
-      mySetup: undefined,
-      idea: undefined,
-      noSolo: undefined,
-      rehearsalNotes: notesForShare(s.rehearsalNotes, 'groupe'),
-    }));
+    // Lien d'invitation MINIMAL : uniquement l'invitation à rejoindre le
+    // groupe (pas le répertoire — il arrive par le cloud après adhésion).
+    // → lien court, page d'accueil claire, orientée « crée ton compte ».
     return {
       v: 1,
-      type: 'setlist',
-      view: 'complete',
+      type: 'invite',
+      view: 'paroles',
       invite: {
         band: band.name || 'notre groupe',
         from: prefs.userName || artist.name || 'Un musicien',
@@ -309,12 +298,8 @@ export function BandEdit({ id }: { id: string }) {
         cloudId: cloudRef?.cloudId,
         token: cloudRef?.token,
       },
-      setlist: { name: `Répertoire — ${band.name || 'groupe'}`, comment: '' },
-      songs: included,
-      itemKeys: included.map((s) => s.key),
-      itemNotes: included.map(() => ''),
     };
-  }, [band, setlists, songs, prefs.userName, artist.name, cloudRef]);
+  }, [band, prefs.userName, artist.name, cloudRef]);
 
   const publicPayload = useMemo<SharePayload | null>(() => {
     if (!band || band.name.trim() === '') return null;

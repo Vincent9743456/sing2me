@@ -347,7 +347,7 @@ export interface ArtistProfile {
 /** Contenu d'un lien de partage public (encodé dans l'URL). */
 export interface SharePayload {
   v: 1;
-  type: 'song' | 'setlist' | 'artist' | 'member';
+  type: 'song' | 'setlist' | 'artist' | 'member' | 'invite';
   /** Vue imposée au destinataire */
   view: ViewMode;
   song?: Song;

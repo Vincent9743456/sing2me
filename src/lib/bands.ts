@@ -10,6 +10,45 @@ export interface CloudBandRef {
   token: string;
 }
 
+/**
+ * Invitation en attente : mémorisée quand un destinataire pas encore
+ * connecté choisit de rejoindre un groupe. Après création de son compte
+ * (lien magique par email), l'adhésion se termine automatiquement.
+ */
+export interface LinkInvite {
+  cloudId: string;
+  token: string;
+  band: string;
+}
+const PENDING_KEY = 'sing2me/pendingInvite';
+
+export function savePendingInvite(inv: LinkInvite): void {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify(inv));
+  } catch {
+    // stockage indisponible : l'invité pourra rejoindre manuellement
+  }
+}
+
+export function peekPendingInvite(): LinkInvite | null {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as LinkInvite;
+    return p && p.cloudId && p.token ? p : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingInvite(): void {
+  try {
+    localStorage.removeItem(PENDING_KEY);
+  } catch {
+    // rien à faire
+  }
+}
+
 export interface CloudMember {
   user_id: string;
   name: string;
