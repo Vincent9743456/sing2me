@@ -26,7 +26,7 @@ const BAND_COLORS = [
 ];
 
 export function SetlistView({ id }: { id: string }) {
-  const { setlists, songs, bands, deleteSetlist } = useStore();
+  const { setlists, songs, bands } = useStore();
   const [showPerso, setShowPerso] = useState(false);
   const setlist = setlists.find((s) => s.id === id);
   const songById = useMemo(
@@ -146,16 +146,7 @@ export function SetlistView({ id }: { id: string }) {
     <>
       <TopBar
         title={setlist.name || 'Setlist'}
-        onBack={() => navigate('/setlists')}
-        right={
-          <button
-            className="btn icon noprint"
-            title="Modifier la setlist"
-            onClick={() => navigate(`/setlist/${setlist.id}/edit`)}
-          >
-            <Icon name="edit" size={18} />
-          </button>
-        }
+        onBack={() => navigate(`/setlist/${setlist.id}`)}
       />
       <div className="page printarea">
         <div className="slv-head">
@@ -199,13 +190,15 @@ export function SetlistView({ id }: { id: string }) {
         </div>
 
         <div className="slv-actions noprint">
-          <button
-            className="btn small"
-            title="Modifier : ajouter/retirer des morceaux, changer l'ordre, réserve, tonalités…"
-            onClick={() => navigate(`/setlist/${setlist.id}/edit`)}
-          >
-            <Icon name="edit" size={14} /> Modifier
-          </button>
+          {setlist.items.length > 0 && (
+            <button
+              className="btn small"
+              title="Imprimer cette vue d'ensemble"
+              onClick={() => window.print()}
+            >
+              <Icon name="clipboard" size={14} /> Imprimer
+            </button>
+          )}
           <button
             className="btn ghost small"
             style={showPerso ? { color: 'var(--accent)' } : undefined}
@@ -213,43 +206,6 @@ export function SetlistView({ id }: { id: string }) {
             onClick={() => setShowPerso((v) => !v)}
           >
             {showPerso ? '✓ ' : ''}Mes notes perso
-          </button>
-          {setlist.items.length > 0 && (
-            <>
-              <button
-                className="btn ghost small"
-                onClick={() => navigate(`/stage/${setlist.id}`)}
-              >
-                <Icon name="play" size={13} /> Scène
-              </button>
-              <button
-                className="btn ghost small"
-                title="Régie (chanteur sans partition)"
-                onClick={() => navigate(`/remote/${setlist.id}`)}
-              >
-                <Icon name="sliders" size={14} /> Régie
-              </button>
-              <button
-                className="btn ghost small"
-                title="Vue d'ensemble imprimable"
-                onClick={() => window.print()}
-              >
-                <Icon name="clipboard" size={14} /> Imprimer
-              </button>
-            </>
-          )}
-          <button
-            className="btn ghost small"
-            style={{ color: 'var(--danger)' }}
-            title="Supprimer cette setlist"
-            onClick={() => {
-              if (confirm(`Supprimer « ${setlist.name || 'cette setlist'} » ?`)) {
-                deleteSetlist(setlist.id);
-                navigate('/setlists');
-              }
-            }}
-          >
-            <Icon name="trash" size={14} /> Supprimer
           </button>
         </div>
 

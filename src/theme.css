@@ -8,6 +8,9 @@
   --bg: #0a0a0e;
   --surface: #131318;
   --surface-high: #1b1b23;
+  /* Panneau « en creux » : nuance de noir entre le fond et les cartes,
+     pour regrouper visuellement (encarts de setlists par groupe). */
+  --surface-sunken: #0e0e13;
   --surface-hover: #22222c;
   --stage-bg: #000;
   /* Bordures */
@@ -632,31 +635,93 @@ textarea.mono {
 }
 
 /* ---------- Encarts de setlists (par groupe / solo / IA) ---------- */
+/* Chaque encart est un panneau « en creux » (nuance de noir) : les
+   groupes de setlists se distinguent d'un coup d'œil, et les cartes
+   (plus claires) ressortent à l'intérieur. */
 .stgroup {
-  margin-bottom: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.stgroup:hover {
+  border-color: var(--border);
 }
 .stgroup-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: var(--sp-2);
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: var(--sp-3);
 }
 .stgroup-title {
   flex: 1;
   font-size: 1.05rem;
   font-weight: 750;
 }
-.stgroup-ai {
-  background: var(--accent-soft);
-  border-radius: var(--radius);
-  padding: var(--sp-3) var(--sp-4);
+.stgroup.open {
+  background: var(--surface-sunken);
 }
-.stgroup-ai .stgroup-head {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
+.stgroup-ai,
+.stgroup-ai.open {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+/* Tête de capsule : photo + nom + nombre de setlists, cliquable. */
+.capsule-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 4px 2px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+.capsule-title {
+  font-size: 1.05rem;
+  font-weight: 750;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.capsule-count {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.capsule-chevron {
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: transform var(--transition);
+}
+.capsule-chevron.open {
+  transform: rotate(180deg);
+}
+.capsule-body {
+  margin-top: var(--sp-3);
+}
+
+/* Carte « créer une setlist » : dernière tuile de la grille, dashed. */
+.row.createcard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px dashed var(--border-strong);
+  background: transparent;
+  color: var(--text-dim);
+  font-weight: 650;
+  cursor: pointer;
+  min-height: 60px;
+  text-align: center;
+}
+.row.createcard:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 /* ---------- Vue synthétique de setlist (lecture + impression) ---------- */

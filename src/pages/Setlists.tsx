@@ -5,7 +5,7 @@
  */
 import React, { useState } from 'react';
 
-import { Empty, TopBar } from '../components/ui';
+import { TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { versionForBand } from '../lib/model';
 import { generateSetlistAI, repertoireForContext } from '../lib/setlistAI';
@@ -42,7 +42,17 @@ const PARTY_PRESETS = [
 ];
 
 export function Setlists() {
-  const { setlists, songs, bands, saveSetlist, deleteSetlist } = useStore();
+  const { setlists, songs, bands, artist, saveSetlist, deleteSetlist } =
+    useStore();
+  // Capsules dépliées (par clé : id de groupe, '' pour Solo, 'ai' pour l'IA).
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  const toggle = (k: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
   const songById = new Map(songs.map((s) => [s.id, s]));
 
   // Durée « jouée » (hors réserve), estimée à 5 min si non renseignée.
@@ -134,41 +144,82 @@ export function Setlists() {
     );
   };
 
-  /** Un encart : titre (+ pastille) et ses setlists, ou une invite à créer. */
-  const groupSection = (
-    title: React.ReactNode,
+  /** Crée une setlist dans ce contexte et l'ouvre directement (éditable). */
+  function createSetlist(newBandId: string) {
+    const sl = { ...emptySetlist(), bandId: newBandId };
+    saveSetlist(sl);
+    navigate(`/setlist/${sl.id}`);
+  }
+
+  /** Pastille de la capsule : photo si dispo, sinon emoji sur fond coloré. */
+  const capAvatar = (photo: string, fallback: string, color: string) =>
+    photo !== '' ? (
+      <img
+        src={photo}
+        alt=""
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: '50%',
+          objectFit: 'cover',
+          flexShrink: 0,
+        }}
+      />
+    ) : (
+      <span
+        aria-hidden="true"
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: '50%',
+          background: color,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '1.3rem',
+          flexShrink: 0,
+        }}
+      >
+        {fallback}
+      </span>
+    );
+
+  /** Une capsule de groupe : repliée par défaut, dépliable au clic. */
+  const capsule = (
+    key: string,
+    name: string,
+    avatar: React.ReactNode,
     list: Setlist[],
-    newBandId: string,
-  ) => (
-    <div className="stgroup">
-      <div className="stgroup-head">
-        <span className="stgroup-title">{title}</span>
-        <button
-          className="btn ghost small"
-          title="Nouvelle setlist dans cet encart"
-          onClick={() => {
-            // Le contexte (groupe/solo) est transmis à l'éditeur sans
-            // créer de setlist vide tant qu'elle n'est pas enregistrée.
-            try {
-              sessionStorage.setItem('sing2me/newSetlistBand', newBandId);
-            } catch {
-              /* stockage indisponible */
-            }
-            navigate('/setlist/new');
-          }}
-        >
-          <Icon name="plus" size={14} /> Nouvelle
+  ) => {
+    const isOpen = open.has(key);
+    return (
+      <div className={`stgroup ${isOpen ? 'open' : ''}`} key={key || 'solo'}>
+        <button className="capsule-head" onClick={() => toggle(key)}>
+          {avatar}
+          <div className="grow" style={{ minWidth: 0 }}>
+            <div className="capsule-title">{name}</div>
+            <div className="capsule-count">
+              {list.length} setlist{list.length > 1 ? 's' : ''}
+            </div>
+          </div>
+          <span className={`capsule-chevron ${isOpen ? 'open' : ''}`}>
+            <Icon name="chevron-down" size={18} />
+          </span>
         </button>
+        {isOpen && (
+          <div className="list capsule-body">
+            {list.map(setlistRow)}
+            <div
+              className="row createcard"
+              onClick={() => createSetlist(key)}
+            >
+              <Icon name="plus" size={16} /> Créer une setlist
+            </div>
+          </div>
+        )}
       </div>
-      {list.length === 0 ? (
-        <p className="help" style={{ margin: '2px 0 0' }}>
-          Aucune setlist pour l'instant.
-        </p>
-      ) : (
-        <div className="list">{list.map(setlistRow)}</div>
-      )}
-    </div>
-  );
+    );
+  };
 
   return (
     <>
@@ -185,53 +236,72 @@ export function Setlists() {
         }
       />
       <div className="page">
-        {setlists.length === 0 && bands.length === 0 && (
-          <Empty>
-            Aucune setlist pour l'instant.
-            <br />
-            Crée-en une par groupe ou en solo, ou laisse l'IA t'en proposer une
-            selon l'ambiance.
-          </Empty>
-        )}
+        <p className="help" style={{ marginTop: 0 }}>
+          Tes setlists rangées par contexte. Touche une capsule pour l'ouvrir.
+        </p>
 
         {bands.map((b, i) =>
-          groupSection(
-            <>
-              <span
-                aria-hidden="true"
-                style={{
-                  display: 'inline-block',
-                  width: 9,
-                  height: 9,
-                  borderRadius: '50%',
-                  background: BAND_COLORS[i % BAND_COLORS.length],
-                  marginRight: 6,
-                  verticalAlign: 'middle',
-                }}
-              />
-              {b.name || 'Groupe sans nom'}
-            </>,
-            byBand(b.id),
+          capsule(
             b.id,
+            b.name || 'Groupe sans nom',
+            capAvatar(
+              b.photo ?? '',
+              '👥',
+              BAND_COLORS[i % BAND_COLORS.length],
+            ),
+            byBand(b.id),
           ),
         )}
 
-        {groupSection(
-          <>
-            <Icon name="mic" size={14} /> Solo
-          </>,
-          byBand(''),
+        {capsule(
           '',
+          `Solo${artist.name !== '' ? ` — ${artist.name}` : ''}`,
+          capAvatar(artist.photo ?? '', '🎤', 'var(--surface-high)'),
+          byBand(''),
         )}
 
-        <AiSetlistCard
-          songs={songs}
-          bands={bands}
-          onCreated={(sl) => {
-            saveSetlist(sl);
-            navigate(`/setlist/${sl.id}/edit`);
-          }}
-        />
+        {/* Capsule IA : dépliable comme les autres. */}
+        <div className={`stgroup stgroup-ai ${open.has('ai') ? 'open' : ''}`}>
+          <button className="capsule-head" onClick={() => toggle('ai')}>
+            <span
+              aria-hidden="true"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                background: 'var(--accent-soft)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.3rem',
+                flexShrink: 0,
+              }}
+            >
+              ✨
+            </span>
+            <div className="grow" style={{ minWidth: 0 }}>
+              <div className="capsule-title">Setlist par l'IA</div>
+              <div className="capsule-count">
+                Une setlist proposée selon l'ambiance
+              </div>
+            </div>
+            <span className={`capsule-chevron ${open.has('ai') ? 'open' : ''}`}>
+              <Icon name="chevron-down" size={18} />
+            </span>
+          </button>
+          {open.has('ai') && (
+            <div className="capsule-body">
+              <AiSetlistCard
+                songs={songs}
+                bands={bands}
+                onCreated={(sl) => {
+                  saveSetlist(sl);
+                  navigate(`/setlist/${sl.id}`);
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
@@ -300,10 +370,7 @@ function AiSetlistCard({
   }
 
   return (
-    <div className="stgroup stgroup-ai">
-      <div className="stgroup-head">
-        <span className="stgroup-title">✨ Setlist par l'IA</span>
-      </div>
+    <>
       <p className="help" style={{ margin: '2px 0 8px' }}>
         Un ordre proposé selon l'ambiance, dans le répertoire {contextLabel} (
         {available} morceau{available > 1 ? 'x' : ''}).
@@ -380,6 +447,6 @@ function AiSetlistCard({
           {error}
         </p>
       )}
-    </div>
+    </>
   );
 }

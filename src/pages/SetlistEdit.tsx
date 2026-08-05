@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ShareModal } from '../components/ShareModal';
 import { gearIcon } from '../components/GearEditor';
@@ -68,6 +68,19 @@ export function SetlistEdit({ id }: { id: string | null }) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const isNew = existing === undefined;
+
+  // Édition directe : chaque changement est enregistré automatiquement
+  // (pas de bouton « Enregistrer »). On saute le tout premier rendu pour
+  // ne pas recréer une nouvelle setlist restée vierge.
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    saveSetlist(draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
 
   const songById = useMemo(
     () => new Map(songs.map((s) => [s.id, s])),
@@ -165,15 +178,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
       items.splice(to, 0, moved);
       return { ...d, items };
     });
-  }
-
-  function onSave() {
-    if (draft.name.trim() === '') {
-      alert('Donne un nom à ta setlist.');
-      return;
-    }
-    saveSetlist(draft);
-    navigate('/setlists');
   }
 
   /**
@@ -673,20 +677,14 @@ export function SetlistEdit({ id }: { id: string | null }) {
 
 
         <div className="rowactions">
-          <button className="btn" onClick={onSave}>
-            Enregistrer
-          </button>
           {draft.items.length > 0 && (
             <>
               <button
                 className="btn ghost"
                 title="Vue d'ensemble propre et imprimable"
-                onClick={() => {
-                  saveSetlist(draft);
-                  navigate(`/setlist/${draft.id}/apercu`);
-                }}
+                onClick={() => navigate(`/setlist/${draft.id}/apercu`)}
               >
-                <Icon name="clipboard" size={15} /> Vue d'ensemble
+                <Icon name="clipboard" size={15} /> Imprimer
               </button>
               <button
                 className="btn ghost"
