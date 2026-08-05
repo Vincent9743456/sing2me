@@ -786,8 +786,16 @@ function SongPreview({
   }, [song, song?.id, song?.activeVersionId]);
   const shift = viewPref?.shift ?? 0;
   const viewCapo = viewPref?.capo ?? song?.capo ?? 0;
-  const shownKey =
+  const displayReal = localStorage.getItem('sing2me/showRealKey') === '1';
+  // song.key = tonalité des formes ; tonalité réelle = formes + capo.
+  const shapeKeyShown =
     song && song.key !== '' ? transposeKeyName(song.key, shift) : '';
+  const realKeyShown =
+    song && song.key !== ''
+      ? transposeKeyName(song.key, shift + viewCapo)
+      : '';
+  const displayShift = displayReal ? shift + viewCapo : shift;
+  const shownKey = displayReal ? realKeyShown : shapeKeyShown;
   const preferFlat = spellingForKey(shownKey);
 
   // Chaque morceau affiché commence à son début (pas de scroll hérité)
@@ -895,11 +903,12 @@ function SongPreview({
       <div className="hstack" style={{ marginBottom: 10 }}>
         <span className="help">
           {[
-            shownKey !== ''
-              ? `Tonalité ${shownKey}${shift !== 0 ? ' (transposée)' : ''}`
+            shapeKeyShown !== ''
+              ? `Accords ${shapeKeyShown}${shift !== 0 ? ' (transposé)' : ''}`
               : '',
             song.tempo > 0 ? `${song.tempo} BPM` : '',
-            viewCapo > 0 ? `Capo ${viewCapo}` : '',
+            !displayReal && viewCapo > 0 ? `Capo ${viewCapo}` : '',
+            viewCapo > 0 && realKeyShown !== '' ? `sonne en ${realKeyShown}` : '',
             formatDuration(song.durationSec),
           ]
             .filter((x) => x !== '')
@@ -1006,8 +1015,8 @@ function SongPreview({
       <SongBody
         song={song}
         view="complete"
-        semitones={shift}
-        capo={viewCapo}
+        semitones={displayShift}
+        capo={0}
         preferFlat={preferFlat}
       />
     </aside>

@@ -25,6 +25,7 @@ import {
   transposeChordSequence,
 } from '../lib/model';
 import { announceBandSong } from '../lib/bands';
+import { findSongKey } from '../lib/ug';
 import { stripChords } from '../lib/chordpro';
 import { normalizeTitle } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
@@ -132,6 +133,8 @@ export function SongView({
   // null = fermé · 'new' = nouvelle note · sinon la note à modifier
   const [noteModal, setNoteModal] = useState<'new' | SongNote | null>(null);
   const [ugUpgrade, setUgUpgrade] = useState(false);
+  const [keyBusy, setKeyBusy] = useState(false);
+  const [keyMsg, setKeyMsg] = useState<string | null>(null);
   const scroll = useAutoScroll(undefined, song?.id);
 
   // En lecture de setlist : bascule sur la version de l'item, puis
@@ -277,6 +280,27 @@ export function SongView({
       saveSong(switchVersion(song, value));
     }
     setShift(0);
+  }
+
+  /** Cherche la tonalité d'origine sur le web (best-effort) et la renseigne. */
+  async function findKey() {
+    if (!song || keyBusy) return;
+    setKeyBusy(true);
+    setKeyMsg(null);
+    try {
+      const found = await findSongKey(song.title, song.artist);
+      if (!found) {
+        setKeyMsg('Tonalité introuvable — saisis-la à la main (Modifier).');
+        return;
+      }
+      saveSong({ ...song, key: found.key, capo: found.capo });
+      setShift(0);
+      setCapo(found.capo);
+    } catch (e) {
+      setKeyMsg(e instanceof Error ? e.message : 'Recherche impossible.');
+    } finally {
+      setKeyBusy(false);
+    }
   }
 
   const bandsWithoutVersion = bands.filter(
@@ -497,6 +521,21 @@ export function SongView({
                 ♯
               </button>
             </div>
+            {song.key === '' && (
+              <button
+                className="btn ghost small"
+                disabled={keyBusy}
+                title="Cherche la tonalité d'origine du morceau sur le web"
+                onClick={() => void findKey()}
+              >
+                {keyBusy ? 'Recherche…' : '🔎 Trouver la tonalité'}
+              </button>
+            )}
+            {keyMsg && (
+              <span className="help" style={{ margin: 0 }}>
+                {keyMsg}
+              </span>
+            )}
             {!displayReal && (
               <>
                 <span className="lbl">Capo</span>

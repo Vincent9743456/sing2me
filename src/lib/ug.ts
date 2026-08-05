@@ -102,6 +102,26 @@ export async function aiCleanText(text: string, hint?: string): Promise<string> 
   return body.text;
 }
 
+/**
+ * Cherche la tonalité (et le capo) d'un morceau sur le web via Ultimate
+ * Guitar : la version « accords » la mieux notée fait foi. Best-effort —
+ * renvoie null si rien de fiable n'est trouvé.
+ */
+export async function findSongKey(
+  title: string,
+  artist: string,
+): Promise<{ key: string; capo: number } | null> {
+  const q = `${title} ${artist}`.trim();
+  if (q === '') return null;
+  const results = await searchUgTabs(q);
+  const ranked = [...results].sort((a, b) => b.votes - a.votes);
+  const top = ranked.find((r) => /chord/i.test(r.type)) ?? ranked[0];
+  if (!top) return null;
+  const tab = await fetchUgTab(top.url);
+  if (tab.key.trim() === '') return null;
+  return { key: tab.key, capo: tab.capo };
+}
+
 /** Appelle la fonction serveur /api/fetch-tab. */
 export async function fetchUgTab(url: string): Promise<UgTab> {
   let res: Response;

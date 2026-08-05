@@ -13,6 +13,7 @@ import { Icon } from '../components/Icon';
 import {
   spellingForKey,
   semitonesBetween,
+  transposeKeyName,
 } from '../lib/chords';
 import { stripChords } from '../lib/chordpro';
 import { notesForBand, resolveVersion } from '../lib/model';
@@ -202,11 +203,19 @@ export function Stage({
   const noteBandId =
     originalSong?.versions.find((v) => v.id === originalSong.activeVersionId)
       ?.bandId ?? '';
+  // song.key = tonalité des FORMES écrites ; keyOverride = formes voulues pour
+  // ce concert ; tonalité réelle = formes + capo. Vue « réelle » (basse) : on
+  // remonte les accords du capo pour montrer ce qui sonne, sans capo.
+  const displayReal = localStorage.getItem('sing2me/showRealKey') === '1';
   const semis =
     keyOverride !== '' && song.key !== ''
       ? (semitonesBetween(song.key, keyOverride) ?? 0)
       : 0;
-  const shownKey = keyOverride !== '' ? keyOverride : song.key;
+  const baseShapeKey = keyOverride !== '' ? keyOverride : song.key;
+  const realKey =
+    baseShapeKey !== '' ? transposeKeyName(baseShapeKey, song.capo) : '';
+  const shownKey = displayReal ? realKey : baseShapeKey;
+  const dispSemis = semis + (displayReal ? song.capo : 0);
   const preferFlat = spellingForKey(shownKey);
 
   return (
@@ -240,7 +249,10 @@ export function Stage({
             song.artist,
             shownKey,
             song.tempo > 0 ? `${song.tempo} BPM` : '',
-            song.capo > 0 ? `Capo ${song.capo}` : '',
+            !displayReal && song.capo > 0 ? `Capo ${song.capo}` : '',
+            !displayReal && song.capo > 0 && realKey !== ''
+              ? `sonne en ${realKey}`
+              : '',
           ]
             .filter((x) => x !== '')
             .join(' · ')}
@@ -279,8 +291,8 @@ export function Stage({
         <SongBody
           song={song}
           view={view}
-          semitones={semis}
-          capo={view === 'complete' ? song.capo : 0}
+          semitones={dispSemis}
+          capo={0}
           preferFlat={preferFlat}
           fontSize={fontSize}
         />
