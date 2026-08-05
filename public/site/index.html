@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sing2Me — Tes partitions, ton groupe, ta scène</title>
+<meta name="description" content="L'application des musiciens qui jouent en vrai : importe tes partitions en masse, prépare tes setlists, joue en mode scène — et fais suivre les paroles à ton public en direct." />
+<meta property="og:title" content="Sing2Me — Tes partitions, ton groupe, ta scène" />
+<meta property="og:description" content="Importe tes partitions, prépare tes setlists, joue en mode scène. Gratuit, sans installation, même hors connexion." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0e;
+    --surface: #131318;
+    --surface-high: #1b1b23;
+    --border: #24242e;
+    --border-strong: #34343f;
+    --text: #f5f5f7;
+    --dim: #9a9aac;
+    --faint: #6b6b7e;
+    --accent: #f6a833;
+    --accent-strong: #ee9418;
+    --accent-soft: rgba(246, 168, 51, 0.12);
+    --on-accent: #16120a;
+    --chord: #62c9f2;
+    --live: #ff4545;
+    --ok: #34d399;
+    --radius: 16px;
+    --radius-s: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3 { font-family: 'Sora', 'Inter', sans-serif; line-height: 1.15; letter-spacing: -0.02em; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 22px; }
+
+  /* ---------- Boutons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+    color: var(--on-accent); font-weight: 700; font-family: 'Sora', sans-serif;
+    padding: 15px 30px; border-radius: 999px; font-size: 1.02rem;
+    box-shadow: 0 8px 30px rgba(246, 168, 51, 0.28);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 38px rgba(246, 168, 51, 0.4); }
+  .btn.ghost {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border-strong); box-shadow: none;
+  }
+  .btn.ghost:hover { border-color: var(--accent); color: var(--accent); box-shadow: none; }
+
+  /* ---------- Header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10, 10, 14, 0.82); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+  .logo { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.25rem; display: flex; align-items: center; gap: 9px; }
+  .logo .amp { color: var(--accent); }
+  .nav .btn { padding: 10px 20px; font-size: 0.92rem; }
+  .navlinks { display: flex; gap: 26px; font-size: 0.93rem; color: var(--dim); }
+  .navlinks a:hover { color: var(--text); }
+  @media (max-width: 720px) { .navlinks { display: none; } }
+
+  /* ---------- Hero ---------- */
+  .hero { position: relative; padding: 84px 0 60px; }
+  .hero::before {
+    content: ''; position: absolute; inset: -40% -20% auto -20%; height: 130%;
+    background:
+      radial-gradient(ellipse 55% 45% at 68% 30%, rgba(246, 168, 51, 0.13), transparent 65%),
+      radial-gradient(ellipse 45% 40% at 25% 15%, rgba(98, 201, 242, 0.07), transparent 60%);
+    pointer-events: none;
+  }
+  .herogrid { position: relative; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; }
+  @media (max-width: 860px) { .herogrid { grid-template-columns: 1fr; } }
+  .kicker {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: 0.82rem; font-weight: 600; letter-spacing: 0.04em;
+    padding: 7px 16px; border-radius: 999px; margin-bottom: 22px;
+  }
+  .hero h1 { font-size: clamp(2.3rem, 5.5vw, 3.6rem); font-weight: 800; margin-bottom: 20px; }
+  .hero h1 .hl { color: var(--accent); }
+  .hero .sub { font-size: clamp(1.02rem, 2vw, 1.18rem); color: var(--dim); max-width: 34em; margin-bottom: 32px; }
+  .heroctas { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+  .herofacts { display: flex; gap: 18px; flex-wrap: wrap; color: var(--faint); font-size: 0.86rem; }
+  .herofacts span { display: inline-flex; align-items: center; gap: 6px; }
+  .herofacts b { color: var(--ok); font-weight: 600; }
+
+  /* ---------- Téléphone (mode scène) ---------- */
+  .phonewrap { display: flex; justify-content: center; position: relative; }
+  .phone {
+    width: 280px; height: 560px; border-radius: 40px;
+    background: #000; border: 1px solid var(--border-strong);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 0 8px #131318, 0 0 90px rgba(246, 168, 51, 0.08);
+    overflow: hidden; position: relative; flex-shrink: 0;
+  }
+  .phone .notch {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 90px; height: 22px; background: #131318; border-radius: 999px; z-index: 3;
+  }
+  .stagehead {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+    padding: 44px 20px 12px;
+    background: linear-gradient(180deg, #000 55%, transparent);
+    font-family: 'Sora', sans-serif;
+  }
+  .stagehead .t { font-weight: 700; font-size: 1.02rem; }
+  .stagehead .m { color: var(--faint); font-size: 0.72rem; margin-top: 2px; }
+  .stagehead .m b { color: var(--accent); font-weight: 600; }
+  .scroller { position: absolute; inset: 0; padding: 105px 20px 30px; overflow: hidden; }
+  .scrollin { animation: crawl 26s linear infinite; }
+  @keyframes crawl { 0% { transform: translateY(0); } 8% { transform: translateY(0); } 100% { transform: translateY(-58%); } }
+  .ln { margin-bottom: 3px; font-size: 0.86rem; white-space: nowrap; }
+  .ch { color: var(--chord); font-weight: 700; font-size: 0.78rem; font-family: 'Sora', sans-serif; letter-spacing: 0.06em; margin-bottom: -1px; }
+  .sec { color: var(--accent); font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 14px 0 6px; }
+  .stagefoot {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 18px 20px;
+    background: linear-gradient(0deg, #000 60%, transparent);
+    font-size: 0.72rem; color: var(--faint);
+  }
+  .stagefoot .pill { border: 1px solid var(--border-strong); border-radius: 999px; padding: 4px 11px; }
+  .stagefoot .live { color: var(--live); border-color: rgba(255, 69, 69, 0.4); font-weight: 700; }
+  .stagefoot .live .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--live); margin-right: 5px; animation: blink 1.4s infinite; }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  /* ---------- Sections ---------- */
+  section { padding: 76px 0; }
+  .sechead { text-align: center; max-width: 620px; margin: 0 auto 52px; }
+  .sechead h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); font-weight: 800; margin-bottom: 14px; }
+  .sechead p { color: var(--dim); font-size: 1.05rem; }
+
+  /* ---------- 3 étapes ---------- */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 820px) { .steps { grid-template-columns: 1fr; } }
+  .step {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 30px 26px; position: relative;
+  }
+  .step .num {
+    font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.8rem;
+    color: var(--accent); background: var(--accent-soft);
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
+  }
+  .step h3 { font-size: 1.18rem; margin-bottom: 10px; }
+  .step p { color: var(--dim); font-size: 0.94rem; }
+
+  /* ---------- Grille de fonctionnalités ---------- */
+  .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 940px) { .feats { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 620px) { .feats { grid-template-columns: 1fr; } }
+  .feat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 26px 24px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .feat:hover { border-color: var(--border-strong); transform: translateY(-3px); }
+  .feat .ico { font-size: 1.7rem; margin-bottom: 14px; display: block; }
+  .feat h3 { font-size: 1.05rem; margin-bottom: 8px; }
+  .feat p { color: var(--dim); font-size: 0.9rem; }
+
+  /* ---------- Bloc ON AIR ---------- */
+  .onair {
+    background: linear-gradient(135deg, var(--surface) 0%, #17131a 100%);
+    border: 1px solid var(--border); border-radius: 22px;
+    padding: 52px 46px; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 44px; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .onair::after {
+    content: ''; position: absolute; right: -15%; top: -40%;
+    width: 60%; height: 130%;
+    background: radial-gradient(ellipse, rgba(255, 69, 69, 0.09), transparent 65%);
+    pointer-events: none;
+  }
+  @media (max-width: 820px) { .onair { grid-template-columns: 1fr; padding: 36px 26px; } }
+  .onair .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--live); font-family: 'Sora', sans-serif; font-weight: 800;
+    font-size: 0.85rem; letter-spacing: 0.12em;
+    border: 1px solid rgba(255, 69, 69, 0.4); border-radius: 999px;
+    padding: 7px 16px; margin-bottom: 20px;
+  }
+  .onair .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--live); animation: blink 1.4s infinite; }
+  .onair h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); margin-bottom: 14px; }
+  .onair p { color: var(--dim); max-width: 30em; }
+  .onair ul { list-style: none; margin-top: 18px; color: var(--dim); font-size: 0.95rem; }
+  .onair li { margin-bottom: 9px; padding-left: 26px; position: relative; }
+  .onair li::before { content: '✓'; position: absolute; left: 0; color: var(--ok); font-weight: 700; }
+  .qrcard {
+    background: #fff; border-radius: 18px; padding: 26px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    color: #16120a; font-family: 'Sora', sans-serif; text-align: center;
+    max-width: 240px; margin: 0 auto; position: relative; z-index: 1;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    transform: rotate(2deg);
+  }
+  .qrcard .qr { width: 150px; height: 150px; }
+  .qrcard b { font-size: 0.95rem; }
+  .qrcard span { font-size: 0.75rem; color: #6b6b7e; font-family: 'Inter', sans-serif; }
+
+  /* ---------- Piliers ---------- */
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 820px) { .pillars { grid-template-columns: 1fr; } }
+  .pillar { text-align: center; padding: 34px 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  .pillar .big { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--accent); margin-bottom: 8px; }
+  .pillar p { color: var(--dim); font-size: 0.92rem; }
+
+  /* ---------- FAQ ---------- */
+  .faq { max-width: 720px; margin: 0 auto; }
+  .faq details {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-s); padding: 20px 24px; margin-bottom: 12px;
+  }
+  .faq summary {
+    cursor: pointer; font-family: 'Sora', sans-serif; font-weight: 600;
+    font-size: 1rem; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: '+'; color: var(--accent); font-size: 1.3rem; font-weight: 400; transition: transform 0.2s; flex-shrink: 0; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details p { color: var(--dim); font-size: 0.94rem; margin-top: 12px; }
+
+  /* ---------- CTA final ---------- */
+  .final { text-align: center; padding: 90px 0 100px; position: relative; }
+  .final::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 55% at 50% 60%, rgba(246, 168, 51, 0.1), transparent 70%);
+    pointer-events: none;
+  }
+  .final h2 { font-size: clamp(1.9rem, 4.5vw, 2.8rem); font-weight: 800; margin-bottom: 16px; position: relative; }
+  .final p { color: var(--dim); margin-bottom: 34px; font-size: 1.08rem; position: relative; }
+  .final .btn { font-size: 1.12rem; padding: 18px 40px; position: relative; }
+  .final .note { margin-top: 18px; font-size: 0.85rem; color: var(--faint); }
+
+  footer { border-top: 1px solid var(--border); padding: 30px 0 40px; color: var(--faint); font-size: 0.85rem; }
+  .footrow { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .footrow a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#top">🎸 Sing<span class="amp">2</span>Me</a>
+    <nav class="navlinks">
+      <a href="#etapes">Comment ça marche</a>
+      <a href="#fonctions">Fonctionnalités</a>
+      <a href="#onair">En concert</a>
+      <a href="#faq">Questions</a>
+    </nav>
+    <a class="btn" href="https://sing2me-three.vercel.app/">Ouvrir l'app</a>
+  </div>
+</header>
+
+<div class="hero" id="top">
+  <div class="wrap herogrid">
+    <div>
+      <div class="kicker">Pour les musiciens qui jouent en vrai 🎤</div>
+      <h1>Tes partitions, ton groupe, <span class="hl">ta scène.</span></h1>
+      <p class="sub">
+        Sing2Me réunit tout ce qu'il faut entre la répét et le concert :
+        ta bibliothèque de morceaux, tes setlists, un mode scène taillé
+        pour le direct — et ton public qui suit les paroles en temps réel.
+      </p>
+      <div class="heroctas">
+        <a class="btn" href="https://sing2me-three.vercel.app/">Essayer Sing2Me — gratuit</a>
+        <a class="btn ghost" href="#etapes">Voir comment ça marche</a>
+      </div>
+      <div class="herofacts">
+        <span><b>✓</b> Rien à installer</span>
+        <span><b>✓</b> Téléphone, tablette, ordi</span>
+        <span><b>✓</b> Fonctionne sans réseau en concert</span>
+      </div>
+    </div>
+    <div class="phonewrap">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="stagehead">
+          <div class="t">Ain't No Sunshine</div>
+          <div class="m">Bill Withers · <b>Am</b> · capo 0 · 78 BPM</div>
+        </div>
+        <div class="scroller">
+          <div class="scrollin">
+            <div class="sec">Couplet</div>
+            <div class="ln ch">Am&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Em&nbsp;G&nbsp;&nbsp;&nbsp;Am</div>
+            <div class="ln">Ain't no sunshine when she's gone</div>
+            <div class="ln ch">Am&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Em&nbsp;&nbsp;G</div>
+            <div class="ln">It's not warm when she's away</div>
+            <div class="ln ch">Am&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Em</div>
+            <div class="ln">Ain't no sunshine when she's gone</div>
+            <div class="ln ch">Dm</div>
+            <div class="ln">And she's always gone too long</div>
+            <div class="ln ch">Em&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Am</div>
+            <div class="ln">Anytime she goes away</div>
+            <div class="sec">Pont</div>
+            <div class="ln">Wonder this time where she's gone</div>
+            <div class="ln">Wonder if she's gone to stay</div>
+            <div class="ln ch">Am&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Em&nbsp;&nbsp;G</div>
+            <div class="ln">Ain't no sunshine when she's gone</div>
+            <div class="ln">And this house just ain't no home</div>
+            <div class="ln ch">Em&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Am</div>
+            <div class="ln">Anytime she goes away</div>
+            <div class="sec">Couplet</div>
+            <div class="ln ch">Am&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Em&nbsp;G&nbsp;&nbsp;&nbsp;Am</div>
+            <div class="ln">Ain't no sunshine when she's gone</div>
+            <div class="ln ch">Am&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Em&nbsp;&nbsp;G</div>
+            <div class="ln">Only darkness every day</div>
+            <div class="ln ch">Am&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Em</div>
+            <div class="ln">Ain't no sunshine when she's gone</div>
+            <div class="ln ch">Dm</div>
+            <div class="ln">And this house just ain't no home</div>
+            <div class="ln ch">Em&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Am</div>
+            <div class="ln">Anytime she goes away</div>
+          </div>
+        </div>
+        <div class="stagefoot">
+          <span class="pill">▲ défilement auto</span>
+          <span class="pill live"><span class="dot"></span>ON AIR</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="etapes">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>De tes vieilles partitions au concert, en trois temps</h2>
+      <p>Pas besoin de tout refaire : Sing2Me récupère ce que tu as déjà, puis t'accompagne jusqu'à la scène.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>📥 Importe tout, d'un coup</h3>
+        <p>
+          Récupère en masse tes partitions d'Ultimate Guitar, tes PDF,
+          fichiers Word, ChordPro, OnSong ou de simples copier-coller.
+          L'analyse détecte les formats abîmés et l'IA les remet au propre
+          — accords alignés sur les paroles, doublons repérés.
+        </p>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>🎼 Prépare tes sets</h3>
+        <p>
+          Setlists en glisser-déposer, tonalité et capo réglés morceau par
+          morceau (transposition instantanée, capo suggéré), versions par
+          groupe, notes de répétition partagées avec les autres musiciens.
+        </p>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>🎤 Joue, l'écran suit</h3>
+        <p>
+          Mode scène plein écran : très grandes polices, défilement
+          automatique, passage au morceau suivant d'un geste, écran qui ne
+          se met jamais en veille. Et tout fonctionne hors connexion.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="fonctions" style="padding-top: 0;">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>Tout ce qu'un groupe attend, rien de superflu</h2>
+      <p>Une seule application, du garage à la scène.</p>
+    </div>
+    <div class="feats">
+      <div class="feat">
+        <span class="ico">📚</span>
+        <h3>Bibliothèque intelligente</h3>
+        <p>Titre, tonalité, tempo, capo, tags, recherche immédiate. Détection des doublons à l'import, plusieurs versions par morceau (acoustique, par groupe…).</p>
+      </div>
+      <div class="feat">
+        <span class="ico">🎸</span>
+        <h3>Transposition musicale</h3>
+        <p>Change de tonalité en un geste : dièses et bémols justes selon l'armure, suggestion de capo pour retrouver tes formes d'accords ouvertes.</p>
+      </div>
+      <div class="feat">
+        <span class="ico">👥</span>
+        <h3>Ton groupe, synchronisé</h3>
+        <p>Répertoire et setlists partagés entre les membres, notes de répét communes, espace de discussion pour proposer des chansons, caler répéts et concerts.</p>
+      </div>
+      <div class="feat">
+        <span class="ico">📋</span>
+        <h3>Setlists de pro</h3>
+        <p>Ordre en glisser-déposer, durée totale estimée, tonalité spécifique par concert, notes par morceau, plan de scène et fiche sono.</p>
+      </div>
+      <div class="feat">
+        <span class="ico">🌙</span>
+        <h3>Mode scène</h3>
+        <p>Plein écran noir, lisible à trois mètres, défilement auto à vitesse réglable, anti-veille. Conçu pour être touché le moins possible pendant que tu joues.</p>
+      </div>
+      <div class="feat">
+        <span class="ico">📱</span>
+        <h3>Partage & QR codes</h3>
+        <p>Chaque morceau, setlist ou concert se partage en un lien ou un QR code — accords pour le groupe, paroles seules pour le public. Sans application à installer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="onair" style="padding-top: 0;">
+  <div class="wrap">
+    <div class="onair">
+      <div>
+        <div class="badge"><span class="dot"></span>ON AIR</div>
+        <h2>Ton public chante avec toi</h2>
+        <p>
+          Un QR code affiché dans la salle, imprimé une fois pour tous tes
+          concerts : ceux qui le scannent voient les paroles du morceau que
+          tu es en train de jouer, mises à jour en direct.
+        </p>
+        <ul>
+          <li>Paroles synchronisées en temps réel pendant le concert</li>
+          <li>Le public envoie des ❤ — comptés morceau par morceau</li>
+          <li>Pourboires par ton lien de paiement (PayPal, Lydia…)</li>
+          <li>Hors concert : ta page artiste, tes liens d'écoute, tes prochaines dates</li>
+        </ul>
+      </div>
+      <div>
+        <div class="qrcard">
+          <svg class="qr" viewBox="0 0 29 29" shape-rendering="crispEdges" aria-hidden="true">
+            <rect width="29" height="29" fill="#fff"/>
+            <path fill="#16120a" d="M0 0h7v1H0zM10 0h2v1h-2zM14 0h1v1h-1zM17 0h2v1h-2zM22 0h7v1h-7zM0 1h1v1H0zM6 1h1v1H6zM9 1h1v1H9zM12 1h3v1h-3zM16 1h1v1h-1zM19 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1H0zM2 2h3v1H2zM6 2h1v1H6zM8 2h2v1H8zM13 2h1v1h-1zM15 2h3v1h-3zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1H0zM2 3h3v1H2zM6 3h1v1H6zM9 3h3v1H9zM14 3h2v1h-2zM18 3h2v1h-2zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1H0zM2 4h3v1H2zM6 4h1v1H6zM8 4h1v1H8zM11 4h2v1h-2zM15 4h1v1h-1zM17 4h1v1h-1zM19 4h2v1h-2zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1H0zM6 5h1v1H6zM9 5h2v1H9zM13 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1H0zM8 6h1v1H8zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM9 7h2v1H9zM13 7h3v1h-3zM17 7h1v1h-1zM19 7h2v1h-2zM0 8h2v1H0zM3 8h4v1H3zM8 8h3v1H8zM12 8h1v1h-1zM15 8h2v1h-2zM18 8h1v1h-1zM21 8h3v1h-3zM25 8h2v1h-2zM28 8h1v1h-1zM1 9h1v1H1zM4 9h1v1H4zM7 9h2v1H7zM11 9h1v1h-1zM14 9h1v1h-1zM16 9h2v1h-2zM19 9h1v1h-1zM23 9h2v1h-2zM26 9h1v1h-1zM0 10h2v1H0zM3 10h1v1H3zM5 10h2v1H5zM9 10h2v1H9zM12 10h2v1h-2zM17 10h1v1h-1zM20 10h2v1h-2zM24 10h1v1h-1zM26 10h3v1h-3zM2 11h1v1H2zM4 11h1v1H4zM8 11h1v1H8zM10 11h1v1h-1zM13 11h3v1h-3zM18 11h2v1h-2zM21 11h1v1h-1zM25 11h1v1h-1zM27 11h1v1h-1zM0 12h1v1H0zM3 12h3v1H3zM6 12h2v1H6zM9 12h1v1H9zM11 12h1v1h-1zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM22 12h2v1h-2zM26 12h2v1h-2zM1 13h2v1H1zM5 13h1v1H5zM7 13h2v1H7zM10 13h2v1h-2zM15 13h1v1h-1zM18 13h1v1h-1zM20 13h2v1h-2zM23 13h1v1h-1zM25 13h2v1h-2zM28 13h1v1h-1zM0 14h2v1H0zM4 14h1v1H4zM6 14h1v1H6zM8 14h1v1H8zM12 14h3v1h-3zM16 14h1v1h-1zM19 14h2v1h-2zM22 14h1v1h-1zM24 14h1v1h-1zM27 14h2v1h-2zM1 15h1v1H1zM3 15h1v1H3zM5 15h1v1H5zM9 15h2v1H9zM13 15h1v1h-1zM15 15h2v1h-2zM18 15h1v1h-1zM21 15h2v1h-2zM25 15h1v1h-1zM28 15h1v1h-1zM0 16h1v1H0zM2 16h2v1H2zM6 16h2v1H6zM10 16h1v1h-1zM12 16h1v1h-1zM14 16h2v1h-2zM17 16h2v1h-2zM20 16h1v1h-1zM23 16h2v1h-2zM26 16h2v1h-2zM1 17h1v1H1zM4 17h2v1H4zM8 17h1v1H8zM11 17h2v1h-2zM15 17h1v1h-1zM19 17h1v1h-1zM22 17h1v1h-1zM24 17h2v1h-2zM27 17h1v1h-1zM0 18h2v1H0zM3 18h1v1H3zM6 18h1v1H6zM9 18h1v1H9zM12 18h2v1h-2zM16 18h2v1h-2zM20 18h2v1h-2zM24 18h1v1h-1zM26 18h1v1h-1zM28 18h1v1h-1zM1 19h1v1H1zM4 19h1v1H4zM7 19h2v1H7zM10 19h2v1h-2zM14 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM22 19h2v1h-2zM25 19h2v1h-2zM0 20h1v1H0zM2 20h3v1H2zM6 20h1v1H6zM8 20h2v1H8zM11 20h1v1h-1zM13 20h3v1h-3zM18 20h3v1h-3zM20 20h5v1h-5zM26 20h2v1h-2zM8 21h1v1H8zM10 21h2v1h-2zM14 21h2v1h-2zM17 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM26 21h1v1h-1zM28 21h1v1h-1zM0 22h7v1H0zM8 22h2v1H8zM12 22h1v1h-1zM15 22h2v1h-2zM18 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h3v1h-3zM0 23h1v1H0zM6 23h1v1H6zM9 23h1v1H9zM11 23h2v1h-2zM14 23h1v1h-1zM17 23h2v1h-2zM20 23h1v1h-1zM24 23h2v1h-2zM27 23h1v1h-1zM0 24h1v1H0zM2 24h3v1H2zM6 24h1v1H6zM8 24h1v1H8zM10 24h2v1h-2zM13 24h2v1h-2zM16 24h1v1h-1zM19 24h2v1h-2zM22 24h4v1h-4zM28 24h1v1h-1zM0 25h1v1H0zM2 25h3v1H2zM6 25h1v1H6zM9 25h2v1H9zM12 25h1v1h-1zM15 25h2v1h-2zM18 25h1v1h-1zM21 25h1v1h-1zM23 25h1v1h-1zM25 25h2v1h-2zM0 26h1v1H0zM2 26h3v1H2zM6 26h1v1H6zM8 26h2v1H8zM11 26h2v1h-2zM14 26h2v1h-2zM17 26h2v1h-2zM20 26h2v1h-2zM24 26h1v1h-1zM26 26h2v1h-2zM0 27h1v1H0zM6 27h1v1H6zM8 27h1v1H8zM10 27h1v1h-1zM13 27h1v1h-1zM16 27h1v1h-1zM19 27h2v1h-2zM22 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM0 28h7v1H0zM9 28h2v1H9zM12 28h2v1h-2zM15 28h1v1h-1zM18 28h1v1h-1zM21 28h1v1h-1zM23 28h2v1h-2zM26 28h3v1h-3z"/>
+          </svg>
+          <b>🎶 Chantez avec nous !</b>
+          <span>Scannez pour suivre les paroles en direct</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top: 0;">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>Pensé pour la vraie vie de musicien</h2>
+      <p>Pas de compte obligatoire, pas d'abonnement, pas de mauvaise surprise au moment de brancher le jack.</p>
+    </div>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="big">100 % hors connexion</div>
+        <p>Tes morceaux vivent dans ton appareil. Cave, festival sans réseau, avion : le mode scène fonctionne toujours.</p>
+      </div>
+      <div class="pillar">
+        <div class="big">Gratuit</div>
+        <p>L'application est gratuite. Un compte (optionnel, sans mot de passe) synchronise ta bibliothèque entre tes appareils et avec ton groupe.</p>
+      </div>
+      <div class="pillar">
+        <div class="big">Tes données à toi</div>
+        <p>Local d'abord, cloud ensuite : rien ne t'enferme. Tes partitions restent les tiennes, exportables et partageables librement.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="padding-top: 0;">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>Questions fréquentes</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>Je dois installer quelque chose ?</summary>
+        <p>Non. Sing2Me fonctionne dans le navigateur, sur téléphone, tablette et ordinateur. Tu peux l'ajouter à ton écran d'accueil (menu du navigateur → « Ajouter à l'écran d'accueil ») pour l'ouvrir comme une application.</p>
+      </details>
+      <details>
+        <summary>Je peux récupérer mes partitions existantes ?</summary>
+        <p>Oui, et en masse : tes partitions Ultimate Guitar (page « My tabs » enregistrée, ou liens), tes PDF, fichiers Word, ChordPro, OnSong, ou de simples copier-coller. L'analyse repère les formats problématiques et l'IA les nettoie à la demande.</p>
+      </details>
+      <details>
+        <summary>Ça marche à plusieurs, en groupe ?</summary>
+        <p>Oui : chaque musicien a son compte, le groupe partage son répertoire, ses setlists et ses notes de répétition — chacun garde en plus sa bibliothèque personnelle. Un espace de discussion permet de proposer des chansons et de caler répéts et concerts.</p>
+      </details>
+      <details>
+        <summary>Et si je n'ai pas de réseau au concert ?</summary>
+        <p>Tout ce qui sert à jouer (partitions, setlists, mode scène) est stocké dans ton appareil et fonctionne sans aucune connexion. Seules les fonctions « public en direct » (ON AIR) ont besoin du réseau… côté public surtout.</p>
+      </details>
+      <details>
+        <summary>Combien ça coûte ?</summary>
+        <p>Rien. Sing2Me est gratuit pendant sa phase de lancement. À terme, le modèle envisagé reste gratuit pour les musiciens — seule une commission sur les pourboires reçus est à l'étude.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<div class="final">
+  <div class="wrap">
+    <h2>Ce soir, tu joues.<br />Sing2Me s'occupe du reste.</h2>
+    <p>Deux minutes pour importer ton premier morceau. Aucune carte bancaire, aucune installation.</p>
+    <a class="btn" href="https://sing2me-three.vercel.app/">🎸 Essayer Sing2Me maintenant</a>
+    <div class="note">Gratuit · sans engagement · tes données restent chez toi</div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap footrow">
+    <span>🎸 Sing2Me — le compagnon des musiciens, des groupes et de leurs concerts.</span>
+    <span><a href="https://sing2me-three.vercel.app/#/cgu">Conditions d'utilisation</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

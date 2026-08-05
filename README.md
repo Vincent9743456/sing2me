@@ -30,20 +30,16 @@ Chaque modification du code se recharge instantanément.
 
 ---
 
-## 🌍 Mettre en ligne (Vercel — gratuit)
+## 🌍 Mise en ligne (pipeline actuel)
 
-C'est l'étape qui rend les **QR codes et liens de partage utilisables par
-n'importe qui**, y compris le public en 4G/5G pendant un concert.
+Le dépôt GitHub `Vincent9743456/sing2me` est la **source de vérité** :
+Vercel y est connecté, et **chaque push sur `main` déploie
+automatiquement** https://sing2me-three.vercel.app. Plus besoin de
+`vercel --prod`.
 
-1. Crée un compte sur https://vercel.com (gratuit).
-2. Installe l'outil : `npm install -g vercel`
-3. Dans ce dossier : `vercel` → réponds aux questions (tout par défaut).
-4. Ton app est en ligne sur une URL du type `https://sing2me.vercel.app`.
-
-Ensuite `vercel --prod` publie chaque nouvelle version.
-
-(Alternative sans terminal : pousse le dossier sur GitHub puis « Import
-project » sur vercel.com.)
+À chaque livraison : incrémenter `src/version.ts` (APP_BUILD) **et**
+`public/version.txt`, puis vérifier après déploiement que
+`https://sing2me-three.vercel.app/version.txt` renvoie la bonne version.
 
 ---
 
@@ -65,16 +61,17 @@ un bloc continu. PDF : texte extrait dans le navigateur (pdf.js via CDN,
 lignes reconstruites d'après les positions pour préserver l'alignement
 accords/paroles) — les PDF scannés (images) restent hors de portée.
 
-**Structure & commentaires de répétition** — chaque morceau affiche en
-tête sa structure (Intro : Am F C G — « batterie seule au début »…) qui
-reprend les décisions de répétition.
+**Structure** — notes libres en tête de partition (« Intro batterie
+seule, pont ×2 avant le dernier refrain… ») : ce qui est stable et
+descriptif sur l'arrangement. (Décision actée : plus de sections avec
+accords par partie — c'est du texte libre.)
 
-**Notes de répétition** — bouton 💬 sur chaque morceau : notes partagées
-(👥 tout le groupe) ou personnelles (🔒), générales ou liées à une partie
-précise (elles s'affichent alors sur la bonne ligne de la structure).
-Dictée vocale 🎤 (navigateur) et synthèse ✨ par IA (transforme la note
-vocale en consigne courte, et détecte la partie visée). Signées avec ton
-nom de musicien (onglet Artiste). Jamais partagées si personnelles.
+**Notes de répétition** — bouton 💬 sur chaque morceau (et en mode
+scène) : notes partagées (👥 tout le groupe) ou personnelles (🔒),
+datées, modifiables, supprimables (la suppression se propage). Dictée
+vocale 🎤 (navigateur) et synthèse ✨ par IA (transforme la note vocale
+en consigne courte). Signées avec ton nom de musicien (onglet Artiste).
+Jamais partagées si personnelles.
 
 **Versions multiples** — chaque morceau peut avoir plusieurs versions
 (tonalité, structure, paroles) : « Standard », « Acoustique », par
@@ -82,9 +79,15 @@ groupe… Sélecteur en haut de la partition (＋ Nouvelle version = copie de
 l'actuelle), et chaque setlist peut choisir sa version morceau par
 morceau.
 
-**Vues par musicien** — Complète (chant/guitare), Accords (basse),
-Structure (batterie), Paroles (public). Vue par défaut réglable dans le
-profil, commutable depuis chaque partition et en mode scène.
+**Une seule vue pour tous les musiciens** (décision actée : les vues
+différenciées par instrument ont été supprimées) — tout le monde voit la
+partition complète ; la vue « paroles seules » n'existe que pour le
+public (partage/QR/ON AIR).
+
+**Groupes** — onglet 👥 dédié : fiches de groupe (musiciens, matériel,
+invitations par lien/QR entre comptes), répertoire synchronisé, et
+**espace de discussion** par groupe (💬 messages, 🎵 propositions de
+chansons, 🥁 répéts, 🎤 concerts).
 
 **Défilement automatique** — sur demande, vitesse réglable, dans la
 partition comme en mode scène.
@@ -407,4 +410,4 @@ montrait ses limites.)
 | `npm run build`     | Version optimisée (dossier `dist/`)  |
 | `npm run preview`   | Tester la version optimisée          |
 | `npm run typecheck` | Vérification TypeScript              |
-| `vercel --prod`     | Publier en ligne                     |
+| `git push` (main)   | Publier en ligne (déploiement Vercel automatique) |
