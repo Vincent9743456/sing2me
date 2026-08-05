@@ -763,6 +763,8 @@ function SongPreview({
     saveSong,
     deleteSong,
     bands,
+    setlists,
+    saveSetlist,
     recordBandRemoval,
     clearBandRemoval,
   } = useStore();
@@ -823,6 +825,29 @@ function SongPreview({
   // Suggestion « accords faciles » : capo qui ouvre les formes sans
   // changer ce qui sonne.
   const easyShapes = realKeyShown !== '' ? suggestCapo(realKeyShown) : null;
+
+  // Ajout / retrait du morceau dans une setlist, en un clic.
+  function toggleSetlist(sl: Setlist) {
+    if (!song) return;
+    const has = sl.items.some((it) => it.songId === song.id);
+    saveSetlist(
+      has
+        ? { ...sl, items: sl.items.filter((it) => it.songId !== song.id) }
+        : {
+            ...sl,
+            items: [
+              ...sl.items,
+              {
+                id: makeId(),
+                songId: song.id,
+                note: '',
+                keyOverride: '',
+                versionId: versionForBand(song, sl.bandId ?? '')?.id ?? '',
+              },
+            ],
+          },
+    );
+  }
 
   // Recherche web de la tonalité d'origine (morceaux sans tonalité connue).
   async function findKey() {
@@ -987,8 +1012,8 @@ function SongPreview({
                 className={`chip ${active ? '' : 'off'}`}
                 title={
                   active
-                    ? `Ce morceau a une version pour ${b.name || 'ce groupe'} — cliquer pour la retirer`
-                    : `Créer la version « ${b.name || 'Groupe'} » de ce morceau (copie de l'actuelle)`
+                    ? `« ${song.title} » est dans le répertoire de ${b.name || 'ce groupe'} — cliquer pour l'en retirer`
+                    : `Ajouter « ${song.title} » au répertoire de ${b.name || 'ce groupe'} (partagé avec tous les membres)`
                 }
                 onClick={() => {
                   if (active && v) {
@@ -1030,6 +1055,9 @@ function SongPreview({
                   }
                 }}
               >
+                <span aria-hidden="true" style={{ marginRight: 2 }}>
+                  {active ? '✓' : '＋'}
+                </span>
                 <span
                   aria-hidden="true"
                   style={{
@@ -1047,6 +1075,41 @@ function SongPreview({
           })}
         </div>
       )}
+      <div
+        className="hstack"
+        style={{ marginBottom: 10, flexWrap: 'wrap', gap: 6 }}
+      >
+        <span className="help">Setlists :</span>
+        {[...setlists]
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+          .map((sl) => {
+            const has = sl.items.some((it) => it.songId === song.id);
+            return (
+              <button
+                key={sl.id}
+                className={`chip ${has ? '' : 'off'}`}
+                title={
+                  has
+                    ? `« ${song.title} » est dans « ${sl.name || 'cette setlist'} » — cliquer pour l'en retirer`
+                    : `Ajouter « ${song.title} » à « ${sl.name || 'cette setlist'} »`
+                }
+                onClick={() => toggleSetlist(sl)}
+              >
+                <span aria-hidden="true" style={{ marginRight: 2 }}>
+                  {has ? '✓' : '＋'}
+                </span>
+                {sl.name || '(sans nom)'}
+              </button>
+            );
+          })}
+        <button
+          className="chip off"
+          title="Créer une nouvelle setlist avec ce morceau"
+          onClick={() => onPickSetlist(song.id)}
+        >
+          ＋ Nouvelle…
+        </button>
+      </div>
       {!displayReal && (
         <div className="transpose" style={{ marginBottom: 10 }}>
           <span className="lbl">Accords</span>
