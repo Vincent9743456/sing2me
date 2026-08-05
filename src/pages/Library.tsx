@@ -533,7 +533,18 @@ export function Library() {
 
   return (
     <>
-      <TopBar title={<Brand size={24} />} />
+      <TopBar
+        title={<Brand size={24} />}
+        right={
+          <button
+            className="btn small"
+            title="Ajouter un morceau (import, lien, texte…)"
+            onClick={() => navigate('/import')}
+          >
+            <Icon name="plus" size={15} /> Ajouter
+          </button>
+        }
+      />
       <div className="page">
         {showNudge && (
           <div

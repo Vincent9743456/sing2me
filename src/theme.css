@@ -634,20 +634,6 @@ textarea.mono {
   min-width: 22px;
 }
 
-/* « Ajouter un morceau » reste visible en bas de l'écran pendant l'édition
-   d'une setlist, même longue (collé au-dessus de la barre d'onglets). */
-.addsticky {
-  position: sticky;
-  bottom: calc(76px + env(safe-area-inset-bottom));
-  z-index: 5;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
-}
-@media (min-width: 900px) {
-  .addsticky {
-    bottom: 16px;
-  }
-}
-
 /* ---------- Encarts de setlists (par groupe / solo / IA) ---------- */
 /* Chaque encart est un panneau « en creux » (nuance de noir) : les
    groupes de setlists se distinguent d'un coup d'œil, et les cartes
