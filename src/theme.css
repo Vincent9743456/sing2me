@@ -911,6 +911,18 @@ textarea.mono {
   font-weight: 800;
   margin: 0 0 4px;
 }
+.stage-broadcast {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--live);
+  border: 1px solid var(--live);
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
 .stage .controls {
   position: fixed;
   bottom: 0;

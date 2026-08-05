@@ -35,6 +35,8 @@ import { Modal } from './ui';
 
 interface OnAirValue {
   status: LiveStatus;
+  /** Session en cours : concert (public) ou répétition (musiciens seuls). */
+  mode: LiveMode;
   /** La page courante déclare ce que voit le chanteur. */
   setCurrent: (song: LiveSong | null, meta?: { key: string }) => void;
   /** Une page de setlist déclare la setlist à diffuser au public. */
@@ -257,7 +259,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <OnAirContext.Provider value={{ status, setCurrent, setSetlist }}>
+    <OnAirContext.Provider value={{ status, mode, setCurrent, setSetlist }}>
       <StatusContext.Provider
         value={{ status, hearts, openPanel: () => setPanel(true) }}
       >
@@ -446,6 +448,12 @@ export function useOnAirSong(song: LiveSong | null, songKey = '') {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setCurrent, key]);
+}
+
+/** État du direct (pour afficher des repères côté musicien). */
+export function useOnAirLive(): { status: LiveStatus; mode: LiveMode } {
+  const ctx = useContext(OnAirContext);
+  return { status: ctx?.status ?? 'off', mode: ctx?.mode ?? 'concert' };
 }
 
 /**

@@ -5,7 +5,11 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { useOnAirSetlist, useOnAirSong } from '../components/OnAir';
+import {
+  useOnAirLive,
+  useOnAirSetlist,
+  useOnAirSong,
+} from '../components/OnAir';
 import { LivePublicSong } from '../lib/live';
 import { SongBody } from '../components/SongBody';
 import { NoteModal } from '../components/NoteModal';
@@ -118,6 +122,10 @@ export function Stage({
     [setlistId, items],
   );
   useOnAirSetlist(publicSetlist);
+  const live = useOnAirLive();
+  // Repère discret : la setlist est bien diffusée au public (concert actif).
+  const setlistBroadcast =
+    publicSetlist !== null && live.status === 'on' && live.mode === 'concert';
 
   // Anti-veille (Wake Lock) pendant toute la durée du mode scène.
   useEffect(() => {
@@ -257,6 +265,11 @@ export function Stage({
     >
       <div className="body" ref={bodyRef}>
         <DndHint />
+        {setlistBroadcast && (
+          <div className="stage-broadcast" title="Le public peut ouvrir la setlist et lire les paroles depuis son téléphone">
+            📋 Setlist visible du public
+          </div>
+        )}
         <h2 className="songtitle" style={{ fontSize: `${fontSize * 1.4}rem` }}>
           {song.title}
         </h2>
