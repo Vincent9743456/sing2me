@@ -17,7 +17,7 @@ export function LogoMark({ size = 28 }: { size?: number }) {
       <path
         d="M8 6h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H22l-9 8v-8H8a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z"
         fill="none"
-        stroke="#ff6f61"
+        stroke="#f6832a"
         strokeWidth="3"
         strokeLinejoin="round"
       />
