@@ -693,7 +693,7 @@ export function Library() {
             </div>
           </>
         )}
-        <div className="libsplit">
+        <div className={`libsplit${selectedId ? ' hasdetail' : ''}`}>
           <div>
             {filtered.length === 0 ? (
               <Empty>
@@ -804,15 +804,7 @@ function SongPreview({
     setUgOpen(false);
   }, [id]);
 
-  if (!song) {
-    return (
-      <aside className="libpreview empty-pane" aria-hidden="true">
-        <p className="help" style={{ textAlign: 'center' }}>
-          Sélectionne un morceau pour l'afficher ici.
-        </p>
-      </aside>
-    );
-  }
+  if (!song) return null;
   return (
     <aside className="libpreview" ref={paneRef}>
       {ugOpen && (

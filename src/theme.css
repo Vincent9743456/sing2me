@@ -1573,21 +1573,22 @@ h2.pagetitle {
   display: none;
 }
 @media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
-  /* Mise en page INCASSABLE : la liste a une largeur fixe, le volet
-     prend le reste et défile en interne (jamais de chevauchement,
-     même avec des lignes de partition très longues). */
-  .libsplit {
+  /* Split maître-détail : actif UNIQUEMENT quand un morceau est sélectionné.
+     La liste passe alors en colonne fixe (400px) et le volet prend le reste
+     en défilant en interne. minmax(0,1fr) empêche les lignes de déborder de
+     leur colonne (sinon les icônes de fin de ligne mordent sur le volet). */
+  .libsplit.hasdetail {
     display: flex;
     gap: var(--sp-5);
     align-items: flex-start;
   }
-  .libsplit > div:first-child {
+  .libsplit.hasdetail > div:first-child {
     flex: 0 0 400px;
     max-width: 400px;
     min-width: 0;
   }
-  .libsplit .list {
-    grid-template-columns: 1fr;
+  .libsplit.hasdetail .list {
+    grid-template-columns: minmax(0, 1fr);
   }
   .libpreview {
     display: block;
@@ -1602,14 +1603,6 @@ h2.pagetitle {
     border: 1px solid var(--border-soft);
     border-radius: var(--radius);
     padding: var(--sp-4) var(--sp-5);
-  }
-  .libpreview.empty-pane {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 240px;
-    background: none;
-    border-style: dashed;
   }
 }
 
