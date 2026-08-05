@@ -243,6 +243,7 @@ export function Import() {
 
   async function onUgSearch() {
     if (ugQuery.trim() === '' || ugSearching) return;
+    setMethod('ug');
     setError(null);
     setUgSearching(true);
     setUgResults(null);
@@ -617,75 +618,166 @@ export function Import() {
     setBulkAiRunning(false);
   }
 
+  const loadingMsg = ugLoading ? (
+    <p className="help" style={{ textAlign: 'center' }}>
+      Récupération de la partition…
+    </p>
+  ) : null;
+  const errorCard = error ? (
+    <div className="card" style={{ borderColor: 'var(--danger)' }}>{error}</div>
+  ) : null;
+
+  // Éditeur commun (recherche ET document/lien) : n'apparaît qu'une fois une
+  // partition chargée — titre/artiste, aperçu de l'analyse, nettoyage IA au
+  // besoin, puis ajout à la bibliothèque ou aux idées.
+  const importEditor =
+    text.trim() !== '' ? (
+      <>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Titre (repris automatiquement)</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Artiste (repris automatiquement)</label>
+            <input
+              type="text"
+              value={artist}
+              onChange={(e) => setArtist(e.target.value)}
+            />
+          </div>
+        </div>
+        {preview && (
+          <div className="card">
+            <div className="help" style={{ marginBottom: 6 }}>
+              APERÇU DE L'ANALYSE
+            </div>
+            <div>
+              Titre : <strong>{title.trim() || preview.song.title}</strong>
+              {(artist.trim() || preview.song.artist) !== '' && (
+                <> — Artiste : {artist.trim() || preview.song.artist}</>
+              )}
+            </div>
+            <div className="help" style={{ marginTop: 4 }}>
+              {[
+                preview.stats.structureRows > 0
+                  ? `structure : ${preview.stats.structureRows} partie${preview.stats.structureRows > 1 ? 's' : ''}`
+                  : 'pas de structure détectée',
+                preview.song.key !== '' ? `tonalité ${preview.song.key}` : '',
+                preview.stats.mergedChordLines > 0
+                  ? `${preview.stats.mergedChordLines} lignes d'accords fusionnées`
+                  : '',
+              ]
+                .filter((x) => x !== '')
+                .join(' · ')}
+            </div>
+            {issues.length === 0 ? (
+              <div style={{ color: 'var(--accent)', marginTop: 8 }}>
+                ✅ Analyse : rien à corriger.
+              </div>
+            ) : (
+              <div style={{ marginTop: 8 }}>
+                {issues.map((i, k) => (
+                  <div
+                    key={k}
+                    className={i.severity === 'info' ? 'help' : ''}
+                    style={
+                      i.severity === 'warn'
+                        ? { color: 'var(--accent)' }
+                        : undefined
+                    }
+                  >
+                    {i.severity === 'warn' ? '⚠ ' : 'ℹ '}
+                    {i.text}
+                  </div>
+                ))}
+              </div>
+            )}
+            {duplicate && (
+              <div style={{ color: 'var(--accent)', marginTop: 8 }}>
+                ⚠ Un morceau nommé « {duplicate.title} » existe déjà — tu vas
+                peut-être créer un doublon.
+              </div>
+            )}
+          </div>
+        )}
+        {needsAi && (
+          <>
+            <button
+              className="btn ghost block"
+              onClick={() => void onAiClean()}
+              disabled={aiLoading}
+            >
+              {aiLoading
+                ? '✨ Nettoyage en cours…'
+                : "✨ L'analyse suggère un nettoyage IA — corriger le format"}
+            </button>
+            <p className="help">
+              L'IA réécrit la partition au format standard (accords [Am] dans
+              les paroles, sections nommées) pour régler les points ⚠
+              ci-dessus. Version en ligne + clé IA requises.
+            </p>
+            <div className="spacer" />
+          </>
+        )}
+        <button
+          className="btn block"
+          onClick={() => onImport(false)}
+          disabled={text.trim() === ''}
+        >
+          Ajouter à ma bibliothèque
+        </button>
+        <div className="spacer" />
+        <button
+          className="btn ghost block"
+          onClick={() => onImport(true)}
+          disabled={text.trim() === ''}
+          title="Jouable tout de suite, mais rangé dans les idées à travailler"
+        >
+          Garder comme idée — à travailler avant validation
+        </button>
+        <p className="help" style={{ textAlign: 'center' }}>
+          Une « idée » est jouable immédiatement (concert, demande du public…)
+          mais reste dans ta réserve jusqu'à ce que tu la valides dans la
+          bibliothèque.
+        </p>
+      </>
+    ) : null;
+
   return (
     <>
       <TopBar title="Ajouter un morceau" onBack={() => history.back()} />
       <div className="page">
-        <p className="help" style={{ marginTop: 0 }}>
-          Tout est récupéré automatiquement : titre, artiste, tonalité,
-          accords, structure. Tu n'auras (presque) rien à saisir.
-        </p>
-        <div className="chips" style={{ marginBottom: 14 }}>
-          <button
-            className={`chip ${method === 'ug' ? '' : 'off'}`}
-            onClick={() => setMethod('ug')}
-          >
-            1 · Rechercher une chanson
-          </button>
-          <button
-            className={`chip ${method === 'doc' ? '' : 'off'}`}
-            onClick={() => setMethod('doc')}
-          >
-            2 · Document ou lien
-          </button>
-          <button
-            className={`chip ${method === 'bulk' ? '' : 'off'}`}
-            onClick={() => setMethod('bulk')}
-          >
-            3 · Import en masse
-          </button>
-        </div>
-
-        {method === 'ug' && (
-          <>
-            <div
-              className="card"
-              style={{ borderColor: 'var(--accent)', marginBottom: 12 }}
+        {/* 1 — Recherche : la première chose visible, toujours en tête */}
+        <div className="field">
+          <label>Rechercher une chanson</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              value={ugQuery}
+              placeholder="Titre et artiste — ex. Angie Rolling Stones"
+              onChange={(e) => setUgQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void onUgSearch();
+              }}
+            />
+            <button
+              className="btn"
+              onClick={() => void onUgSearch()}
+              disabled={ugQuery.trim() === '' || ugSearching}
             >
-              <div className="title">✨ Trouve ta chanson en un instant</div>
-              <div className="help" style={{ marginTop: 4 }}>
-                Tape un titre (et l'artiste) : Sing2Me trouve la meilleure
-                version et importe accords, paroles et structure. La façon la
-                plus simple d'ajouter un morceau.
-              </div>
-            </div>
-            <div className="field">
-              <label>Titre de la chanson (et artiste)</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={ugQuery}
-                  placeholder="Ex. Angie Rolling Stones"
-                  onChange={(e) => setUgQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') void onUgSearch();
-                  }}
-                />
-                <button
-                  className="btn"
-                  onClick={() => void onUgSearch()}
-                  disabled={ugQuery.trim() === '' || ugSearching}
-                >
-                  {ugSearching ? '…' : 'Chercher'}
-                </button>
-              </div>
-              <p className="help" style={{ marginTop: 4 }}>
-                Choisis ensuite la version qui te convient (accords, tablature,
-                basse, ukulélé…).
-              </p>
-            </div>
-          </>
-        )}
+              {ugSearching ? '…' : 'Chercher'}
+            </button>
+          </div>
+          <p className="help" style={{ marginTop: 4 }}>
+            Le plus simple : Sing2Me trouve la meilleure version et importe
+            accords, paroles et structure.
+          </p>
+        </div>
 
         {method === 'ug' && ugResults !== null && ugResults.length > 0 && (
           <div
@@ -721,6 +813,43 @@ export function Import() {
             ))}
           </div>
         )}
+
+        {/* Flux recherche : messages + éditeur d'import (si partition chargée) */}
+        {method === 'ug' && (
+          <>
+            {loadingMsg}
+            {errorCard}
+            {importEditor}
+          </>
+        )}
+
+        {/* 2 — Autres façons d'ajouter un morceau, en secondaire, plus bas */}
+        <div className="spacer" />
+        <div
+          className="help"
+          style={{
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            marginBottom: 6,
+          }}
+        >
+          Ou importer autrement
+        </div>
+        <div className="chips" style={{ marginBottom: 12 }}>
+          <button
+            className={`chip ${method === 'doc' ? '' : 'off'}`}
+            onClick={() => setMethod(method === 'doc' ? 'ug' : 'doc')}
+          >
+            Document ou lien
+          </button>
+          <button
+            className={`chip ${method === 'bulk' ? '' : 'off'}`}
+            onClick={() => setMethod(method === 'bulk' ? 'ug' : 'bulk')}
+          >
+            Import en masse
+          </button>
+        </div>
 
         {method === 'doc' && (
           <>
@@ -785,6 +914,9 @@ export function Import() {
                 }
               />
             </div>
+            {loadingMsg}
+            {errorCard}
+            {importEditor}
           </>
         )}
 
@@ -1028,141 +1160,10 @@ export function Import() {
                   </p>
                 </>
               )}
+            {errorCard}
           </>
         )}
 
-        {ugLoading && (
-          <p className="help" style={{ textAlign: 'center' }}>
-            Récupération de la partition…
-          </p>
-        )}
-        {error && (
-          <div className="card" style={{ borderColor: 'var(--danger)' }}>
-            {error}
-          </div>
-        )}
-
-        {method !== 'bulk' && text.trim() !== '' && (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Titre (repris automatiquement)</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Artiste (repris automatiquement)</label>
-              <input
-                type="text"
-                value={artist}
-                onChange={(e) => setArtist(e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-
-        {method !== 'bulk' && preview && (
-          <div className="card">
-            <div className="help" style={{ marginBottom: 6 }}>
-              APERÇU DE L'ANALYSE
-            </div>
-            <div>
-              Titre : <strong>{title.trim() || preview.song.title}</strong>
-              {(artist.trim() || preview.song.artist) !== '' && (
-                <> — Artiste : {artist.trim() || preview.song.artist}</>
-              )}
-            </div>
-            <div className="help" style={{ marginTop: 4 }}>
-              {[
-                preview.stats.structureRows > 0
-                  ? `structure : ${preview.stats.structureRows} partie${preview.stats.structureRows > 1 ? 's' : ''}`
-                  : 'pas de structure détectée',
-                preview.song.key !== '' ? `tonalité ${preview.song.key}` : '',
-                preview.stats.mergedChordLines > 0
-                  ? `${preview.stats.mergedChordLines} lignes d'accords fusionnées`
-                  : '',
-              ]
-                .filter((x) => x !== '')
-                .join(' · ')}
-            </div>
-            {issues.length === 0 ? (
-              <div style={{ color: 'var(--accent)', marginTop: 8 }}>
-                ✅ Analyse : rien à corriger.
-              </div>
-            ) : (
-              <div style={{ marginTop: 8 }}>
-                {issues.map((i, k) => (
-                  <div
-                    key={k}
-                    className={i.severity === 'info' ? 'help' : ''}
-                    style={
-                      i.severity === 'warn'
-                        ? { color: 'var(--accent)' }
-                        : undefined
-                    }
-                  >
-                    {i.severity === 'warn' ? '⚠ ' : 'ℹ '}
-                    {i.text}
-                  </div>
-                ))}
-              </div>
-            )}
-            {duplicate && (
-              <div style={{ color: 'var(--accent)', marginTop: 8 }}>
-                ⚠ Un morceau nommé « {duplicate.title} » existe déjà — tu vas
-                peut-être créer un doublon.
-              </div>
-            )}
-          </div>
-        )}
-
-        {method !== 'bulk' && text.trim() !== '' && needsAi && (
-          <>
-            <button
-              className="btn ghost block"
-              onClick={() => void onAiClean()}
-              disabled={aiLoading}
-            >
-              {aiLoading
-                ? '✨ Nettoyage en cours…'
-                : "✨ L'analyse suggère un nettoyage IA — corriger le format"}
-            </button>
-            <p className="help">
-              L'IA réécrit la partition au format standard (accords [Am] dans
-              les paroles, sections nommées) pour régler les points ⚠
-              ci-dessus. Version en ligne + clé IA requises.
-            </p>
-            <div className="spacer" />
-          </>
-        )}
-        {method !== 'bulk' && (
-          <>
-            <button
-              className="btn block"
-              onClick={() => onImport(false)}
-              disabled={text.trim() === ''}
-            >
-              Ajouter à ma bibliothèque
-            </button>
-            <div className="spacer" />
-            <button
-              className="btn ghost block"
-              onClick={() => onImport(true)}
-              disabled={text.trim() === ''}
-              title="Jouable tout de suite, mais rangé dans les idées à travailler"
-            >
-              Garder comme idée — à travailler avant validation
-            </button>
-            <p className="help" style={{ textAlign: 'center' }}>
-              Une « idée » est jouable immédiatement (concert, demande du
-              public…) mais reste dans ta réserve jusqu'à ce que tu la valides
-              dans la bibliothèque.
-            </p>
-            <div className="spacer" />
-          </>
-        )}
         <p className="help" style={{ textAlign: 'center' }}>
           <a
             href="#/song/new"
