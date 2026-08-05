@@ -766,9 +766,32 @@ textarea.mono {
 }
 .slv-item {
   display: flex;
-  gap: 10px;
+  gap: 18px;
+  align-items: flex-start;
+  flex-wrap: wrap;
   padding: 10px 4px;
   border-bottom: 1px solid var(--border-soft);
+}
+.slv-left {
+  display: flex;
+  gap: 10px;
+  flex: 1 1 300px;
+  min-width: 220px;
+}
+/* Les commentaires prennent la largeur disponible à droite. */
+.slv-comments {
+  flex: 2 1 320px;
+  min-width: 240px;
+}
+.slv-gen {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-top: 3px;
+}
+.slv-perso-block {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-soft);
 }
 .slv-num {
   color: var(--accent);
@@ -858,8 +881,12 @@ textarea.mono {
   }
   .slv-num,
   .slv-note,
+  .slv-gen,
   .slv-chords {
     color: #000;
+  }
+  .slv-perso-block {
+    border-top-color: #ccc;
   }
 }
 

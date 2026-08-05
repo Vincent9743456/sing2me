@@ -86,58 +86,64 @@ export function SetlistView({ id }: { id: string }) {
           (n) => n.visibility === 'privee' && n.text.trim() !== '',
         )
       : [];
+    const hasGeneral =
+      item.note.trim() !== '' || comments.length > 0 || groupNotes.length > 0;
     return (
       <div className="slv-item" key={item.id}>
-        <span className="slv-num">{num !== null ? `${num}.` : '·'}</span>
-        <div className="grow">
-          <div className="slv-title">
-            {song.title || '(sans titre)'}
-            {song.artist !== '' && (
-              <span className="slv-artist"> — {song.artist}</span>
+        <div className="slv-left">
+          <span className="slv-num">{num !== null ? `${num}.` : '·'}</span>
+          <div style={{ minWidth: 0 }}>
+            <div className="slv-title">
+              {song.title || '(sans titre)'}
+              {song.artist !== '' && (
+                <span className="slv-artist"> — {song.artist}</span>
+              )}
+            </div>
+            <div className="slv-meta">
+              {[
+                shownKey !== ''
+                  ? item.keyOverride !== ''
+                    ? `Tonalité ${shownKey} (concert)`
+                    : `Tonalité ${shownKey}`
+                  : '',
+                formatDuration(songSeconds(raw)),
+                raw.durationSec <= 0 ? '(estimée)' : '',
+                song.tempo > 0 ? `${song.tempo} BPM` : '',
+              ]
+                .filter((x) => x !== '')
+                .join(' · ')}
+            </div>
+          </div>
+        </div>
+        {(hasGeneral || persoNotes.length > 0) && (
+          <div className="slv-comments">
+            {/* Commentaires généraux d'abord */}
+            {item.note.trim() !== '' && (
+              <div className="slv-note">▸ {item.note}</div>
+            )}
+            {comments.map((r) => (
+              <div className="slv-gen" key={r.id}>
+                {r.comment}
+              </div>
+            ))}
+            {groupNotes.map((n) => (
+              <div className="slv-gen" key={n.id}>
+                {n.target !== '' ? `${n.target} — ` : ''}
+                {n.text}
+              </div>
+            ))}
+            {/* Commentaires perso en dessous */}
+            {persoNotes.length > 0 && (
+              <div className="slv-perso-block">
+                {persoNotes.map((n) => (
+                  <div className="slv-perso" key={n.id}>
+                    ✎ {n.text}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-          <div className="slv-meta">
-            {[
-              shownKey !== ''
-                ? item.keyOverride !== ''
-                  ? `Tonalité ${shownKey} (concert)`
-                  : `Tonalité ${shownKey}`
-                : '',
-              formatDuration(songSeconds(raw)),
-              raw.durationSec <= 0 ? '(estimée)' : '',
-              song.tempo > 0 ? `${song.tempo} BPM` : '',
-            ]
-              .filter((x) => x !== '')
-              .join(' · ')}
-          </div>
-          {item.note.trim() !== '' && (
-            <div className="slv-note">▸ {item.note}</div>
-          )}
-          {comments.length > 0 && (
-            <ul className="slv-struct-list">
-              {comments.map((r) => (
-                <li key={r.id}>{r.comment}</li>
-              ))}
-            </ul>
-          )}
-          {groupNotes.length > 0 && (
-            <div className="slv-perso">
-              {groupNotes.map((n) => (
-                <div key={n.id}>
-                  ✎ {n.target !== '' ? `${n.target} — ` : ''}
-                  {n.text}
-                </div>
-              ))}
-            </div>
-          )}
-          {persoNotes.length > 0 && (
-            <div className="slv-perso">
-              {persoNotes.map((n) => (
-                <div key={n.id}>✎ {n.text}</div>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     );
   };

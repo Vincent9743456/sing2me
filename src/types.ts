@@ -224,6 +224,12 @@ export interface Setlist {
    * contexte facultatif, utile notamment aux setlists proposées par l'IA.
    */
   partyType?: string;
+  /**
+   * Capsule contextuelle (ex. « Soirée entre amis ») : regroupe des
+   * setlists solo autour d'un contexte plutôt que d'un groupe. Vide =
+   * capsule Solo classique ou capsule de groupe (voir bandId).
+   */
+  context?: string;
   createdAt: string;
   updatedAt: string;
 }

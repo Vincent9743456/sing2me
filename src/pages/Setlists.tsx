@@ -5,7 +5,7 @@
  */
 import React, { useState } from 'react';
 
-import { Modal, TopBar } from '../components/ui';
+import { Field, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { creatorMember, versionForBand } from '../lib/model';
 import { generateSetlistAI, repertoireForContext } from '../lib/setlistAI';
@@ -56,6 +56,7 @@ export function Setlists() {
   // Capsules dépliées (par clé : id de groupe, '' pour Solo, 'ai' pour l'IA).
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
+  const [newName, setNewName] = useState('');
   const toggle = (k: string) =>
     setOpen((prev) => {
       const next = new Set(prev);
@@ -155,16 +156,14 @@ export function Setlists() {
   };
 
   /** Crée une setlist dans ce contexte et l'ouvre directement (éditable). */
-  function createSetlist(newBandId: string) {
-    const sl = { ...emptySetlist(), bandId: newBandId };
+  function createSetlist(newBandId: string, context = '') {
+    const sl = { ...emptySetlist(), bandId: newBandId, context };
     saveSetlist(sl);
     navigate(`/setlist/${sl.id}`);
   }
 
-  /** Crée un nouveau groupe (nouvelle capsule) puis une setlist dedans. */
-  function createInNewBand() {
-    const name = prompt('Nom du nouveau groupe');
-    if (name === null || name.trim() === '') return;
+  /** Crée un nouveau groupe (auto-créé) puis une setlist dedans. */
+  function createInNewBand(name: string) {
     const b = {
       ...emptyBand(),
       name: name.trim(),
@@ -208,12 +207,13 @@ export function Setlists() {
       </span>
     );
 
-  /** Une capsule de groupe : repliée par défaut, dépliable au clic. */
+  /** Une capsule : repliée par défaut, dépliable au clic. */
   const capsule = (
     key: string,
     name: string,
     avatar: React.ReactNode,
     list: Setlist[],
+    onCreate: () => void,
   ) => {
     const isOpen = open.has(key);
     return (
@@ -233,10 +233,7 @@ export function Setlists() {
         {isOpen && (
           <div className="list capsule-body">
             {list.map(setlistRow)}
-            <div
-              className="row createcard"
-              onClick={() => createSetlist(key)}
-            >
+            <div className="row createcard" onClick={onCreate}>
               <Icon name="plus" size={16} /> Créer une setlist
             </div>
           </div>
@@ -276,12 +273,15 @@ export function Setlists() {
           </button>
         </div>
 
-        {/* Solo toujours en premier. */}
+        {/* Solo toujours en premier (setlists solo, hors capsules de contexte). */}
         {capsule(
           '',
           `Solo${artist.name !== '' ? ` — ${artist.name}` : ''}`,
           capAvatar(artist.photo ?? '', '🎤', 'var(--surface-high)'),
-          byBand(''),
+          setlists.filter(
+            (s) => (s.bandId ?? '') === '' && (s.context ?? '') === '',
+          ),
+          () => createSetlist(''),
         )}
 
         {bands.map((b, i) =>
@@ -294,8 +294,30 @@ export function Setlists() {
               BAND_COLORS[i % BAND_COLORS.length],
             ),
             byBand(b.id),
+            () => createSetlist(b.id),
           ),
         )}
+
+        {/* Capsules contextuelles (ex. « Soirée entre amis ») : solo + label. */}
+        {[
+          ...new Set(
+            setlists
+              .filter((s) => (s.bandId ?? '') === '' && (s.context ?? '') !== '')
+              .map((s) => s.context as string),
+          ),
+        ]
+          .sort((a, b) => a.localeCompare(b, 'fr'))
+          .map((ctx) =>
+            capsule(
+              `ctx:${ctx}`,
+              ctx,
+              capAvatar('', '🎉', 'var(--surface-high)'),
+              setlists.filter(
+                (s) => (s.bandId ?? '') === '' && s.context === ctx,
+              ),
+              () => createSetlist('', ctx),
+            ),
+          )}
 
         {/* Capsule IA : dépliable comme les autres. */}
         <div className={`stgroup stgroup-ai ${open.has('ai') ? 'open' : ''}`}>
@@ -344,10 +366,14 @@ export function Setlists() {
       {createOpen && (
         <Modal
           title="Créer une setlist"
-          onClose={() => setCreateOpen(false)}
+          onClose={() => {
+            setCreateOpen(false);
+            setNewName('');
+          }}
         >
           <p className="help" style={{ marginTop: 0 }}>
-            Pour qui ? Choisis une capsule existante, ou crée un nouveau groupe.
+            Dans quelle capsule ? Choisis-en une existante, ou crée-en une
+            nouvelle plus bas.
           </p>
           <div
             className="row"
@@ -388,16 +414,69 @@ export function Setlists() {
               </span>
             </div>
           ))}
-          <div className="row createcard" onClick={createInNewBand}>
-            <Icon name="plus" size={16} /> Nouveau groupe…
-          </div>
+          {[
+            ...new Set(
+              setlists
+                .filter(
+                  (s) => (s.bandId ?? '') === '' && (s.context ?? '') !== '',
+                )
+                .map((s) => s.context as string),
+            ),
+          ]
+            .sort((a, b) => a.localeCompare(b, 'fr'))
+            .map((ctx) => (
+              <div
+                className="row"
+                key={`ctx:${ctx}`}
+                onClick={() => {
+                  setCreateOpen(false);
+                  createSetlist('', ctx);
+                }}
+              >
+                {capAvatar('', '🎉', 'var(--surface-high)')}
+                <div className="grow" style={{ marginLeft: 10 }}>
+                  <div className="title">{ctx}</div>
+                </div>
+                <span className="chevron">
+                  <Icon name="plus" size={16} />
+                </span>
+              </div>
+            ))}
           <div className="spacer" />
-          <button
-            className="btn ghost block"
-            onClick={() => setCreateOpen(false)}
-          >
-            Annuler
-          </button>
+          <Field label="Nouvelle capsule">
+            <input
+              type="text"
+              value={newName}
+              placeholder="Nom (un groupe, ou un contexte : « Soirée entre amis »…)"
+              onChange={(e) => setNewName(e.target.value)}
+            />
+          </Field>
+          <div className="rowactions">
+            <button
+              className="btn"
+              disabled={newName.trim() === ''}
+              title="Crée le groupe (tu en es le premier musicien) et une setlist dedans"
+              onClick={() => {
+                createInNewBand(newName.trim());
+                setNewName('');
+              }}
+            >
+              <Icon name="users" size={14} /> Comme groupe
+            </button>
+            <button
+              className="btn ghost"
+              disabled={newName.trim() === ''}
+              title="Crée une capsule contextuelle (ex. « Soirée entre amis »), sans groupe"
+              onClick={() => {
+                const ctx = newName.trim();
+                setNewName('');
+                setCreateOpen(false);
+                createSetlist('', ctx);
+              }}
+            >
+              🎉 Comme contexte
+            </button>
+          </div>
         </Modal>
       )}
     </>
