@@ -296,6 +296,34 @@ export function duplicateVersion(
   };
 }
 
+/**
+ * Rattache un morceau importé comme NOUVELLE VERSION d'un morceau existant
+ * (au lieu de créer un doublon) : son contenu (tonalité, capo, structure,
+ * paroles) devient une version, activée pour que l'utilisateur voie ce qu'il
+ * vient d'importer. Le morceau existant garde ses cœurs, ses notes, ses
+ * autres versions et son morceau d'origine (versions[0]).
+ */
+export function addSongAsVersion(
+  existing: Song,
+  imported: Song,
+  name: string,
+): Song {
+  const version: SongVersion = {
+    id: makeId(),
+    name: name.trim() || `Version ${existing.versions.length + 1}`,
+    bandId: '',
+    key: imported.key,
+    tempo: imported.tempo,
+    capo: imported.capo,
+    structure: imported.structure.map((r) => ({ ...r, id: makeId() })),
+    lyrics: imported.lyrics,
+  };
+  return switchVersion(
+    { ...existing, versions: [...existing.versions, version] },
+    version.id,
+  );
+}
+
 /** Supprime une version (jamais la dernière) ; bascule sur la première restante si besoin. */
 export function removeVersion(song: Song, versionId: string): Song {
   if (song.versions.length <= 1) return song;

@@ -17,6 +17,7 @@ import {
   UgSearchResult,
   ugTabToImportText,
 } from '../lib/ug';
+import { addSongAsVersion } from '../lib/model';
 import { looksGarbled } from '../lib/textRepair';
 import { parseUgTabHtml } from '../lib/ugHtml';
 import { navigate } from '../router';
@@ -282,6 +283,16 @@ export function Import() {
     if (title.trim() !== '') song.title = title.trim();
     if (artist.trim() !== '') song.artist = artist.trim();
     if (asIdea) song.idea = true;
+    // Détection de doublon (titre / artiste / paroles) : si le morceau
+    // existe déjà, on l'ajoute comme NOUVELLE VERSION plutôt que de créer
+    // un doublon dans la bibliothèque.
+    const twin = findSameSong(songs, song.title, song.lyrics, song.artist);
+    if (twin && twin.idea !== true) {
+      const merged = addSongAsVersion(twin, song, 'Version importée');
+      saveSong(merged);
+      navigate(`/song/${merged.id}`);
+      return;
+    }
     saveSong(song);
     navigate(`/song/${song.id}`);
   }
