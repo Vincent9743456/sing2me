@@ -60,7 +60,12 @@ export function TopBar({
 
 const TABS: { route: string; match: Route['name'][]; ico: IconName; label: string }[] = [
   { route: '/', match: ['library', 'song', 'songEdit', 'import'], ico: 'music', label: 'Morceaux' },
-  { route: '/setlists', match: ['setlists', 'setlist'], ico: 'list', label: 'Setlists' },
+  {
+    route: '/setlists',
+    match: ['setlists', 'setlist', 'setlistEdit'],
+    ico: 'list',
+    label: 'Setlists',
+  },
   { route: '/concerts', match: ['concerts', 'concert'], ico: 'star', label: 'Concerts' },
   { route: '/bands', match: ['bands', 'band', 'bandChat'], ico: 'users', label: 'Groupes' },
   { route: '/artist', match: ['artist'], ico: 'user', label: 'Artiste' },

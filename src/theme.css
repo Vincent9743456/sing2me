@@ -615,6 +615,10 @@ textarea.mono {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
+.slitem.reserve {
+  opacity: 0.68;
+  border-style: dashed;
+}
 .slitem .drag {
   cursor: grab;
   color: var(--text-faint);
@@ -625,6 +629,173 @@ textarea.mono {
   color: var(--accent);
   font-weight: 750;
   min-width: 22px;
+}
+
+/* ---------- Encarts de setlists (par groupe / solo / IA) ---------- */
+.stgroup {
+  margin-bottom: var(--sp-5);
+}
+.stgroup-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--sp-2);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.stgroup-title {
+  flex: 1;
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+.stgroup-ai {
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+}
+.stgroup-ai .stgroup-head {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* ---------- Vue synthétique de setlist (lecture + impression) ---------- */
+.slv-head {
+  margin-bottom: var(--sp-4);
+}
+.slv-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  line-height: 1.15;
+}
+.slv-sub {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+.slv-sub > span {
+  font-weight: 650;
+}
+.slv-duration {
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+.slv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--sp-3) 0;
+}
+.slv-section {
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--text-dim);
+  margin: var(--sp-4) 0 var(--sp-2);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.slv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.slv-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.slv-num {
+  color: var(--accent);
+  font-weight: 750;
+  min-width: 26px;
+  font-size: 1.05rem;
+}
+.slv-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.slv-artist {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.slv-meta {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.slv-note {
+  font-size: 0.9rem;
+  color: var(--accent);
+  margin-top: 4px;
+}
+.slv-struct {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+  white-space: pre-wrap;
+}
+.slv-struct-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 0.86rem;
+  color: var(--text-dim);
+}
+.slv-struct-list li {
+  margin: 1px 0;
+}
+.slv-struct-list strong {
+  color: var(--text);
+}
+.slv-chords {
+  font-family: var(--mono, monospace);
+  color: var(--accent);
+}
+.slv-perso {
+  font-size: 0.86rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-style: italic;
+}
+.slv-reserve {
+  opacity: 0.72;
+}
+
+/* ---------- Impression : uniquement la vue setlist ---------- */
+@media print {
+  .topbar,
+  .tabbar,
+  .noprint {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .page {
+    padding: 0;
+    max-width: none;
+  }
+  .slv-item {
+    break-inside: avoid;
+    border-bottom: 1px solid #ccc;
+  }
+  .slv-title,
+  .slv-struct-list strong {
+    color: #000;
+  }
+  .slv-meta,
+  .slv-struct,
+  .slv-struct-list,
+  .slv-perso,
+  .slv-sub {
+    color: #333;
+  }
+  .slv-num,
+  .slv-note,
+  .slv-chords {
+    color: #000;
+  }
 }
 
 /* ---------- Mode scène ---------- */

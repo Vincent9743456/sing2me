@@ -14,6 +14,7 @@ import { Follow } from './pages/Follow';
 import { Remote } from './pages/Remote';
 import { Library } from './pages/Library';
 import { SetlistEdit } from './pages/SetlistEdit';
+import { SetlistView } from './pages/SetlistView';
 import { Setlists } from './pages/Setlists';
 import { SharePage } from './pages/SharePage';
 import { SongEdit } from './pages/SongEdit';
@@ -75,6 +76,9 @@ function Screen() {
       page = <Setlists />;
       break;
     case 'setlist':
+      page = <SetlistView id={route.id} key={route.id} />;
+      break;
+    case 'setlistEdit':
       page = <SetlistEdit id={route.id} key={route.id ?? 'new'} />;
       break;
     case 'songInSet':

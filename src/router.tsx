@@ -10,7 +10,8 @@ export type Route =
   | { name: 'songEdit'; id: string | null }
   | { name: 'import' }
   | { name: 'setlists' }
-  | { name: 'setlist'; id: string | null }
+  | { name: 'setlist'; id: string }
+  | { name: 'setlistEdit'; id: string | null }
   | { name: 'songInSet'; setlistId: string; index: number }
   | { name: 'stage'; setlistId: string | null; songId: string | null }
   | { name: 'concerts' }
@@ -42,6 +43,8 @@ export function parseHash(hash: string): Route {
     case 'setlists':
       return { name: 'setlists' };
     case 'setlist':
+      // Nouvelle setlist / édition → éditeur ; sinon vue synthétique.
+      if (parts[1] === 'new') return { name: 'setlistEdit', id: null };
       // Lecture d'un morceau DANS sa setlist : #/setlist/:id/song/:index
       if (parts[1] && parts[2] === 'song' && parts[3] !== undefined) {
         return {
@@ -50,7 +53,11 @@ export function parseHash(hash: string): Route {
           index: Math.max(0, parseInt(parts[3], 10) || 0),
         };
       }
-      return { name: 'setlist', id: parts[1] === 'new' ? null : (parts[1] ?? null) };
+      if (parts[1] && parts[2] === 'edit') {
+        return { name: 'setlistEdit', id: parts[1] };
+      }
+      if (parts[1]) return { name: 'setlist', id: parts[1] };
+      return { name: 'setlists' };
     case 'stage':
       if (parts[1] === 'song' && parts[2])
         return { name: 'stage', setlistId: null, songId: parts[2] };

@@ -27,6 +27,7 @@ import {
   Setlist,
   SharePayload,
   Song,
+  songSeconds,
   StageSetup,
 } from '../types';
 
@@ -43,11 +44,24 @@ export function SetlistEdit({ id }: { id: string | null }) {
     prefs,
   } = useStore();
   const existing = id ? setlists.find((s) => s.id === id) : undefined;
-  const [draft, setDraft] = useState<Setlist>(() =>
-    existing
-      ? { ...existing, items: existing.items.map((x) => ({ ...x })) }
-      : emptySetlist(),
-  );
+  const [draft, setDraft] = useState<Setlist>(() => {
+    if (existing) {
+      return { ...existing, items: existing.items.map((x) => ({ ...x })) };
+    }
+    // Nouvelle setlist : reprendre le contexte (groupe/solo) de l'encart
+    // d'où l'on vient, s'il a été transmis.
+    const base = emptySetlist();
+    try {
+      const b = sessionStorage.getItem('sing2me/newSetlistBand');
+      if (b !== null) {
+        sessionStorage.removeItem('sing2me/newSetlistBand');
+        return { ...base, bandId: b };
+      }
+    } catch {
+      /* stockage indisponible */
+    }
+    return base;
+  });
   const [picker, setPicker] = useState(false);
   const [gearPicker, setGearPicker] = useState(false);
   const [share, setShare] = useState<'groupe' | 'public' | null>(null);
@@ -63,9 +77,15 @@ export function SetlistEdit({ id }: { id: string | null }) {
   const bandName = (bid: string) =>
     bands.find((b) => b.id === bid)?.name ?? '';
 
-  const total = draft.items.reduce(
-    (sum, it) => sum + (songById.get(it.songId)?.durationSec ?? 0),
-    0,
+  // Durées estimées : durée réelle si renseignée, sinon 5 min. On
+  // distingue les morceaux joués de ceux « en réserve ».
+  const secondsOf = (its: Setlist['items']) =>
+    its.reduce((sum, it) => sum + songSeconds(songById.get(it.songId)), 0);
+  const playedItems = draft.items.filter((it) => it.reserve !== true);
+  const reserveItems = draft.items.filter((it) => it.reserve === true);
+  const playedSec = secondsOf(playedItems);
+  const hasEstimate = playedItems.some(
+    (it) => (songById.get(it.songId)?.durationSec ?? 0) <= 0,
   );
 
   function update(patch: Partial<Setlist>) {
@@ -153,7 +173,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
       return;
     }
     saveSetlist(draft);
-    navigate('/setlists');
+    navigate(`/setlist/${draft.id}`);
   }
 
   /**
@@ -283,9 +303,21 @@ export function SetlistEdit({ id }: { id: string | null }) {
       />
       <div className="page">
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
-          Morceaux ({draft.items.length}
-          {total > 0 ? ` · ≈ ${formatDuration(total)}` : ''})
+          Morceaux ({playedItems.length}
+          {playedSec > 0
+            ? ` · ${hasEstimate ? '≈ ' : ''}${formatDuration(playedSec)}`
+            : ''}
+          {reserveItems.length > 0
+            ? ` · ${reserveItems.length} en réserve`
+            : ''}
+          )
         </h2>
+        {hasEstimate && (
+          <p className="help" style={{ marginTop: -6 }}>
+            Durée estimée à 5 min pour les morceaux dont la durée n'est pas
+            renseignée — renseigne-la sur la fiche du morceau pour affiner.
+          </p>
+        )}
 
         {draft.items.map((item, idx) => {
           const song = songById.get(item.songId);
@@ -297,7 +329,9 @@ export function SetlistEdit({ id }: { id: string | null }) {
               : [];
           return (
             <div
-              className={`slitem ${overIndex === idx ? 'dragover' : ''}`}
+              className={`slitem ${overIndex === idx ? 'dragover' : ''} ${
+                item.reserve ? 'reserve' : ''
+              }`}
               key={item.id}
               draggable
               onDragStart={() => setDragIndex(idx)}
@@ -453,6 +487,31 @@ export function SetlistEdit({ id }: { id: string | null }) {
                     onClick={() => openItemSong(item, true)}
                   >
                     <Icon name="edit" size={14} />
+                  </button>
+                  <button
+                    className="btn ghost small"
+                    style={
+                      item.reserve
+                        ? { color: 'var(--accent)', fontWeight: 700 }
+                        : undefined
+                    }
+                    title={
+                      item.reserve
+                        ? 'En réserve — cliquer pour le remettre dans le set joué'
+                        : 'Mettre en réserve (joué seulement si besoin — hors durée prévue)'
+                    }
+                    onClick={() =>
+                      setDraft((d) => ({
+                        ...d,
+                        items: d.items.map((it) =>
+                          it.id === item.id
+                            ? { ...it, reserve: !it.reserve }
+                            : it,
+                        ),
+                      }))
+                    }
+                  >
+                    {item.reserve ? '☆ En réserve' : '☆ Réserve'}
                   </button>
                 </div>
               </div>

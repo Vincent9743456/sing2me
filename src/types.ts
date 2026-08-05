@@ -202,6 +202,12 @@ export interface SetlistItem {
   keyOverride: string;
   /** Version du morceau à jouer ('' = version active) */
   versionId: string;
+  /**
+   * true = morceau « en réserve » : présent dans la setlist mais pas
+   * prévu d'office — on le garde sous le coude selon l'ambiance. Par
+   * défaut (absent/false) le morceau fait partie du set joué.
+   */
+  reserve?: boolean;
 }
 
 export interface Setlist {
@@ -213,8 +219,23 @@ export interface Setlist {
   items: SetlistItem[];
   /** Sono & scène : matériel, branchements, plan de scène, réglages */
   setup?: StageSetup;
+  /**
+   * Type de soirée (ex. « entre potes », « bœuf », « concert »…) —
+   * contexte facultatif, utile notamment aux setlists proposées par l'IA.
+   */
+  partyType?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Durée par défaut d'un morceau quand sa durée réelle n'est pas
+ *  renseignée : 5 minutes. Sert à estimer la durée d'une setlist. */
+export const DEFAULT_SONG_SECONDS = 300;
+
+/** Durée à retenir pour un morceau : sa durée réelle si renseignée,
+ *  sinon l'estimation par défaut. */
+export function songSeconds(song: { durationSec: number } | undefined): number {
+  return song && song.durationSec > 0 ? song.durationSec : DEFAULT_SONG_SECONDS;
 }
 
 export interface Concert {
