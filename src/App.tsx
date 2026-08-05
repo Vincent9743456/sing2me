@@ -5,6 +5,7 @@ import { OnAirButton, OnAirProvider } from './components/OnAir';
 import { TabBar } from './components/ui';
 import { Artist } from './pages/Artist';
 import { BandChat } from './pages/BandChat';
+import { Bands } from './pages/Bands';
 import { BandEdit } from './pages/BandEdit';
 import { Live } from './pages/Live';
 import { ConcertEdit, Concerts } from './pages/Concerts';
@@ -93,6 +94,9 @@ function Screen() {
       break;
     case 'artist':
       page = <Artist />;
+      break;
+    case 'bands':
+      page = <Bands />;
       break;
     case 'band':
       page = <BandEdit id={route.id} key={route.id} />;

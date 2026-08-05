@@ -145,7 +145,7 @@ export function BandChat({ id }: { id: string }) {
   if (!band) {
     return (
       <>
-        <TopBar title="Espace du groupe" onBack={() => navigate('/artist')} />
+        <TopBar title="Espace du groupe" onBack={() => navigate('/bands')} />
         <div className="page">
           <p className="help">Ce groupe n'existe plus.</p>
         </div>

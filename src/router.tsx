@@ -16,6 +16,7 @@ export type Route =
   | { name: 'concerts' }
   | { name: 'concert'; id: string | null }
   | { name: 'artist' }
+  | { name: 'bands' }
   | { name: 'band'; id: string }
   | { name: 'bandChat'; id: string }
   | { name: 'live' }
@@ -60,6 +61,8 @@ export function parseHash(hash: string): Route {
       return { name: 'concert', id: parts[1] === 'new' ? null : (parts[1] ?? null) };
     case 'artist':
       return { name: 'artist' };
+    case 'bands':
+      return { name: 'bands' };
     case 'band':
       if (parts[1] && parts[2] === 'chat')
         return { name: 'bandChat', id: parts[1] };

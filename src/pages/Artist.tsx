@@ -597,6 +597,10 @@ export function Artist() {
 
         <h2 className="pagetitle">Mes groupes</h2>
         <p className="help">
+          Les groupes ont désormais leur onglet dédié 👥 dans la barre de
+          navigation — fiche, membres, répertoire partagé et discussion.
+        </p>
+        <p className="help">
           Clique sur un groupe pour gérer son profil public, ses musiciens et
           les invitations.
         </p>

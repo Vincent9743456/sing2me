@@ -159,7 +159,7 @@ export function BandEdit({ id }: { id: string }) {
   if (!band) {
     return (
       <>
-        <TopBar title="Groupe" onBack={() => navigate('/artist')} />
+        <TopBar title="Groupe" onBack={() => navigate('/bands')} />
         <div className="page">
         <button
           className="btn block"
@@ -183,7 +183,7 @@ export function BandEdit({ id }: { id: string }) {
     <>
       <TopBar
         title={band.name || 'Groupe'}
-        onBack={() => navigate('/artist')}
+        onBack={() => navigate('/bands')}
       />
       <div className="page">
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
