@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+import { Icon } from '../components/Icon';
 import { Field, TopBar } from '../components/ui';
 import { KEY_CHOICES } from '../lib/chords';
 import { importText } from '../lib/importer';
@@ -22,6 +23,7 @@ import {
 
 export function SongEdit({ id }: { id: string | null }) {
   const { songs, bands, saveSong, deleteSong } = useStore();
+  const [saved, setSaved] = useState(false);
   const existing = id ? songs.find((s) => s.id === id) : undefined;
   const [draft, setDraft] = useState<Song>(() =>
     existing
@@ -137,7 +139,15 @@ export function SongEdit({ id }: { id: string | null }) {
       song = switchVersion(song, existing.activeVersionId);
     }
     saveSong(song);
-    navigate(`/song/${song.id}`);
+    // On RESTE dans l'éditeur pour pouvoir continuer à modifier à tout
+    // moment (feedback « Enregistré ✓ »). Un nouveau morceau bascule sur son
+    // URL d'édition ; la partition se consulte via ← ou « Voir la partition ».
+    if (isNew) {
+      navigate(`/song/${song.id}/edit`);
+    } else {
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 1800);
+    }
   }
 
   function onDelete() {
@@ -345,10 +355,17 @@ export function SongEdit({ id }: { id: string | null }) {
           vocale…) s'ajoutent depuis la page du morceau.
         </p>
         <button className="btn block" onClick={onSave}>
-          Enregistrer
+          {saved ? '✓ Enregistré' : 'Enregistrer'}
         </button>
         {!isNew && (
           <>
+            <div className="spacer" />
+            <button
+              className="btn ghost block"
+              onClick={() => navigate(`/song/${draft.id}`)}
+            >
+              <Icon name="eye" size={15} /> Voir la partition
+            </button>
             <div className="spacer" />
             <button className="btn danger block" onClick={onDelete}>
               Supprimer le morceau

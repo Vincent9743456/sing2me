@@ -401,11 +401,11 @@ export function SongView({
         }
         right={
           <button
-            className="btn icon"
-            title="Modifier"
+            className="btn small"
+            title="Modifier la partition (paroles, accords, structure…)"
             onClick={() => navigate(`/song/${song.id}/edit`)}
           >
-            <Icon name="edit" size={18} />
+            <Icon name="edit" size={15} /> Modifier
           </button>
         }
       />
