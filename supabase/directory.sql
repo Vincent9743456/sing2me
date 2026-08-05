@@ -3,7 +3,7 @@
 -- À exécuter dans le SQL Editor de Supabase APRÈS bands.sql
 -- (ré-exécutable sans risque — idempotent).
 --
--- • profiles      : annuaire (nom + photo) des comptes qui acceptent
+-- • musician_directory : annuaire (nom + photo) des comptes qui acceptent
 --                   d'être trouvés. Recherche via search_profiles().
 -- • band_invites  : invitations en attente. Le créateur invite depuis
 --                   l'annuaire ; l'invité DOIT accepter (respond_invite).
@@ -11,7 +11,7 @@
 -- ============================================================
 
 -- ---------- Annuaire ----------
-create table if not exists public.profiles (
+create table if not exists public.musician_directory (
   user_id uuid primary key references auth.users (id) on delete cascade,
   name text not null default '',
   photo text not null default '',
@@ -20,12 +20,12 @@ create table if not exists public.profiles (
   searchable boolean not null default true,
   updated_at timestamptz not null default now()
 );
-alter table public.profiles enable row level security;
+alter table public.musician_directory enable row level security;
 
 -- Chacun gère uniquement sa propre fiche. La recherche passe par une
 -- fonction security definer (search_profiles) : pas de select global.
-drop policy if exists profiles_self on public.profiles;
-create policy profiles_self on public.profiles
+drop policy if exists musician_directory_self on public.musician_directory;
+create policy musician_directory_self on public.musician_directory
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- Renseigne/actualise sa fiche d'annuaire (nom + photo + instrument).
@@ -39,7 +39,7 @@ begin
   if auth.uid() is null then
     return;
   end if;
-  insert into public.profiles (user_id, name, photo, instrument, updated_at)
+  insert into public.musician_directory (user_id, name, photo, instrument, updated_at)
   values (
     auth.uid(),
     coalesce(p_name, ''),
@@ -60,7 +60,7 @@ create or replace function public.search_profiles(p_query text)
 returns table (user_id uuid, name text, photo text, instrument text)
 language sql security definer set search_path = public as $$
   select p.user_id, p.name, p.photo, p.instrument
-  from public.profiles p
+  from public.musician_directory p
   where p.searchable
     and p.user_id <> auth.uid()
     and length(coalesce(p_query, '')) >= 2
@@ -119,7 +119,7 @@ begin
   ) then
     return json_build_object('error', 'Déjà membre du groupe');
   end if;
-  select coalesce(name, '') into v_from from public.profiles
+  select coalesce(name, '') into v_from from public.musician_directory
     where user_id = auth.uid();
   insert into public.band_invites
     (band_id, invited_user, invited_by, band_name, from_name, status)
@@ -196,7 +196,7 @@ returns table (
 language sql security definer set search_path = public as $$
   select m.user_id, m.name, m.instrument, m.joined_at, coalesce(p.photo, '') as photo
   from public.cloud_band_members m
-  left join public.profiles p on p.user_id = m.user_id
+  left join public.musician_directory p on p.user_id = m.user_id
   where m.band_id = p_band
     and (
       exists (
