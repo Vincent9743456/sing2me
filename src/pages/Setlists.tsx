@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { Empty, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { versionForBand } from '../lib/model';
-import { generateSetlistAI, playableForAI } from '../lib/setlistAI';
+import { generateSetlistAI, repertoireForContext } from '../lib/setlistAI';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -231,7 +231,12 @@ function AiSetlistCard({
   const [bandId, setBandId] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const playable = playableForAI(songs).length;
+  // Répertoire disponible pour le contexte choisi (groupe précis ou solo).
+  const available = repertoireForContext(songs, bandId).length;
+  const contextLabel =
+    bandId === ''
+      ? 'en solo'
+      : bands.find((b) => b.id === bandId)?.name || 'ce groupe';
 
   async function generate() {
     if (busy) return;
@@ -242,6 +247,7 @@ function AiSetlistCard({
         songs,
         partyType.trim(),
         minutes,
+        bandId,
       );
       const items = result.order
         .map((idx) => lib[idx])
@@ -277,81 +283,81 @@ function AiSetlistCard({
       <div className="stgroup-head">
         <span className="stgroup-title">✨ Setlist par l'IA</span>
       </div>
-      {playable === 0 ? (
-        <p className="help" style={{ margin: '2px 0 0' }}>
-          Ajoute d'abord des morceaux à ta bibliothèque : l'IA compose à
-          partir de ton répertoire.
-        </p>
-      ) : (
-        <>
-          <p className="help" style={{ margin: '2px 0 8px' }}>
-            Dis l'ambiance, l'IA te propose un ordre à partir de ton
-            répertoire ({playable} morceau{playable > 1 ? 'x' : ''}). Tu
-            ajustes ensuite.
-          </p>
-          <div className="chips" style={{ marginBottom: 8 }}>
-            {PARTY_PRESETS.map((p) => (
-              <button
-                key={p}
-                className={`chip ${partyType === p ? '' : 'off'}`}
-                onClick={() => setPartyType(partyType === p ? '' : p)}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-          <div
-            style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
+      <p className="help" style={{ margin: '2px 0 8px' }}>
+        Un ordre proposé selon l'ambiance, dans le répertoire {contextLabel} (
+        {available} morceau{available > 1 ? 'x' : ''}).
+      </p>
+      <div className="chips" style={{ marginBottom: 8 }}>
+        {PARTY_PRESETS.map((p) => (
+          <button
+            key={p}
+            className={`chip ${partyType === p ? '' : 'off'}`}
+            onClick={() => setPartyType(partyType === p ? '' : p)}
           >
-            <input
-              type="text"
-              value={partyType}
-              placeholder="Type de soirée (ou précise…)"
-              style={{ flex: 1, minWidth: 160 }}
-              onChange={(e) => setPartyType(e.target.value)}
-            />
-            <label className="help" style={{ margin: 0 }}>
-              Durée
-              <input
-                type="number"
-                value={minutes}
-                min={5}
-                max={300}
-                step={5}
-                style={{ width: 70, marginLeft: 6, padding: '4px 6px' }}
-                onChange={(e) =>
-                  setMinutes(
-                    Math.max(5, Math.min(300, parseInt(e.target.value, 10) || 60)),
-                  )
-                }
-              />{' '}
-              min
-            </label>
-            {bands.length > 0 && (
-              <select
-                value={bandId}
-                title="Contexte de la setlist"
-                style={{ width: 'auto', padding: '4px 6px' }}
-                onChange={(e) => setBandId(e.target.value)}
-              >
-                <option value="">Solo</option>
-                {bands.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name || 'Groupe sans nom'}
-                  </option>
-                ))}
-              </select>
-            )}
-            <button className="btn" disabled={busy} onClick={() => void generate()}>
-              {busy ? 'Génération…' : '✨ Générer'}
-            </button>
-          </div>
-          {error !== '' && (
-            <p className="help" style={{ color: 'var(--danger)', marginBottom: 0 }}>
-              {error}
-            </p>
-          )}
-        </>
+            {p}
+          </button>
+        ))}
+      </div>
+      <div
+        style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
+      >
+        <input
+          type="text"
+          value={partyType}
+          placeholder="Type de soirée (ou précise…)"
+          style={{ flex: 1, minWidth: 160 }}
+          onChange={(e) => setPartyType(e.target.value)}
+        />
+        <label className="help" style={{ margin: 0 }}>
+          Durée
+          <input
+            type="number"
+            value={minutes}
+            min={5}
+            max={300}
+            step={5}
+            style={{ width: 70, marginLeft: 6, padding: '4px 6px' }}
+            onChange={(e) =>
+              setMinutes(
+                Math.max(5, Math.min(300, parseInt(e.target.value, 10) || 60)),
+              )
+            }
+          />{' '}
+          min
+        </label>
+        {bands.length > 0 && (
+          <select
+            value={bandId}
+            title="Contexte de la setlist (solo ou groupe)"
+            style={{ width: 'auto', padding: '4px 6px' }}
+            onChange={(e) => setBandId(e.target.value)}
+          >
+            <option value="">Solo</option>
+            {bands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name || 'Groupe sans nom'}
+              </option>
+            ))}
+          </select>
+        )}
+        <button
+          className="btn"
+          disabled={busy || available === 0}
+          onClick={() => void generate()}
+        >
+          {busy ? 'Génération…' : '✨ Générer'}
+        </button>
+      </div>
+      {available === 0 && (
+        <p className="help" style={{ marginBottom: 0 }}>
+          Aucun morceau {contextLabel} pour l'instant — affecte des morceaux à
+          ce répertoire d'abord.
+        </p>
+      )}
+      {error !== '' && (
+        <p className="help" style={{ color: 'var(--danger)', marginBottom: 0 }}>
+          {error}
+        </p>
       )}
     </div>
   );

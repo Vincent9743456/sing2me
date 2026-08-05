@@ -26,7 +26,7 @@ const BAND_COLORS = [
 ];
 
 export function SetlistView({ id }: { id: string }) {
-  const { setlists, songs, bands } = useStore();
+  const { setlists, songs, bands, deleteSetlist } = useStore();
   const [showPerso, setShowPerso] = useState(false);
   const setlist = setlists.find((s) => s.id === id);
   const songById = useMemo(
@@ -184,6 +184,13 @@ export function SetlistView({ id }: { id: string }) {
 
         <div className="slv-actions noprint">
           <button
+            className="btn small"
+            title="Modifier : ajouter/retirer des morceaux, changer l'ordre, réserve, tonalités…"
+            onClick={() => navigate(`/setlist/${setlist.id}/edit`)}
+          >
+            <Icon name="edit" size={14} /> Modifier
+          </button>
+          <button
             className="btn ghost small"
             style={showPerso ? { color: 'var(--accent)' } : undefined}
             title="Afficher mes notes personnelles (privées) sous chaque morceau"
@@ -215,6 +222,19 @@ export function SetlistView({ id }: { id: string }) {
               </button>
             </>
           )}
+          <button
+            className="btn ghost small"
+            style={{ color: 'var(--danger)' }}
+            title="Supprimer cette setlist"
+            onClick={() => {
+              if (confirm(`Supprimer « ${setlist.name || 'cette setlist'} » ?`)) {
+                deleteSetlist(setlist.id);
+                navigate('/setlists');
+              }
+            }}
+          >
+            <Icon name="trash" size={14} /> Supprimer
+          </button>
         </div>
 
         {setlist.items.length === 0 ? (

@@ -3,6 +3,7 @@
  * ordonnée à partir de la bibliothèque et du type de soirée. Best-effort —
  * nécessite la version en ligne (Vercel) + ANTHROPIC_API_KEY côté serveur.
  */
+import { versionForBand } from './model';
 import { Song, songSeconds } from '../types';
 
 export interface AiSetlistResult {
@@ -23,12 +24,26 @@ export function playableForAI(songs: Song[]): Song[] {
   );
 }
 
+/**
+ * Répertoire disponible pour un contexte donné :
+ * - groupe (bandId non vide) : uniquement les morceaux affectés à CE groupe
+ *   (ceux qui ont une version pour ce groupe) ;
+ * - solo (bandId vide) : les morceaux jouables en solo (hors « déqualifiés »).
+ * Dans les deux cas, hors idées et propositions non acceptées.
+ */
+export function repertoireForContext(songs: Song[], bandId: string): Song[] {
+  const base = playableForAI(songs);
+  if (bandId === '') return base.filter((s) => s.noSolo !== true);
+  return base.filter((s) => versionForBand(s, bandId) !== null);
+}
+
 export async function generateSetlistAI(
   songs: Song[],
   partyType: string,
   minutes: number,
+  bandId: string,
 ): Promise<{ result: AiSetlistResult; songs: Song[] }> {
-  const lib = playableForAI(songs);
+  const lib = repertoireForContext(songs, bandId);
   const payload = lib.map((s) => ({
     title: s.title,
     artist: s.artist,
