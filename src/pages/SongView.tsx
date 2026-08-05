@@ -497,6 +497,41 @@ export function SongView({
           </div>
         )}
 
+        {view === 'complete' && capo > 0 && targetKey !== '' && (
+          <p className="help" style={{ marginTop: -8 }}>
+            🎸 Capo {capo} : formes {transposeKeyName(targetKey, -capo)} — ça
+            sonne en {targetKey}. (Le bassiste et les autres voient les accords
+            réels dans la vue Accords.)
+          </p>
+        )}
+
+        <SongBody
+          song={{ ...song, rehearsalNotes: contextNotes }}
+          view={view}
+          semitones={shift}
+          capo={view === 'complete' ? capo : 0}
+          preferFlat={preferFlat}
+          fontSize={fontSize}
+        />
+
+        <div className="rowactions">
+          <button className="btn" onClick={() => navigate(`/stage/song/${song.id}`)}>
+            <Icon name="play" size={14} /> Scène
+          </button>
+          <button
+            className="btn ghost"
+            onClick={() => setFontSize((f) => Math.max(0.8, +(f - 0.1).toFixed(2)))}
+          >
+            A−
+          </button>
+          <button
+            className="btn ghost"
+            onClick={() => setFontSize((f) => Math.min(1.8, +(f + 0.1).toFixed(2)))}
+          >
+            A＋
+          </button>
+        </div>
+
         {showNotes && (
           <div className="notesbox">
             <div className="label" style={{ display: 'flex', gap: 8 }}>
@@ -640,40 +675,6 @@ export function SongView({
           </p>
         </details>
 
-        {view === 'complete' && capo > 0 && targetKey !== '' && (
-          <p className="help" style={{ marginTop: -8 }}>
-            🎸 Capo {capo} : formes {transposeKeyName(targetKey, -capo)} — ça
-            sonne en {targetKey}. (Le bassiste et les autres voient les accords
-            réels dans la vue Accords.)
-          </p>
-        )}
-
-        <SongBody
-          song={{ ...song, rehearsalNotes: contextNotes }}
-          view={view}
-          semitones={shift}
-          capo={view === 'complete' ? capo : 0}
-          preferFlat={preferFlat}
-          fontSize={fontSize}
-        />
-
-        <div className="rowactions">
-          <button className="btn" onClick={() => navigate(`/stage/song/${song.id}`)}>
-            <Icon name="play" size={14} /> Scène
-          </button>
-          <button
-            className="btn ghost"
-            onClick={() => setFontSize((f) => Math.max(0.8, +(f - 0.1).toFixed(2)))}
-          >
-            A−
-          </button>
-          <button
-            className="btn ghost"
-            onClick={() => setFontSize((f) => Math.min(1.8, +(f + 0.1).toFixed(2)))}
-          >
-            A＋
-          </button>
-        </div>
         <div className="rowactions">
           <button className="btn ghost" onClick={() => setShare('groupe')}>
             <Icon name="users" size={15} /> Partager au groupe

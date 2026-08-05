@@ -548,12 +548,8 @@ textarea.mono {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius);
-  padding: 10px 14px;
-  margin-bottom: 16px;
+  gap: 8px 12px;
+  margin-bottom: 14px;
 }
 .transpose .lbl {
   color: var(--text-dim);
