@@ -561,14 +561,10 @@ export function Library() {
                         </div>
                       )}
                     </div>
-                    {song.idea !== true &&
-                      (song.pendingBandId ?? '') === '' &&
-                      !(song.tags ?? []).includes(EXAMPLE_TAG) &&
-                      isRecent(song.createdAt) && (
-                        <span className="newtag" title="Ajoutée cette semaine">
-                          Nouveau
-                        </span>
-                      )}
+                    {/* Le repérage des nouveautés passe par le chip
+                        « ✨ Nouveautés » (filtre actionnable) — plus de badge
+                        par ligne : sur un import en masse, chaque ligne en
+                        portait un (bruit signalé par l'audit UI). */}
                     {[...(membership.bandsBySong.get(song.id) ?? [])].map((bid) => {
                       const idx = bandIndex.get(bid) ?? 0;
                       const b = bands[idx];

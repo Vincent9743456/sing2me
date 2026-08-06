@@ -17,7 +17,9 @@ const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 import {
   ArtistProfile,
   Band,
+  Concert,
   makeId,
+  Setlist,
   Song,
   SongNote,
   SongVersion,
@@ -427,6 +429,60 @@ export function notesForShare(
 ): SongNote[] {
   if (share === 'public') return [];
   return notes.filter((n) => n.visibility === 'groupe');
+}
+
+/**
+ * Assainit une setlist stockée : chaque champ requis reçoit une valeur par
+ * défaut, les items invalides sont écartés. Une donnée partielle (vieux
+ * schéma, synchro incomplète) ne doit JAMAIS planter une page — leçon de
+ * l'audit UI : sans cette garde, un champ manquant mettait l'écran en
+ * erreur plein écran.
+ */
+export function migrateSetlist(raw: unknown): Setlist {
+  const sl = (raw ?? {}) as Partial<Setlist> & Record<string, unknown>;
+  const items = Array.isArray(sl.items) ? sl.items : [];
+  return {
+    ...sl,
+    id: typeof sl.id === 'string' && sl.id !== '' ? sl.id : makeId(),
+    name: typeof sl.name === 'string' ? sl.name : '',
+    comment: typeof sl.comment === 'string' ? sl.comment : '',
+    bandId: typeof sl.bandId === 'string' ? sl.bandId : '',
+    items: items
+      .filter(
+        (it): it is NonNullable<typeof it> =>
+          !!it && typeof it.songId === 'string' && it.songId !== '',
+      )
+      .map((it) => ({
+        ...it,
+        id: typeof it.id === 'string' && it.id !== '' ? it.id : makeId(),
+        songId: it.songId,
+        note: typeof it.note === 'string' ? it.note : '',
+        keyOverride: typeof it.keyOverride === 'string' ? it.keyOverride : '',
+        versionId: typeof it.versionId === 'string' ? it.versionId : '',
+      })),
+    createdAt: typeof sl.createdAt === 'string' ? sl.createdAt : '',
+    updatedAt: typeof sl.updatedAt === 'string' ? sl.updatedAt : '',
+  };
+}
+
+/** Assainit un concert stocké (même garde défensive que migrateSetlist). */
+export function migrateConcert(raw: unknown): Concert {
+  const c = (raw ?? {}) as Partial<Concert> & Record<string, unknown>;
+  return {
+    ...c,
+    id: typeof c.id === 'string' && c.id !== '' ? c.id : makeId(),
+    title: typeof c.title === 'string' ? c.title : '',
+    date: typeof c.date === 'string' ? c.date : '',
+    time: typeof c.time === 'string' ? c.time : '',
+    venue: typeof c.venue === 'string' ? c.venue : '',
+    venueUrl: typeof c.venueUrl === 'string' ? c.venueUrl : '',
+    eventUrl: typeof c.eventUrl === 'string' ? c.eventUrl : '',
+    description: typeof c.description === 'string' ? c.description : '',
+    setlistId: typeof c.setlistId === 'string' ? c.setlistId : '',
+    visibility: c.visibility === 'prive' ? 'prive' : 'public',
+    createdAt: typeof c.createdAt === 'string' ? c.createdAt : '',
+    updatedAt: typeof c.updatedAt === 'string' ? c.updatedAt : '',
+  };
 }
 
 /**
