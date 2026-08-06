@@ -110,7 +110,10 @@ export function SongEdit({ id }: { id: string | null }) {
       ),
     };
     if (scope === 'all') {
-      // La partition affichée remplace celle de TOUTES les versions.
+      // La partition affichée remplace celle de TOUTES les versions —
+      // chacune est donc modifiée : on tamponne son `updatedAt` propre
+      // pour que la partition parte aussi vers le groupe à la synchro.
+      const now = new Date().toISOString();
       base = {
         ...base,
         versions: base.versions.map((v) => ({
@@ -120,6 +123,7 @@ export function SongEdit({ id }: { id: string | null }) {
           capo: base.capo,
           structure: base.structure.map((r) => ({ ...r, id: makeId() })),
           lyrics: base.lyrics,
+          updatedAt: now,
         })),
       };
     }

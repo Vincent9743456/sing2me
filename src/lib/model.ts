@@ -169,7 +169,25 @@ export function activeVersion(song: Song): SongVersion {
   );
 }
 
-/** Réécrit les champs actifs (tonalité, structure, paroles…) dans la version active. */
+/** Le contenu partageable d'une version a-t-il changé par rapport aux
+ *  champs actifs d'un morceau ? (paroles, accords, structure, tonalité). */
+function versionContentDiffers(
+  v: SongVersion,
+  song: Pick<Song, 'key' | 'tempo' | 'capo' | 'structure' | 'lyrics'>,
+): boolean {
+  return (
+    v.key !== song.key ||
+    v.tempo !== song.tempo ||
+    v.capo !== song.capo ||
+    v.lyrics !== song.lyrics ||
+    JSON.stringify(v.structure) !== JSON.stringify(song.structure)
+  );
+}
+
+/** Réécrit les champs actifs (tonalité, structure, paroles…) dans la version
+ *  active. Si son contenu a changé, on tamponne son `updatedAt` propre : c'est
+ *  ce timestamp (et non celui du morceau) qui propage l'édition d'une version
+ *  de groupe aux autres membres. */
 export function syncActiveVersion(song: Song): Song {
   return {
     ...song,
@@ -182,6 +200,9 @@ export function syncActiveVersion(song: Song): Song {
             capo: song.capo,
             structure: song.structure,
             lyrics: song.lyrics,
+            updatedAt: versionContentDiffers(v, song)
+              ? new Date().toISOString()
+              : v.updatedAt,
           }
         : v,
     ),

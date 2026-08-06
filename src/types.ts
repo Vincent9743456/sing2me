@@ -53,6 +53,15 @@ export interface SongVersion {
   capo: number;
   structure: StructureRow[];
   lyrics: string;
+  /**
+   * Dernière modification du CONTENU de cette version (paroles, accords,
+   * structure, tonalité, capo, tempo). Sert à propager les modifications
+   * d'une version de groupe entre membres, indépendamment du `updatedAt`
+   * du morceau entier (que chaque compte bump pour ses propres raisons).
+   * Absent = version héritée d'avant ce suivi : on retombe alors sur le
+   * `updatedAt` du morceau.
+   */
+  updatedAt?: string;
 }
 
 export interface Song {

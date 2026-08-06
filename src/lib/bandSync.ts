@@ -29,6 +29,13 @@ export interface SharedVersion {
   capo: number;
   structure: StructureRow[];
   lyrics: string;
+  /**
+   * Dernière modification du contenu de CETTE version. C'est ce timestamp
+   * (et non `SharedSong.updatedAt`, qui reflète tout le morceau côté
+   * expéditeur) qui décide si l'édition d'une version de groupe se propage
+   * aux autres membres.
+   */
+  updatedAt: string;
 }
 
 export interface SharedSong {
@@ -123,6 +130,9 @@ export function exportBandData(
         capo: v.capo,
         structure: v.structure,
         lyrics: v.lyrics,
+        // Repli sur le timestamp du morceau pour les versions héritées
+        // d'avant le suivi par version.
+        updatedAt: v.updatedAt ?? s.updatedAt,
       },
       notes: sharedNotes(s.rehearsalNotes, localBandId),
       updatedAt: s.updatedAt,
@@ -194,13 +204,22 @@ export function mergeBandData(cloud: BandData, local: BandData): BandData {
       songs.set(s.key, s);
       continue;
     }
-    // Garde anti-churn : contenu identique → on garde le plus ANCIEN
+    // Le CONTENU de la version de groupe est arbitré par le timestamp de la
+    // VERSION (pas du morceau) : une édition de la version « Vince et
+    // Marcus » gagne, même si l'autre membre a touché son morceau plus
+    // récemment pour une autre raison (version perso, notes, tags…).
     const same = versionEqual(s.version, other.version);
-    const newer = s.updatedAt > other.updatedAt ? s : other;
-    const older = s.updatedAt > other.updatedAt ? other : s;
+    const sAt = s.version.updatedAt || s.updatedAt;
+    const oAt = other.version.updatedAt || other.updatedAt;
+    const newer = sAt > oAt ? s : other;
+    const older = sAt > oAt ? other : s;
     const winner = same ? older : newer;
     songs.set(s.key, {
       ...winner,
+      // Le morceau garde le timestamp le plus récent des deux côtés — la
+      // détection « ré-apporté après un retrait » (plus bas) doit rester
+      // basée sur l'activité globale du morceau.
+      updatedAt: s.updatedAt > other.updatedAt ? s.updatedAt : other.updatedAt,
       notes: mergeNotes(other.notes, s.notes),
     });
   }
@@ -354,6 +373,7 @@ export function applyBandData(
             capo: e.version.capo,
             structure: e.version.structure,
             lyrics: e.version.lyrics,
+            updatedAt: e.version.updatedAt,
           },
         ],
         activeVersionId: vid,
@@ -385,12 +405,17 @@ export function applyBandData(
             capo: e.version.capo,
             structure: e.version.structure,
             lyrics: e.version.lyrics,
+            updatedAt: e.version.updatedAt,
           },
         ],
       };
       changed = true;
     } else if (
-      e.updatedAt > song.updatedAt &&
+      // Arbitrage par le timestamp de la VERSION de groupe : l'édition
+      // d'un membre est appliquée dès qu'elle est plus récente que MA
+      // copie de cette même version — que j'aie touché mon morceau pour
+      // d'autres raisons ou non.
+      (e.version.updatedAt || e.updatedAt) > (bandV.updatedAt ?? '') &&
       !versionEqual(
         {
           name: bandV.name,
@@ -399,6 +424,7 @@ export function applyBandData(
           capo: bandV.capo,
           structure: bandV.structure,
           lyrics: bandV.lyrics,
+          updatedAt: bandV.updatedAt ?? '',
         },
         e.version,
       )
@@ -415,6 +441,7 @@ export function applyBandData(
                 capo: e.version.capo,
                 structure: e.version.structure,
                 lyrics: e.version.lyrics,
+                updatedAt: e.version.updatedAt,
               }
             : v,
         ),
@@ -428,7 +455,7 @@ export function applyBandData(
               lyrics: e.version.lyrics,
             }
           : {}),
-        updatedAt: e.updatedAt,
+        updatedAt: e.updatedAt > song.updatedAt ? e.updatedAt : song.updatedAt,
       };
       changed = true;
     }
