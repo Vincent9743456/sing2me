@@ -914,7 +914,7 @@ export function Library() {
           title="Ajouter un morceau (importer un texte, un lien, un PDF… ou écrire à la main)"
           onClick={() => navigate('/import')}
         >
-          <Icon name="plus" size={17} /> Nouveau morceau
+          <Icon name="plus" size={17} /> New Song
         </button>
       )}
       {bandCollect && bandFilter !== null && bandFilter !== '' && (

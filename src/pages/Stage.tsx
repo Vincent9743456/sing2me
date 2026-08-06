@@ -195,16 +195,52 @@ export function Stage({
     return () => cancelAnimationFrame(raf);
   }, [scroll, speed, clamped]);
 
-  // Navigation clavier
+  // Navigation clavier / PÉDALE BLUETOOTH. La plupart des pédales
+  // « tourne-pages » (AirTurn, PageFlip, iRig BlueBoard, Donner…) se
+  // comportent comme un clavier Bluetooth et envoient ces touches ; on les
+  // mappe donc sur : suivant/précédent, défilement auto, vitesse, retour haut.
+  const noteOpenRef = useRef(noteOpen);
+  noteOpenRef.current = noteOpen;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === ' ') {
-        e.preventDefault();
-        setIndex((i) => Math.min(items.length - 1, i + 1));
-      } else if (e.key === 'ArrowLeft') {
-        setIndex((i) => Math.max(0, i - 1));
-      } else if (e.key === 'Escape') {
-        history.back();
+      // Ne pas capter les touches quand on écrit (dictée / saisie d'une note).
+      if (noteOpenRef.current) return;
+      const t = document.activeElement?.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'PageDown':
+        case ' ':
+          e.preventDefault();
+          setIndex((i) => Math.min(items.length - 1, i + 1));
+          break;
+        case 'ArrowLeft':
+        case 'PageUp':
+          e.preventDefault();
+          setIndex((i) => Math.max(0, i - 1));
+          break;
+        case 'ArrowDown':
+        case 'Enter':
+          // Défilement automatique : marche / arrêt.
+          e.preventDefault();
+          setScroll((s) => !s);
+          break;
+        case 'ArrowUp':
+          // Revenir en haut du morceau.
+          e.preventDefault();
+          if (bodyRef.current) bodyRef.current.scrollTop = 0;
+          break;
+        case '+':
+        case '=':
+          setSpeed((s) => Math.min(120, s + 10));
+          break;
+        case '-':
+        case '_':
+          setSpeed((s) => Math.max(10, s - 10));
+          break;
+        case 'Escape':
+          history.back();
+          break;
       }
     };
     window.addEventListener('keydown', onKey);

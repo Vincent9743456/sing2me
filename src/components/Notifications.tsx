@@ -123,6 +123,9 @@ export function useNotifications(): NotificationsValue {
 
 const SEEN_KEY = 'sing2me/seenMembers';
 const INIT_KEY = 'sing2me/initBands';
+// Groupes cloud dont je suis (ou j'ai été) membre : sert à détecter une
+// dissolution / un retrait (je n'y suis plus) et à retirer le groupe local.
+const WAS_MEMBER_KEY = 'sing2me/wasMember';
 const NEWS_KEY = 'sing2me/memberNews';
 const MSG_SEEN_KEY = 'sing2me/msgSeen'; // { [cloudId]: dernier créé_at vu }
 const MSG_INIT_KEY = 'sing2me/msgInit'; // groupes déjà « baselinés »
@@ -219,6 +222,7 @@ export function NotificationsProvider({
       //    messages de groupe non lus.
       const seen = loadSet(SEEN_KEY);
       const initBands = loadSet(INIT_KEY);
+      const wasMember = loadSet(WAS_MEMBER_KEY);
       const msgSeen = loadMap(MSG_SEEN_KEY);
       const msgInit = loadSet(MSG_INIT_KEY);
       const fresh: MemberNews[] = [];
@@ -231,16 +235,21 @@ export function NotificationsProvider({
           // Première observation d'un groupe : on établit la base sans
           // notifier (sinon tous les membres existants sembleraient nouveaux).
           const firstTime = !initBands.has(cid);
-          // Groupe DISSOUS par son créateur (ou je m'en suis fait retirer) :
-          // en tant que MEMBRE (owned:false), un groupe déjà connu qui ne
-          // renvoie plus aucun membre (moi compris) a disparu côté cloud. On
-          // le retire de mon app et je suis prévenu — mes copies personnelles
-          // des morceaux restent. (Le créateur, lui, n'est jamais concerné :
-          // owned !== false.)
-          if (band.owned === false && !firstTime && members.length === 0) {
+          // Détection fiable côté MEMBRE (indépendante du flag local, donc
+          // valable aussi pour les adhésions anciennes) : le créateur n'est
+          // jamais dans cloud_band_members, un membre si. Si j'étais membre de
+          // ce groupe et que je n'y suis plus (dissous par le créateur, ou
+          // retiré), on le retire de mon app + notif. Mes copies personnelles
+          // des morceaux restent. Sécurité : jamais pour un groupe dont je suis
+          // le propriétaire.
+          const iAmMember = members.some((m) => m.user_id === s.userId);
+          if (iAmMember) {
+            wasMember.add(cid);
+          } else if (wasMember.has(cid) && band.owned !== true) {
+            wasMember.delete(cid);
             deleteBandRef.current(band.id);
             toastRef.current.show(
-              `Le groupe « ${band.name || 'ton groupe'} » a été dissous — tes morceaux restent dans ta bibliothèque.`,
+              `Le groupe « ${band.name || 'ton groupe'} » n'existe plus — tes morceaux restent dans ta bibliothèque.`,
             );
             continue;
           }
@@ -289,6 +298,7 @@ export function NotificationsProvider({
       }
       saveSet(SEEN_KEY, seen);
       saveSet(INIT_KEY, initBands);
+      saveSet(WAS_MEMBER_KEY, wasMember);
       saveMap(MSG_SEEN_KEY, msgSeen);
       saveSet(MSG_INIT_KEY, msgInit);
       setUnreadByBand(unread);
