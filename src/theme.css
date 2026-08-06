@@ -535,6 +535,28 @@ textarea.mono {
   vertical-align: 1px;
 }
 
+/* ---------- Coach marks (aides contextuelles) ---------- */
+.coachmark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-s);
+  padding: 8px 10px;
+  margin-bottom: var(--sp-3);
+  font-size: 0.84rem;
+  color: var(--text);
+}
+.coachclose {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
 /* ---------- Onboarding (bienvenue + checklist) ---------- */
 .onbcard {
   position: relative;

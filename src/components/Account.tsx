@@ -337,11 +337,12 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           '',
         );
         clearPendingInvite();
-        const already = (st.bands ?? []).some(
+        const already = (st.bands ?? []).find(
           (b) => b.cloudId === pending.cloudId,
         );
+        let localBandId = already?.id ?? '';
         if (!already) {
-          store.saveBand({
+          const nb = {
             ...emptyBand(),
             name: bandName || pending.band,
             cloudId: pending.cloudId,
@@ -356,9 +357,20 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
                   : [],
               },
             ],
-          });
+          };
+          localBandId = nb.id;
+          store.saveBand(nb);
         }
-        navigate('/bands');
+        // F3 : atterrissage sur Morceaux avec une bannière de bienvenue.
+        try {
+          localStorage.setItem(
+            'sing2me/justJoined',
+            JSON.stringify({ name: bandName || pending.band, bandId: localBandId }),
+          );
+        } catch {
+          // stockage indisponible
+        }
+        navigate('/');
       } catch {
         // échec passager : on retentera au prochain cycle de session
         invitedRef.current = false;

@@ -8,6 +8,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Icon } from '../components/Icon';
+import { CoachMark } from '../components/CoachMark';
 import { useNotifications } from '../components/Notifications';
 import { Modal, TopBar } from '../components/ui';
 import { getValidSession } from '../lib/auth';
@@ -227,6 +228,10 @@ export function BandChat({ id }: { id: string }) {
         onBack={() => navigate(`/band/${band.id}`)}
       />
       <div className="page">
+        <CoachMark
+          id="chat-propose"
+          text="Propose une chanson 🎵 — un bouton l'importera directement pour tout le groupe."
+        />
         {messages === null && error === null && (
           <p className="help" style={{ textAlign: 'center' }}>
             Ouverture de l'espace du groupe…

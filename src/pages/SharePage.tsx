@@ -298,12 +298,20 @@ export function SharePage({
             {payload.invite.from} t'invite à rejoindre «&nbsp;
             {payload.invite.band}&nbsp;»
           </h1>
-          <p className="help" style={{ margin: 0 }}>
-            Sing2Me réunit ton répertoire — paroles + accords, transposition et
-            capo automatiques, mode scène, setlists — et un espace de groupe
-            pour préparer répètes et concerts. En rejoignant, tu récupères tout
-            de suite le répertoire partagé du groupe. C'est gratuit.
-          </p>
+          <div
+            className="hstack"
+            style={{
+              gap: 12,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              color: 'var(--text-dim)',
+              fontSize: '0.86rem',
+            }}
+          >
+            <span>✓ Gratuit</span>
+            <span>✓ Le répertoire du groupe arrive tout seul</span>
+            <span>✓ Tes morceaux restent à toi</span>
+          </div>
           {joined !== null ? (
             <p style={{ color: 'var(--accent)', fontWeight: 700, margin: 0 }}>
               ✓ Tu fais partie de «&nbsp;{joined}&nbsp;» ! Ouvre ton onglet

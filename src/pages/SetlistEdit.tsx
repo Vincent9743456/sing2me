@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ShareModal } from '../components/ShareModal';
 import { gearIcon } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
+import { CoachMark } from '../components/CoachMark';
 import { SongCollector } from '../components/SongPicker';
 import { StagePlan } from '../components/StagePlan';
 import { Field, Modal, TopBar } from '../components/ui';
@@ -343,6 +344,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
         onBack={() => navigate('/setlists')}
       />
       <div className="page">
+        <CoachMark
+          id="setlist-reorder"
+          text="Glisse les morceaux pour les réordonner. Chaque morceau peut avoir sa tonalité pour ce concert."
+        />
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
           Morceaux ({playedItems.length}
           {playedSec > 0

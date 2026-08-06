@@ -33,6 +33,7 @@ import { stripChords } from '../lib/chordpro';
 import { normalizeTitle } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet } from '../components/SongPicker';
+import { CoachMark } from '../components/CoachMark';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -534,6 +535,10 @@ export function SongView({
           </button>
         </div>
 
+        <CoachMark
+          id="song-transpose"
+          text="Change la tonalité ou le capo ici — tout se transpose."
+        />
         <div className="versionbar">
           {/* Le sélecteur de version n'apparaît qu'à partir de 2 versions
               (Lot D : un morceau simple n'affiche aucune notion de version). */}

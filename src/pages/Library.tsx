@@ -8,6 +8,7 @@ import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { ConfirmSheet, MenuSheet } from '../components/Feedback';
 import { Onboarding } from '../components/Onboarding';
 import { EXAMPLE_TAG } from '../seed';
+import { hintsOff, setHintsOff } from '../components/CoachMark';
 import { Empty, TopBar } from '../components/ui';
 
 /** Ajout / retrait d'un morceau dans les setlists, sans quitter la liste. */
@@ -992,6 +993,11 @@ export function Library() {
                   },
                 ]
               : []),
+            {
+              label: hintsOff() ? 'Réafficher les aides' : 'Masquer toutes les aides',
+              icon: 'eye' as const,
+              onClick: () => setHintsOff(!hintsOff()),
+            },
           ]}
           onClose={() => setHeaderMenu(false)}
         />

@@ -15,6 +15,7 @@ import { SongBody } from '../components/SongBody';
 import { NoteModal } from '../components/NoteModal';
 import { DndHint } from '../components/ui';
 import { Icon } from '../components/Icon';
+import { CoachMark } from '../components/CoachMark';
 import {
   spellingForKey,
   semitonesBetween,
@@ -222,6 +223,12 @@ export function Stage({
   if (!item) {
     return (
       <div className="stage">
+        <div style={{ padding: '8px 12px 0' }}>
+          <CoachMark
+            id="stage-gestures"
+            text="Balaie pour changer de morceau · ▲ défilement automatique · l'écran ne se met pas en veille."
+          />
+        </div>
         <div className="body">
           <p style={{ textAlign: 'center', color: 'var(--text-dim)' }}>
             Setlist vide ou introuvable.
