@@ -156,6 +156,7 @@ export function SongView({
   const [versionMenu, setVersionMenu] = useState(false);
   const [newVersionOpen, setNewVersionOpen] = useState(false);
   const [delVersionOpen, setDelVersionOpen] = useState(false);
+  const [delSongOpen, setDelSongOpen] = useState(false);
   const scroll = useAutoScroll(undefined, song?.id);
 
   // En lecture de setlist : bascule sur la version de l'item, puis
@@ -448,56 +449,6 @@ export function SongView({
           )}
         </div>
 
-        {/* Appartenances : état compact (où le morceau EST) + éditeur à la
-            demande pour l'ajouter/retirer d'un groupe ou d'une setlist. */}
-        <div
-          className="hstack"
-          style={{
-            marginBottom: 8,
-            flexWrap: 'wrap',
-            gap: 6,
-            alignItems: 'center',
-          }}
-        >
-          <span className="help">Dans :</span>
-          {memberBands.length === 0 && memberSetlists.length === 0 && (
-            <span className="help" style={{ margin: 0 }}>
-              aucun groupe ni setlist
-            </span>
-          )}
-          {memberBands.map((b) => (
-            <span key={b.id} className="chip static">
-              <span
-                aria-hidden="true"
-                style={{
-                  display: 'inline-block',
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background:
-                    BAND_COLORS[
-                      bands.findIndex((x) => x.id === b.id) % BAND_COLORS.length
-                    ],
-                  marginRight: 4,
-                }}
-              />
-              {b.name || 'Groupe sans nom'}
-            </span>
-          ))}
-          {memberSetlists.map((sl) => (
-            <span key={sl.id} className="chip static">
-              {sl.name || '(sans nom)'}
-            </span>
-          ))}
-          <button
-            className="chip off"
-            title="Ajouter ce morceau à un groupe ou une setlist"
-            onClick={() => setAssocOpen(true)}
-          >
-            ＋ Ajouter à…
-          </button>
-        </div>
-
         {/* Bandeau de version : dit toujours CE QUE tu consultes et si c'est
             partagé. Absent pour un morceau simple (1 version perso) — Lot D. */}
         {(isBandVersion || song.versions.length >= 2) && (
@@ -570,32 +521,6 @@ export function SongView({
           </div>
         )}
 
-        {/* Morceau simple (1 seule version perso) : accès discret sans jamais
-            afficher la notion de version tant qu'il n'y en a qu'une. */}
-        {!isBandVersion && song.versions.length < 2 && (
-          <div className="versionbar">
-            <button
-              className="btn ai small"
-              title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
-              onClick={() => setUgUpgrade(true)}
-            >
-              ★ Meilleure version ?
-            </button>
-            <button
-              className="btn ghost small"
-              title="Créer une variante (arrangement acoustique, autre tonalité…)"
-              onClick={() => setNewVersionOpen(true)}
-            >
-              ＋ Nouvelle version
-            </button>
-          </div>
-        )}
-
-        <CoachMark
-          id="song-transpose"
-          text="Change la tonalité ou le capo ici — tout se transpose."
-        />
-
         {ugUpgrade && (
           <UgUpgradeModal
             song={song}
@@ -609,8 +534,21 @@ export function SongView({
         )}
 
 
+        {/* La partition d'abord (« un écran = une mission ») : la
+            transposition vit dans un pli qui affiche toujours la tonalité
+            et le capo courants — un tap pour l'ouvrir, zéro place perdue. */}
+        <CoachMark
+          id="song-transpose"
+          text="Tonalité et capo sont ici — tout se transpose."
+        />
         {showTranspose && (
-          <div className="transpose">
+          <details className="stfold">
+            <summary>
+              🎵 Tonalité{shownKey !== '' ? ` ${shownKey}` : ''}
+              {capo > 0 ? ` · Capo ${capo}` : ''} — transposer
+            </summary>
+            <div className="spacer" />
+            <div className="transpose">
             {/* Chaque bloc « libellé + molette » est insécable : Transposer et
                 Capo restent groupés ; si la place manque, Capo passe à la
                 ligne en entier (une 2ᵉ ligne qui commence par « Capo »). */}
@@ -682,7 +620,8 @@ export function SongView({
                 Réinitialiser
               </button>
             )}
-          </div>
+            </div>
+          </details>
         )}
 
         <SongBody
@@ -711,6 +650,77 @@ export function SongView({
             A＋
           </button>
         </div>
+
+        {/* Sous la partition (la lecture d'abord) : appartenances (où le
+            morceau EST) + accès versions pour un morceau simple. */}
+        <div
+          className="hstack"
+          style={{
+            marginBottom: 8,
+            flexWrap: 'wrap',
+            gap: 6,
+            alignItems: 'center',
+          }}
+        >
+          <span className="help">Dans :</span>
+          {memberBands.length === 0 && memberSetlists.length === 0 && (
+            <span className="help" style={{ margin: 0 }}>
+              aucun groupe ni setlist
+            </span>
+          )}
+          {memberBands.map((b) => (
+            <span key={b.id} className="chip static">
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background:
+                    BAND_COLORS[
+                      bands.findIndex((x) => x.id === b.id) % BAND_COLORS.length
+                    ],
+                  marginRight: 4,
+                }}
+              />
+              {b.name || 'Groupe sans nom'}
+            </span>
+          ))}
+          {memberSetlists.map((sl) => (
+            <span key={sl.id} className="chip static">
+              {sl.name || '(sans nom)'}
+            </span>
+          ))}
+          <button
+            className="chip off"
+            title="Ajouter ce morceau à un groupe ou une setlist"
+            onClick={() => setAssocOpen(true)}
+          >
+            ＋ Ajouter à…
+          </button>
+        </div>
+
+        {/* Morceau simple (1 seule version perso) : accès discret sans jamais
+            afficher la notion de version tant qu'il n'y en a qu'une. */}
+        {!isBandVersion && song.versions.length < 2 && (
+          <div className="versionbar">
+            <button
+              className="btn ai small"
+              title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
+              onClick={() => setUgUpgrade(true)}
+            >
+              ★ Meilleure version ?
+            </button>
+            <button
+              className="btn ghost small"
+              title="Créer une variante (arrangement acoustique, autre tonalité…)"
+              onClick={() => setNewVersionOpen(true)}
+            >
+              ＋ Nouvelle version
+            </button>
+          </div>
+        )}
 
         {showNotes && (
           <div className="notesbox">
@@ -873,20 +883,23 @@ export function SongView({
         <button
           className="btn ghost block"
           style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-          onClick={() => {
-            if (
-              confirm(
-                `Supprimer « ${song.title || '(sans titre)'} » ? ` +
-                  'Le morceau sera aussi retiré des setlists.',
-              )
-            ) {
-              deleteSong(song.id);
-              navigate('/');
-            }
-          }}
+          onClick={() => setDelSongOpen(true)}
         >
           <Icon name="trash" size={15} /> Supprimer ce morceau
         </button>
+        {delSongOpen && (
+          <ConfirmSheet
+            title={`Supprimer « ${song.title || '(sans titre)'} » ?`}
+            message="Le morceau sera aussi retiré des setlists."
+            confirmLabel="Supprimer"
+            danger
+            onConfirm={() => {
+              deleteSong(song.id);
+              navigate('/');
+            }}
+            onClose={() => setDelSongOpen(false)}
+          />
+        )}
       </div>
 
       {/* Lecture de setlist : précédent / suivant toujours accessibles */}
