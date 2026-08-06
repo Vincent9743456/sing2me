@@ -159,10 +159,8 @@ export function Bands() {
         )}
         {bands.length === 0 && !creating ? (
           <Empty>
-            Joue à plusieurs : crée ton groupe (tu en seras le premier
-            musicien), invite les autres par lien ou QR — chacun avec son
-            compte. Vous partagerez le répertoire, les setlists, et un
-            espace de discussion pour préparer répéts et concerts.
+            Joue à plusieurs : crée ton groupe, invite les autres, et
+            partagez répertoire, setlists et discussions.
           </Empty>
         ) : (
           <div className="list">
@@ -256,8 +254,7 @@ export function Bands() {
           </button>
         )}
         <p className="help" style={{ textAlign: 'center' }}>
-          Le créateur en est automatiquement le premier musicien (avec son
-          matériel). Les invitations s'envoient depuis la fiche du groupe.
+          Tu invites les autres ensuite, depuis la fiche du groupe.
         </p>
       </div>
     </>

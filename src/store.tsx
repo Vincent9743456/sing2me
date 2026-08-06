@@ -14,7 +14,7 @@ import React, {
 } from 'react';
 
 import { normalizeTitle } from './lib/importer';
-import { migrateSong } from './lib/model';
+import { migrateConcert, migrateSetlist, migrateSong } from './lib/model';
 import { exampleSetlist, exampleSongs, SEED_KEY, SEED_VERSION } from './seed';
 import {
   ArtistProfile,
@@ -97,10 +97,10 @@ function loadState(): AppState {
         // migration automatique de l'ancien modèle à sections
         songs: (Array.isArray(parsed.songs) ? parsed.songs : []).map(migrateSong),
         setlists: (Array.isArray(parsed.setlists) ? parsed.setlists : []).map(
-          (sl) => ({ ...sl, bandId: sl.bandId ?? '' }),
+          migrateSetlist,
         ),
         concerts: (Array.isArray(parsed.concerts) ? parsed.concerts : []).map(
-          (c) => ({ ...c, venueUrl: c.venueUrl ?? '', eventUrl: c.eventUrl ?? '' }),
+          migrateConcert,
         ),
         bands: (Array.isArray(parsed.bands) ? parsed.bands : []).map((b) => ({
           bio: '',

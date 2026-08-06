@@ -277,7 +277,7 @@ export function Setlists() {
           <p className="help" style={{ margin: 0 }}>
             {setlists.length === 0
               ? 'Une setlist = l’ordre de tes morceaux pour un concert ou une répét.'
-              : 'Tes setlists rangées par contexte. Touche une capsule pour l’ouvrir.'}
+              : 'Tes setlists, rangées par groupe ou contexte. Touche une rangée pour l’ouvrir.'}
           </p>
           <button
             className="btn"
