@@ -127,6 +127,8 @@ export function BandEdit({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [headerMenu, setHeaderMenu] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
+  // Étape « prénom de l'invité » avant de partager le lien.
+  const [invitePrompt, setInvitePrompt] = useState(false);
   const [pendingName, setPendingName] = useState('');
   const [confirmDel, setConfirmDel] = useState(false);
   const [lastMsg, setLastMsg] = useState<{ text: string; at: string } | null>(
@@ -191,7 +193,10 @@ export function BandEdit({ id }: { id: string }) {
       // sans cloud, l'invitation classique (répertoire + carte) reste valable
     } finally {
       setInviteBusy(false);
-      setInvite(true);
+      // On demande d'abord le prénom de l'invité (pour l'afficher « en
+      // attente »), puis on partage le lien.
+      setPendingName('');
+      setInvitePrompt(true);
     }
   }
 
@@ -374,6 +379,13 @@ export function BandEdit({ id }: { id: string }) {
   }
 
   const meKey = (prefs.userName || artist.name || '').trim().toLowerCase();
+  // Photo d'un membre : la sienne, ou — pour MOI (le créateur, absent des
+  // membres cloud) — celle de mon profil artiste en secours.
+  const photoOf = (m: { name: string; photo?: string }): string =>
+    m.photo ||
+    (meKey !== '' && m.name.trim().toLowerCase() === meKey
+      ? artist.photo || ''
+      : '');
   const cloudNames = new Set(
     cloudMembers
       .map((m) => m.name.trim().toLowerCase())
@@ -387,11 +399,15 @@ export function BandEdit({ id }: { id: string }) {
       m.pending !== true &&
       (m.name.trim() === '' || !cloudNames.has(m.name.trim().toLowerCase())),
   );
-  // Invités pas encore acceptés (si le vrai compte a rejoint entre-temps, le
-  // même nom côté cloud le masque : plus « en attente »).
-  const pendingMembers = band.members.filter(
-    (m) => m.pending === true && !cloudNames.has(m.name.trim().toLowerCase()),
-  );
+  // Invités pas encore acceptés. Dès que le vrai compte a rejoint (nom cloud
+  // qui contient le prénom, ou l'inverse — « Marco » → « marco.bosio »),
+  // l'invité n'est plus « en attente » : sa fiche remplace le prénom.
+  const cloudNamesArr = [...cloudNames];
+  const pendingMembers = band.members.filter((m) => {
+    if (m.pending !== true) return false;
+    const nm = m.name.trim().toLowerCase();
+    return !cloudNamesArr.some((cn) => cn.includes(nm) || nm.includes(cn));
+  });
 
   // Données des 3 portes.
   const allMembers = [...cloudMembers, ...manualMembers];
@@ -461,8 +477,8 @@ export function BandEdit({ id }: { id: string }) {
                 <span className="avstack" aria-hidden="true">
                   {allMembers.slice(0, 4).map((m, i) => (
                     <span className="av" key={i}>
-                      {m.photo ? (
-                        <img src={m.photo} alt="" />
+                      {photoOf(m) ? (
+                        <img src={photoOf(m)} alt="" />
                       ) : (
                         (m.name.trim()[0] || '?').toUpperCase()
                       )}
@@ -959,6 +975,59 @@ export function BandEdit({ id }: { id: string }) {
           </button>
         </Modal>
       )}
+      {invitePrompt && (
+        <Modal
+          title="Inviter un musicien"
+          onClose={() => setInvitePrompt(false)}
+        >
+          <p className="help" style={{ marginTop: 0 }}>
+            Qui invites-tu ? Note son prénom : il apparaîtra « en attente »
+            jusqu'à ce qu'il rejoigne, puis son nom d'artiste le remplacera.
+          </p>
+          <input
+            type="text"
+            value={pendingName}
+            placeholder="Prénom de l'invité·e"
+            autoFocus
+            onChange={(e) => setPendingName(e.target.value)}
+          />
+          <div className="spacer" />
+          <button
+            className="btn block"
+            onClick={() => {
+              const nm = pendingName.trim();
+              if (
+                nm !== '' &&
+                !band.members.some(
+                  (m) => m.name.trim().toLowerCase() === nm.toLowerCase(),
+                )
+              ) {
+                saveBand({
+                  ...band,
+                  members: [
+                    ...band.members,
+                    { id: makeId(), name: nm, instrument: '', pending: true },
+                  ],
+                });
+              }
+              setInvitePrompt(false);
+              setInvite(true);
+            }}
+          >
+            Obtenir le lien d'invitation
+          </button>
+          <button
+            className="btn ghost block"
+            style={{ marginTop: 8 }}
+            onClick={() => {
+              setInvitePrompt(false);
+              setInvite(true);
+            }}
+          >
+            Partager sans noter de prénom
+          </button>
+        </Modal>
+      )}
       {invite && invitePayload && (
         <ShareModal
           title={`Inviter dans « ${band.name} »`}
@@ -981,7 +1050,7 @@ export function BandEdit({ id }: { id: string }) {
           )}
           {allMembers.map((m, i) => (
             <div className="row" key={`a${i}`} style={{ cursor: 'default' }}>
-              <Avatar name={m.name} photo={m.photo} />
+              <Avatar name={m.name} photo={photoOf(m)} />
               <div className="grow">
                 <div className="title">{m.name || 'Musicien'}</div>
                 {m.instrument !== '' && (
@@ -1019,45 +1088,6 @@ export function BandEdit({ id }: { id: string }) {
               )}
             </div>
           ))}
-          {isOwner && (
-            <>
-              <div className="spacer" />
-              <p className="help" style={{ marginTop: 0 }}>
-                Tu as envoyé le lien d'invitation à quelqu'un ? Note son prénom
-                pour le suivre « en attente » jusqu'à ce qu'il rejoigne.
-              </p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={pendingName}
-                  placeholder="Prénom de l'invité·e"
-                  onChange={(e) => setPendingName(e.target.value)}
-                />
-                <button
-                  className="btn"
-                  style={{ flexShrink: 0 }}
-                  disabled={pendingName.trim() === ''}
-                  onClick={() => {
-                    saveBand({
-                      ...band,
-                      members: [
-                        ...band.members,
-                        {
-                          id: makeId(),
-                          name: pendingName.trim(),
-                          instrument: '',
-                          pending: true,
-                        },
-                      ],
-                    });
-                    setPendingName('');
-                  }}
-                >
-                  Ajouter en attente
-                </button>
-              </div>
-            </>
-          )}
         </Modal>
       )}
       {headerMenu && (

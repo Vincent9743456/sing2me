@@ -73,10 +73,23 @@ function mergeCloudMembers(
           verified: true,
         };
   });
-  const keptManual = local.filter(
-    (m) =>
-      m.name.trim() === '' || !cloudNames.has(m.name.trim().toLowerCase()),
-  );
+  const cloudNamesArr = [...cloudNames];
+  const keptManual = local.filter((m) => {
+    const nm = m.name.trim().toLowerCase();
+    if (nm === '') return true; // membre manuel sans nom : conservé
+    if (cloudNames.has(nm)) return false; // déjà représenté (nom exact)
+    // Invité « en attente » : son PRÉNOM peut différer du nom d'artiste
+    // choisi à l'adhésion (« Marco » → « marco.bosio »). Dès qu'un membre
+    // cloud contient ce prénom (ou l'inverse), l'invité a rejoint : on retire
+    // le profil « en attente », remplacé par sa vraie fiche (nom + photo).
+    if (
+      m.pending === true &&
+      cloudNamesArr.some((cn) => cn.includes(nm) || nm.includes(cn))
+    ) {
+      return false;
+    }
+    return true;
+  });
   return [...fromCloud, ...keptManual];
 }
 
