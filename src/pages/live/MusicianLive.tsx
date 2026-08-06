@@ -70,6 +70,13 @@ export default function MusicianLive({
 
   return (
     <>
+      {/* Retour visible SANS défiler (symétrique du bouton d'entrée côté
+          public) — le bouton en bas de partition reste pour qui a tout lu. */}
+      <div style={{ textAlign: 'center', margin: '0 0 10px' }}>
+        <button className="btn ghost small" onClick={onPublic}>
+          ← Revenir à la vue public
+        </button>
+      </div>
       <div className={`livebadge ${state.status === 'pause' ? 'pause' : ''}`}>
         {state.status === 'pause'
           ? '⏸ PAUSE'
