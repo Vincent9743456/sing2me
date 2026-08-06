@@ -63,8 +63,14 @@ export function loadSession(): AuthSession | null {
 }
 
 function saveSession(s: AuthSession | null): void {
-  if (s) localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-  else localStorage.removeItem(STORAGE_KEY);
+  // Jamais bloquant : un stockage plein ou indisponible (navigateur intégré
+  // d'une app mail, mode privé…) ne doit pas faire planter le rendu.
+  try {
+    if (s) localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* stockage indisponible */
+  }
 }
 
 let lastAuthError: string | null = null;
@@ -80,31 +86,49 @@ export function takeAuthError(): string | null {
  * ou d'un OAuth (#access_token=…), crée la session et nettoie l'URL.
  */
 export function handleRedirectHash(): AuthSession | null {
-  const h = location.hash;
-  if (!h.includes('access_token=') && !h.includes('error_description=')) {
-    return null;
-  }
-  const params = new URLSearchParams(h.replace(/^#\/?/, ''));
-  const err = params.get('error_description');
-  if (err) {
-    lastAuthError = err.replace(/\+/g, ' ');
+  // Appelé pendant le rendu initial (initialisation d'état) : ne DOIT jamais
+  // lever d'exception, sinon l'application ne monte pas (écran noir au retour
+  // du lien magique). Tout est donc encapsulé.
+  try {
+    const h = location.hash;
+    if (!h.includes('access_token=') && !h.includes('error_description=')) {
+      return null;
+    }
+    const params = new URLSearchParams(h.replace(/^#\/?/, ''));
+    const err = params.get('error_description');
+    if (err) {
+      lastAuthError = err.replace(/\+/g, ' ');
+      location.hash = '#/artist';
+      return null;
+    }
+    const access = params.get('access_token') ?? '';
+    if (access === '') {
+      // Jeton absent/illisible : on nettoie l'URL au lieu de rester bloqué
+      // sur un hash technique qui n'est aucune route.
+      location.hash = '#/artist';
+      return null;
+    }
+    const claims = decodeJwt(access);
+    const expiresIn = parseInt(params.get('expires_in') ?? '3600', 10) || 3600;
+    const session: AuthSession = {
+      accessToken: access,
+      refreshToken: params.get('refresh_token') ?? '',
+      expiresAt: Math.floor(Date.now() / 1000) + expiresIn,
+      userId: claims.sub ?? '',
+      email: claims.email ?? '',
+    };
+    saveSession(session);
     location.hash = '#/artist';
+    return session;
+  } catch {
+    // En dernier ressort : ne pas laisser un écran noir. On repart propre.
+    try {
+      location.hash = '#/artist';
+    } catch {
+      /* location indisponible */
+    }
     return null;
   }
-  const access = params.get('access_token') ?? '';
-  if (access === '') return null;
-  const claims = decodeJwt(access);
-  const expiresIn = parseInt(params.get('expires_in') ?? '3600', 10) || 3600;
-  const session: AuthSession = {
-    accessToken: access,
-    refreshToken: params.get('refresh_token') ?? '',
-    expiresAt: Math.floor(Date.now() / 1000) + expiresIn,
-    userId: claims.sub ?? '',
-    email: claims.email ?? '',
-  };
-  saveSession(session);
-  location.hash = '#/artist';
-  return session;
 }
 
 /** Envoie le lien magique de connexion (crée le compte si besoin). */

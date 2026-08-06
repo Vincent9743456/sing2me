@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 
 import { AccountProvider } from './components/Account';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Feedback';
 import { NotificationsProvider, useNotifications } from './components/Notifications';
 import { OnAirButton, OnAirProvider } from './components/OnAir';
@@ -130,16 +131,18 @@ function Screen() {
 
 export default function App() {
   return (
-    <StoreProvider>
-      <AccountProvider>
-        <ToastProvider>
-          <NotificationsProvider>
-            <OnAirProvider>
-              <Screen />
-            </OnAirProvider>
-          </NotificationsProvider>
-        </ToastProvider>
-      </AccountProvider>
-    </StoreProvider>
+    <ErrorBoundary>
+      <StoreProvider>
+        <AccountProvider>
+          <ToastProvider>
+            <NotificationsProvider>
+              <OnAirProvider>
+                <Screen />
+              </OnAirProvider>
+            </NotificationsProvider>
+          </ToastProvider>
+        </AccountProvider>
+      </StoreProvider>
+    </ErrorBoundary>
   );
 }
