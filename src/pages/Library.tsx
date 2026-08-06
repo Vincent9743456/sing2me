@@ -6,6 +6,8 @@ import { SongBody } from '../components/SongBody';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { ConfirmSheet, MenuSheet } from '../components/Feedback';
+import { Onboarding } from '../components/Onboarding';
+import { EXAMPLE_TAG } from '../seed';
 import { Empty, TopBar } from '../components/ui';
 
 /** Ajout / retrait d'un morceau dans les setlists, sans quitter la liste. */
@@ -235,6 +237,7 @@ export function Library() {
     bands,
     setlists,
     saveSong,
+    deleteSetlist,
     clearBandRemoval,
     prefs,
     artist,
@@ -253,6 +256,7 @@ export function Library() {
   const [rowAssign, setRowAssign] = useState<string | null>(null);
   const [rowDelete, setRowDelete] = useState<Song | null>(null);
   const [headerMenu, setHeaderMenu] = useState(false);
+  const [confirmExamples, setConfirmExamples] = useState(false);
   // Collecteur « Ajouter des morceaux » quand la bibliothèque est filtrée
   // sur un groupe (vue répertoire — porte du groupe, règle 1).
   const [bandCollect, setBandCollect] = useState(false);
@@ -478,6 +482,9 @@ export function Library() {
                       <div className="title">{song.title || '(sans titre)'}</div>
                       <div className="sub">
                         {[
+                          (song.tags ?? []).includes(EXAMPLE_TAG)
+                            ? 'Exemple'
+                            : '',
                           song.artist,
                           song.key,
                           song.tempo > 0 ? `${song.tempo} BPM` : '',
@@ -797,6 +804,7 @@ export function Library() {
           </>
         )}
         </div>
+        <Onboarding />
         {allTags.length > 0 && (
           <>
             <div className="spacer" />
@@ -974,8 +982,35 @@ export function Library() {
               icon: 'edit',
               onClick: () => navigate('/song/new'),
             },
+            ...(songs.some((s) => (s.tags ?? []).includes(EXAMPLE_TAG))
+              ? [
+                  {
+                    label: 'Supprimer les exemples',
+                    icon: 'trash' as const,
+                    danger: true,
+                    onClick: () => setConfirmExamples(true),
+                  },
+                ]
+              : []),
           ]}
           onClose={() => setHeaderMenu(false)}
+        />
+      )}
+      {confirmExamples && (
+        <ConfirmSheet
+          title="Supprimer les morceaux d'exemple ?"
+          message="Les 2 morceaux d'exemple et « Ma première setlist (exemple) » seront retirés. Tes propres morceaux ne sont pas touchés."
+          confirmLabel="Supprimer les exemples"
+          danger
+          onConfirm={() => {
+            songs
+              .filter((s) => (s.tags ?? []).includes(EXAMPLE_TAG))
+              .forEach((s) => deleteSong(s.id));
+            setlists
+              .filter((sl) => /\(exemple\)/i.test(sl.name))
+              .forEach((sl) => deleteSetlist(sl.id));
+          }}
+          onClose={() => setConfirmExamples(false)}
         />
       )}
     </>

@@ -49,10 +49,17 @@ export function Setlists() {
     bands,
     artist,
     prefs,
+    concerts,
     saveSetlist,
     deleteSetlist,
     saveBand,
   } = useStore();
+  // E5 : la setlist du prochain concert (date la plus proche) est mise en avant.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const nextConcertSetlistId =
+    [...concerts]
+      .filter((c) => (c.setlistId ?? '') !== '' && c.date >= todayIso)
+      .sort((a, b) => a.date.localeCompare(b.date))[0]?.setlistId ?? '';
   // Capsules dépliées (par clé : id de groupe, '' pour Solo, 'ai' pour l'IA).
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -94,7 +101,12 @@ export function Setlists() {
         onClick={() => navigate(`/setlist/${sl.id}`)}
       >
         <div className="grow" style={{ minWidth: 0 }}>
-          <div className="title">{sl.name || '(sans nom)'}</div>
+          <div className="title">
+            {sl.name || '(sans nom)'}
+            {sl.id === nextConcertSetlistId && (
+              <span className="badge-next">Prochain concert</span>
+            )}
+          </div>
           <div
             className="sub"
             style={{

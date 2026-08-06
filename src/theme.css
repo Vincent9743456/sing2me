@@ -523,6 +523,83 @@ textarea.mono {
   flex-shrink: 0;
 }
 
+.badge-next {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.64rem;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+
+/* ---------- Onboarding (bienvenue + checklist) ---------- */
+.onbcard {
+  position: relative;
+  border-color: var(--accent);
+  margin-bottom: var(--sp-3);
+}
+.onbclose {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px;
+}
+.onbtitle {
+  font-family: inherit;
+  font-weight: 750;
+  font-size: 1.05rem;
+}
+.onbstep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 9px 2px;
+  cursor: pointer;
+  border-top: 1px solid var(--border-soft);
+  font-size: 0.92rem;
+}
+.onbstep:disabled {
+  cursor: default;
+}
+.onbcheck {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-faint);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.onbcheck.on {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #06281c;
+}
+.onbdone {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+.onbgo {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 1.2rem;
+}
+
 /* ---------- Feedback : feuilles du bas, toast ---------- */
 .sheet-backdrop {
   position: fixed;

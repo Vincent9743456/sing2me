@@ -15,7 +15,7 @@ import React, {
 
 import { normalizeTitle } from './lib/importer';
 import { migrateSong } from './lib/model';
-import { seedSongs } from './seed';
+import { exampleSetlist, exampleSongs, SEED_KEY, SEED_VERSION } from './seed';
 import {
   ArtistProfile,
   Band,
@@ -120,8 +120,10 @@ function loadState(): AppState {
   } catch {
     // stockage illisible : on repart des données de démo
   }
+  // Installation neuve : bibliothèque vide (le contenu témoin est injecté
+  // ensuite par un effet, sauf pour les invités — voir StoreProvider).
   return withEmbeddedLiveKey({
-    songs: seedSongs(),
+    songs: [],
     setlists: [],
     concerts: [],
     bands: [],
@@ -135,6 +137,41 @@ function loadState(): AppState {
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(loadState);
   const timer = useRef<number | null>(null);
+
+  // Contenu témoin (lot E) : à la toute première ouverture, on injecte 2
+  // morceaux d'exemple + 1 setlist. Une seule fois (drapeau), jamais réinjecté
+  // après suppression. EXCEPTION : un invité (lien de groupe/partage) reçoit du
+  // vrai contenu, pas les exemples.
+  useEffect(() => {
+    let seeded = false;
+    try {
+      seeded = localStorage.getItem(SEED_KEY) !== null;
+    } catch {
+      seeded = true;
+    }
+    if (seeded) return;
+    let invited = false;
+    try {
+      invited = localStorage.getItem('sing2me/pendingInvite') !== null;
+    } catch {
+      invited = false;
+    }
+    // On marque comme fait dans tous les cas (invité inclus : pas d'exemples).
+    try {
+      localStorage.setItem(SEED_KEY, SEED_VERSION);
+    } catch {
+      // stockage indisponible : tant pis, pas d'exemples
+    }
+    if (invited) return;
+    setState((prev) => {
+      if (prev.songs.length > 0 || prev.setlists.length > 0) return prev;
+      const songs = exampleSongs();
+      const setlist = exampleSetlist(songs.map((s) => s.id));
+      return { ...prev, songs, setlists: [setlist] };
+    });
+    // au montage uniquement
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (timer.current !== null) window.clearTimeout(timer.current);

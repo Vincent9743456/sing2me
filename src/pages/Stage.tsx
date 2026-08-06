@@ -23,6 +23,8 @@ import {
 import { stripChords } from '../lib/chordpro';
 import { notesForBand, resolveVersion } from '../lib/model';
 import { useStore } from '../store';
+import { EXAMPLE_TAG } from '../seed';
+import { STAGE_PLAYED_KEY } from '../components/Onboarding';
 import { Song, ViewMode } from '../types';
 
 interface StageItem {
@@ -91,6 +93,19 @@ export function Stage({
 
   const clamped = Math.min(index, Math.max(0, items.length - 1));
   const item = items[clamped] ?? null;
+
+  // Checklist onboarding (E3) : le mode scène a été ouvert sur un vrai
+  // morceau (pas un exemple).
+  useEffect(() => {
+    const s = item?.song;
+    if (s && !(s.tags ?? []).includes(EXAMPLE_TAG)) {
+      try {
+        localStorage.setItem(STAGE_PLAYED_KEY, new Date().toISOString());
+      } catch {
+        // stockage indisponible
+      }
+    }
+  }, [item?.song?.id]);
 
   // Ce que voit le chanteur → publié si la session est active
   // (paroles pour le public, accords pour la vue musicien du QR)
