@@ -315,6 +315,14 @@ export function SongView({
         }
         right={
           <>
+            {/* « Scène » (action principale) tout à droite — demande Vincent. */}
+            <button
+              className="btn ghost small"
+              title="Modifier la partition (paroles, accords, structure…)"
+              onClick={() => navigate(`/song/${song.id}/edit`)}
+            >
+              <Icon name="edit" size={15} /> Modifier
+            </button>
             <button
               className="btn small"
               title={
@@ -331,13 +339,6 @@ export function SongView({
               }
             >
               <Icon name="play" size={14} /> Scène
-            </button>
-            <button
-              className="btn ghost small"
-              title="Modifier la partition (paroles, accords, structure…)"
-              onClick={() => navigate(`/song/${song.id}/edit`)}
-            >
-              <Icon name="edit" size={15} /> Modifier
             </button>
           </>
         }
