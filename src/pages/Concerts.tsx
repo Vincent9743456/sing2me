@@ -1,3 +1,4 @@
+import { LiveBanner } from '../components/LiveBanner';
 import React, { useMemo, useState } from 'react';
 
 import { ShareModal } from '../components/ShareModal';
@@ -58,6 +59,7 @@ export function Concerts() {
         }
       />
       <div className="page">
+        <LiveBanner />
         {concerts.length === 0 && (
           <Empty>
             Aucun concert planifié.

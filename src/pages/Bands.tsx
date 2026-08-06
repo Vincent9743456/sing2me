@@ -2,6 +2,7 @@
  * Onglet Groupes : tous tes groupes au premier niveau — leur fiche,
  * leur espace de discussion, et la création en un geste.
  */
+import { LiveBanner } from '../components/LiveBanner';
 import React, { useEffect, useState } from 'react';
 
 import { useAccount } from '../components/Account';
@@ -101,6 +102,7 @@ export function Bands() {
     <>
       <TopBar title="Groupes" />
       <div className="page">
+        <LiveBanner />
         {memberNews.length > 0 && (
           <>
             {memberNews.map((n) => (

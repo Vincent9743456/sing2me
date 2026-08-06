@@ -1,3 +1,4 @@
+import { LiveBanner } from '../components/LiveBanner';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { ShareModal } from '../components/ShareModal';
@@ -242,6 +243,7 @@ export function Artist() {
     <>
       <TopBar title="Profil artiste" />
       <div className="page">
+        <LiveBanner />
         <AccountSection />
         <div className="spacer" />
 
