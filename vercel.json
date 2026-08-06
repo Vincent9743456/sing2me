@@ -19,6 +19,8 @@
     { "source": "/api/fetch-tab", "destination": "/api/tabs?fn=fetch" },
     { "source": "/api/search-tabs", "destination": "/api/tabs?fn=search" },
     { "source": "/api/social-import", "destination": "/api/tabs?fn=social" },
+    { "source": "/live", "destination": "/public.html" },
+    { "source": "/:name([a-z0-9]{3,30})", "destination": "/public.html" },
     {
       "source": "/(.*)",
       "destination": "/index.html"
