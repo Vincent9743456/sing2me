@@ -122,9 +122,23 @@ export function ensureOriginalVersion(song: Song): Song {
  * - depuis la bibliothèque / solo (bandId '') → la version originale.
  * Repli : version originale, sinon la première version.
  */
+/**
+ * « Solo » est un contexte à part entière, comme un groupe (décision
+ * Vincent, b115) : l'originale reste la maîtresse qui pilote tout, mais le
+ * musicien peut créer UNE version Solo dédiée, modifiable séparément —
+ * exactement comme une version de groupe. Identifiant réservé (jamais un
+ * id de groupe réel : makeId() ne produit pas « solo ») ; ces versions ne
+ * sortent jamais de l'appareil (bandSync ne regarde que les vrais groupes).
+ */
+export const SOLO_BAND_ID = 'solo';
+
 export function contextVersionId(song: Song, bandId: string): string {
+  // Contexte solo ('') : la version Solo dédiée si elle existe, sinon
+  // l'originale. Contexte groupe : la version du groupe, sinon l'originale.
   const v =
-    versionForBand(song, bandId) ?? versionForBand(song, '') ?? song.versions[0];
+    versionForBand(song, bandId === '' ? SOLO_BAND_ID : bandId) ??
+    versionForBand(song, '') ??
+    song.versions[0];
   return v?.id ?? song.activeVersionId;
 }
 

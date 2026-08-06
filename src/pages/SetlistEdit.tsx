@@ -12,6 +12,7 @@ import { normalizeTitle } from '../lib/importer';
 import {
   creatorMember,
   duplicateVersion,
+  SOLO_BAND_ID,
   notesForBand,
   notesForShare,
   resolveVersion,
@@ -180,7 +181,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
    */
   function addSongToSetlist(song: Song) {
     const bandId = draft.bandId ?? '';
-    let versionId = versionForBand(song, bandId)?.id ?? '';
+    // Setlist de groupe → version du groupe ; setlist solo → version Solo
+    // dédiée si elle existe (sinon l'originale, comme avant).
+    let versionId =
+      versionForBand(song, bandId === '' ? SOLO_BAND_ID : bandId)?.id ?? '';
     if (bandId !== '' && versionId === '') {
       const b = bands.find((x) => x.id === bandId);
       const prev = song.activeVersionId;
@@ -198,6 +202,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
       );
       versionId = versionForBand(updated, bandId)?.id ?? '';
     }
+    if (versionId === '') versionId = versionForBand(song, '')?.id ?? '';
     setDraft((d) => ({
       ...d,
       items: [

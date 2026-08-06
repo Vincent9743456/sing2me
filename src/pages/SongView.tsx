@@ -14,8 +14,10 @@ import {
 } from '../lib/chords';
 import {
   activeVersion,
+  duplicateVersion,
   notesForBand,
   removeVersion,
+  SOLO_BAND_ID,
   switchVersion,
   versionForBand,
 } from '../lib/model';
@@ -242,8 +244,12 @@ export function SongView({
 
   const current = activeVersion(song);
   const curBandId = current.bandId ?? '';
-  const isBandVersion = curBandId !== '';
+  // La version Solo (contexte réservé SOLO_BAND_ID) se comporte comme une
+  // version de groupe (une seule, modifiable à part) mais reste locale.
+  const isSoloVersion = curBandId === SOLO_BAND_ID;
+  const isBandVersion = curBandId !== '' && !isSoloVersion;
   const isMainVersion = current.id === song.versions[0]?.id;
+  const hasSoloVersion = versionForBand(song, SOLO_BAND_ID) !== null;
   const bandColorFor = (bid: string) =>
     BAND_COLORS[
       Math.max(0, bands.findIndex((x) => x.id === bid)) % BAND_COLORS.length
@@ -273,7 +279,8 @@ export function SongView({
    *  copie perso). */
   function confirmDeleteVersion() {
     if (!song) return;
-    const inBand = (current.bandId ?? '') !== '';
+    const inBand =
+      (current.bandId ?? '') !== '' && current.bandId !== SOLO_BAND_ID;
     if (inBand) {
       recordBandRemoval(current.bandId, normalizeTitle(song.title));
     }
@@ -414,7 +421,7 @@ export function SongView({
 
         {/* Bandeau de version : dit toujours CE QUE tu consultes et si c'est
             partagé. Absent pour un morceau simple (1 version perso) — Lot D. */}
-        {(isBandVersion || song.versions.length >= 2) && (
+        {(isBandVersion || isSoloVersion || song.versions.length >= 2) && (
           <div
             className="versionbanner"
             style={
@@ -428,12 +435,16 @@ export function SongView({
                 <span>
                   {isBandVersion
                     ? `Version du groupe ${bandName(curBandId) || '—'}`
-                    : isMainVersion
-                      ? 'Version originale'
-                      : `Version « ${current.name} »`}
+                    : isSoloVersion
+                      ? 'Version Solo'
+                      : isMainVersion
+                        ? 'Version originale'
+                        : `Version « ${current.name} »`}
                 </span>
                 {isBandVersion ? (
                   <span className="vb-shared">partagée</span>
+                ) : isSoloVersion ? (
+                  <span className="vb-solo">solo</span>
                 ) : isMainVersion ? (
                   <span className="vb-solo">pilote</span>
                 ) : (
@@ -443,9 +454,11 @@ export function SongView({
               <div className="vb-sub">
                 {isBandVersion
                   ? 'Tes modifications de cette version arrivent chez tous les membres du groupe.'
-                  : isMainVersion
-                    ? 'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres (tonalité/capo se répercutent).'
-                    : 'À toi seul — cette version n’est pas partagée.'}
+                  : isSoloVersion
+                    ? 'Ta façon de le jouer en solo — modifiable à part, jamais partagée. Les évolutions de l’originale s’y répercutent.'
+                    : isMainVersion
+                      ? 'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres (tonalité/capo se répercutent).'
+                      : 'À toi seul — cette version n’est pas partagée.'}
               </div>
             </div>
             {song.versions.length >= 2 && (
@@ -650,9 +663,23 @@ export function SongView({
           </button>
         </div>
 
-        {/* Modèle des versions (décision Vincent, b113) : l'originale + une
-            version par groupe qui a le morceau — rien d'autre. Pas de
-            création de variantes personnelles ni de versions de setlist. */}
+        {/* Modèle des versions (décisions Vincent, b113/b115) : l'originale
+            + une version par groupe + une version Solo optionnelle — rien
+            d'autre. Pas de versions de setlist. */}
+        {!hasSoloVersion && (
+          <div className="versionbar">
+            <button
+              className="btn ghost small"
+              title="Ta façon de le jouer en solo — modifiable à part, comme une version de groupe"
+              onClick={() => {
+                saveSong(duplicateVersion(song, 'Solo', SOLO_BAND_ID));
+                setShift(0);
+              }}
+            >
+              🎙 Créer la version Solo
+            </button>
+          </div>
+        )}
 
         {showNotes && (
           <div className="notesbox">
@@ -868,6 +895,18 @@ export function SongView({
               icon: 'star',
               onClick: () => setUgUpgrade(true),
             },
+            ...(!hasSoloVersion
+              ? [
+                  {
+                    label: '🎙 Créer la version Solo',
+                    icon: 'mic' as const,
+                    onClick: () => {
+                      saveSong(duplicateVersion(song, 'Solo', SOLO_BAND_ID));
+                      setShift(0);
+                    },
+                  },
+                ]
+              : []),
             ...(song.versions.length > 1 && !isMainVersion
               ? [
                   {
