@@ -86,6 +86,28 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     (tombstones) ;
   - navigation : les boutons ← des pages vont vers un parent explicite
     (`navigate('/xxx')`), pas `history.back()`.
+- **Politique tarifaire** (documentée, à ne jamais contredire ; pas encore
+  implémentée) :
+  - Tarification **INDIVIDUELLE uniquement** : jamais d'abonnement par
+    groupe (un musicien a souvent plusieurs groupes). Un seul Premium :
+    **2,99 €/mois ou 24,99 €/an**.
+  - Lancement : tout gratuit. Ensuite : **90 jours de Premium offerts** à
+    chaque nouveau compte (sans CB), prolongés par le 1er concert ON AIR
+    et par parrainage. **Statut Fondateur** pour les comptes de lancement.
+  - **Socle gratuit à vie** : tout ce qui sert à jouer (morceaux
+    illimités, import, mode scène, transposition, partages/QR), 3 setlists
+    personnelles, et la **contribution au groupe toujours gratuite**
+    (écrire ses notes partagées, discussion, voir le répertoire et la
+    setlist active / du prochain concert).
+  - **Premium = confort personnel** : setlists perso illimitées,
+    consultation de TOUTES les setlists du groupe à tout moment, synchro
+    multi-appareils continue, IA illimitée, page publique sans mention,
+    stats.
+  - Principes intangibles : un groupe n'est **jamais bloqué** par un
+    membre non-payeur ; on ne paywalle **jamais** une contribution au
+    groupe ; **aucune donnée** n'est jamais supprimée ou prise en otage.
+  - Commission ~7 % sur les pourboires ON AIR (tous comptes), hors frais
+    Stripe.
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
   par les composants Feedback (règle 10 — dette existante) ; OAuth
   Google/Facebook à configurer ; OCR des PDF scannés ; app native
