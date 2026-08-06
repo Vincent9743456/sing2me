@@ -92,6 +92,11 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     (tombstones) ;
   - navigation : les boutons ← des pages vont vers un parent explicite
     (`navigate('/xxx')`), pas `history.back()`.
+  - **une partition ne circule QUE par deux canaux** (décision Vincent,
+    b110) : poussée dans le répertoire d'un groupe (« Ajouter à… », synchro
+    auto) ou diffusée par QR en mode ON AIR. Aucun partage de morceau ni de
+    setlist par lien (les boutons « Partager au groupe / au public » ont été
+    retirés ; la page de réception /s/… des anciens liens reste) ;
   - **ligne rouge « outil, pas catalogue »** (§A.4 du mémo fondateurs) :
     aucune recherche de morceaux côté serveur, aucune base mutualisée entre
     comptes, aucun préremplissage de bibliothèque ; un morceau ne circule
