@@ -17,6 +17,7 @@ import { getValidSession } from '../lib/auth';
 import {
   announceBandSong,
   CloudMember,
+  deleteCloudBand,
   DirectoryPerson,
   ensureCloudBand,
   fetchBandMembers,
@@ -180,7 +181,7 @@ export function BandEdit({ id }: { id: string }) {
           const ref = await ensureCloudBand(s, band.id, band.name);
           setCloudRef(ref);
           if (band.cloudId !== ref.cloudId) {
-            saveBand({ ...band, cloudId: ref.cloudId });
+            saveBand({ ...band, cloudId: ref.cloudId, owned: true });
           }
         }
       }
@@ -203,7 +204,7 @@ export function BandEdit({ id }: { id: string }) {
           const ref = await ensureCloudBand(s, band.id, band.name);
           setCloudRef(ref);
           if (band.cloudId !== ref.cloudId) {
-            saveBand({ ...band, cloudId: ref.cloudId });
+            saveBand({ ...band, cloudId: ref.cloudId, owned: true });
           }
         }
       }
@@ -342,6 +343,34 @@ export function BandEdit({ id }: { id: string }) {
     if (band) saveBand({ ...band, ...patch });
   }
 
+  // Propriétaire = créateur du groupe. Lui seul peut supprimer le groupe,
+  // inviter ou retirer un musicien. Les autres peuvent seulement le quitter.
+  // (owned non renseigné = groupe créé avant cette règle → considéré comme
+  // mien pour ne pas bloquer d'anciens groupes ; les adhésions récentes
+  // posent explicitement owned:false.)
+  const isOwner = band.owned !== false;
+
+  /** Propriétaire → dissout le groupe pour tout le monde ; membre → le quitte
+   *  (retire sa propre adhésion cloud). Dans les deux cas, on le retire de mon
+   *  app ; mes copies personnelles des morceaux restent. */
+  async function dissolveOrLeave() {
+    if (!band) return;
+    const cid = band.cloudId;
+    if (cid) {
+      try {
+        const s = await getValidSession();
+        if (s) {
+          if (isOwner) await deleteCloudBand(s, cid);
+          else await removeBandMember(s, cid, s.userId);
+        }
+      } catch {
+        // best-effort : la suppression locale a lieu de toute façon
+      }
+    }
+    deleteBand(band.id);
+    navigate(isOwner ? '/artist' : '/bands');
+  }
+
   const meKey = (prefs.userName || artist.name || '').trim().toLowerCase();
   const cloudNames = new Set(
     cloudMembers
@@ -442,14 +471,20 @@ export function BandEdit({ id }: { id: string }) {
                     : ''}
                 </span>
               </div>
-              <button
-                className={`btn ${fewMembers ? '' : 'ghost'}`}
-                disabled={inviteBusy}
-                onClick={() => void openInvite()}
-                title="Inviter un musicien : il rejoint avec son compte, le répertoire se partage tout seul"
-              >
-                {inviteBusy ? '…' : '＋ Inviter'}
-              </button>
+              {isOwner ? (
+                <button
+                  className={`btn ${fewMembers ? '' : 'ghost'}`}
+                  disabled={inviteBusy}
+                  onClick={() => void openInvite()}
+                  title="Inviter un musicien : il rejoint avec son compte, le répertoire se partage tout seul"
+                >
+                  {inviteBusy ? '…' : '＋ Inviter'}
+                </button>
+              ) : (
+                <span className="help" style={{ margin: 0 }}>
+                  Membre du groupe
+                </span>
+              )}
             </div>
 
             {/* Trois grandes portes. */}
@@ -756,16 +791,18 @@ export function BandEdit({ id }: { id: string }) {
                 })
               }
             />
-            <button
-              className="btn ghost small"
-              style={{ color: 'var(--danger)' }}
-              title="Retirer ce musicien"
-              onClick={() =>
-                update({ members: band.members.filter((x) => x.id !== m.id) })
-              }
-            >
-              <Icon name="x" size={14} />
-            </button>
+            {isOwner && (
+              <button
+                className="btn ghost small"
+                style={{ color: 'var(--danger)' }}
+                title="Retirer ce musicien"
+                onClick={() =>
+                  update({ members: band.members.filter((x) => x.id !== m.id) })
+                }
+              >
+                <Icon name="x" size={14} />
+              </button>
+            )}
           </div>
           <details className="stfold" style={{ margin: '4px 0 0 8px' }}>
             <summary>
@@ -788,25 +825,29 @@ export function BandEdit({ id }: { id: string }) {
           )}
           </div>
         ))}
-        <button
-          className="btn ghost block"
-          onClick={() =>
-            update({
-              members: [...band.members, { id: makeId(), name: '', instrument: '' }],
-            })
-          }
-        >
-          ＋ Ajouter un musicien
-        </button>
+        {isOwner && (
+          <button
+            className="btn ghost block"
+            onClick={() =>
+              update({
+                members: [...band.members, { id: makeId(), name: '', instrument: '' }],
+              })
+            }
+          >
+            ＋ Ajouter un musicien
+          </button>
+        )}
 
         <div className="rowactions">
-          <button
-            className="btn"
-            disabled={inviteBusy}
-            onClick={() => void openInvite()}
-          >
-            {inviteBusy ? '…' : '📨 Inviter un musicien'}
-          </button>
+          {isOwner && (
+            <button
+              className="btn"
+              disabled={inviteBusy}
+              onClick={() => void openInvite()}
+            >
+              {inviteBusy ? '…' : '📨 Inviter un musicien'}
+            </button>
+          )}
           <button
             className="btn ghost"
             disabled={publicPayload === null}
@@ -816,14 +857,9 @@ export function BandEdit({ id }: { id: string }) {
           </button>
           <button
             className="btn danger"
-            onClick={() => {
-              if (confirm(`Supprimer le groupe « ${band.name} » ?`)) {
-                deleteBand(band.id);
-                navigate('/artist');
-              }
-            }}
+            onClick={() => setConfirmDel(true)}
           >
-            Supprimer
+            {isOwner ? 'Supprimer le groupe' : 'Quitter le groupe'}
           </button>
         </div>
         <p className="help">
@@ -943,8 +979,8 @@ export function BandEdit({ id }: { id: string }) {
               onClick: () => setShare(true),
             },
             {
-              label: 'Supprimer le groupe',
-              icon: 'trash',
+              label: isOwner ? 'Supprimer le groupe' : 'Quitter le groupe',
+              icon: isOwner ? 'trash' : 'x',
               danger: true,
               onClick: () => setConfirmDel(true),
             },
@@ -954,14 +990,19 @@ export function BandEdit({ id }: { id: string }) {
       )}
       {confirmDel && (
         <ConfirmSheet
-          title={`Supprimer « ${band.name || 'ce groupe'} » ?`}
-          message="Le groupe est retiré de ton app. Tes morceaux personnels restent dans ta bibliothèque."
-          confirmLabel="Supprimer le groupe"
+          title={
+            isOwner
+              ? `Supprimer le groupe « ${band.name || 'ce groupe'} » ?`
+              : `Quitter le groupe « ${band.name || 'ce groupe'} » ?`
+          }
+          message={
+            isOwner
+              ? 'Le groupe sera dissous pour tous les membres (chacun garde ses copies personnelles des morceaux).'
+              : 'Tu quittes ce groupe. Tes copies personnelles des morceaux restent dans ta bibliothèque.'
+          }
+          confirmLabel={isOwner ? 'Supprimer le groupe' : 'Quitter le groupe'}
           danger
-          onConfirm={() => {
-            deleteBand(band.id);
-            navigate('/bands');
-          }}
+          onConfirm={() => void dissolveOrLeave()}
           onClose={() => setConfirmDel(false)}
         />
       )}

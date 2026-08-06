@@ -811,6 +811,7 @@ export function Artist() {
             const b = {
               ...emptyBand(),
               name: 'Mon groupe',
+              owned: true,
               members: [creatorMember(draft, prefs.userName)],
             };
             saveBand(b);

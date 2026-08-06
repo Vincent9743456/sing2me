@@ -164,6 +164,8 @@ export interface Band {
   tipUrl: string;
   /** Publication cloud du groupe (adhésions entre comptes) */
   cloudId?: string;
+  /** true = j'ai créé ce groupe (propriétaire cloud) ; sinon je l'ai rejoint. */
+  owned?: boolean;
 }
 
 /** Position d'un musicien ou d'un matériel sur le plan de scène (0…1). */

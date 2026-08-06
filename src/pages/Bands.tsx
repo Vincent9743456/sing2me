@@ -67,6 +67,7 @@ export function Bands() {
           ...emptyBand(),
           name: inv.band_name || 'Groupe',
           cloudId: inv.band_id,
+          owned: false, // j'ai REJOINT ce groupe : je n'en suis pas le créateur
           members: [creatorMember(artist, prefs.userName)],
         });
       }
@@ -88,6 +89,7 @@ export function Bands() {
     const b = {
       ...emptyBand(),
       name: newName.trim() || 'Mon groupe',
+      owned: true, // je CRÉE ce groupe : j'en suis le propriétaire
       members: [creatorMember(artist, prefs.userName)],
     };
     saveBand(b);

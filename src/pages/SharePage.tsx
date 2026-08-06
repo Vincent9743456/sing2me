@@ -151,6 +151,7 @@ export function SharePage({
           ...emptyBand(),
           name: bandName || inv.band,
           cloudId: inv.cloudId,
+          owned: false,
           members: [
             {
               id: makeId(),

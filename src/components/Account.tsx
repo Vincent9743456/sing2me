@@ -346,6 +346,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             ...emptyBand(),
             name: bandName || pending.band,
             cloudId: pending.cloudId,
+            owned: false,
             members: [
               {
                 id: makeId(),

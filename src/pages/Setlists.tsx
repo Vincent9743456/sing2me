@@ -179,6 +179,7 @@ export function Setlists() {
     const b = {
       ...emptyBand(),
       name: name.trim(),
+      owned: true,
       members: [creatorMember(artist, prefs.userName)],
     };
     saveBand(b);

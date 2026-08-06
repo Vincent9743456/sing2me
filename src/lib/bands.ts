@@ -387,3 +387,21 @@ export async function removeBandMember(
   );
   if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
 }
+
+/**
+ * Dissout le groupe côté cloud (suppression de la ligne cloud_bands). La RLS
+ * n'autorise que le PROPRIÉTAIRE : pour un simple membre, la requête ne
+ * supprime rien (sans erreur). La cascade retire membres, répertoire et
+ * messages — chaque membre garde ses copies personnelles des morceaux.
+ * Les membres détectent la disparition à leur prochaine synchro (le groupe
+ * est alors retiré de leur app, avec une notification).
+ */
+export async function deleteCloudBand(
+  s: AuthSession,
+  cloudId: string,
+): Promise<void> {
+  const res = await sbAuthed(s, `/rest/v1/cloud_bands?id=eq.${cloudId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+}

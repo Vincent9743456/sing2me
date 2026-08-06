@@ -24,6 +24,7 @@ import {
 import { useStore } from '../store';
 import { BandMember, makeId } from '../types';
 import { useAccount } from './Account';
+import { useToast } from './Feedback';
 
 /** Signature stable de la liste de membres (par nom) pour comparer sans churn. */
 function membersSignature(members: { name: string }[]): string {
@@ -179,7 +180,8 @@ export function NotificationsProvider({
   children: React.ReactNode;
 }) {
   const account = useAccount();
-  const { bands, saveBand } = useStore();
+  const { bands, saveBand, deleteBand } = useStore();
+  const toast = useToast();
   const [inviteCount, setInviteCount] = useState(0);
   const [memberNews, setMemberNews] = useState<MemberNews[]>(() => loadNews());
   const [unreadByBand, setUnreadByBand] = useState<Record<string, number>>({});
@@ -187,6 +189,10 @@ export function NotificationsProvider({
   bandsRef.current = bands;
   const saveBandRef = useRef(saveBand);
   saveBandRef.current = saveBand;
+  const deleteBandRef = useRef(deleteBand);
+  deleteBandRef.current = deleteBand;
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
   const busy = useRef(false);
 
   const poll = useCallback(async () => {
@@ -220,6 +226,19 @@ export function NotificationsProvider({
           // Première observation d'un groupe : on établit la base sans
           // notifier (sinon tous les membres existants sembleraient nouveaux).
           const firstTime = !initBands.has(cid);
+          // Groupe DISSOUS par son créateur (ou je m'en suis fait retirer) :
+          // en tant que MEMBRE (owned:false), un groupe déjà connu qui ne
+          // renvoie plus aucun membre (moi compris) a disparu côté cloud. On
+          // le retire de mon app et je suis prévenu — mes copies personnelles
+          // des morceaux restent. (Le créateur, lui, n'est jamais concerné :
+          // owned !== false.)
+          if (band.owned === false && !firstTime && members.length === 0) {
+            deleteBandRef.current(band.id);
+            toastRef.current.show(
+              `Le groupe « ${band.name || 'ton groupe'} » a été dissous — tes morceaux restent dans ta bibliothèque.`,
+            );
+            continue;
+          }
           for (const m of members) {
             if (m.user_id === s.userId) continue;
             const key = `${cid}:${m.user_id}`;

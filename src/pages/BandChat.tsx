@@ -94,7 +94,7 @@ export function BandChat({ id }: { id: string }) {
       if (cloudIdRef.current === '') {
         const ref = await ensureCloudBand(s, band.id, band.name);
         cloudIdRef.current = ref.cloudId;
-        saveBand({ ...band, cloudId: ref.cloudId });
+        saveBand({ ...band, cloudId: ref.cloudId, owned: true });
       }
       setMessages(await fetchBandMessages(s, cloudIdRef.current));
       // Ouvrir/consulter la discussion = fil lu : on efface le compteur.
@@ -167,7 +167,7 @@ export function BandChat({ id }: { id: string }) {
       if (cloudIdRef.current === '') {
         const ref = await ensureCloudBand(s, band.id, band.name);
         cloudIdRef.current = ref.cloudId;
-        saveBand({ ...band, cloudId: ref.cloudId });
+        saveBand({ ...band, cloudId: ref.cloudId, owned: true });
       }
       // Associe la chanson au groupe (version dédiée) si ce n'est pas déjà
       // fait, sans changer la version affichée du morceau. La synchro du
@@ -336,7 +336,7 @@ export function BandChat({ id }: { id: string }) {
           onClick={() => void onSend()}
           disabled={text.trim() === '' || busy}
         >
-          {busy ? 'Envoi…' : `Envoyer — signé ${author}`}
+          {busy ? 'Envoi…' : 'Envoyer'}
         </button>
         <p className="help" style={{ textAlign: 'center' }}>
           Visible par tous les membres du groupe. Actualisé automatiquement.

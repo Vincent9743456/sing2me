@@ -8,7 +8,6 @@ import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { ConfirmSheet, MenuSheet } from '../components/Feedback';
 import { Onboarding } from '../components/Onboarding';
 import { EXAMPLE_TAG } from '../seed';
-import { hintsOff, setHintsOff } from '../components/CoachMark';
 import { Empty, TopBar } from '../components/ui';
 
 /** Ajout / retrait d'un morceau dans les setlists, sans quitter la liste. */
@@ -250,8 +249,6 @@ export function Library() {
   const [rowMenu, setRowMenu] = useState<Song | null>(null);
   const [rowAssign, setRowAssign] = useState<string | null>(null);
   const [rowDelete, setRowDelete] = useState<Song | null>(null);
-  const [headerMenu, setHeaderMenu] = useState(false);
-  const [confirmExamples, setConfirmExamples] = useState(false);
   // Collecteur « Ajouter des morceaux » quand la bibliothèque est filtrée
   // sur un groupe (vue répertoire — porte du groupe, règle 1).
   const [bandCollect, setBandCollect] = useState(false);
@@ -618,19 +615,7 @@ export function Library() {
 
   return (
     <>
-      <TopBar
-        title="Morceaux"
-        right={
-          <button
-            className="btn icon"
-            title="Plus"
-            aria-label="Plus d'actions"
-            onClick={() => setHeaderMenu(true)}
-          >
-            <Icon name="more" size={20} />
-          </button>
-        }
-      />
+      <TopBar title="Morceaux" />
       <div className="page">
         {showNudge && (
           <div
@@ -926,10 +911,10 @@ export function Library() {
       ) : (
         <button
           className="btn libfab"
-          title="Importer un morceau (texte, lien Ultimate Guitar, PDF, Word…)"
+          title="Ajouter un morceau (importer un texte, un lien, un PDF… ou écrire à la main)"
           onClick={() => navigate('/import')}
         >
-          <Icon name="import" size={17} /> Importer
+          <Icon name="plus" size={17} /> Nouveau morceau
         </button>
       )}
       {bandCollect && bandFilter !== null && bandFilter !== '' && (
@@ -1014,53 +999,6 @@ export function Library() {
             if (selectedId === rowDelete.id) setSelectedId(null);
           }}
           onClose={() => setRowDelete(null)}
-        />
-      )}
-
-      {/* Menu « ⋯ » de l'en-tête : création manuelle (l'action principale
-          reste « Importer »). */}
-      {headerMenu && (
-        <MenuSheet
-          items={[
-            {
-              label: 'Nouveau morceau vide',
-              icon: 'edit',
-              onClick: () => navigate('/song/new'),
-            },
-            ...(songs.some((s) => (s.tags ?? []).includes(EXAMPLE_TAG))
-              ? [
-                  {
-                    label: 'Supprimer les exemples',
-                    icon: 'trash' as const,
-                    danger: true,
-                    onClick: () => setConfirmExamples(true),
-                  },
-                ]
-              : []),
-            {
-              label: hintsOff() ? 'Réafficher les aides' : 'Masquer toutes les aides',
-              icon: 'eye' as const,
-              onClick: () => setHintsOff(!hintsOff()),
-            },
-          ]}
-          onClose={() => setHeaderMenu(false)}
-        />
-      )}
-      {confirmExamples && (
-        <ConfirmSheet
-          title="Supprimer les morceaux d'exemple ?"
-          message="Les 2 morceaux d'exemple et « Ma première setlist (exemple) » seront retirés. Tes propres morceaux ne sont pas touchés."
-          confirmLabel="Supprimer les exemples"
-          danger
-          onConfirm={() => {
-            songs
-              .filter((s) => (s.tags ?? []).includes(EXAMPLE_TAG))
-              .forEach((s) => deleteSong(s.id));
-            setlists
-              .filter((sl) => /\(exemple\)/i.test(sl.name))
-              .forEach((sl) => deleteSetlist(sl.id));
-          }}
-          onClose={() => setConfirmExamples(false)}
         />
       )}
     </>

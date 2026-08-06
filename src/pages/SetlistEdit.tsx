@@ -645,6 +645,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 const b = {
                   ...emptyBand(),
                   name: name.trim(),
+                  owned: true,
                   members: [creatorMember(artist, prefs.userName)],
                 };
                 saveBand(b);
