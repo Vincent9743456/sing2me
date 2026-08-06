@@ -74,6 +74,12 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - modifier une partition ne change jamais la version active par
     défaut d'un morceau ; la tonalité/capo de la version principale se
     propage aux versions qui suivaient les mêmes valeurs ;
+  - **invariant « originale maîtresse »** : la 1ʳᵉ version (`versions[0]`)
+    est TOUJOURS l'originale personnelle (`bandId ''`) — elle reste dans la
+    bibliothèque perso, pilote les autres, n'est jamais absorbée par un
+    groupe ni supprimée. Les autres versions sont pour un groupe précis ou
+    une variante solo. Garanti par `ensureOriginalVersion` (réparation au
+    chargement) + garde dans `removeVersion` + éditeur ;
   - retirer un morceau du répertoire d'un groupe est un acte de niveau
     groupe propagé à tous (chacun garde sa copie personnelle) ;
   - un morceau ajouté au répertoire d'un groupe arrive chez les autres

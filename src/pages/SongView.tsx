@@ -515,11 +515,13 @@ export function SongView({
                   {isBandVersion
                     ? `Version du groupe ${bandName(curBandId) || '—'}`
                     : isMainVersion
-                      ? 'Version principale'
+                      ? 'Version originale'
                       : `Version « ${current.name} »`}
                 </span>
                 {isBandVersion ? (
                   <span className="vb-shared">partagée</span>
+                ) : isMainVersion ? (
+                  <span className="vb-solo">pilote</span>
                 ) : (
                   <span className="vb-solo">perso</span>
                 )}
@@ -527,7 +529,9 @@ export function SongView({
               <div className="vb-sub">
                 {isBandVersion
                   ? 'Tes modifications de cette version arrivent chez tous les membres du groupe.'
-                  : 'À toi seul — cette version n’est pas partagée.'}
+                  : isMainVersion
+                    ? 'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres (tonalité/capo se répercutent).'
+                    : 'À toi seul — cette version n’est pas partagée.'}
               </div>
             </div>
             {song.versions.length >= 2 && (
@@ -933,7 +937,7 @@ export function SongView({
               icon: 'plus',
               onClick: () => setNewVersionOpen(true),
             },
-            ...(song.versions.length > 1
+            ...(song.versions.length > 1 && !isMainVersion
               ? [
                   {
                     label: isBandVersion

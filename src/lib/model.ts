@@ -81,6 +81,40 @@ export function versionForBand(song: Song, bandId: string): SongVersion | null {
 }
 
 /**
+ * Invariant fondamental : la PREMIÈRE version (`versions[0]`) est toujours
+ * la version ORIGINALE, personnelle (bandId ''), maîtresse — elle reste dans
+ * la bibliothèque perso et pilote les autres (voir `propagateMainKeyCapo`).
+ * Elle n'est jamais absorbée par un groupe ni supprimée.
+ *
+ * Cette fonction garantit l'invariant sur un morceau : si `versions[0]` a
+ * été rattachée à un groupe (donnée abîmée), on restaure une originale —
+ * en promouvant une version solo existante, sinon en insérant une copie
+ * personnelle du contenu courant. Idempotente.
+ */
+export function ensureOriginalVersion(song: Song): Song {
+  if (!Array.isArray(song.versions) || song.versions.length === 0) return song;
+  if ((song.versions[0].bandId ?? '') === '') return song; // déjà conforme
+  // Une version solo existe plus loin → on la remet en tête (maîtresse).
+  const soloIdx = song.versions.findIndex((v) => (v.bandId ?? '') === '');
+  if (soloIdx > 0) {
+    const solo = song.versions[soloIdx];
+    const rest = song.versions.filter((_, i) => i !== soloIdx);
+    return { ...song, versions: [solo, ...rest] };
+  }
+  // Aucune version solo : on crée l'originale personnelle à partir du
+  // contenu de la version actuellement en tête (copie indépendante).
+  const first = song.versions[0];
+  const original: SongVersion = {
+    ...first,
+    id: makeId(),
+    name: 'Original',
+    bandId: '',
+    structure: first.structure.map((r) => ({ ...r, id: makeId() })),
+  };
+  return { ...song, versions: [original, ...song.versions] };
+}
+
+/**
  * Version à ouvrir par défaut selon le contexte d'ouverture d'un morceau :
  * - depuis un groupe → la version de ce groupe si elle existe ;
  * - depuis la bibliothèque / solo (bandId '') → la version originale.
@@ -352,9 +386,12 @@ export function addSongAsVersion(
   return activate ? switchVersion(withVersion, version.id) : withVersion;
 }
 
-/** Supprime une version (jamais la dernière) ; bascule sur la première restante si besoin. */
+/** Supprime une version (jamais la dernière, jamais l'originale maîtresse) ;
+ *  bascule sur la première restante si besoin. */
 export function removeVersion(song: Song, versionId: string): Song {
   if (song.versions.length <= 1) return song;
+  // L'originale (versions[0]) est la maîtresse : on ne la supprime jamais.
+  if (song.versions[0]?.id === versionId) return song;
   const versions = song.versions.filter((v) => v.id !== versionId);
   let out: Song = { ...song, versions };
   if (song.activeVersionId === versionId) {
@@ -593,6 +630,14 @@ export function migrateSong(raw: unknown): Song {
       )
       .join('\n');
     base = { ...base, structureNotes: fromComments };
+  }
+
+  // Invariant « originale maîtresse » : versions[0] doit être personnelle
+  // (bandId ''). On répare les morceaux où l'originale a été absorbée par un
+  // groupe — sauf les propositions encore en attente (pas encore adoptées
+  // dans la bibliothèque perso).
+  if ((base.pendingBandId ?? '') === '') {
+    base = ensureOriginalVersion(base);
   }
 
   const { notes: _legacyNotes, ...clean } = base as Song & { notes?: string };

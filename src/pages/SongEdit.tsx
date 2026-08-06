@@ -60,18 +60,27 @@ export function SongEdit({ id }: { id: string | null }) {
     'var(--band-6)',
     'var(--band-7)',
   ][Math.max(0, bands.findIndex((b) => b.id === versionBandId)) % 7];
+  // La version en cours d'édition est-elle l'originale maîtresse ?
+  const editingOriginal = draft.versions[0]?.id === draft.activeVersionId;
 
   function update(patch: Partial<Song>) {
     setDraft((d) => ({ ...d, ...patch }));
   }
 
-  /** Fige les champs édités dans la version courante du brouillon. */
+  /** Fige les champs édités dans la version courante du brouillon.
+   *  L'originale (versions[0]) reste TOUJOURS personnelle (bandId '') : elle
+   *  ne peut jamais être rattachée à un groupe depuis l'éditeur. */
   function bakeDraft(d: Song): Song {
+    const isOriginal = d.versions[0]?.id === d.activeVersionId;
     return syncActiveVersion({
       ...d,
       versions: d.versions.map((v) =>
         v.id === d.activeVersionId
-          ? { ...v, name: versionName.trim() || v.name, bandId: versionBandId }
+          ? {
+              ...v,
+              name: versionName.trim() || v.name,
+              bandId: isOriginal ? '' : versionBandId,
+            }
           : v,
       ),
     });
@@ -251,24 +260,28 @@ export function SongEdit({ id }: { id: string | null }) {
             <div className="vb-title">
               <span>
                 Tu modifies :{' '}
-                {versionBandId
-                  ? `version du groupe ${editBand?.name || 'sans nom'}`
-                  : draft.versions.length > 1
-                    ? `version « ${versionName.trim() || activeVersion(draft).name} »`
-                    : 'ce morceau'}
+                {editingOriginal
+                  ? 'la version originale'
+                  : versionBandId
+                    ? `version du groupe ${editBand?.name || 'sans nom'}`
+                    : `version « ${versionName.trim() || activeVersion(draft).name} »`}
               </span>
-              {versionBandId ? (
+              {editingOriginal ? (
+                <span className="vb-solo">pilote</span>
+              ) : versionBandId ? (
                 <span className="vb-shared">partagée</span>
               ) : (
                 <span className="vb-solo">perso</span>
               )}
             </div>
             <div className="vb-sub">
-              {versionBandId
-                ? 'À l’enregistrement, tes changements partent vers tous les membres du groupe.'
-                : draft.versions.length > 1
-                  ? 'Modifications privées à cette version — les autres versions gardent leurs réglages.'
-                  : 'Modifications privées — à toi seul.'}
+              {editingOriginal
+                ? draft.versions.length > 1
+                  ? 'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres versions (tonalité/capo se répercutent).'
+                  : 'Version maîtresse, personnelle : la base de ce morceau.'
+                : versionBandId
+                  ? 'À l’enregistrement, tes changements partent vers tous les membres du groupe.'
+                  : 'Modifications privées à cette version — les autres versions gardent leurs réglages.'}
             </div>
           </div>
         </div>
@@ -297,7 +310,14 @@ export function SongEdit({ id }: { id: string | null }) {
             />
           </Field>
         )}
-        {bands.length > 0 && (
+        {editingOriginal && (
+          <p className="help">
+            🔒 L’originale est toujours <strong>personnelle</strong> et reste
+            dans ta bibliothèque. Pour une version dédiée à un groupe, utilise
+            « Ajouter à… » depuis la partition.
+          </p>
+        )}
+        {bands.length > 0 && !editingOriginal && (
           <Field label="Cette version est pour">
             <select
               value={versionBandId}
