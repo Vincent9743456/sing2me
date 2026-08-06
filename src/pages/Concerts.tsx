@@ -46,30 +46,24 @@ export function Concerts() {
 
   return (
     <>
-      <TopBar
-        title="Concerts"
-        right={
-          <button
-            className="btn icon"
-            title="Nouveau concert"
-            onClick={() => navigate('/concert/new')}
-          >
-            <Icon name="plus" size={20} />
-          </button>
-        }
-      />
+      {/* Même patron que Morceaux/Setlists : un vrai bouton de création en
+          haut du contenu, pas de « + » discret dans l'en-tête. */}
+      <TopBar title="Concerts" />
       <div className="page">
         <LiveBanner />
+        <button
+          className="btn"
+          style={{ marginBottom: 12 }}
+          onClick={() => navigate('/concert/new')}
+        >
+          <Icon name="plus" size={16} /> Planifier un concert
+        </button>
         {concerts.length === 0 && (
           <Empty>
             Aucun concert planifié.
             <br />
             Date, lieu, setlist : tout au même endroit pour préparer ta
             prochaine date.
-            <div className="spacer" />
-            <button className="btn" onClick={() => navigate('/concert/new')}>
-              + Planifier un concert
-            </button>
           </Empty>
         )}
         {upcoming.length > 0 && <h2 className="pagetitle">À venir</h2>}
