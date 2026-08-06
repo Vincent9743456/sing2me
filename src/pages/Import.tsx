@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { TopBar } from '../components/ui';
+import { SongBody } from '../components/SongBody';
 import { extractDocxText } from '../lib/docx';
 import { extractPdfText } from '../lib/pdf';
 import {
@@ -739,6 +740,25 @@ export function Import() {
                 peut-être créer un doublon.
               </div>
             )}
+          </div>
+        )}
+        {/* Aperçu de la partition telle qu'elle sera enregistrée : on la
+            montre AVANT de l'ajouter à la bibliothèque ou aux idées. */}
+        {preview && preview.song.lyrics.trim() !== '' && (
+          <div className="card importpreview">
+            <div className="help" style={{ marginBottom: 6 }}>
+              APERÇU DE LA PARTITION
+            </div>
+            <div className="importpreview-body">
+              <SongBody
+                song={{
+                  ...preview.song,
+                  title: title.trim() || preview.song.title,
+                  artist: artist.trim() || preview.song.artist,
+                }}
+                view="complete"
+              />
+            </div>
           </div>
         )}
         {needsAi && (

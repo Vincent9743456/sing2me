@@ -9,10 +9,8 @@ import { ShareModal } from '../components/ShareModal';
 import { SongBody } from '../components/SongBody';
 import { Empty, Field, Modal, TopBar } from '../components/ui';
 import {
-  detectKeyFromChords,
   semitonesBetween,
   spellingForKey,
-  suggestCapo,
   transposeContent,
   transposeKeyName,
 } from '../lib/chords';
@@ -28,7 +26,6 @@ import {
   versionForBand,
 } from '../lib/model';
 import { announceBandSong } from '../lib/bands';
-import { findSongKey } from '../lib/ug';
 import { stripChords } from '../lib/chordpro';
 import { normalizeTitle } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
@@ -156,8 +153,6 @@ export function SongView({
   const [ugUpgrade, setUgUpgrade] = useState(false);
   // Éditeur « Ajouter à un groupe / une setlist » (à la demande).
   const [assocOpen, setAssocOpen] = useState(false);
-  const [keyBusy, setKeyBusy] = useState(false);
-  const [keyMsg, setKeyMsg] = useState<string | null>(null);
   const scroll = useAutoScroll(undefined, song?.id);
 
   // En lecture de setlist : bascule sur la version de l'item, puis
@@ -202,9 +197,6 @@ export function SongView({
   const displayShift = displayReal ? shift + capo : shift;
   const shownKey = displayReal ? realKeyShown : shownShapeKey;
   const preferFlat = spellingForKey(shownKey);
-  // Suggestion « accords faciles » : capo qui donne des formes ouvertes pour
-  // la tonalité réelle (sans changer ce qui sonne).
-  const easyShapes = realKeyShown !== '' ? suggestCapo(realKeyShown) : null;
 
   // Ce que voit le chanteur → publié si la session est active
   // (paroles pour le public, accords pour la vue musicien du QR)
@@ -326,44 +318,6 @@ export function SongView({
     setShift(0);
   }
 
-  /** Cherche la tonalité d'origine sur le web (best-effort) et la renseigne. */
-  async function findKey() {
-    if (!song || keyBusy) return;
-    setKeyBusy(true);
-    setKeyMsg(null);
-    try {
-      const found = await findSongKey(song.title, song.artist);
-      if (!found) {
-        setKeyMsg('Tonalité introuvable — saisis-la à la main (Modifier).');
-        return;
-      }
-      saveSong({ ...song, key: found.key, capo: found.capo });
-      setShift(0);
-      setCapo(found.capo);
-    } catch (e) {
-      setKeyMsg(e instanceof Error ? e.message : 'Recherche impossible.');
-    } finally {
-      setKeyBusy(false);
-    }
-  }
-
-  /** Corrige la tonalité d'après les accords réellement écrits. */
-  function detectKey() {
-    if (!song) return;
-    const k = detectKeyFromChords(song.lyrics);
-    if (k === '') {
-      setKeyMsg('Aucun accord détecté.');
-      return;
-    }
-    if (k !== song.key) {
-      saveSong({ ...song, key: k });
-      setShift(0);
-      setKeyMsg(`Tonalité corrigée d'après les accords : ${k}`);
-    } else {
-      setKeyMsg(`Tonalité confirmée : ${k}`);
-    }
-  }
-
   const bandsWithoutVersion = bands.filter(
     (b) => !song.versions.some((v) => v.bandId === b.id),
   );
@@ -449,9 +403,11 @@ export function SongView({
           </div>
         )}
         <div className="songmeta chips">
-          {song.artist !== '' && (
-            <span className="chip static off">{song.artist}</span>
-          )}
+          {song.artist !== '' &&
+            song.artist.trim().toLowerCase() !==
+              (artist.name ?? '').trim().toLowerCase() && (
+              <span className="chip static off">{song.artist}</span>
+            )}
           {song.tempo > 0 && <span className="chip static">{song.tempo} BPM</span>}
           {song.durationSec > 0 && (
             <span className="chip static">{formatDuration(song.durationSec)}</span>
@@ -640,9 +596,9 @@ export function SongView({
 
         {showTranspose && (
           <div className="transpose">
-            {/* Accords affichés (formes) : transposer bouge les formes ;
-                le capo se recale pour garder la tonalité réelle. */}
-            <span className="lbl">Accords</span>
+            {/* Transposer les accords affichés (formes) : le capo se recale
+                pour garder la tonalité réelle. Transposer + Capo : une ligne. */}
+            <span className="lbl">Transposer</span>
             <div className="stepper">
               <button
                 title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
@@ -670,30 +626,6 @@ export function SongView({
                 ♯
               </button>
             </div>
-            {song.key === '' && (
-              <button
-                className="btn ghost small"
-                disabled={keyBusy}
-                title="Cherche la tonalité d'origine du morceau sur le web"
-                onClick={() => void findKey()}
-              >
-                {keyBusy ? 'Recherche…' : '🔎 Trouver la tonalité'}
-              </button>
-            )}
-            {song.lyrics.includes('[') && (
-              <button
-                className="btn ghost small"
-                title="Corrige la tonalité affichée d'après les accords réellement écrits"
-                onClick={detectKey}
-              >
-                🎯 D'après les accords
-              </button>
-            )}
-            {keyMsg && (
-              <span className="help" style={{ margin: 0 }}>
-                {keyMsg}
-              </span>
-            )}
             {!displayReal && (
               <>
                 <span className="lbl">Capo</span>
@@ -720,27 +652,15 @@ export function SongView({
                 <strong style={{ color: 'var(--text)' }}>{realKeyShown}</strong>
               </span>
             )}
-            {easyShapes && !displayReal && (
-              <button
-                className="btn ghost small"
-                title={`Capo ${easyShapes.capo} pour des formes ouvertes de ${easyShapes.shapeKey} — ça sonne toujours en ${realKeyShown}`}
-                onClick={() => {
-                  const sh = semitonesBetween(song.key, easyShapes.shapeKey);
-                  if (sh === null) return;
-                  setShift(sh);
-                  setCapo(easyShapes.capo);
-                }}
-              >
-                💡 accords faciles
-              </button>
-            )}
+            {/* Une seule fonction « musicien » : afficher les accords à jouer
+                sans capo (pratique pour la basse / la tonalité réelle). */}
             <button
               className="btn ghost small"
               style={displayReal ? { color: 'var(--accent)' } : undefined}
-              title="Voir les accords dans la tonalité réelle (sans capo) — pratique pour la basse"
+              title="Afficher les accords tels qu'ils doivent être joués sans capo — pratique pour la basse"
               onClick={toggleReal}
             >
-              {displayReal ? '✓ Tonalité réelle' : 'Tonalité réelle'}
+              {displayReal ? '✓ Accords sans capo' : 'Accords sans capo'}
             </button>
             {(shift !== 0 || capo !== song.capo) && (
               <button

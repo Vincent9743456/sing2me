@@ -131,13 +131,7 @@ function SetlistPicker({
 }
 import { announceBandSong } from '../lib/bands';
 import { fetchLive } from '../lib/live';
-import {
-  semitonesBetween,
-  spellingForKey,
-  suggestCapo,
-  transposeKeyName,
-} from '../lib/chords';
-import { findSongKey } from '../lib/ug';
+import { spellingForKey, transposeKeyName } from '../lib/chords';
 import { normalizeTitle } from '../lib/importer';
 import {
   contextVersionId,
@@ -401,8 +395,25 @@ export function Library() {
     const q = query.trim().toLowerCase();
     const byTitle = (a: (typeof songs)[number], b: (typeof songs)[number]) =>
       a.title.localeCompare(b.title, 'fr');
+    // Les nouvelles importations restent épinglées EN TÊTE tant qu'elles
+    // sont « nouvelles » (une semaine) — sauf en tri par artiste (qui
+    // regroupe) ou dans une vue filtrée dédiée.
+    const pinNew = sort !== 'artist' && !showNew && !showIdeas && !showPending;
+    const freshRank = (s: (typeof songs)[number]) =>
+      s.idea !== true &&
+      (s.pendingBandId ?? '') === '' &&
+      isRecent(s.createdAt);
     return [...songs]
       .sort((a, b) => {
+        if (pinNew) {
+          const fa = freshRank(a);
+          const fb = freshRank(b);
+          if (fa !== fb) return fa ? -1 : 1;
+          if (fa && fb) {
+            const cmp = b.createdAt.localeCompare(a.createdAt);
+            if (cmp !== 0) return cmp;
+          }
+        }
         if (sort === 'artist') {
           const cmp = a.artist.localeCompare(b.artist, 'fr');
           return cmp !== 0 ? cmp : byTitle(a, b);
@@ -1057,8 +1068,6 @@ function SongPreview({
   // Transpose des formes + capo, éditables et mémorisés par appareil.
   const [shift, setShift] = useState(0);
   const [viewCapo, setViewCapo] = useState(0);
-  const [keyBusy, setKeyBusy] = useState(false);
-  const [keyMsg, setKeyMsg] = useState('');
   useEffect(() => {
     if (!song) return;
     try {
@@ -1101,31 +1110,6 @@ function SongPreview({
   const displayShift = displayReal ? shift + viewCapo : shift;
   const shownKey = displayReal ? realKeyShown : shapeKeyShown;
   const preferFlat = spellingForKey(shownKey);
-  // Suggestion « accords faciles » : capo qui ouvre les formes sans
-  // changer ce qui sonne.
-  const easyShapes = realKeyShown !== '' ? suggestCapo(realKeyShown) : null;
-
-  // Recherche web de la tonalité d'origine (morceaux sans tonalité connue).
-  async function findKey() {
-    if (!song || keyBusy) return;
-    setKeyBusy(true);
-    setKeyMsg('');
-    try {
-      const found = await findSongKey(song.title, song.artist);
-      if (found && found.key !== '') {
-        saveSong({ ...song, key: found.key, capo: found.capo });
-        setShift(0);
-        setViewCapo(found.capo);
-        setKeyMsg(`Tonalité trouvée : ${found.key}`);
-      } else {
-        setKeyMsg('Tonalité introuvable sur le web.');
-      }
-    } catch {
-      setKeyMsg('Recherche indisponible (hors ligne ?).');
-    } finally {
-      setKeyBusy(false);
-    }
-  }
 
   // Chaque morceau affiché commence à son début (pas de scroll hérité)
   useEffect(() => {
@@ -1314,7 +1298,7 @@ function SongPreview({
       )}
       {!displayReal && (
         <div className="transpose" style={{ marginBottom: 10 }}>
-          <span className="lbl">Accords</span>
+          <span className="lbl">Transposer</span>
           <div className="stepper">
             <button
               title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
@@ -1342,21 +1326,6 @@ function SongPreview({
               ♯
             </button>
           </div>
-          {song.key === '' && (
-            <button
-              className="btn ghost small"
-              disabled={keyBusy}
-              title="Cherche la tonalité d'origine du morceau sur le web"
-              onClick={() => void findKey()}
-            >
-              {keyBusy ? 'Recherche…' : '🔎 Trouver la tonalité'}
-            </button>
-          )}
-          {keyMsg !== '' && (
-            <span className="help" style={{ margin: 0 }}>
-              {keyMsg}
-            </span>
-          )}
           <span className="lbl">Capo</span>
           <div className="stepper">
             <button
@@ -1375,20 +1344,6 @@ function SongPreview({
               🔊 sonne en{' '}
               <strong style={{ color: 'var(--text)' }}>{realKeyShown}</strong>
             </span>
-          )}
-          {easyShapes && (
-            <button
-              className="btn ghost small"
-              title={`Capo ${easyShapes.capo} pour des formes ouvertes de ${easyShapes.shapeKey} — ça sonne toujours en ${realKeyShown}`}
-              onClick={() => {
-                const sh = semitonesBetween(song.key, easyShapes.shapeKey);
-                if (sh === null) return;
-                setShift(sh);
-                setViewCapo(easyShapes.capo);
-              }}
-            >
-              💡 accords faciles
-            </button>
           )}
           {(shift !== 0 || viewCapo !== song.capo) && (
             <button

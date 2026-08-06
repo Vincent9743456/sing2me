@@ -414,110 +414,8 @@ export function SetlistEdit({ id }: { id: string | null }) {
                   )}
                 </div>
                 <div
-                  style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}
+                  style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}
                 >
-                  {keyOptions.length > 0 && (
-                    <select
-                      value={item.keyOverride}
-                      style={{ width: 'auto', padding: '4px 6px', fontSize: '0.8rem' }}
-                      onChange={(e) =>
-                        setDraft((d) => ({
-                          ...d,
-                          items: d.items.map((it) =>
-                            it.id === item.id
-                              ? { ...it, keyOverride: e.target.value }
-                              : it,
-                          ),
-                        }))
-                      }
-                    >
-                      <option value="">Tonalité : {song?.key}</option>
-                      {keyOptions
-                        .filter((k) => k !== song?.key)
-                        .map((k) => (
-                          <option key={k} value={k}>
-                            → {k}
-                          </option>
-                        ))}
-                    </select>
-                  )}
-                  {song && (
-                    <select
-                      value={item.versionId ?? ''}
-                      style={{ width: 'auto', padding: '4px 6px', fontSize: '0.8rem' }}
-                      title="Version jouée dans cette setlist"
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '__newsl__') {
-                          // Interprétation propre à cette setlist :
-                          // copie de la version courante, nommée d'après
-                          // elle. IMPORTANT : le morceau REVIENT ensuite
-                          // sur sa version d'origine — la version setlist
-                          // n'existe que pour cette setlist, elle ne
-                          // devient pas la version par défaut du morceau.
-                          const vname =
-                            draft.name.trim() !== ''
-                              ? draft.name.trim()
-                              : 'Version setlist';
-                          const prevActive = song.activeVersionId;
-                          let updated = duplicateVersion(
-                            song,
-                            vname,
-                            draft.bandId ?? '',
-                          );
-                          const newVid = updated.activeVersionId;
-                          updated = switchVersion(updated, prevActive);
-                          saveSong(updated);
-                          setDraft((d) => ({
-                            ...d,
-                            items: d.items.map((it) =>
-                              it.id === item.id
-                                ? { ...it, versionId: newVid }
-                                : it,
-                            ),
-                          }));
-                          return;
-                        }
-                        setDraft((d) => ({
-                          ...d,
-                          items: d.items.map((it) =>
-                            it.id === item.id
-                              ? { ...it, versionId: value }
-                              : it,
-                          ),
-                        }));
-                      }}
-                    >
-                      <option value="">Version active</option>
-                      {song.versions.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.name}
-                          {v.bandId !== '' && bandName(v.bandId) !== ''
-                            ? ` · ${bandName(v.bandId)}`
-                            : ''}
-                        </option>
-                      ))}
-                      <option value="__newsl__">
-                        ＋ Version pour cette setlist…
-                      </option>
-                    </select>
-                  )}
-                  <input
-                    type="text"
-                    value={item.note}
-                    placeholder="Note (départ batterie, medley…)"
-                    style={{ flex: 1, minWidth: 140, padding: '4px 8px', fontSize: '0.8rem' }}
-                    onChange={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        items: d.items.map((it) =>
-                          it.id === item.id
-                            ? { ...it, note: e.target.value }
-                            : it,
-                        ),
-                      }))
-                    }
-                  />
                   <button
                     className="btn ghost small"
                     title="Voir la partition (version de cette setlist)"
@@ -560,6 +458,129 @@ export function SetlistEdit({ id }: { id: string | null }) {
                     {item.reserve ? '☆ En réserve' : '☆ Réserve'}
                   </button>
                 </div>
+                {/* Réglages propres à la setlist (tonalité, version, note) :
+                    repliés par défaut pour garder la ligne compacte, dispo
+                    d'un clic. Le résumé rappelle ce qui a été personnalisé. */}
+                <details className="slmore">
+                  <summary>
+                    {[
+                      item.keyOverride !== '' ? `→ ${item.keyOverride}` : '',
+                      (item.versionId ?? '') !== ''
+                        ? (song?.versions.find((v) => v.id === item.versionId)
+                            ?.name ?? '')
+                        : '',
+                      item.note.trim() !== '' ? '📝' : '',
+                    ]
+                      .filter((x) => x !== '')
+                      .join(' · ') || 'Tonalité, version, note…'}
+                  </summary>
+                  <div
+                    style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}
+                  >
+                    {keyOptions.length > 0 && (
+                      <select
+                        value={item.keyOverride}
+                        style={{ width: 'auto', padding: '4px 6px', fontSize: '0.8rem' }}
+                        onChange={(e) =>
+                          setDraft((d) => ({
+                            ...d,
+                            items: d.items.map((it) =>
+                              it.id === item.id
+                                ? { ...it, keyOverride: e.target.value }
+                                : it,
+                            ),
+                          }))
+                        }
+                      >
+                        <option value="">Tonalité : {song?.key}</option>
+                        {keyOptions
+                          .filter((k) => k !== song?.key)
+                          .map((k) => (
+                            <option key={k} value={k}>
+                              → {k}
+                            </option>
+                          ))}
+                      </select>
+                    )}
+                    {song && (
+                      <select
+                        value={item.versionId ?? ''}
+                        style={{ width: 'auto', padding: '4px 6px', fontSize: '0.8rem' }}
+                        title="Version jouée dans cette setlist"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '__newsl__') {
+                            // Interprétation propre à cette setlist :
+                            // copie de la version courante, nommée d'après
+                            // elle. IMPORTANT : le morceau REVIENT ensuite
+                            // sur sa version d'origine — la version setlist
+                            // n'existe que pour cette setlist, elle ne
+                            // devient pas la version par défaut du morceau.
+                            const vname =
+                              draft.name.trim() !== ''
+                                ? draft.name.trim()
+                                : 'Version setlist';
+                            const prevActive = song.activeVersionId;
+                            let updated = duplicateVersion(
+                              song,
+                              vname,
+                              draft.bandId ?? '',
+                            );
+                            const newVid = updated.activeVersionId;
+                            updated = switchVersion(updated, prevActive);
+                            saveSong(updated);
+                            setDraft((d) => ({
+                              ...d,
+                              items: d.items.map((it) =>
+                                it.id === item.id
+                                  ? { ...it, versionId: newVid }
+                                  : it,
+                              ),
+                            }));
+                            return;
+                          }
+                          setDraft((d) => ({
+                            ...d,
+                            items: d.items.map((it) =>
+                              it.id === item.id
+                                ? { ...it, versionId: value }
+                                : it,
+                            ),
+                          }));
+                        }}
+                      >
+                        <option value="">Version active</option>
+                        {song.versions.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.name}
+                            {v.bandId !== '' && bandName(v.bandId) !== ''
+                              ? ` · ${bandName(v.bandId)}`
+                              : ''}
+                          </option>
+                        ))}
+                        <option value="__newsl__">
+                          ＋ Version pour cette setlist…
+                        </option>
+                      </select>
+                    )}
+                    <input
+                      type="text"
+                      value={item.note}
+                      placeholder="Note (départ batterie, medley…)"
+                      style={{ flex: 1, minWidth: 140, padding: '4px 8px', fontSize: '0.8rem' }}
+                      onChange={(e) =>
+                        setDraft((d) => ({
+                          ...d,
+                          items: d.items.map((it) =>
+                            it.id === item.id
+                              ? { ...it, note: e.target.value }
+                              : it,
+                          ),
+                        }))
+                      }
+                    />
+                  </div>
+                </details>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <button

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import { Icon } from '../components/Icon';
+import { MenuSheet } from '../components/Feedback';
 import { Field, TopBar } from '../components/ui';
 import { KEY_CHOICES } from '../lib/chords';
 import { importText } from '../lib/importer';
@@ -23,7 +24,9 @@ import {
 
 export function SongEdit({ id }: { id: string | null }) {
   const { songs, bands, saveSong, deleteSong } = useStore();
-  const [saved, setSaved] = useState(false);
+  // Feuille « appliquer à toutes les versions / seulement celle-ci » à
+  // l'enregistrement (quand le morceau a plusieurs versions).
+  const [askScope, setAskScope] = useState(false);
   const existing = id ? songs.find((s) => s.id === id) : undefined;
   const [draft, setDraft] = useState<Song>(() =>
     existing
@@ -72,36 +75,27 @@ export function SongEdit({ id }: { id: string | null }) {
     setVersionBandId(activeVersion(d).bandId);
   }
 
-  /** Applique la partition affichée à TOUTES les versions (action volontaire). */
-  function propagateToAll() {
-    if (
-      !confirm(
-        `Appliquer cette partition (paroles, accords, structure, tonalité, ` +
-          `tempo, capo) aux ${draft.versions.length} versions du morceau ?\n\n` +
-          'Les différences propres à chaque version (setlists, groupes) ' +
-          'seront remplacées par ce contenu.',
-      )
-    )
-      return;
-    setDraft((d) => ({
-      ...d,
-      versions: d.versions.map((v) => ({
-        ...v,
-        key: d.key,
-        tempo: d.tempo,
-        capo: d.capo,
-        structure: d.structure.map((r) => ({ ...r, id: makeId() })),
-        lyrics: d.lyrics,
-      })),
-    }));
+  /** La partition (accords/paroles/tonalité…) de la version éditée a-t-elle
+   *  changé ? Sert à ne poser la question « toutes / cette version » que
+   *  quand c'est pertinent. */
+  function partitionChanged(): boolean {
+    if (!existing) return false;
+    const v = existing.versions.find((x) => x.id === draft.activeVersionId);
+    if (!v) return true;
+    return (
+      v.lyrics !== draft.lyrics ||
+      v.key !== draft.key ||
+      v.tempo !== draft.tempo ||
+      v.capo !== draft.capo ||
+      JSON.stringify(v.structure) !== JSON.stringify(draft.structure)
+    );
   }
 
-  function onSave() {
-    if (draft.title.trim() === '') {
-      alert('Donne un titre à ton morceau.');
-      return;
-    }
-    let song: Song = bakeDraft({
+  /** Enregistre — puis quitte l'édition et revient EN HAUT de la partition.
+   *  `scope` = 'all' recopie la partition affichée dans toutes les versions. */
+  function commitSave(scope: 'current' | 'all') {
+    setAskScope(false);
+    let base: Song = {
       ...draft,
       durationSec: parseDuration(durationText),
       tags: tagsText
@@ -114,7 +108,22 @@ export function SongEdit({ id }: { id: string | null }) {
           r.chords.trim() !== '' ||
           r.comment.trim() !== '',
       ),
-    });
+    };
+    if (scope === 'all') {
+      // La partition affichée remplace celle de TOUTES les versions.
+      base = {
+        ...base,
+        versions: base.versions.map((v) => ({
+          ...v,
+          key: base.key,
+          tempo: base.tempo,
+          capo: base.capo,
+          structure: base.structure.map((r) => ({ ...r, id: makeId() })),
+          lyrics: base.lyrics,
+        })),
+      };
+    }
+    let song: Song = bakeDraft(base);
     // Version PRINCIPALE modifiée → sa tonalité/son capo se répercutent
     // sur les versions qui la suivaient (et partent vers le groupe à la
     // synchro). Les versions au réglage propre ne bougent pas.
@@ -139,15 +148,21 @@ export function SongEdit({ id }: { id: string | null }) {
       song = switchVersion(song, existing.activeVersionId);
     }
     saveSong(song);
-    // On RESTE dans l'éditeur pour pouvoir continuer à modifier à tout
-    // moment (feedback « Enregistré ✓ »). Un nouveau morceau bascule sur son
-    // URL d'édition ; la partition se consulte via ← ou « Voir la partition ».
-    if (isNew) {
-      navigate(`/song/${song.id}/edit`);
-    } else {
-      setSaved(true);
-      window.setTimeout(() => setSaved(false), 1800);
+    // On quitte l'édition et on revient EN HAUT de la partition.
+    navigate(`/song/${song.id}`);
+  }
+
+  function onSave() {
+    if (draft.title.trim() === '') {
+      alert('Donne un titre à ton morceau.');
+      return;
     }
+    // Plusieurs versions + partition modifiée → demander la portée.
+    if (existing && draft.versions.length > 1 && partitionChanged()) {
+      setAskScope(true);
+      return;
+    }
+    commitSave('current');
   }
 
   function onDelete() {
@@ -305,20 +320,11 @@ export function SongEdit({ id }: { id: string | null }) {
           </p>
         )}
         {draft.versions.length > 1 && (
-          <>
-            <button
-              className="btn ghost block"
-              title="Copie cette partition (paroles, accords, structure, tonalité) dans toutes les versions du morceau"
-              onClick={propagateToAll}
-            >
-              ⇉ Appliquer cette partition à toutes les versions (
-              {draft.versions.length})
-            </button>
-            <p className="help">
-              Pour corriger le « fichier original » partout d'un coup — par
-              exemple une faute dans les paroles reprise dans chaque version.
-            </p>
-          </>
+          <p className="help">
+            À l'enregistrement, Sing2Me te demandera si tes changements de
+            partition valent pour <strong>cette version</strong> seulement ou
+            pour <strong>toutes les versions</strong>.
+          </p>
         )}
 
         <h2 className="pagetitle">Structure</h2>
@@ -355,7 +361,7 @@ export function SongEdit({ id }: { id: string | null }) {
           vocale…) s'ajoutent depuis la page du morceau.
         </p>
         <button className="btn block" onClick={onSave}>
-          {saved ? '✓ Enregistré' : 'Enregistrer'}
+          Enregistrer
         </button>
         {!isNew && (
           <>
@@ -373,6 +379,23 @@ export function SongEdit({ id }: { id: string | null }) {
           </>
         )}
       </div>
+
+      {askScope && (
+        <MenuSheet
+          title="Appliquer tes modifications à…"
+          items={[
+            {
+              label: 'Cette version seulement',
+              onClick: () => commitSave('current'),
+            },
+            {
+              label: `Toutes les versions (${draft.versions.length})`,
+              onClick: () => commitSave('all'),
+            },
+          ]}
+          onClose={() => setAskScope(false)}
+        />
+      )}
     </>
   );
 }

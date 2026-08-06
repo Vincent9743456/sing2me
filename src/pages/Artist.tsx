@@ -351,6 +351,33 @@ export function Artist() {
                 </div>
               </>
             )}
+            {/* Mes groupes : icônes cliquables (accès direct à la fiche). */}
+            <h2 className="pagetitle">Mes groupes</h2>
+            {bands.length === 0 ? (
+              <button className="slot" onClick={() => setEditing(true)}>
+                ＋ Crée ou rejoins un groupe pour partager ton répertoire
+              </button>
+            ) : (
+              <div className="bandavatars">
+                {bands.map((band) => (
+                  <button
+                    key={band.id}
+                    className="bandavatar"
+                    title={`${band.name || 'Groupe'} — ouvrir la fiche`}
+                    onClick={() => navigate(`/band/${band.id}`)}
+                  >
+                    {band.photo !== '' ? (
+                      <img src={band.photo} alt="" />
+                    ) : (
+                      <span aria-hidden="true">👥</span>
+                    )}
+                    <span className="bandavatar-name">
+                      {band.name || '(sans nom)'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="spacer" />
             <div className="rowactions">
               <button className="btn" onClick={() => setEditing(true)}>
