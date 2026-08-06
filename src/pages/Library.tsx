@@ -282,13 +282,16 @@ export function Library() {
       root.setProperty('--lib-sticky-top', `${topH + barH}px`);
     };
     apply();
-    const ro = new ResizeObserver(apply);
-    if (el) ro.observe(el);
+    // ResizeObserver absent sur d'anciens Safari (vieux iPad) : on se rabat
+    // sur l'écoute du redimensionnement, sans jamais planter.
+    const ro =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(apply) : null;
+    if (ro && el) ro.observe(el);
     const tb = document.querySelector('.topbar');
-    if (tb) ro.observe(tb);
+    if (ro && tb) ro.observe(tb);
     window.addEventListener('resize', apply);
     return () => {
-      ro.disconnect();
+      if (ro) ro.disconnect();
       window.removeEventListener('resize', apply);
     };
   }, []);
