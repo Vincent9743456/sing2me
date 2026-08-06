@@ -5,6 +5,7 @@
  */
 import React, { useState } from 'react';
 
+import { LiveBanner } from '../components/LiveBanner';
 import { Empty, Field, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { creatorMember, versionForBand } from '../lib/model';
@@ -257,19 +258,11 @@ export function Setlists() {
 
   return (
     <>
-      <TopBar
-        title="Setlists"
-        right={
-          <button
-            className="btn icon"
-            title="Suivre le groupe (concert)"
-            onClick={() => navigate('/follow')}
-          >
-            <Icon name="antenna" size={20} />
-          </button>
-        }
-      />
+      {/* Plus de raccourci « satellite » manuel (décision Vincent) : quand le
+          leader passe ON AIR, la bannière LiveBanner invite les membres. */}
+      <TopBar title="Setlists" />
       <div className="page">
+        <LiveBanner />
         <div
           className="hstack"
           style={{ justifyContent: 'space-between', gap: 8, marginBottom: 8 }}

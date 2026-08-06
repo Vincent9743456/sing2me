@@ -129,7 +129,7 @@ function SetlistPicker({
   );
 }
 import { announceBandSong } from '../lib/bands';
-import { fetchLive } from '../lib/live';
+import { LiveBanner } from '../components/LiveBanner';
 import { spellingForKey, transposeKeyName } from '../lib/chords';
 import { normalizeTitle } from '../lib/importer';
 import {
@@ -154,65 +154,6 @@ function isSplitScreen(): boolean {
   return window.matchMedia(SPLIT_QUERY).matches;
 }
 
-/**
- * Session active d'UN DE MES GROUPES ? (équivalent notification membres)
- *
- * Portée « mon groupe » : la bannière n'apparaît que si le direct est tagué
- * avec le cloudId d'un groupe auquel J'appartiens. Un live solo ou celui d'un
- * artiste inconnu (bandId absent de mes groupes) est ignoré. On remonte aussi
- * QUI a lancé le direct et le nom du groupe, pour l'afficher.
- */
-function useLiveSession(myGroups: Map<string, string>): {
-  mode: 'concert' | 'repet';
-  title: string;
-  by: string;
-  group: string;
-} | null {
-  const [session, setSession] = useState<{
-    mode: 'concert' | 'repet';
-    title: string;
-    by: string;
-    group: string;
-  } | null>(null);
-  // Clé stable des cloudIds pour ne relancer l'effet que si mes groupes changent.
-  const groupsKey = [...myGroups.keys()].sort().join('|');
-  useEffect(() => {
-    let cancelled = false;
-    async function tick() {
-      // Le leader (ON AIR actif sur cet appareil) n'a pas besoin de bannière.
-      if ((localStorage.getItem('sing2me/onair') ?? 'off') !== 'off') {
-        if (!cancelled) setSession(null);
-        return;
-      }
-      try {
-        const s = await fetchLive();
-        if (cancelled) return;
-        // Ne notifier que pour le live d'un de MES groupes (bandId reconnu).
-        const mine = s.bandId !== '' && myGroups.has(s.bandId);
-        setSession(
-          s.status !== 'off' && mine
-            ? {
-                mode: s.mode,
-                title: s.song?.title ?? s.bandSong?.title ?? '',
-                by: s.startedBy,
-                group: myGroups.get(s.bandId) ?? '',
-              }
-            : null,
-        );
-      } catch {
-        if (!cancelled) setSession(null);
-      }
-    }
-    void tick();
-    const id = window.setInterval(() => void tick(), 45000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupsKey]);
-  return session;
-}
 
 type SortMode = 'title' | 'artist' | 'recent';
 
@@ -261,14 +202,6 @@ export function Library() {
   const [tag, setTag] = useState<string | null>(null);
   // null = tous · '' = solo (aucun groupe) · sinon id du groupe
   const [bandFilter, setBandFilter] = useState<string | null>(null);
-  // Mes groupes indexés par cloudId (seul identifiant partagé entre membres),
-  // pour ne recevoir la bannière « Concert en cours » QUE de mes groupes.
-  const myGroups = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const b of bands) if (b.cloudId) m.set(b.cloudId, b.name);
-    return m;
-  }, [bands]);
-  const session = useLiveSession(myGroups);
   const account = useAccount();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
@@ -670,43 +603,7 @@ export function Library() {
             </button>
           </div>
         )}
-        {session && (
-          <div
-            className="card"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              borderColor: 'var(--accent)',
-            }}
-          >
-            <span style={{ flex: 1 }}>
-              {session.mode === 'repet' ? '🎸 Répétition' : '🔴 Concert'} en
-              cours
-              {session.group !== '' && (
-                <>
-                  {' '}
-                  — <strong>{session.group}</strong>
-                </>
-              )}
-              {session.title !== '' && <> · {session.title}</>}
-              {session.by !== '' && (
-                <span
-                  style={{
-                    display: 'block',
-                    color: 'var(--muted)',
-                    fontSize: '0.85em',
-                  }}
-                >
-                  lancé par {session.by}
-                </span>
-              )}
-            </span>
-            <button className="btn" onClick={() => navigate('/follow')}>
-              Rejoindre 📡
-            </button>
-          </div>
-        )}
+        <LiveBanner />
         {/* Barre d'outils figée : recherche + tri + filtres toujours
             accessibles pendant le défilement de la bibliothèque. */}
         <div className="libtoolbar" ref={toolbarRef}>
