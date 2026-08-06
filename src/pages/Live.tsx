@@ -29,6 +29,34 @@ import { defaultPublicScreen } from '../types';
 
 const POLL_MS = 4000;
 
+/**
+ * Préchargement + mode dégradé réseau (chantier 1) : la setlist entière du
+ * concert (paroles publiques) est mise en cache localStorage dès le premier
+ * chargement. Ensuite les appels périodiques ne servent qu'au SUIVI (position
+ * + statut) ; si le réseau tombe, le spectateur garde tout le set consultable
+ * hors ligne, et le suivi reprend seul au retour du réseau.
+ */
+const SETLIST_CACHE_KEY = 'sing2me/live/setlist';
+
+function loadCachedSetlist(): LivePublicSong[] | null {
+  try {
+    const raw = localStorage.getItem(SETLIST_CACHE_KEY);
+    if (raw === null) return null;
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? (arr as LivePublicSong[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedSetlist(list: LivePublicSong[]): void {
+  try {
+    localStorage.setItem(SETLIST_CACHE_KEY, JSON.stringify(list));
+  } catch {
+    /* stockage indisponible */
+  }
+}
+
 /** Liens de recherche du morceau sur les plateformes (souvenir de concert). */
 function streamLinks(title: string, artist: string) {
   const q = encodeURIComponent(`${title} ${artist}`.trim());
@@ -37,6 +65,127 @@ function streamLinks(title: string, artist: string) {
     { name: 'Apple Music', url: `https://music.apple.com/search?term=${q}` },
     { name: 'Deezer', url: `https://www.deezer.com/search/${q}` },
   ];
+}
+
+/** Parcours de la setlist (public) — fonctionne à partir du set en cache,
+ *  donc consultable même hors ligne. */
+function SetlistBrowser({
+  setlist,
+  idx,
+  souvenir,
+  onIdx,
+  onSouvenir,
+  onClose,
+}: {
+  setlist: LivePublicSong[];
+  idx: number | null;
+  souvenir: boolean;
+  onIdx: (i: number | null) => void;
+  onSouvenir: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="stagelist"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="inner">
+        {idx !== null && setlist[idx] ? (
+          <>
+            <button className="btn ghost small" onClick={() => onIdx(null)}>
+              ◀ La setlist
+            </button>
+            <h2 className="livetitle" style={{ marginTop: 10 }}>
+              {setlist[idx].title}
+            </h2>
+            {setlist[idx].artist !== '' && (
+              <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
+                {setlist[idx].artist}
+              </p>
+            )}
+            <div className="livelyrics">
+              {decodeHtmlEntities(setlist[idx].lyrics) ||
+                '(paroles non disponibles)'}
+            </div>
+            <div className="rowactions" style={{ justifyContent: 'center' }}>
+              <button
+                className="btn ghost small"
+                disabled={idx <= 0}
+                onClick={() => onIdx(Math.max(0, idx - 1))}
+              >
+                ‹ Précédent
+              </button>
+              <button
+                className="btn ghost small"
+                disabled={idx >= setlist.length - 1}
+                onClick={() => onIdx(Math.min(setlist.length - 1, idx + 1))}
+              >
+                Suivant ›
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
+              La setlist du concert — tape un morceau pour lire les paroles.
+            </p>
+            {setlist.length === 0 && (
+              <p className="help" style={{ textAlign: 'center' }}>
+                Setlist momentanément indisponible.
+              </p>
+            )}
+            {setlist.map((s, i) => (
+              <button
+                key={i}
+                className="remoterow"
+                onClick={() => onIdx(i)}
+              >
+                <span className="num">{i + 1}</span>
+                <span className="grow">
+                  <span className="rtitle">{s.title || '(sans titre)'}</span>
+                  {s.artist !== '' && <span className="rsub">{s.artist}</span>}
+                </span>
+                {souvenir && (
+                  <span
+                    style={{ display: 'flex', gap: 6 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {streamLinks(s.title, s.artist).map((l) => (
+                      <a
+                        key={l.name}
+                        href={l.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn ghost small"
+                        title={`Chercher sur ${l.name}`}
+                      >
+                        {l.name[0]}
+                      </a>
+                    ))}
+                  </span>
+                )}
+              </button>
+            ))}
+            {setlist.length > 0 && (
+              <button
+                className={`btn ${souvenir ? '' : 'ghost'} block`}
+                style={{ marginTop: 8 }}
+                onClick={onSouvenir}
+              >
+                🎧 {souvenir ? 'Masquer' : 'Garder un souvenir'} — écouter sur
+                Spotify / Apple / Deezer
+              </button>
+            )}
+            <button className="btn ghost block" onClick={onClose}>
+              Fermer
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function MessageBox({ songTitle = '' }: { songTitle?: string }) {
@@ -327,17 +476,22 @@ export function Live() {
   }
   // L'écran du spectateur reste allumé pendant le direct
   useWakeLock();
-  const [error, setError] = useState<string | null>(null);
+  // Réseau perdu en cours de session : on garde le dernier état + le set en
+  // cache, un bandeau discret invite à défiler à la main ; reprise auto.
+  const [offline, setOffline] = useState(false);
   const [floats, setFloats] = useState<{ id: number; x: number }[]>([]);
   const [localHearts, setLocalHearts] = useState(0);
   // Parcours libre de la setlist par le public + souvenir (playlist).
+  // Initialisé depuis le cache : consultable même hors ligne.
   const [browseOpen, setBrowseOpen] = useState(false);
   const [browseSetlist, setBrowseSetlist] = useState<LivePublicSong[] | null>(
-    null,
+    () => loadCachedSetlist(),
   );
   const [browseIdx, setBrowseIdx] = useState<number | null>(null);
   const [souvenir, setSouvenir] = useState(false);
   const lastTitle = useRef('');
+  // Nombre de morceaux de la dernière setlist préchargée (re-précharge si change).
+  const lastSetlistCount = useRef(-1);
   const pending = useRef(0);
   const flushTimer = useRef<number | null>(null);
   const floatId = useRef(0);
@@ -367,10 +521,11 @@ export function Live() {
     let cancelled = false;
     async function tick() {
       try {
+        // Appel de SUIVI : position (morceau courant) + statut.
         const s = await fetchLive();
         if (cancelled) return;
         setState(s);
-        setError(null);
+        setOffline(false); // réseau OK → reprise silencieuse du suivi
         // remonter en haut quand la chanson change
         const t = s.song?.title ?? '';
         if (t !== lastTitle.current) {
@@ -378,10 +533,22 @@ export function Live() {
           setLocalHearts(0);
           window.scrollTo({ top: 0 });
         }
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'Connexion impossible.');
+        // PRÉCHARGEMENT : dès le 1er chargement et à chaque changement de
+        // setlist, on récupère TOUT le set (paroles) et on le met en cache —
+        // ainsi une coupure réseau ne prive jamais le spectateur du set.
+        if (s.setlistCount !== lastSetlistCount.current) {
+          lastSetlistCount.current = s.setlistCount;
+          if (s.setlistCount > 0) {
+            const list = await fetchLiveSetlist();
+            if (!cancelled && list.length > 0) {
+              setBrowseSetlist(list);
+              saveCachedSetlist(list);
+            }
+          }
         }
+      } catch {
+        // Réseau perdu : on NE touche pas au dernier état connu ni au cache.
+        if (!cancelled) setOffline(true);
       }
     }
     void tick();
@@ -393,11 +560,31 @@ export function Live() {
   }, []);
 
   if (state === null) {
+    // Jamais connecté encore : si un set est en cache (session précédente sur
+    // cet appareil), on laisse quand même le parcourir hors ligne.
+    const cached = browseSetlist;
     return (
       <div className="public">
         <p className="help" style={{ textAlign: 'center' }}>
-          {error ?? 'Connexion au direct…'}
+          {offline ? 'Hors ligne — reconnexion au direct…' : 'Connexion au direct…'}
         </p>
+        {offline && cached && cached.length > 0 && (
+          <div style={{ textAlign: 'center' }}>
+            <button className="btn small" onClick={() => void openBrowse()}>
+              📋 Revoir la setlist ({cached.length})
+            </button>
+          </div>
+        )}
+        {browseOpen && cached && (
+          <SetlistBrowser
+            setlist={cached}
+            idx={browseIdx}
+            souvenir={souvenir}
+            onIdx={setBrowseIdx}
+            onSouvenir={() => setSouvenir((v) => !v)}
+            onClose={() => setBrowseOpen(false)}
+          />
+        )}
       </div>
     );
   }
@@ -410,19 +597,34 @@ export function Live() {
     (state.status === 'pause' || (state.status === 'on' && !state.song));
   // L'artiste choisit ce qui s'affiche (réglages « Écran public »).
   const ps = { ...defaultPublicScreen(), ...(state.artist?.publicScreen ?? {}) };
-  const canBrowse = publicSession && state.setlistCount > 0;
+  // Consultable dès qu'on a un set (serveur OU cache) — vrai même hors ligne.
+  const cachedCount = browseSetlist?.length ?? 0;
+  const browseCount = state.setlistCount > 0 ? state.setlistCount : cachedCount;
+  const canBrowse = publicSession && browseCount > 0;
 
   async function openBrowse() {
     setBrowseIdx(null);
     setSouvenir(false);
     setBrowseOpen(true);
+    // Repli réseau : si rien en cache, on tente une récupération (best-effort).
     if (browseSetlist === null) {
-      setBrowseSetlist(await fetchLiveSetlist());
+      const list = await fetchLiveSetlist();
+      if (list.length > 0) {
+        setBrowseSetlist(list);
+        saveCachedSetlist(list);
+      }
     }
   }
 
   return (
     <div className="public">
+      {/* Mode dégradé : suivi interrompu, le set reste consultable à la main. */}
+      {offline && (
+        <div className="offlinebanner" role="status">
+          ⚠ Suivi interrompu — fais défiler à la main. Reprise automatique dès
+          le retour du réseau.
+        </div>
+      )}
       {/* Visible au premier coup d'œil : un musicien bascule sur sa partition */}
       {role === 'public' && (
         <div style={{ textAlign: 'center', margin: '0 0 10px' }}>
@@ -437,7 +639,7 @@ export function Live() {
       {role === 'public' && canBrowse && (
         <div style={{ textAlign: 'center', margin: '0 0 12px' }}>
           <button className="btn small" onClick={() => void openBrowse()}>
-            📋 Voir la setlist ({state.setlistCount})
+            📋 Voir la setlist ({browseCount})
           </button>
         </div>
       )}
@@ -519,124 +721,25 @@ export function Live() {
           )}
         </>
       )}
-      {browseOpen && (
-        <div
-          className="stagelist"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setBrowseOpen(false);
-          }}
-        >
-          <div className="inner">
-            {browseSetlist === null ? (
+      {browseOpen &&
+        (browseSetlist === null ? (
+          <div className="stagelist" onClick={() => setBrowseOpen(false)}>
+            <div className="inner">
               <p className="help" style={{ textAlign: 'center' }}>
                 Chargement de la setlist…
               </p>
-            ) : browseIdx !== null && browseSetlist[browseIdx] ? (
-              <>
-                <button
-                  className="btn ghost small"
-                  onClick={() => setBrowseIdx(null)}
-                >
-                  ◀ La setlist
-                </button>
-                <h2 className="livetitle" style={{ marginTop: 10 }}>
-                  {browseSetlist[browseIdx].title}
-                </h2>
-                {browseSetlist[browseIdx].artist !== '' && (
-                  <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-                    {browseSetlist[browseIdx].artist}
-                  </p>
-                )}
-                <div className="livelyrics">
-                  {decodeHtmlEntities(browseSetlist[browseIdx].lyrics) ||
-                    '(paroles non disponibles)'}
-                </div>
-                <div className="rowactions" style={{ justifyContent: 'center' }}>
-                  <button
-                    className="btn ghost small"
-                    disabled={browseIdx <= 0}
-                    onClick={() => setBrowseIdx((i) => Math.max(0, (i ?? 0) - 1))}
-                  >
-                    ‹ Précédent
-                  </button>
-                  <button
-                    className="btn ghost small"
-                    disabled={browseIdx >= browseSetlist.length - 1}
-                    onClick={() =>
-                      setBrowseIdx((i) =>
-                        Math.min(browseSetlist.length - 1, (i ?? 0) + 1),
-                      )
-                    }
-                  >
-                    Suivant ›
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-                  La setlist du concert — tape un morceau pour lire les paroles.
-                </p>
-                {browseSetlist.length === 0 && (
-                  <p className="help" style={{ textAlign: 'center' }}>
-                    Setlist momentanément indisponible.
-                  </p>
-                )}
-                {browseSetlist.map((s, i) => (
-                  <button
-                    key={i}
-                    className="remoterow"
-                    onClick={() => setBrowseIdx(i)}
-                  >
-                    <span className="num">{i + 1}</span>
-                    <span className="grow">
-                      <span className="rtitle">{s.title || '(sans titre)'}</span>
-                      {s.artist !== '' && (
-                        <span className="rsub">{s.artist}</span>
-                      )}
-                    </span>
-                    {souvenir && (
-                      <span
-                        style={{ display: 'flex', gap: 6 }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {streamLinks(s.title, s.artist).map((l) => (
-                          <a
-                            key={l.name}
-                            href={l.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn ghost small"
-                            title={`Chercher sur ${l.name}`}
-                          >
-                            {l.name[0]}
-                          </a>
-                        ))}
-                      </span>
-                    )}
-                  </button>
-                ))}
-                {browseSetlist.length > 0 && (
-                  <button
-                    className={`btn ${souvenir ? '' : 'ghost'} block`}
-                    style={{ marginTop: 8 }}
-                    onClick={() => setSouvenir((v) => !v)}
-                  >
-                    🎧 {souvenir ? 'Masquer' : 'Garder un souvenir'} — écouter sur
-                    Spotify / Apple / Deezer
-                  </button>
-                )}
-                <button
-                  className="btn ghost block"
-                  onClick={() => setBrowseOpen(false)}
-                >
-                  Fermer
-                </button>
-              </>
-            )}
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <SetlistBrowser
+            setlist={browseSetlist}
+            idx={browseIdx}
+            souvenir={souvenir}
+            onIdx={setBrowseIdx}
+            onSouvenir={() => setSouvenir((v) => !v)}
+            onClose={() => setBrowseOpen(false)}
+          />
+        ))}
       {/* Invitation discrète, seulement hors morceau (pause / fin de live) */}
       {!liveNow && role === 'public' && ps.appInvite && (
         <div className="footer">

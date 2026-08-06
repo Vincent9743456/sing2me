@@ -1745,6 +1745,18 @@ textarea.mono {
   text-decoration: none;
 }
 
+/* Mode dégradé réseau (spectateur ON AIR) : bandeau discret, non alarmant. */
+.offlinebanner {
+  text-align: center;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dark);
+  border-radius: var(--radius-s);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
 .livebadge {
   display: flex;
   align-items: center;
