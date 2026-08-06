@@ -230,34 +230,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
     if (!song) return;
     let vid = (item.versionId ?? '') || song.activeVersionId;
     let nextDraft = draft;
-    // Modifier depuis la setlist alors que l'item suit la « Version
-    // active » : proposer de créer la version dédiée — sinon les
-    // changements toucheraient la version d'origine (partout).
-    if (edit && (item.versionId ?? '') === '') {
-      const makeOwn = confirm(
-        'Adapter ce morceau pour cette setlist ?\n\n' +
-          'OK — tes changements (tonalité, capo, notes) ne valent que pour ' +
-          'cette setlist et ne touchent pas l’original.\n' +
-          'Annuler — modifier le morceau partout.',
-      );
-      if (makeOwn) {
-        const vname =
-          draft.name.trim() !== '' ? draft.name.trim() : 'Version setlist';
-        const updated = duplicateVersion(song, vname, draft.bandId ?? '');
-        vid = updated.activeVersionId;
-        saveSong(updated); // reste actif le temps de l'édition
-        nextDraft = {
-          ...draft,
-          items: draft.items.map((it) =>
-            it.id === item.id ? { ...it, versionId: vid } : it,
-          ),
-        };
-        setDraft(nextDraft);
-        saveSetlist(nextDraft);
-        navigate(`/song/${song.id}/edit`);
-        return;
-      }
-    }
+    // Plus de « version setlist » (décision Vincent, b113) : modifier
+    // depuis la setlist modifie la version affichée du morceau. Les
+    // ajustements propres à un concert passent par la tonalité de l'item
+    // (keyOverride), pas par une version.
     if (vid !== song.activeVersionId) {
       saveSong(switchVersion(song, vid));
     }
@@ -438,36 +414,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
                         title="Version jouée dans cette setlist"
                         onChange={(e) => {
                           const value = e.target.value;
-                          if (value === '__newsl__') {
-                            // Interprétation propre à cette setlist :
-                            // copie de la version courante, nommée d'après
-                            // elle. IMPORTANT : le morceau REVIENT ensuite
-                            // sur sa version d'origine — la version setlist
-                            // n'existe que pour cette setlist, elle ne
-                            // devient pas la version par défaut du morceau.
-                            const vname =
-                              draft.name.trim() !== ''
-                                ? draft.name.trim()
-                                : 'Version setlist';
-                            const prevActive = song.activeVersionId;
-                            let updated = duplicateVersion(
-                              song,
-                              vname,
-                              draft.bandId ?? '',
-                            );
-                            const newVid = updated.activeVersionId;
-                            updated = switchVersion(updated, prevActive);
-                            saveSong(updated);
-                            setDraft((d) => ({
-                              ...d,
-                              items: d.items.map((it) =>
-                                it.id === item.id
-                                  ? { ...it, versionId: newVid }
-                                  : it,
-                              ),
-                            }));
-                            return;
-                          }
                           setDraft((d) => ({
                             ...d,
                             items: d.items.map((it) =>
@@ -487,9 +433,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
                               : ''}
                           </option>
                         ))}
-                        <option value="__newsl__">
-                          ＋ Version pour cette setlist…
-                        </option>
                       </select>
                     )}
                     <input

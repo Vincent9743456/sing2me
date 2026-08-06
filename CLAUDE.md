@@ -77,9 +77,13 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - **invariant « originale maîtresse »** : la 1ʳᵉ version (`versions[0]`)
     est TOUJOURS l'originale personnelle (`bandId ''`) — elle reste dans la
     bibliothèque perso, pilote les autres, n'est jamais absorbée par un
-    groupe ni supprimée. Les autres versions sont pour un groupe précis ou
-    une variante solo. Garanti par `ensureOriginalVersion` (réparation au
-    chargement) + garde dans `removeVersion` + éditeur ;
+    groupe ni supprimée. **Modèle simplifié (b113)** : un morceau =
+    l'originale + AU PLUS une version par groupe qui l'a au répertoire —
+    rien d'autre (plus de variantes solo à la création, plus de « versions
+    setlist » ; les ajustements d'un concert passent par la tonalité de
+    l'item de setlist). Garanti par `ensureOriginalVersion` +
+    `dedupeBandVersions` (réparations au chargement), `duplicateVersion`
+    idempotente par groupe, et la garde dans `removeVersion` ;
   - retirer un morceau du répertoire d'un groupe est un acte de niveau
     groupe propagé à tous (chacun garde sa copie personnelle) ;
   - un morceau ajouté au répertoire d'un groupe arrive chez les autres
