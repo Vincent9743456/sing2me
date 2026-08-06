@@ -14,7 +14,6 @@ import {
 } from '../lib/chords';
 import {
   activeVersion,
-  duplicateVersion,
   notesForBand,
   removeVersion,
   switchVersion,
@@ -24,7 +23,7 @@ import { stripChords } from '../lib/chordpro';
 import { normalizeTitle } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet } from '../components/SongPicker';
-import { ConfirmSheet, MenuSheet, PromptSheet } from '../components/Feedback';
+import { ConfirmSheet, MenuSheet } from '../components/Feedback';
 import { CoachMark } from '../components/CoachMark';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -147,7 +146,6 @@ export function SongView({
   const [assocOpen, setAssocOpen] = useState(false);
   // Actions « versions » (menu ⋯), création et suppression de version.
   const [versionMenu, setVersionMenu] = useState(false);
-  const [newVersionOpen, setNewVersionOpen] = useState(false);
   const [delVersionOpen, setDelVersionOpen] = useState(false);
   const [delSongOpen, setDelSongOpen] = useState(false);
   const scroll = useAutoScroll(undefined, song?.id);
@@ -269,12 +267,6 @@ export function SongView({
     setShift(0);
   }
 
-  /** Crée une nouvelle version perso (copie de l'affichée) et bascule dessus. */
-  function createNewVersion(name: string) {
-    if (!song) return;
-    saveSong(duplicateVersion(song, name));
-    setShift(0);
-  }
 
   /** Supprime la version affichée ; si c'est celle d'un groupe, retire aussi
    *  le morceau du répertoire du groupe (propagé à tous — chacun garde sa
@@ -658,20 +650,9 @@ export function SongView({
           </button>
         </div>
 
-        {/* Morceau simple (1 seule version perso) : accès discret sans jamais
-            afficher la notion de version tant qu'il n'y en a qu'une.
-            (« Meilleure version ? » est en haut de page — demande Vincent.) */}
-        {!isBandVersion && song.versions.length < 2 && (
-          <div className="versionbar">
-            <button
-              className="btn ghost small"
-              title="Créer une variante (arrangement acoustique, autre tonalité…)"
-              onClick={() => setNewVersionOpen(true)}
-            >
-              ＋ Nouvelle version
-            </button>
-          </div>
-        )}
+        {/* Modèle des versions (décision Vincent, b113) : l'originale + une
+            version par groupe qui a le morceau — rien d'autre. Pas de
+            création de variantes personnelles ni de versions de setlist. */}
 
         {showNotes && (
           <div className="notesbox">
@@ -887,11 +868,6 @@ export function SongView({
               icon: 'star',
               onClick: () => setUgUpgrade(true),
             },
-            {
-              label: '＋ Nouvelle version…',
-              icon: 'plus',
-              onClick: () => setNewVersionOpen(true),
-            },
             ...(song.versions.length > 1 && !isMainVersion
               ? [
                   {
@@ -906,18 +882,6 @@ export function SongView({
               : []),
           ]}
           onClose={() => setVersionMenu(false)}
-        />
-      )}
-
-      {newVersionOpen && (
-        <PromptSheet
-          title="Nouvelle version"
-          message="Une copie de la version affichée, que tu pourras arranger librement (acoustique, autre tonalité, live…)."
-          initialValue={`Version ${song.versions.length + 1}`}
-          placeholder="Acoustique, Live, capo 3…"
-          confirmLabel="Créer"
-          onSubmit={createNewVersion}
-          onClose={() => setNewVersionOpen(false)}
         />
       )}
 

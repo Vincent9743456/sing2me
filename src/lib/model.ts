@@ -327,19 +327,78 @@ export function splitVersion(
   return { remaining, created };
 }
 
-/** Duplique la version active sous un nouveau nom et bascule dessus. */
+/**
+ * Répare l'invariant « une seule version par groupe » sur un morceau :
+ * s'il existe plusieurs versions pour le MÊME groupe (doublons
+ * historiques), on garde la plus récemment modifiée (updatedAt) et on
+ * rebranche la version active si elle faisait partie des doublons.
+ * Les versions personnelles (bandId '') ne sont jamais touchées.
+ */
+export function dedupeBandVersions(song: Song): Song {
+  if (!Array.isArray(song.versions) || song.versions.length < 2) return song;
+  const keeper = new Map<string, SongVersion>();
+  for (const v of song.versions) {
+    const bid = v.bandId ?? '';
+    if (bid === '') continue;
+    const cur = keeper.get(bid);
+    if (!cur || (v.updatedAt ?? '') >= (cur.updatedAt ?? '')) {
+      keeper.set(bid, v);
+    }
+  }
+  const keepIds = new Set<string>();
+  for (const v of song.versions) {
+    const bid = v.bandId ?? '';
+    if (bid === '' || keeper.get(bid)?.id === v.id) keepIds.add(v.id);
+  }
+  if (keepIds.size === song.versions.length) return song;
+  const versions = song.versions.filter((v) => keepIds.has(v.id));
+  if (versions.some((v) => v.id === song.activeVersionId)) {
+    return { ...song, versions };
+  }
+  // L'active était un doublon supprimé → on bascule sur la version
+  // conservée de son groupe (miroir des champs du morceau inclus).
+  const wasActive = song.versions.find((v) => v.id === song.activeVersionId);
+  const repl =
+    (wasActive ? keeper.get(wasActive.bandId ?? '') : undefined) ?? versions[0];
+  return {
+    ...song,
+    versions,
+    activeVersionId: repl.id,
+    key: repl.key,
+    tempo: repl.tempo,
+    capo: repl.capo,
+    structure: repl.structure,
+    lyrics: repl.lyrics,
+  };
+}
+
+/** Duplique la version active sous un nouveau nom et bascule dessus.
+ *
+ *  Invariant « une seule version par groupe » (décision Vincent, b113) :
+ *  un morceau a l'originale + AU PLUS une version par groupe. Si le groupe
+ *  visé a déjà sa version, on bascule dessus au lieu d'en créer une
+ *  deuxième — tous les chemins d'appel (fiche, setlists, bibliothèque,
+ *  discussion) passent par ici, l'invariant est garanti en un seul point.
+ *  Sans bandId explicite, la copie est PERSONNELLE (bandId '') : dupliquer
+ *  en consultant une version de groupe ne doit jamais créer un doublon de
+ *  cette version de groupe. */
 export function duplicateVersion(
   song: Song,
   name: string,
   bandId?: string,
 ): Song {
   const synced = syncActiveVersion(song);
+  const targetBand = bandId ?? '';
+  if (targetBand !== '') {
+    const existing = versionForBand(synced, targetBand);
+    if (existing) return switchVersion(synced, existing.id);
+  }
   const current = activeVersion(synced);
   const copy: SongVersion = {
     ...current,
     id: makeId(),
     name: name.trim() || `Version ${synced.versions.length + 1}`,
-    bandId: bandId ?? current.bandId,
+    bandId: targetBand,
     structure: current.structure.map((r) => ({ ...r, id: makeId() })),
   };
   return {
@@ -695,6 +754,9 @@ export function migrateSong(raw: unknown): Song {
   if ((base.pendingBandId ?? '') === '') {
     base = ensureOriginalVersion(base);
   }
+  // Invariant « une seule version par groupe » : répare les doublons
+  // historiques au chargement (on garde la plus récemment modifiée).
+  base = dedupeBandVersions(base);
 
   const { notes: _legacyNotes, ...clean } = base as Song & { notes?: string };
   return clean as Song;
