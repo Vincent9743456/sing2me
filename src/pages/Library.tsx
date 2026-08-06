@@ -229,7 +229,16 @@ function isRecent(createdAt: string): boolean {
 }
 
 export function Library() {
-  const { songs, deleteSong, bands, setlists, saveSong } = useStore();
+  const {
+    songs,
+    deleteSong,
+    bands,
+    setlists,
+    saveSong,
+    clearBandRemoval,
+    prefs,
+    artist,
+  } = useStore();
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
   // null = tous · '' = solo (aucun groupe) · sinon id du groupe
@@ -244,6 +253,22 @@ export function Library() {
   const [rowAssign, setRowAssign] = useState<string | null>(null);
   const [rowDelete, setRowDelete] = useState<Song | null>(null);
   const [headerMenu, setHeaderMenu] = useState(false);
+  // Collecteur « Ajouter des morceaux » quand la bibliothèque est filtrée
+  // sur un groupe (vue répertoire — porte du groupe, règle 1).
+  const [bandCollect, setBandCollect] = useState(false);
+  // Filtre demandé par une autre page (porte « Répertoire du groupe »).
+  useEffect(() => {
+    let pending: string | null = null;
+    try {
+      pending = localStorage.getItem('sing2me/libBandFilter');
+      if (pending) localStorage.removeItem('sing2me/libBandFilter');
+    } catch {
+      pending = null;
+    }
+    if (pending) setBandFilter(pending);
+    // au montage uniquement
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Barre d'outils figée : on mesure l'en-tête + la barre pour la caler
   // juste sous l'en-tête, et positionner le volet d'aperçu en dessous.
   const toolbarRef = useRef<HTMLDivElement | null>(null);
@@ -828,14 +853,58 @@ export function Library() {
         </div>
       </div>
 
-      {/* Action principale unique de l'onglet : importer. */}
-      <button
-        className="btn libfab"
-        title="Importer un morceau (texte, lien Ultimate Guitar, PDF, Word…)"
-        onClick={() => navigate('/import')}
-      >
-        <Icon name="import" size={17} /> Importer
-      </button>
+      {/* Action principale unique : importer — ou, en vue répertoire d'un
+          groupe (filtre actif), ajouter des morceaux à ce répertoire. */}
+      {bandFilter !== null && bandFilter !== '' ? (
+        <button
+          className="btn libfab"
+          title="Ajouter des morceaux au répertoire du groupe"
+          onClick={() => setBandCollect(true)}
+        >
+          <Icon name="plus" size={17} /> Ajouter des morceaux
+        </button>
+      ) : (
+        <button
+          className="btn libfab"
+          title="Importer un morceau (texte, lien Ultimate Guitar, PDF, Word…)"
+          onClick={() => navigate('/import')}
+        >
+          <Icon name="import" size={17} /> Importer
+        </button>
+      )}
+      {bandCollect && bandFilter !== null && bandFilter !== '' && (
+        <SongCollector
+          title={`Ajouter au répertoire — ${
+            bands.find((b) => b.id === bandFilter)?.name || 'groupe'
+          }`}
+          alreadyIn={songs
+            .filter((s) => versionForBand(s, bandFilter) !== null)
+            .map((s) => s.id)}
+          confirmLabel={(n) => `Ajouter ${n} morceau${n > 1 ? 'x' : ''} au répertoire`}
+          onConfirm={(ids) => {
+            const b = bands.find((x) => x.id === bandFilter);
+            if (!b) return;
+            for (const id of ids) {
+              const s = songs.find((x) => x.id === id);
+              if (!s || versionForBand(s, b.id) !== null) continue;
+              saveSong(
+                switchVersion(
+                  duplicateVersion(s, b.name || 'Groupe', b.id),
+                  s.activeVersionId,
+                ),
+              );
+              clearBandRemoval(b.id, normalizeTitle(s.title));
+              void announceBandSong(
+                b.cloudId,
+                prefs.userName || artist.name || 'Moi',
+                s.title,
+                s.artist,
+              );
+            }
+          }}
+          onClose={() => setBandCollect(false)}
+        />
+      )}
 
       {pickerFor !== null && (
         <SetlistPicker songId={pickerFor} onClose={() => setPickerFor(null)} />

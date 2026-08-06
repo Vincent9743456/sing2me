@@ -7,9 +7,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { useAccount } from '../components/Account';
+import { ConfirmSheet, MenuSheet } from '../components/Feedback';
 import { GearEditor } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
-import { SongCollector } from '../components/SongPicker';
 import { LinkPreviews } from '../components/LinkPreviews';
 import { ShareModal } from '../components/ShareModal';
 import { Field, Modal, TopBar } from '../components/ui';
@@ -20,6 +20,7 @@ import {
   DirectoryPerson,
   ensureCloudBand,
   fetchBandMembers,
+  fetchBandMessages,
   inviteToBand,
   removeBandMember,
   searchProfiles,
@@ -86,6 +87,16 @@ function Avatar({ name, photo }: { name: string; photo?: string }) {
   );
 }
 
+/** Ancienneté lisible (« il y a 2 h ») pour le sous-titre de la Discussion. */
+function ago(iso: string): string {
+  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (min < 1) return "à l'instant";
+  if (min < 60) return `il y a ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `il y a ${h} h`;
+  return `il y a ${Math.floor(h / 24)} j`;
+}
+
 export function BandEdit({ id }: { id: string }) {
   const {
     bands,
@@ -110,8 +121,14 @@ export function BandEdit({ id }: { id: string }) {
   } | null>(null);
   const [cloudMembers, setCloudMembers] = useState<CloudMember[]>([]);
   const [inviteBusy, setInviteBusy] = useState(false);
-  // Vue par défaut = fiche mise en forme ; « Modifier » ouvre le formulaire.
+  // Vue par défaut = écran d'accueil du groupe (3 portes) ; l'avancé
+  // (édition, page publique, suppression) vit derrière « ⋯ ».
   const [editing, setEditing] = useState(false);
+  const [headerMenu, setHeaderMenu] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [lastMsg, setLastMsg] = useState<{ text: string; at: string } | null>(
+    null,
+  );
   const [myId, setMyId] = useState('');
   // Ajout d'un membre : recherche dans l'annuaire ou repli lien/email.
   const [addOpen, setAddOpen] = useState(false);
@@ -120,29 +137,6 @@ export function BandEdit({ id }: { id: string }) {
   const [dirBusy, setDirBusy] = useState(false);
   const [dirMsg, setDirMsg] = useState<string | null>(null);
   const [invited, setInvited] = useState<Set<string>>(new Set());
-  // Répertoire : ajout de morceaux au groupe (bouton dédié, hors discussion).
-  const [repOpen, setRepOpen] = useState(false);
-
-  /**
-   * Ajoute un morceau du répertoire personnel au répertoire du groupe :
-   * on lui crée sa version « groupe » (sans changer la version affichée) ;
-   * le fil de discussion reçoit une annonce automatique et la synchro le
-   * propage aux autres membres (en proposition à accepter).
-   */
-  function addToRepertoire(song: Song) {
-    if (!band || versionForBand(song, band.id)) return;
-    const prev = song.activeVersionId;
-    saveSong(
-      switchVersion(duplicateVersion(song, band.name || 'Groupe', band.id), prev),
-    );
-    clearBandRemoval(band.id, normalizeTitle(song.title));
-    void announceBandSong(
-      band.cloudId,
-      prefs.userName || artist.name || 'Moi',
-      song.title,
-      song.artist,
-    );
-  }
 
   // Membres réels (comptes) du groupe publié
   useEffect(() => {
@@ -156,6 +150,16 @@ export function BandEdit({ id }: { id: string }) {
         if (!cancelled) setMyId(s.userId);
         const members = await fetchBandMembers(s, cid);
         if (!cancelled) setCloudMembers(members);
+        // Dernier message pour le sous-titre de la porte « Discussion ».
+        try {
+          const msgs = await fetchBandMessages(s, cid);
+          const last = msgs.length ? msgs[msgs.length - 1] : null;
+          if (!cancelled && last) {
+            setLastMsg({ text: last.text, at: last.created_at });
+          }
+        } catch {
+          // fil injoignable : sous-titre générique
+        }
       } catch {
         // silencieux : la liste locale reste affichée
       }
@@ -329,174 +333,146 @@ export function BandEdit({ id }: { id: string }) {
     (m) => m.name.trim() === '' || !cloudNames.has(m.name.trim().toLowerCase()),
   );
 
+  // Données des 3 portes.
+  const allMembers = [...cloudMembers, ...manualMembers];
+  const memberCount = allMembers.length;
+  const fewMembers = memberCount < 2;
+  const repCount = songs.filter(
+    (s) => versionForBand(s, band.id) !== null,
+  ).length;
+  const propCount = songs.filter(
+    (s) => (s.pendingBandId ?? '') === band.id,
+  ).length;
+  const bandSetlists = [...setlists]
+    .filter((sl) => sl.bandId === band.id)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+  function openRepertoire() {
+    if (!band) return;
+    // Règle 1 : le répertoire = la bibliothèque filtrée sur ce groupe.
+    try {
+      localStorage.setItem('sing2me/libBandFilter', band.id);
+    } catch {
+      // stockage indisponible : la bibliothèque s'ouvrira sans filtre
+    }
+    navigate('/');
+  }
+
   return (
     <>
       <TopBar
         title={band.name || 'Groupe'}
-        onBack={() => navigate('/bands')}
+        onBack={() => (editing ? setEditing(false) : navigate('/bands'))}
+        right={
+          !editing ? (
+            <button
+              className="btn icon"
+              title="Plus"
+              aria-label="Plus d'actions"
+              onClick={() => setHeaderMenu(true)}
+            >
+              <Icon name="more" size={20} />
+            </button>
+          ) : undefined
+        }
       />
       <div className="page">
         {!editing && (
           <>
-            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              {band.photo !== '' ? (
-                <img
-                  src={band.photo}
-                  alt={band.name}
-                  title="Changer la photo du groupe"
-                  style={{
-                    width: 112,
-                    height: 112,
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '2px solid var(--border)',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setEditing(true)}
-                />
-              ) : (
-                <button
-                  title="Ajouter une photo du groupe"
-                  onClick={() => setEditing(true)}
-                  style={{
-                    width: 112,
-                    height: 112,
-                    borderRadius: '50%',
-                    background: 'var(--surface-high)',
-                    border: '1px dashed var(--border-strong)',
-                    display: 'inline-flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '2rem',
-                    cursor: 'pointer',
-                    color: 'var(--text-dim)',
-                    gap: 2,
-                  }}
-                >
-                  👥
-                  <span style={{ fontSize: '0.7rem' }}>＋ photo</span>
-                </button>
-              )}
-              <h1 style={{ margin: '12px 0 2px', fontSize: '1.4rem' }}>
-                {band.name || 'Groupe'}
-              </h1>
-              {band.bio !== '' ? (
-                <p
-                  className="help"
-                  style={{
-                    whiteSpace: 'pre-wrap',
-                    maxWidth: 480,
-                    margin: '4px auto 0',
-                  }}
-                >
-                  {band.bio}
-                </p>
-              ) : (
-                <button className="slot" onClick={() => setEditing(true)}>
-                  ＋ Ajoute une bio du groupe
-                </button>
-              )}
-            </div>
-            {band.links.some((l) => l.url.trim() !== '') ? (
-              <LinkPreviews links={band.links} showChips />
-            ) : (
-              <button className="slot" onClick={() => setEditing(true)}>
-                ＋ Ajoute les liens du groupe (Spotify, Instagram, YouTube…)
+            {/* En-tête : photo + nom + membres + Inviter. */}
+            <div className="bandhead">
+              <button
+                className="bandhead-photo"
+                title="Modifier le groupe (photo, nom…)"
+                onClick={() => setEditing(true)}
+              >
+                {band.photo !== '' ? (
+                  <img src={band.photo} alt={band.name} />
+                ) : (
+                  <span aria-hidden="true">👥</span>
+                )}
               </button>
-            )}
-            <h2 className="pagetitle">Musiciens</h2>
-            {(cloudMembers.length > 0 || manualMembers.length > 0) && (
-              <div className="list">
-                {cloudMembers.map((m) => {
-                  const isMe = m.user_id === myId;
-                  return (
-                    <div
-                      className="row"
-                      key={m.user_id}
-                      onClick={isMe ? () => navigate('/artist') : undefined}
-                      style={{ cursor: isMe ? 'pointer' : 'default' }}
-                      title={isMe ? 'Voir mon profil artiste' : undefined}
-                    >
-                      <Avatar
-                        name={m.name}
-                        photo={isMe ? artist.photo || m.photo : m.photo}
-                      />
-                      <div className="grow">
-                        <div className="title">
-                          {m.name || '(sans nom)'}{' '}
-                          <span
-                            style={{ color: 'var(--accent)' }}
-                            title="Compte Sing2Me"
-                          >
-                            ✓
-                          </span>
-                        </div>
-                        {m.instrument !== '' && (
-                          <div className="sub">{m.instrument}</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {manualMembers.map((m) => {
-                  const isMe =
-                    m.verified === true &&
-                    meKey !== '' &&
-                    m.name.trim().toLowerCase() === meKey;
-                  return (
-                    <div
-                      className="row"
-                      key={m.id}
-                      onClick={isMe ? () => navigate('/artist') : undefined}
-                      style={{ cursor: isMe ? 'pointer' : 'default' }}
-                      title={isMe ? 'Voir mon profil artiste' : undefined}
-                    >
-                      <Avatar name={m.name} photo={isMe ? artist.photo : ''} />
-                      <div className="grow">
-                        <div className="title">{m.name || '(sans nom)'}</div>
-                        {m.instrument !== '' && (
-                          <div className="sub">{m.instrument}</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+              <h1>{band.name || 'Groupe'}</h1>
+              <div className="bandhead-members">
+                <span className="avstack" aria-hidden="true">
+                  {allMembers.slice(0, 4).map((m, i) => (
+                    <span className="av" key={i}>
+                      {(m.name.trim()[0] || '?').toUpperCase()}
+                    </span>
+                  ))}
+                </span>
+                <span>
+                  {memberCount} musicien{memberCount > 1 ? 's' : ''}
+                </span>
               </div>
-            )}
-            <button
-              className="btn ghost block"
-              disabled={inviteBusy}
-              onClick={() => void openAddMember()}
-              title="Inviter un musicien : annuaire, lien ou email (il rejoint avec son compte = acceptation)"
-            >
-              {inviteBusy ? '…' : '＋ Ajouter un membre'}
-            </button>
-            <div className="rowactions">
-              <button className="btn" onClick={() => setEditing(true)}>
-                Modifier
-              </button>
               <button
-                className="btn ghost"
-                title="Ajouter des morceaux de ton répertoire au répertoire du groupe"
-                onClick={() => setRepOpen(true)}
+                className={`btn ${fewMembers ? '' : 'ghost'}`}
+                disabled={inviteBusy}
+                onClick={() => void openInvite()}
+                title="Inviter un musicien : il rejoint avec son compte, le répertoire se partage tout seul"
               >
-                <Icon name="music" size={15} /> Répertoire
-              </button>
-              <button
-                className="btn ghost"
-                onClick={() => navigate(`/band/${band.id}/chat`)}
-              >
-                <Icon name="message" size={15} /> Discussion
-              </button>
-              <button
-                className="btn ghost"
-                disabled={publicPayload === null}
-                onClick={() => setShare(true)}
-              >
-                Page publique / QR
+                {inviteBusy ? '…' : '＋ Inviter'}
               </button>
             </div>
+
+            {/* Trois grandes portes. */}
+            <button
+              className="bigrow"
+              onClick={() => navigate(`/band/${band.id}/chat`)}
+            >
+              <span className="i" aria-hidden="true">
+                💬
+              </span>
+              <div className="grow" style={{ minWidth: 0 }}>
+                <div className="ti">Discussion</div>
+                <div className="su">
+                  {lastMsg
+                    ? `« ${lastMsg.text.slice(0, 40)}${lastMsg.text.length > 40 ? '…' : ''} » · ${ago(lastMsg.at)}`
+                    : 'Prépare répéts et concerts, propose des chansons'}
+                </div>
+              </div>
+              <span className="chev" aria-hidden="true">
+                ›
+              </span>
+            </button>
+
+            <button className="bigrow" onClick={openRepertoire}>
+              <span className="i" aria-hidden="true">
+                🎵
+              </span>
+              <div className="grow" style={{ minWidth: 0 }}>
+                <div className="ti">Répertoire du groupe</div>
+                <div className="su">
+                  {repCount} morceau{repCount > 1 ? 'x' : ''}
+                  {propCount > 0
+                    ? ` · ${propCount} proposition${propCount > 1 ? 's' : ''} à valider`
+                    : ''}
+                </div>
+              </div>
+              <span className="chev" aria-hidden="true">
+                ›
+              </span>
+            </button>
+
+            <button
+              className="bigrow"
+              onClick={() => navigate('/setlists')}
+            >
+              <span className="i" aria-hidden="true">
+                📋
+              </span>
+              <div className="grow" style={{ minWidth: 0 }}>
+                <div className="ti">Setlists du groupe</div>
+                <div className="su">
+                  {bandSetlists.length === 0
+                    ? 'Aucune setlist pour ce groupe'
+                    : `${bandSetlists[0].name || '(sans nom)'} · ${bandSetlists.length} au total`}
+                </div>
+              </div>
+              <span className="chev" aria-hidden="true">
+                ›
+              </span>
+            </button>
           </>
         )}
 
@@ -890,20 +866,42 @@ export function BandEdit({ id }: { id: string }) {
           onClose={() => setShare(false)}
         />
       )}
-      {repOpen && (
-        <SongCollector
-          title={`Ajouter au répertoire — ${band.name || 'groupe'}`}
-          alreadyIn={songs
-            .filter((s) => versionForBand(s, band.id) !== null)
-            .map((s) => s.id)}
-          confirmLabel={(n) => `Ajouter ${n} morceau${n > 1 ? 'x' : ''} au répertoire`}
-          onConfirm={(ids) => {
-            for (const id of ids) {
-              const s = songs.find((x) => x.id === id);
-              if (s) addToRepertoire(s);
-            }
+      {/* « ⋯ » de l'en-tête : tout l'avancé du groupe. */}
+      {headerMenu && (
+        <MenuSheet
+          title={band.name || 'Groupe'}
+          items={[
+            {
+              label: 'Modifier le groupe',
+              icon: 'edit',
+              onClick: () => setEditing(true),
+            },
+            {
+              label: 'Page publique / QR',
+              icon: 'qr',
+              onClick: () => setShare(true),
+            },
+            {
+              label: 'Supprimer le groupe',
+              icon: 'trash',
+              danger: true,
+              onClick: () => setConfirmDel(true),
+            },
+          ]}
+          onClose={() => setHeaderMenu(false)}
+        />
+      )}
+      {confirmDel && (
+        <ConfirmSheet
+          title={`Supprimer « ${band.name || 'ce groupe'} » ?`}
+          message="Le groupe est retiré de ton app. Tes morceaux personnels restent dans ta bibliothèque."
+          confirmLabel="Supprimer le groupe"
+          danger
+          onConfirm={() => {
+            deleteBand(band.id);
+            navigate('/bands');
           }}
-          onClose={() => setRepOpen(false)}
+          onClose={() => setConfirmDel(false)}
         />
       )}
     </>

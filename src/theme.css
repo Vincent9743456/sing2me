@@ -423,6 +423,106 @@ textarea.mono {
   }
 }
 
+/* ---------- Fiche groupe : en-tête + portes ---------- */
+.bandhead {
+  text-align: center;
+  margin-bottom: var(--sp-5);
+}
+.bandhead-photo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface-high);
+  color: var(--text-dim);
+  font-size: 2rem;
+  cursor: pointer;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.bandhead-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bandhead h1 {
+  margin: 12px 0 6px;
+  font-size: 1.4rem;
+}
+.bandhead-members {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  margin-bottom: 12px;
+}
+.avstack {
+  display: inline-flex;
+}
+.avstack .av {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-hover);
+  border: 2px solid var(--bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: -7px;
+}
+.avstack .av:first-child {
+  margin-left: 0;
+}
+.bigrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  color: inherit;
+  transition:
+    border-color var(--transition),
+    transform var(--transition);
+}
+.bigrow:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.bigrow .i {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.bigrow .ti {
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+.bigrow .su {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bigrow .chev {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
 /* ---------- Feedback : feuilles du bas, toast ---------- */
 .sheet-backdrop {
   position: fixed;
