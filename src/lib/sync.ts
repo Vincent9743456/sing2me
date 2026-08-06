@@ -55,6 +55,36 @@ function pick(local: string, cloud: string | undefined): string {
   return local !== '' ? local : (cloud ?? '');
 }
 
+/**
+ * Fusion des groupes par id. Les groupes n'ont pas d'horodatage : la fusion
+ * générique « le local gagne à égalité » pouvait effacer une photo (ou une
+ * bio, un nom…) si un appareil détenait une copie plus ancienne du groupe.
+ * Ici on UNIT les champs : une valeur déjà saisie d'un côté n'est jamais
+ * écrasée par une valeur vide de l'autre. Le local reste la base (membres
+ * réconciliés, cloudId), mais photo/nom/bio/liens sont rescapés du cloud.
+ */
+function mergeBandsById(local: Band[], cloud: Band[]): Band[] {
+  const result = new Map<string, Band>();
+  for (const b of cloud) result.set(b.id, b);
+  for (const b of local) {
+    const other = result.get(b.id);
+    if (!other) {
+      result.set(b.id, b);
+      continue;
+    }
+    result.set(b.id, {
+      ...b,
+      name: b.name || other.name,
+      photo: b.photo || other.photo,
+      bio: b.bio || other.bio,
+      tipUrl: b.tipUrl || other.tipUrl,
+      links: b.links.length > 0 ? b.links : (other.links ?? []),
+      cloudId: b.cloudId || other.cloudId,
+    });
+  }
+  return [...result.values()];
+}
+
 export function mergeStates(
   local: SyncState,
   cloud: Partial<SyncState> | null,
@@ -110,7 +140,7 @@ export function mergeStates(
     songs: alive(mergeById(local.songs, cloud.songs ?? [])),
     setlists: alive(mergeById(local.setlists, cloud.setlists ?? [])),
     concerts: alive(mergeById(local.concerts, cloud.concerts ?? [])),
-    bands: alive(mergeById(local.bands, cloud.bands ?? [])),
+    bands: alive(mergeBandsById(local.bands, cloud.bands ?? [])),
     artist,
     prefs,
     deleted: [...tombs.values()]
