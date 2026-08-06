@@ -798,18 +798,32 @@ export function BandEdit({ id }: { id: string }) {
                 ✓
               </span>
             )}
-            <input
-              type="text"
-              value={m.name}
-              placeholder="Nom du musicien"
-              onChange={(e) =>
-                update({
-                  members: band.members.map((x) =>
-                    x.id === m.id ? { ...x, name: e.target.value } : x,
-                  ),
-                })
-              }
-            />
+            {m.verified === true ? (
+              // Le nom d'un membre qui a son propre compte lui appartient :
+              // personne d'autre ne peut le modifier (évite les désyncs et
+              // les doublons). Seul lui le change, dans son onglet Artiste.
+              <div
+                className="grow"
+                style={{ minWidth: 0 }}
+                title="Nom géré par son compte — seul ce musicien peut le modifier"
+              >
+                <div className="title">{m.name || 'Musicien'}</div>
+                <div className="sub">Nom géré par son compte</div>
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={m.name}
+                placeholder="Nom du musicien"
+                onChange={(e) =>
+                  update({
+                    members: band.members.map((x) =>
+                      x.id === m.id ? { ...x, name: e.target.value } : x,
+                    ),
+                  })
+                }
+              />
+            )}
             <input
               type="text"
               value={m.instrument}
