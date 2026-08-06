@@ -162,7 +162,14 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     const tick = async () => {
       try {
         const s = await fetchLive();
-        if (!cancelled) setHearts(s.hearts);
+        if (cancelled) return;
+        setHearts(s.hearts);
+        // Le serveur peut couper un direct oublié (4 h, ou 1 h sans
+        // partition) : on répercute l'arrêt sur l'UI du leader.
+        if (s.status === 'off') {
+          setStatus('off');
+          setPanel(false);
+        }
       } catch {
         // silencieux
       }

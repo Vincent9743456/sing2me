@@ -29,6 +29,74 @@ function sbHeaders() {
   };
 }
 
+// Garde-fous « direct oublié » : 4 h max depuis le début, ou 1 h sans
+// nouvelle partition. Renvoie true si le live doit être coupé.
+const AUTO_STOP_MAX_MS = 4 * 60 * 60 * 1000; // 4 h après le début
+const AUTO_STOP_IDLE_MS = 60 * 60 * 1000; // 1 h sans partition
+function liveExpired(row) {
+  const now = Date.now();
+  const started = row?.started_at ? Date.parse(row.started_at) : NaN;
+  const lastSong = row?.last_song_at ? Date.parse(row.last_song_at) : NaN;
+  if (!Number.isNaN(started) && now - started > AUTO_STOP_MAX_MS) return true;
+  // Inactivité : référence = dernière partition, sinon le début du direct.
+  const ref = !Number.isNaN(lastSong) ? lastSong : started;
+  if (!Number.isNaN(ref) && now - ref > AUTO_STOP_IDLE_MS) return true;
+  return false;
+}
+
+// Archive la dernière partition jouée (registre « setlist souvenir »).
+async function archivePlayedSong(base, row) {
+  const title = row?.song?.title ?? '';
+  if (title === '') return;
+  let ins = await fetch(`${base}/rest/v1/live_stats`, {
+    method: 'POST',
+    headers: sbHeaders(),
+    body: JSON.stringify({
+      song_title: title,
+      song_artist: row.song?.artist ?? '',
+      hearts: row.hearts ?? 0,
+      concert_id: row.concert?.id ?? '',
+      concert_title: row.concert?.title ?? '',
+      session_id: row.session_id ?? null,
+      played_at: new Date().toISOString(),
+    }),
+  });
+  if (ins.status === 400) {
+    await fetch(`${base}/rest/v1/live_stats`, {
+      method: 'POST',
+      headers: sbHeaders(),
+      body: JSON.stringify({
+        song_title: title,
+        song_artist: row.song?.artist ?? '',
+        hearts: row.hearts ?? 0,
+        played_at: new Date().toISOString(),
+      }),
+    });
+  }
+}
+
+// Fige le nombre d'uniques et l'heure de fin d'une session ON AIR.
+async function finalizeSession(base, sessionId) {
+  if (!sessionId) return;
+  let uniques = 0;
+  try {
+    const c = await fetch(
+      `${base}/rest/v1/live_attendance?session_id=eq.${sessionId}&select=device_id`,
+      { headers: { ...sbHeaders(), prefer: 'count=exact' } },
+    );
+    const range = c.headers.get('content-range') || '';
+    const m = /\/(\d+)$/.exec(range);
+    uniques = m ? parseInt(m[1], 10) : 0;
+  } catch {
+    /* comptage best-effort */
+  }
+  await fetch(`${base}/rest/v1/live_sessions?id=eq.${sessionId}`, {
+    method: 'PATCH',
+    headers: sbHeaders(),
+    body: JSON.stringify({ ended_at: new Date().toISOString(), uniques }),
+  });
+}
+
 export default async function handler(req, res) {
   res.setHeader('cache-control', 'no-store');
   try {
@@ -64,11 +132,11 @@ export default async function handler(req, res) {
         return;
       }
       let r = await fetch(
-        `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at,band_id,started_by`,
+        `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at,band_id,started_by,started_at,last_song_at,session_id`,
         { headers: sbHeaders() },
       );
-      // Repli si les colonnes band_id/started_by n'existent pas encore
-      // (migration supabase/live.sql pas rejouée) : ne jamais casser l'état.
+      // Repli si les colonnes récentes n'existent pas encore (migration
+      // supabase/live.sql pas rejouée) : ne jamais casser l'état.
       if (r.status === 400) {
         r = await fetch(
           `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at`,
@@ -81,6 +149,73 @@ export default async function handler(req, res) {
       }
       const rows = await r.json();
       const row = Array.isArray(rows) && rows[0] ? rows[0] : {};
+
+      // Garde-fou « direct oublié » : à la lecture, si le live dépasse 4 h
+      // ou reste 1 h sans nouvelle partition, on le coupe côté serveur (même
+      // si le leader a fermé son app). Le PATCH conditionnel (status<>off)
+      // sert de verrou : un seul appel « gagne » la clôture et archive.
+      if (row.status && row.status !== 'off' && liveExpired(row)) {
+        try {
+          const claim = await fetch(
+            `${base}/rest/v1/live_state?id=eq.live&status=neq.off`,
+            {
+              method: 'PATCH',
+              headers: { ...sbHeaders(), prefer: 'return=representation' },
+              body: JSON.stringify({
+                status: 'off',
+                song: null,
+                band_song: null,
+                setlist: null,
+                setlist_count: 0,
+                concert: null,
+                band_id: '',
+                started_by: '',
+                started_at: null,
+                last_song_at: null,
+                session_id: null,
+                hearts: 0,
+                updated_at: new Date().toISOString(),
+              }),
+            },
+          );
+          let claimed = [];
+          try {
+            claimed = await claim.json();
+          } catch {
+            claimed = [];
+          }
+          if (Array.isArray(claimed) && claimed.length > 0) {
+            // On a gagné la clôture : on finalise comme un arrêt manuel.
+            await archivePlayedSong(base, row);
+            await finalizeSession(base, row.session_id);
+            try {
+              await fetch(`${base}/rest/v1/live_messages?id=not.is.null`, {
+                method: 'DELETE',
+                headers: sbHeaders(),
+              });
+            } catch {
+              /* purge best-effort */
+            }
+          }
+        } catch {
+          // auto-arrêt best-effort : en cas d'échec on renvoie « off » quand même
+        }
+        res.status(200).json({
+          status: 'off',
+          mode: row.mode === 'repet' ? 'repet' : 'concert',
+          song: null,
+          artist: null,
+          hearts: 0,
+          bandSong: null,
+          concert: null,
+          setlistCount: 0,
+          updatedAt: new Date().toISOString(),
+          bandId: '',
+          startedBy: '',
+        });
+        return;
+      }
+
       res.status(200).json({
         status: row.status ?? 'off',
         mode: row.mode === 'repet' ? 'repet' : 'concert',
@@ -167,6 +302,8 @@ export default async function handler(req, res) {
         patch.band_song = null;
         patch.band_id = '';
         patch.started_by = '';
+        patch.started_at = null;
+        patch.last_song_at = null;
       }
       if (req.body?.mode === 'repet' || req.body?.mode === 'concert') {
         patch.mode = req.body.mode;
@@ -178,6 +315,10 @@ export default async function handler(req, res) {
       }
       if ('song' in (req.body ?? {})) patch.song = req.body.song ?? null;
       if ('artist' in (req.body ?? {})) patch.artist = req.body.artist ?? null;
+      // Toute partition poussée réarme le compte à rebours d'inactivité (1 h).
+      if (status !== 'off' && patch.song && patch.song.title) {
+        patch.last_song_at = new Date().toISOString();
+      }
       if (status !== 'off' && 'bandId' in (req.body ?? {})) {
         patch.band_id =
           typeof req.body.bandId === 'string' ? req.body.bandId.slice(0, 200) : '';
@@ -248,6 +389,10 @@ export default async function handler(req, res) {
       try {
         const wasLive = !!liveRow && liveRow.status && liveRow.status !== 'off';
         if (status !== 'off' && !wasLive) {
+          // Passage en direct : on horodate le début (garde-fou 4 h) et on
+          // amorce le compteur d'inactivité (garde-fou 1 h sans partition).
+          patch.started_at = new Date().toISOString();
+          if (!patch.last_song_at) patch.last_song_at = patch.started_at;
           const artistName =
             patch.artist?.name || liveRow?.artist?.name || '';
           const s = await fetch(`${base}/rest/v1/live_sessions`, {
@@ -311,10 +456,18 @@ export default async function handler(req, res) {
       // Repli si band_id/started_by n'existent pas encore côté base
       // (migration pas rejouée) : on réécrit sans ces colonnes plutôt que
       // de couper le direct. « Jamais de coupure en plein concert. »
-      if (r.status === 400 && ('band_id' in patch || 'started_by' in patch)) {
-        const { band_id, started_by, ...safe } = patch;
+      if (
+        r.status === 400 &&
+        ('band_id' in patch ||
+          'started_by' in patch ||
+          'started_at' in patch ||
+          'last_song_at' in patch)
+      ) {
+        const { band_id, started_by, started_at, last_song_at, ...safe } = patch;
         void band_id;
         void started_by;
+        void started_at;
+        void last_song_at;
         r = await fetch(`${base}/rest/v1/live_state`, {
           method: 'POST',
           headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },

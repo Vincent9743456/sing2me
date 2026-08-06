@@ -129,3 +129,11 @@ alter table live_stats add column if not exists session_id uuid;
 --               bannière « Concert en cours » chez les membres du groupe).
 alter table live_state add column if not exists band_id text not null default '';
 alter table live_state add column if not exists started_by text not null default '';
+
+-- Garde-fous d'un direct oublié (auto-arrêt côté serveur, à la lecture) :
+--  started_at   : heure de passage en direct (off → on/pause) ;
+--  last_song_at : dernière fois qu'une partition a été poussée dans le live.
+-- Un direct est coupé s'il dépasse 4 h depuis started_at, ou 1 h sans
+-- nouvelle partition (last_song_at). Voir api/live.js.
+alter table live_state add column if not exists started_at timestamptz;
+alter table live_state add column if not exists last_song_at timestamptz;
