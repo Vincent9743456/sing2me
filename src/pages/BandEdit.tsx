@@ -252,6 +252,27 @@ export function BandEdit({ id }: { id: string }) {
       if (!s) return;
       await inviteToBand(s, cid, person.user_id);
       setInvited((prev) => new Set(prev).add(person.user_id));
+      // On matérialise l'invitation par un profil « en attente d'acceptation »
+      // dans le groupe : le musicien apparaît tout de suite, marqué comme
+      // pas encore accepté (il deviendra un membre normal à son adhésion).
+      const already = band?.members.some(
+        (m) =>
+          m.name.trim().toLowerCase() === person.name.trim().toLowerCase(),
+      );
+      if (band && !already && person.name.trim() !== '') {
+        saveBand({
+          ...band,
+          members: [
+            ...band.members,
+            {
+              id: makeId(),
+              name: person.name.trim(),
+              instrument: '',
+              pending: true,
+            },
+          ],
+        });
+      }
     } catch (e) {
       setDirMsg(e instanceof Error ? e.message : 'Invitation impossible.');
     }
@@ -328,9 +349,17 @@ export function BandEdit({ id }: { id: string }) {
       .filter((n) => n !== ''),
   );
   // Membres manuels non déjà représentés par un compte (dé-doublonnage :
-  // évite le créateur affiché deux fois quand il devient membre cloud).
+  // évite le créateur affiché deux fois quand il devient membre cloud) — et
+  // hors profils « en attente d'acceptation », comptés à part.
   const manualMembers = band.members.filter(
-    (m) => m.name.trim() === '' || !cloudNames.has(m.name.trim().toLowerCase()),
+    (m) =>
+      m.pending !== true &&
+      (m.name.trim() === '' || !cloudNames.has(m.name.trim().toLowerCase())),
+  );
+  // Invités pas encore acceptés (si le vrai compte a rejoint entre-temps, le
+  // même nom côté cloud le masque : plus « en attente »).
+  const pendingMembers = band.members.filter(
+    (m) => m.pending === true && !cloudNames.has(m.name.trim().toLowerCase()),
   );
 
   // Données des 3 portes.
@@ -400,9 +429,17 @@ export function BandEdit({ id }: { id: string }) {
                       {(m.name.trim()[0] || '?').toUpperCase()}
                     </span>
                   ))}
+                  {pendingMembers.slice(0, 2).map((m, i) => (
+                    <span className="av pending" key={`p${i}`} title="En attente d'acceptation">
+                      {(m.name.trim()[0] || '?').toUpperCase()}
+                    </span>
+                  ))}
                 </span>
                 <span>
                   {memberCount} musicien{memberCount > 1 ? 's' : ''}
+                  {pendingMembers.length > 0
+                    ? ` · ${pendingMembers.length} en attente`
+                    : ''}
                 </span>
               </div>
               <button
@@ -657,6 +694,28 @@ export function BandEdit({ id }: { id: string }) {
         )}
         {band.members.map((m) => (
           <div key={m.id} style={{ marginBottom: 10 }}>
+          {m.pending === true ? (
+            <div className="pendingmember">
+              <span className="av pending" aria-hidden="true">
+                {(m.name.trim()[0] || '?').toUpperCase()}
+              </span>
+              <div className="grow" style={{ minWidth: 0 }}>
+                <div className="title">{m.name || '(invité)'}</div>
+                <div className="sub">⏳ En attente d'acceptation</div>
+              </div>
+              <button
+                className="btn ghost small"
+                style={{ color: 'var(--danger)' }}
+                title="Annuler l'invitation"
+                onClick={() =>
+                  update({ members: band.members.filter((x) => x.id !== m.id) })
+                }
+              >
+                <Icon name="x" size={14} />
+              </button>
+            </div>
+          ) : (
+          <>
           <div
             style={{
               display: 'flex',
@@ -725,6 +784,8 @@ export function BandEdit({ id }: { id: string }) {
               }
             />
           </details>
+          </>
+          )}
           </div>
         ))}
         <button

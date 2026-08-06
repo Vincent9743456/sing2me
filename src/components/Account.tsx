@@ -466,6 +466,9 @@ export function AccountSection() {
   const [email, setEmail] = useState(
     () => localStorage.getItem('sing2me/lastEmail') ?? '',
   );
+  // Arrivée pour rejoindre un groupe (invitation) : on met le curseur droit
+  // dans le champ email → plus de recherche du champ, saisie immédiate.
+  const [joining] = useState(() => peekPendingInvite() != null);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -553,6 +556,9 @@ export function AccountSection() {
               type="email"
               value={email}
               placeholder="toi@exemple.com"
+              autoFocus={joining}
+              autoComplete="email"
+              inputMode="email"
               onChange={(e) => setEmail(e.target.value)}
             />
             <button

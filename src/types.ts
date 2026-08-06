@@ -148,6 +148,8 @@ export interface BandMember {
   instrument: string;
   /** true = le nom vient de la carte de musicien Sing2Me du membre */
   verified?: boolean;
+  /** Invité mais pas encore accepté : profil « en attente d'acceptation ». */
+  pending?: boolean;
   /** Matériel apporté par ce musicien */
   gear?: GearItem[];
 }

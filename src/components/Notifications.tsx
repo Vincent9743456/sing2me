@@ -57,6 +57,8 @@ function mergeCloudMembers(
           name: m.name || existing.name,
           instrument: m.instrument || existing.instrument,
           verified: true,
+          // Il a rejoint pour de bon : ce n'est plus « en attente ».
+          pending: undefined,
         }
       : {
           id: makeId(),
