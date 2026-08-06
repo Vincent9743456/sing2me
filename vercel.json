@@ -6,6 +6,19 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/heart", "destination": "/api/live-x?fn=heart" },
+    { "source": "/api/message", "destination": "/api/live-x?fn=message" },
+    { "source": "/api/live-stats", "destination": "/api/live-x?fn=live-stats" },
+    { "source": "/api/attend", "destination": "/api/live-x?fn=attend" },
+    { "source": "/api/follow", "destination": "/api/fan?fn=follow" },
+    { "source": "/api/souvenir", "destination": "/api/fan?fn=souvenir" },
+    { "source": "/api/report", "destination": "/api/fan?fn=report" },
+    { "source": "/api/ai-clean", "destination": "/api/ai?fn=clean" },
+    { "source": "/api/ai-note", "destination": "/api/ai?fn=note" },
+    { "source": "/api/setlist-ai", "destination": "/api/ai?fn=setlist" },
+    { "source": "/api/fetch-tab", "destination": "/api/tabs?fn=fetch" },
+    { "source": "/api/search-tabs", "destination": "/api/tabs?fn=search" },
+    { "source": "/api/social-import", "destination": "/api/tabs?fn=social" },
     {
       "source": "/(.*)",
       "destination": "/index.html"
