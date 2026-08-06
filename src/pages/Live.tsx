@@ -33,6 +33,7 @@ const MessageBox = lazy(() => import('./live/MessageBox'));
 const FollowButton = lazy(() => import('./live/FollowButton'));
 const MusicianLive = lazy(() => import('./live/MusicianLive'));
 const SouvenirCard = lazy(() => import('./live/SouvenirCard'));
+const ArtistSheet = lazy(() => import('./live/ArtistSheet'));
 
 const POLL_MS = 4000;
 
@@ -117,6 +118,8 @@ export function Live() {
   const [souvenir, setSouvenir] = useState(false);
   // Setlist souvenir (fanbase V1) : morceaux du dernier concert terminé.
   const [souvenirData, setSouvenirData] = useState<Souvenir | null>(null);
+  // Fiche artiste consultable pendant le direct (bouton-avatar).
+  const [artistOpen, setArtistOpen] = useState(false);
   const lastTitle = useRef('');
   // Nombre de morceaux de la dernière setlist préchargée (re-précharge si change).
   const lastSetlistCount = useRef(-1);
@@ -277,6 +280,53 @@ export function Live() {
           ⚠ Suivi interrompu — fais défiler à la main. Reprise automatique dès
           le retour du réseau.
         </div>
+      )}
+      {/* Fiche artiste pendant le concert : bouton-avatar (photo du groupe /
+          de l'artiste) en haut à droite — la fiche s'ouvre par-dessus les
+          paroles, le retour est immédiat (grand bouton + tap à côté). */}
+      {role === 'public' &&
+        publicSession &&
+        (state.status === 'on' || state.status === 'pause') &&
+        state.artist &&
+        state.artist.name !== '' &&
+        ps.profile && (
+          <button
+            aria-label={`Voir la page de ${state.artist.name}`}
+            title={`Voir la page de ${state.artist.name}`}
+            onClick={() => setArtistOpen(true)}
+            style={{
+              position: 'fixed',
+              top: 'var(--sp-3)',
+              right: 'var(--sp-3)',
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              padding: 0,
+              border: '2px solid var(--accent)',
+              background: 'var(--accent-soft)',
+              overflow: 'hidden',
+              zIndex: 60,
+              cursor: 'pointer',
+            }}
+          >
+            {state.artist.photo !== '' ? (
+              <img
+                src={state.artist.photo}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span style={{ fontSize: '1.3rem' }}>🎤</span>
+            )}
+          </button>
+        )}
+      {artistOpen && state.artist && (
+        <Suspense fallback={null}>
+          <ArtistSheet
+            artist={state.artist}
+            onClose={() => setArtistOpen(false)}
+          />
+        </Suspense>
       )}
       {/* Bifurcation « bœuf » : un musicien de passage bascule sur la
           partition complète (accords, transposition perso), sans compte. */}
