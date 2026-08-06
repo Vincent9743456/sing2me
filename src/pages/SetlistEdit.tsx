@@ -416,14 +416,8 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 <div
                   style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}
                 >
-                  <button
-                    className="btn ghost small"
-                    title="Voir la partition (version de cette setlist)"
-                    aria-label="Voir la partition"
-                    onClick={() => openItemSong(item, false)}
-                  >
-                    <Icon name="eye" size={14} />
-                  </button>
+                  {/* Voir la partition = un clic sur le titre (ci-dessus) ;
+                      ici on ne garde que Modifier + Réserve pour désencombrer. */}
                   <button
                     className="btn ghost small"
                     title="Modifier la partition (version de cette setlist)"

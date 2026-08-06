@@ -952,8 +952,11 @@ export function Import() {
               </p>
             )}
             <div className="spacer" />
-            <div className="field">
-              <label>Ou colle le texte de la partition</label>
+            {/* Coller le texte à la main : replié par défaut pour alléger
+                l'écran — le lien et le fichier restent accessibles d'un geste. */}
+            <details className="stfold" open={text.trim() !== ''}>
+              <summary>Ou coller le texte de la partition</summary>
+              <div className="spacer" />
               <textarea
                 className="mono"
                 value={text}
@@ -969,7 +972,7 @@ export function Import() {
                   '• Sections : [Couplet 1], Refrain:, [Verse], [Chorus]…'
                 }
               />
-            </div>
+            </details>
             {loadingMsg}
             {errorCard}
             {importEditor}

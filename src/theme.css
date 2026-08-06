@@ -2431,7 +2431,20 @@ h2.pagetitle {
     min-height: 44px;
   }
   .btn.small {
-    min-height: 38px;
+    min-height: 40px;
+  }
+  /* Chips, boutons-icônes et pastille du direct : cibles tactiles ≥ 40 px. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+  .btn.icon {
+    min-height: 44px;
+    min-width: 40px;
+  }
+  .onair {
+    padding: 9px 14px;
   }
   .stepper button,
   .scrollfab button {

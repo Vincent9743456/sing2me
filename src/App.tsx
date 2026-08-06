@@ -24,7 +24,7 @@ import { SongEdit } from './pages/SongEdit';
 import { SongView } from './pages/SongView';
 import { Stage } from './pages/Stage';
 import { Terms } from './pages/Terms';
-import { useRoute } from './router';
+import { Route, useRoute } from './router';
 import { StoreProvider } from './store';
 
 function Screen() {
@@ -120,11 +120,23 @@ function Screen() {
       break;
   }
 
+  // Le bouton « GO LIVE » ne s'affiche que là où lancer un direct a du sens
+  // (bibliothèque, setlists, groupes, artiste…). Sur la fiche d'un morceau,
+  // l'édition, l'import ou une discussion, il n'a rien à faire là et libère la
+  // barre du haut (le titre respire).
+  const hideLive = new Set<Route['name']>([
+    'song',
+    'songEdit',
+    'songInSet',
+    'import',
+    'concert',
+    'bandChat',
+  ]);
   return (
     <div className="app">
       {page}
       <TabBar current={route.name} bandsBadge={badge} />
-      <OnAirButton />
+      {!hideLive.has(route.name) && <OnAirButton />}
     </div>
   );
 }

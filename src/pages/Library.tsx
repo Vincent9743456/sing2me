@@ -309,6 +309,7 @@ export function Library() {
         (s) =>
           s.idea !== true &&
           (s.pendingBandId ?? '') === '' &&
+          !(s.tags ?? []).includes(EXAMPLE_TAG) &&
           isRecent(s.createdAt),
       ).length,
     [songs],
@@ -405,7 +406,10 @@ export function Library() {
     const isProposal = (s: (typeof songs)[number]) =>
       (s.pendingBandId ?? '') !== '';
     const freshRank = (s: (typeof songs)[number]) =>
-      s.idea !== true && !isProposal(s) && isRecent(s.createdAt);
+      s.idea !== true &&
+      !isProposal(s) &&
+      !(s.tags ?? []).includes(EXAMPLE_TAG) &&
+      isRecent(s.createdAt);
     return [...songs]
       .sort((a, b) => {
         if (pinTop) {
@@ -534,6 +538,7 @@ export function Library() {
                     </div>
                     {song.idea !== true &&
                       (song.pendingBandId ?? '') === '' &&
+                      !(song.tags ?? []).includes(EXAMPLE_TAG) &&
                       isRecent(song.createdAt) && (
                         <span className="newtag" title="Ajoutée cette semaine">
                           Nouveau
