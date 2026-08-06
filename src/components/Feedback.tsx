@@ -4,6 +4,7 @@
  *  • Sheet        : primitive (fond + panneau bas + poignée).
  *  • MenuSheet    : liste d'actions (le « ⋯ » d'un morceau, d'un en-tête…).
  *  • ConfirmSheet : confirmation destructive ou non, deux boutons.
+ *  • PromptSheet  : saisie d'une courte valeur (remplace prompt()).
  *  • Toast        : notification passagère (via ToastProvider / useToast).
  */
 import React, {
@@ -104,6 +105,62 @@ export function ConfirmSheet({
           onClose();
         }}
       >
+        {confirmLabel}
+      </button>
+      <button
+        className="btn ghost block"
+        style={{ marginTop: 8 }}
+        onClick={onClose}
+      >
+        Annuler
+      </button>
+    </Sheet>
+  );
+}
+
+export function PromptSheet({
+  title,
+  message,
+  initialValue = '',
+  placeholder,
+  confirmLabel = 'Valider',
+  onSubmit,
+  onClose,
+}: {
+  title: string;
+  message?: string;
+  initialValue?: string;
+  placeholder?: string;
+  confirmLabel?: string;
+  onSubmit: (value: string) => void;
+  onClose: () => void;
+}) {
+  const [value, setValue] = useState(initialValue);
+  function submit() {
+    const v = value.trim();
+    if (v === '') return;
+    onSubmit(v);
+    onClose();
+  }
+  return (
+    <Sheet title={title} onClose={onClose}>
+      {message && (
+        <p className="help" style={{ marginTop: 0 }}>
+          {message}
+        </p>
+      )}
+      <input
+        type="text"
+        autoFocus
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') submit();
+        }}
+        style={{ marginBottom: 8 }}
+      />
+      <button className="btn block" onClick={submit}>
         {confirmLabel}
       </button>
       <button

@@ -1082,6 +1082,63 @@ textarea.mono {
   width: auto;
   padding: 6px 10px;
 }
+/* Bandeau de version : énonce toujours CE QUE tu consultes / modifies et
+   si c'est partagé avec un groupe. Discret, teinté à la couleur du groupe
+   (posée en inline sur border-left). Une seule ligne forte + un sous-titre. */
+.versionbanner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-3);
+  border-radius: var(--radius-s);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--border-strong);
+}
+.versionbanner .vb-main {
+  flex: 1;
+  min-width: 0;
+}
+.versionbanner .vb-title {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  line-height: 1.25;
+}
+.versionbanner .vb-shared {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.versionbanner .vb-solo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+  color: var(--text-dim);
+}
+.versionbanner .vb-sub {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-top: 3px;
+}
+.versionbanner select {
+  width: auto;
+  max-width: 45%;
+  padding: 6px 10px;
+  flex-shrink: 0;
+}
 .transpose {
   display: flex;
   align-items: center;

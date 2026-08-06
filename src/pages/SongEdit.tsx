@@ -49,6 +49,17 @@ export function SongEdit({ id }: { id: string | null }) {
     () => activeVersion(draft).bandId,
   );
   const isNew = existing === undefined;
+  // Groupe de la version en cours d'édition (pour le bandeau de contexte).
+  const editBand = bands.find((b) => b.id === versionBandId);
+  const editBandColor = [
+    'var(--band-1)',
+    'var(--band-2)',
+    'var(--band-3)',
+    'var(--band-4)',
+    'var(--band-5)',
+    'var(--band-6)',
+    'var(--band-7)',
+  ][Math.max(0, bands.findIndex((b) => b.id === versionBandId)) % 7];
 
   function update(patch: Partial<Song>) {
     setDraft((d) => ({ ...d, ...patch }));
@@ -231,13 +242,36 @@ export function SongEdit({ id }: { id: string | null }) {
             ? 'propre à la version choisie'
             : 'version unique'}
         </h2>
-        <p className="help">
-          {draft.versions.length > 1
-            ? 'Ce qui suit ne modifie QUE la version sélectionnée ci-dessous — ' +
-              'les versions liées à une setlist ou à un groupe gardent leurs ' +
-              'propres réglages.'
-            : "Ce morceau n'a qu'une version : ces champs s'appliquent à elle."}
-        </p>
+        {/* Bandeau : rappelle CE QUE tu modifies et si c'est partagé. */}
+        <div
+          className="versionbanner"
+          style={versionBandId ? { borderLeftColor: editBandColor } : undefined}
+        >
+          <div className="vb-main">
+            <div className="vb-title">
+              <span>
+                Tu modifies :{' '}
+                {versionBandId
+                  ? `version du groupe ${editBand?.name || 'sans nom'}`
+                  : draft.versions.length > 1
+                    ? `version « ${versionName.trim() || activeVersion(draft).name} »`
+                    : 'ce morceau'}
+              </span>
+              {versionBandId ? (
+                <span className="vb-shared">partagée</span>
+              ) : (
+                <span className="vb-solo">perso</span>
+              )}
+            </div>
+            <div className="vb-sub">
+              {versionBandId
+                ? 'À l’enregistrement, tes changements partent vers tous les membres du groupe.'
+                : draft.versions.length > 1
+                  ? 'Modifications privées à cette version — les autres versions gardent leurs réglages.'
+                  : 'Modifications privées — à toi seul.'}
+            </div>
+          </div>
+        </div>
         {draft.versions.length > 1 && (
           <Field label="Version modifiée">
             <select

@@ -24,11 +24,11 @@ import {
   transposeChordSequence,
   versionForBand,
 } from '../lib/model';
-import { announceBandSong } from '../lib/bands';
 import { stripChords } from '../lib/chordpro';
 import { normalizeTitle } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet } from '../components/SongPicker';
+import { ConfirmSheet, MenuSheet, PromptSheet } from '../components/Feedback';
 import { CoachMark } from '../components/CoachMark';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -152,6 +152,10 @@ export function SongView({
   const [ugUpgrade, setUgUpgrade] = useState(false);
   // Éditeur « Ajouter à un groupe / une setlist » (à la demande).
   const [assocOpen, setAssocOpen] = useState(false);
+  // Actions « versions » (menu ⋯), création et suppression de version.
+  const [versionMenu, setVersionMenu] = useState(false);
+  const [newVersionOpen, setNewVersionOpen] = useState(false);
+  const [delVersionOpen, setDelVersionOpen] = useState(false);
   const scroll = useAutoScroll(undefined, song?.id);
 
   // En lecture de setlist : bascule sur la version de l'item, puis
@@ -279,6 +283,13 @@ export function SongView({
   }
 
   const current = activeVersion(song);
+  const curBandId = current.bandId ?? '';
+  const isBandVersion = curBandId !== '';
+  const isMainVersion = current.id === song.versions[0]?.id;
+  const bandColorFor = (bid: string) =>
+    BAND_COLORS[
+      Math.max(0, bands.findIndex((x) => x.id === bid)) % BAND_COLORS.length
+    ];
   const showTranspose = view === 'complete' || view === 'accords';
   // Notes du contexte courant : solo/tous + celles du groupe de la version
   const contextNotes = notesForBand(song.rehearsalNotes, current.bandId);
@@ -290,36 +301,33 @@ export function SongView({
   const bandName = (bid: string) =>
     bands.find((b) => b.id === bid)?.name ?? '';
 
+  /** Bascule vers une autre version existante (le sélecteur ne propose plus
+   *  que de vraies versions — la création passe par le menu ⋯). */
   function onVersionChange(value: string) {
     if (!song) return;
-    if (value === '__new__') {
-      const name = prompt(
-        'Nom de la nouvelle version (ex. Acoustique, Groupe Xyz…)',
-        `Version ${song.versions.length + 1}`,
-      );
-      if (name === null) return;
-      saveSong(duplicateVersion(song, name));
-    } else if (value.startsWith('__band__:')) {
-      // Crée en un clic la version dédiée à ce groupe (copie de l'actuelle)
-      const bid = value.slice('__band__:'.length);
-      const b = bands.find((x) => x.id === bid);
-      saveSong(duplicateVersion(song, b?.name ?? 'Groupe', bid));
-      // Le groupe est informé (best-effort si publié + connecté)
-      void announceBandSong(
-        b?.cloudId,
-        prefs.userName || artist.name || 'Moi',
-        song.title,
-        song.artist,
-      );
-    } else {
-      saveSong(switchVersion(song, value));
-    }
+    saveSong(switchVersion(song, value));
     setShift(0);
   }
 
-  const bandsWithoutVersion = bands.filter(
-    (b) => !song.versions.some((v) => v.bandId === b.id),
-  );
+  /** Crée une nouvelle version perso (copie de l'affichée) et bascule dessus. */
+  function createNewVersion(name: string) {
+    if (!song) return;
+    saveSong(duplicateVersion(song, name));
+    setShift(0);
+  }
+
+  /** Supprime la version affichée ; si c'est celle d'un groupe, retire aussi
+   *  le morceau du répertoire du groupe (propagé à tous — chacun garde sa
+   *  copie perso). */
+  function confirmDeleteVersion() {
+    if (!song) return;
+    const inBand = (current.bandId ?? '') !== '';
+    if (inBand) {
+      recordBandRemoval(current.bandId, normalizeTitle(song.title));
+    }
+    saveSong(removeVersion(song, current.id));
+  }
+
   // Appartenances actuelles (pour l'état compact).
   const memberBands = bands.filter((b) => versionForBand(song, b.id) !== null);
   const memberSetlists = setlists.filter((sl) =>
@@ -490,77 +498,99 @@ export function SongView({
           </button>
         </div>
 
+        {/* Bandeau de version : dit toujours CE QUE tu consultes et si c'est
+            partagé. Absent pour un morceau simple (1 version perso) — Lot D. */}
+        {(isBandVersion || song.versions.length >= 2) && (
+          <div
+            className="versionbanner"
+            style={
+              isBandVersion
+                ? { borderLeftColor: bandColorFor(curBandId) }
+                : undefined
+            }
+          >
+            <div className="vb-main">
+              <div className="vb-title">
+                <span>
+                  {isBandVersion
+                    ? `Version du groupe ${bandName(curBandId) || '—'}`
+                    : isMainVersion
+                      ? 'Version principale'
+                      : `Version « ${current.name} »`}
+                </span>
+                {isBandVersion ? (
+                  <span className="vb-shared">partagée</span>
+                ) : (
+                  <span className="vb-solo">perso</span>
+                )}
+              </div>
+              <div className="vb-sub">
+                {isBandVersion
+                  ? 'Tes modifications de cette version arrivent chez tous les membres du groupe.'
+                  : 'À toi seul — cette version n’est pas partagée.'}
+              </div>
+            </div>
+            {song.versions.length >= 2 && (
+              <select
+                value={current.id}
+                aria-label="Changer de version affichée"
+                onChange={(e) => onVersionChange(e.target.value)}
+              >
+                {song.versions.map((v) => {
+                  const bn =
+                    v.bandId !== '' ? bandName(v.bandId) : '';
+                  // Évite « Vince et Marcus · Vince et Marcus » quand le nom
+                  // de version reprend déjà celui du groupe.
+                  const suffix =
+                    bn !== '' && bn.trim() !== v.name.trim()
+                      ? ` · ${bn}`
+                      : '';
+                  return (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                      {suffix}
+                      {v.key !== '' ? ` (${v.key})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
+            <button
+              className="btn ghost small"
+              aria-label="Actions sur les versions"
+              title="Versions : meilleure version, nouvelle version, supprimer"
+              onClick={() => setVersionMenu(true)}
+            >
+              ⋯
+            </button>
+          </div>
+        )}
+
+        {/* Morceau simple (1 seule version perso) : accès discret sans jamais
+            afficher la notion de version tant qu'il n'y en a qu'une. */}
+        {!isBandVersion && song.versions.length < 2 && (
+          <div className="versionbar">
+            <button
+              className="btn ai small"
+              title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
+              onClick={() => setUgUpgrade(true)}
+            >
+              ★ Meilleure version ?
+            </button>
+            <button
+              className="btn ghost small"
+              title="Créer une variante (arrangement acoustique, autre tonalité…)"
+              onClick={() => setNewVersionOpen(true)}
+            >
+              ＋ Nouvelle version
+            </button>
+          </div>
+        )}
+
         <CoachMark
           id="song-transpose"
           text="Change la tonalité ou le capo ici — tout se transpose."
         />
-        <div className="versionbar">
-          {/* Le sélecteur de version n'apparaît qu'à partir de 2 versions
-              (Lot D : un morceau simple n'affiche aucune notion de version). */}
-          {song.versions.length >= 2 && (
-            <>
-              <span className="lbl help">Version :</span>
-              <select
-                value={current.id}
-                onChange={(e) => onVersionChange(e.target.value)}
-              >
-                {song.versions.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                    {v.bandId !== '' && bandName(v.bandId) !== ''
-                      ? ` · ${bandName(v.bandId)}`
-                      : ''}
-                    {v.key !== '' ? ` (${v.key})` : ''}
-                  </option>
-                ))}
-                {bandsWithoutVersion.map((b) => (
-                  <option key={`__band__:${b.id}`} value={`__band__:${b.id}`}>
-                    ＋ Version pour {b.name || 'groupe sans nom'}
-                  </option>
-                ))}
-                <option value="__new__">＋ Nouvelle version…</option>
-              </select>
-            </>
-          )}
-          <button
-            className="btn ai small"
-            title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
-            onClick={() => setUgUpgrade(true)}
-          >
-            ★ Meilleure version ?
-          </button>
-          {song.versions.length > 1 && (
-            <>
-              <button
-                className="btn ghost small"
-                style={{ color: 'var(--danger)' }}
-                onClick={() => {
-                  const inBand = (current.bandId ?? '') !== '';
-                  if (
-                    confirm(
-                      inBand
-                        ? `Supprimer la version « ${current.name} » ? Le ` +
-                            'morceau sortira aussi du répertoire du groupe ' +
-                            'pour tous les membres (chacun garde sa ' +
-                            'partition personnelle).'
-                        : `Supprimer la version « ${current.name} » ?`,
-                    )
-                  ) {
-                    if (inBand) {
-                      recordBandRemoval(
-                        current.bandId,
-                        normalizeTitle(song.title),
-                      );
-                    }
-                    saveSong(removeVersion(song, current.id));
-                  }
-                }}
-              >
-                Supprimer cette version
-              </button>
-            </>
-          )}
-        </div>
 
         {ugUpgrade && (
           <UgUpgradeModal
@@ -888,6 +918,64 @@ export function SongView({
       )}
 
       <AutoScrollFab scroll={scroll} />
+
+      {versionMenu && (
+        <MenuSheet
+          title={`Version « ${current.name} »`}
+          items={[
+            {
+              label: '★ Chercher une meilleure version (IA)',
+              icon: 'star',
+              onClick: () => setUgUpgrade(true),
+            },
+            {
+              label: '＋ Nouvelle version…',
+              icon: 'plus',
+              onClick: () => setNewVersionOpen(true),
+            },
+            ...(song.versions.length > 1
+              ? [
+                  {
+                    label: isBandVersion
+                      ? 'Retirer cette version (et le morceau du groupe)'
+                      : `Supprimer la version « ${current.name} »`,
+                    icon: 'trash' as const,
+                    danger: true,
+                    onClick: () => setDelVersionOpen(true),
+                  },
+                ]
+              : []),
+          ]}
+          onClose={() => setVersionMenu(false)}
+        />
+      )}
+
+      {newVersionOpen && (
+        <PromptSheet
+          title="Nouvelle version"
+          message="Une copie de la version affichée, que tu pourras arranger librement (acoustique, autre tonalité, live…)."
+          initialValue={`Version ${song.versions.length + 1}`}
+          placeholder="Acoustique, Live, capo 3…"
+          confirmLabel="Créer"
+          onSubmit={createNewVersion}
+          onClose={() => setNewVersionOpen(false)}
+        />
+      )}
+
+      {delVersionOpen && (
+        <ConfirmSheet
+          title={`Supprimer la version « ${current.name} » ?`}
+          message={
+            isBandVersion
+              ? 'Le morceau sortira aussi du répertoire du groupe pour tous les membres (chacun garde sa partition personnelle).'
+              : 'Les autres versions du morceau sont conservées.'
+          }
+          confirmLabel="Supprimer la version"
+          danger
+          onConfirm={confirmDeleteVersion}
+          onClose={() => setDelVersionOpen(false)}
+        />
+      )}
 
       {noteModal !== null && (
         <NoteModal
