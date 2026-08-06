@@ -706,7 +706,11 @@ export function SharePage({
         </a>
         <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
           <a href="#/cgu" style={{ color: 'var(--text-dim)' }}>
-            Conditions d'utilisation · signaler un contenu
+            Conditions d'utilisation
+          </a>
+          {' · '}
+          <a href="#/report" style={{ color: 'var(--text-dim)' }}>
+            Signaler un contenu
           </a>
         </p>
       </div>

@@ -24,7 +24,8 @@ export type Route =
   | { name: 'follow' }
   | { name: 'remote'; setlistId: string }
   | { name: 'share'; data: string; shortId?: string }
-  | { name: 'cgu' };
+  | { name: 'cgu' }
+  | { name: 'report' };
 
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#\/?/, '');
@@ -90,6 +91,8 @@ export function parseHash(hash: string): Route {
       return { name: 'share', data: '', shortId: parts[1] ?? '' };
     case 'cgu':
       return { name: 'cgu' };
+    case 'report':
+      return { name: 'report' };
     default:
       return { name: 'library' };
   }

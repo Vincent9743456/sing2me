@@ -146,9 +146,14 @@ export default async function handler(req, res) {
         updated_at: new Date().toISOString(),
       };
       if (status === 'off') {
+        // Purge de l'état live à la clôture (chantier 3 — défensif) : aucune
+        // parole poussée ne reste côté serveur ; on ne garde que l'agrégat
+        // statistique (cœurs archivés par chanson, compteurs de session).
         patch.concert = null;
         patch.setlist = null;
         patch.setlist_count = 0;
+        patch.song = null;
+        patch.band_song = null;
       }
       if (req.body?.mode === 'repet' || req.body?.mode === 'concert') {
         patch.mode = req.body.mode;
@@ -260,6 +265,20 @@ export default async function handler(req, res) {
         }
       } catch {
         // mesure best-effort : ne bloque jamais le direct
+      }
+
+      // Purge défensive des messages du public à la clôture (chantier 3) :
+      // on ne conserve aucune parole côté serveur après le concert. Les cœurs
+      // sont déjà agrégés dans live_stats. Best-effort, jamais bloquant.
+      if (status === 'off') {
+        try {
+          await fetch(`${base}/rest/v1/live_messages?id=not.is.null`, {
+            method: 'DELETE',
+            headers: sbHeaders(),
+          });
+        } catch {
+          // purge best-effort
+        }
       }
       const r = await fetch(`${base}/rest/v1/live_state`, {
         method: 'POST',

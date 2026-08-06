@@ -69,6 +69,19 @@ export function Terms() {
           peut entraîner la fermeture du compte.
         </p>
 
+        <h2 className="pagetitle">Signaler un contenu</h2>
+        <p>
+          Un contenu ne devrait pas être là (droits d'auteur, contenu
+          inapproprié…) ? Signale-le : nous nous engageons à examiner chaque
+          demande et à retirer rapidement ce qui doit l'être.
+        </p>
+        <button
+          className="btn ghost block"
+          onClick={() => navigate('/report')}
+        >
+          Signaler un contenu
+        </button>
+
         <div className="spacer" />
         <button className="btn ghost block" onClick={() => navigate('/')}>
           ← Retour à l'application

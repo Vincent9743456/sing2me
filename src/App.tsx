@@ -25,6 +25,7 @@ import { SongEdit } from './pages/SongEdit';
 import { SongView } from './pages/SongView';
 import { Stage } from './pages/Stage';
 import { Terms } from './pages/Terms';
+import { Report } from './pages/Report';
 import { Route, useRoute } from './router';
 import { StoreProvider } from './store';
 
@@ -50,6 +51,13 @@ function Screen() {
     return (
       <div className="public">
         <Terms />
+      </div>
+    );
+  }
+  if (route.name === 'report') {
+    return (
+      <div className="public">
+        <Report />
       </div>
     );
   }
