@@ -2253,6 +2253,11 @@ h2.pagetitle {
   flex-shrink: 0;
   white-space: nowrap;
 }
+/* Morceau proposé par un groupe (poussé dans la bibliothèque, à accepter) :
+   ligne teintée + sous-titre « 📥 Proposé par … ». */
+.row.proposal {
+  background: var(--accent-soft);
+}
 
 /* ---------- Structure repliable (vue complète) ---------- */
 .stfold {

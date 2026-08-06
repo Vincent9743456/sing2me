@@ -401,14 +401,19 @@ export function Library() {
     // Les nouvelles importations restent épinglées EN TÊTE tant qu'elles
     // sont « nouvelles » (une semaine) — sauf en tri par artiste (qui
     // regroupe) ou dans une vue filtrée dédiée.
-    const pinNew = sort !== 'artist' && !showNew && !showIdeas && !showPending;
+    const pinTop = sort !== 'artist' && !showNew && !showIdeas && !showPending;
+    const isProposal = (s: (typeof songs)[number]) =>
+      (s.pendingBandId ?? '') !== '';
     const freshRank = (s: (typeof songs)[number]) =>
-      s.idea !== true &&
-      (s.pendingBandId ?? '') === '' &&
-      isRecent(s.createdAt);
+      s.idea !== true && !isProposal(s) && isRecent(s.createdAt);
     return [...songs]
       .sort((a, b) => {
-        if (pinNew) {
+        if (pinTop) {
+          // 1) Les propositions d'un groupe tout en haut (à accepter).
+          const pa = isProposal(a);
+          const pb = isProposal(b);
+          if (pa !== pb) return pa ? -1 : 1;
+          // 2) Puis les nouvelles importations de la semaine.
           const fa = freshRank(a);
           const fb = freshRank(b);
           if (fa !== fb) return fa ? -1 : 1;
@@ -429,10 +434,14 @@ export function Library() {
       .filter((s) => {
         // Vue « Propositions » : uniquement les propositions en attente.
         if (showPending) return (s.pendingBandId ?? '') !== '';
-        // Partout ailleurs, une proposition non acceptée reste invisible
-        // dans la bibliothèque personnelle.
-        if ((s.pendingBandId ?? '') !== '') return false;
-        return showIdeas ? s.idea === true : s.idea !== true;
+        // Vue « Idées » : uniquement les idées (jamais les propositions).
+        if (showIdeas) return s.idea === true;
+        // Vue par défaut « Toutes les partitions » : les morceaux ET les
+        // propositions poussées par un groupe (affichées directement, avec un
+        // bouton « Accepter » et épinglées en tête) — pour qu'un nouveau venu
+        // voie tout de suite ce qui lui est envoyé. On exclut seulement les
+        // idées (réserve à travailler).
+        return s.idea !== true;
       })
       .filter((s) => (showNew ? isRecent(s.createdAt) : true))
       .filter((s) => (tag ? s.tags.includes(tag) : true))
@@ -485,7 +494,9 @@ export function Library() {
 
   const renderRow = (song: (typeof filtered)[number]) => (
                   <div
-                    className={`row ${selectedId === song.id ? 'selected' : ''}`}
+                    className={`row ${selectedId === song.id ? 'selected' : ''} ${
+                      (song.pendingBandId ?? '') !== '' ? 'proposal' : ''
+                    }`}
                     key={song.id}
                     onClick={() => {
                       openWithContext(song);
@@ -493,27 +504,41 @@ export function Library() {
                       else navigate(`/song/${song.id}`);
                     }}
                   >
-                    <div className="grow">
+                    <div className="grow" style={{ minWidth: 0 }}>
                       <div className="title">{song.title || '(sans titre)'}</div>
-                      <div className="sub">
-                        {[
-                          (song.tags ?? []).includes(EXAMPLE_TAG)
-                            ? 'Exemple'
-                            : '',
-                          song.artist,
-                          song.key,
-                          song.tempo > 0 ? `${song.tempo} BPM` : '',
-                          formatDuration(song.durationSec),
-                        ]
-                          .filter((x) => x !== '')
-                          .join(' · ') || ' '}
-                      </div>
+                      {(song.pendingBandId ?? '') !== '' ? (
+                        <div
+                          className="sub"
+                          style={{ color: 'var(--accent)', fontWeight: 600 }}
+                        >
+                          📥 Proposé par{' '}
+                          {bands.find((b) => b.id === song.pendingBandId)?.name ||
+                            'ton groupe'}
+                          {song.artist !== '' ? ` · ${song.artist}` : ''}
+                        </div>
+                      ) : (
+                        <div className="sub">
+                          {[
+                            (song.tags ?? []).includes(EXAMPLE_TAG)
+                              ? 'Exemple'
+                              : '',
+                            song.artist,
+                            song.key,
+                            song.tempo > 0 ? `${song.tempo} BPM` : '',
+                            formatDuration(song.durationSec),
+                          ]
+                            .filter((x) => x !== '')
+                            .join(' · ') || ' '}
+                        </div>
+                      )}
                     </div>
-                    {song.idea !== true && isRecent(song.createdAt) && (
-                      <span className="newtag" title="Ajoutée cette semaine">
-                        Nouveau
-                      </span>
-                    )}
+                    {song.idea !== true &&
+                      (song.pendingBandId ?? '') === '' &&
+                      isRecent(song.createdAt) && (
+                        <span className="newtag" title="Ajoutée cette semaine">
+                          Nouveau
+                        </span>
+                      )}
                     {[...(membership.bandsBySong.get(song.id) ?? [])].map((bid) => {
                       const idx = bandIndex.get(bid) ?? 0;
                       const b = bands[idx];

@@ -433,17 +433,21 @@ export function OnAirButton() {
     <button
       className={`onair ${status}`}
       onClick={openPanel}
-      title="Mode ON AIR (direct public)"
+      title={
+        status === 'on' || status === 'pause'
+          ? 'Direct en cours — gérer'
+          : 'Passer en direct (public)'
+      }
     >
       {status === 'on' ? (
         <>
-          <span className="dot" /> ON AIR
+          <span className="dot" /> LIVE
           {hearts > 0 && <span className="onairhearts">❤ {hearts}</span>}
         </>
       ) : status === 'pause' ? (
-        '⏸ ON AIR'
+        '⏸ LIVE'
       ) : (
-        '◦ ON AIR'
+        '● GO LIVE'
       )}
     </button>
   );
