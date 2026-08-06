@@ -195,9 +195,8 @@ export function Import() {
         const tab = parseUgTabHtml(await file.text());
         if (!tab) {
           setError(
-            'Cette page enregistrée ne contient pas de partition Ultimate ' +
-              'Guitar lisible — pour une LISTE de partitions (My tabs), passe ' +
-              'par « 3 · Import en masse ».',
+            'Cette page enregistrée ne contient pas de partition lisible — ' +
+              'pour une LISTE de partitions, passe par « 3 · Import en masse ».',
           );
           return;
         }
@@ -323,10 +322,10 @@ export function Import() {
               text: ugTabToImportText(tab),
             });
           } else {
-            // Sinon : page de LISTE (My tabs, favoris) → liens
+            // Sinon : page de LISTE (mes partitions, favoris) → liens
             const links = extractUgLinks(html);
             if (links.length === 0)
-              failed.push(`${f.name} (ni partition ni lien Ultimate Guitar)`);
+              failed.push(`${f.name} (ni partition ni lien de page de partition)`);
             else linksFound.push(...links);
           }
         } else if (lower.endsWith('.docx')) {
@@ -426,7 +425,7 @@ export function Import() {
               ) {
                 throw msg.includes('429')
                   ? new Error(
-                      'Ultimate Guitar limite le débit — relance l’import dans ' +
+                      'Le service limite le débit — relance l’import dans ' +
                         'quelques minutes, les morceaux déjà importés seront ignorés',
                     )
                   : e;
@@ -434,7 +433,7 @@ export function Import() {
               const wait = [5, 15, 30][attempt] ?? 30;
               items[i] = {
                 ...items[i],
-                message: `⏳ Ultimate Guitar demande une pause — nouvel essai dans ${wait} s`,
+                message: `⏳ Le service demande une pause — nouvel essai dans ${wait} s`,
               };
               setBulkItems([...items]);
               await new Promise((r) => setTimeout(r, wait * 1000));
@@ -986,8 +985,8 @@ export function Import() {
               onClick={() => bulkFileRef.current?.click()}
               disabled={bulkRunning}
             >
-              Déposer des fichiers — page Ultimate Guitar enregistrée (.html) ou
-              partitions
+              Déposer des fichiers — page de partition enregistrée (.html) ou
+              fichiers
             </button>
             <input
               ref={bulkFileRef}
@@ -998,8 +997,9 @@ export function Import() {
               onChange={(e) => void onBulkFiles(e)}
             />
             <p className="help">
-              <strong>Le plus simple pour Ultimate Guitar :</strong> ouvre ta
-              page « My tabs » (ou tes favoris) et{' '}
+              <strong>Le plus simple pour reprendre ta collection :</strong>{' '}
+              ouvre la page qui liste tes partitions (ta page « mes partitions »
+              ou tes favoris) et{' '}
               <strong>
                 fais d'abord afficher toutes tes partitions sur la page
               </strong>{' '}
@@ -1008,14 +1008,12 @@ export function Import() {
               (Ctrl+S) et dépose le fichier .html ici. S'il reste plusieurs
               pages, enregistre chacune : tu peux déposer tous les fichiers
               .html en une fois, les liens s'additionnent sans doublons.{' '}
-              <strong>Tablatures personnelles (« Personal tabs »)</strong> :
-              ouvre chaque tablature sur Ultimate Guitar et enregistre sa page
-              (Ctrl+S) —
-              dépose ces .html ici, la partition est extraite directement du
-              fichier, sans passer par le serveur. Tu peux aussi déposer
-              plusieurs fichiers de partitions exportés d'une autre
-              application (txt, ChordPro, OnSong, Word, PDF) : un fichier = un
-              morceau.
+              <strong>Pages de partition personnelles</strong> : ouvre chaque
+              page de partition et enregistre-la (Ctrl+S) — dépose ces .html
+              ici, la partition est extraite directement du fichier, sans passer
+              par le serveur. Tu peux aussi déposer plusieurs fichiers de
+              partitions exportés d'une autre application (txt, ChordPro,
+              OnSong, Word, PDF) : un fichier = un morceau.
             </p>
             {bulkFiles.length > 0 && (
               <p className="help">
@@ -1036,23 +1034,23 @@ export function Import() {
             )}
             <div className="spacer" />
             <div className="field">
-              <label>Ou colle des liens Ultimate Guitar (un par ligne)</label>
+              <label>Ou colle des liens de pages de partition (un par ligne)</label>
               <textarea
                 className="mono"
                 value={bulkInput}
                 onChange={(e) => setBulkInput(e.target.value)}
                 disabled={bulkRunning}
                 placeholder={
-                  'https://tabs.ultimate-guitar.com/tab/…\n' +
-                  'https://tabs.ultimate-guitar.com/tab/…\n' +
-                  'https://tabs.ultimate-guitar.com/user/tab/view?h=…'
+                  'https://…/tab/…\n' +
+                  'https://…/tab/…\n' +
+                  'https://…/user/tab/view?h=…'
                 }
               />
               <p className="help" style={{ marginTop: 4 }}>
                 Tu peux coller en vrac (texte, page copiée…) : seules les
                 pages de partition sont retenues, sans doublons. Cet import
-                sert à récupérer <strong>ta</strong> collection (My tabs,
-                favoris) — {MAX_BULK_LINKS} liens max par fournée.
+                sert à récupérer <strong>ta</strong> collection (tes partitions,
+                tes favoris) — {MAX_BULK_LINKS} liens max par fournée.
                 {bulkLinks.length > 0 && (
                   <>
                     {' '}

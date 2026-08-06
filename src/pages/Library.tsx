@@ -859,8 +859,8 @@ export function Library() {
                   <div style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6 }}>
                     Importe tes partitions
                   </div>
-                  Colle un texte, un lien Ultimate Guitar, un PDF ou un fichier
-                  Word — Sing2Me met tout au propre.
+                  Colle un texte, un lien d'une page de partition, un PDF ou un
+                  fichier Word — Sing2Me met tout au propre.
                   <div className="spacer" />
                   <button
                     className="btn"

@@ -92,28 +92,34 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     (tombstones) ;
   - navigation : les boutons ← des pages vont vers un parent explicite
     (`navigate('/xxx')`), pas `history.back()`.
-- **Politique tarifaire** (documentée, à ne jamais contredire ; pas encore
-  implémentée) :
-  - Tarification **INDIVIDUELLE uniquement** : jamais d'abonnement par
-    groupe (un musicien a souvent plusieurs groupes). Un seul Premium :
-    **2,99 €/mois ou 24,99 €/an**.
-  - Lancement : tout gratuit. Ensuite : **90 jours de Premium offerts** à
-    chaque nouveau compte (sans CB), prolongés par le 1er concert ON AIR
-    et par parrainage. **Statut Fondateur** pour les comptes de lancement.
-  - **Socle gratuit à vie** : tout ce qui sert à jouer (morceaux
-    illimités, import, mode scène, transposition, partages/QR), 3 setlists
-    personnelles, et la **contribution au groupe toujours gratuite**
-    (écrire ses notes partagées, discussion, voir le répertoire et la
-    setlist active / du prochain concert).
-  - **Premium = confort personnel** : setlists perso illimitées,
-    consultation de TOUTES les setlists du groupe à tout moment, synchro
-    multi-appareils continue, IA illimitée, page publique sans mention,
-    stats.
-  - Principes intangibles : un groupe n'est **jamais bloqué** par un
-    membre non-payeur ; on ne paywalle **jamais** une contribution au
-    groupe ; **aucune donnée** n'est jamais supprimée ou prise en otage.
-  - Commission ~7 % sur les pourboires ON AIR (tous comptes), hors frais
-    Stripe.
+  - **ligne rouge « outil, pas catalogue »** (§A.4 du mémo fondateurs) :
+    aucune recherche de morceaux côté serveur, aucune base mutualisée entre
+    comptes, aucun préremplissage de bibliothèque ; un morceau ne circule
+    que d'un membre vers SON groupe. Import déclenché par l'utilisateur,
+    page par page, vers SA bibliothèque.
+  - **ne jamais nommer la plateforme source des tabs** (§A.5) dans
+    l'interface, l'aide, la landing ou le README public. Formulations
+    neutres : « colle le lien d'une page de partition », « reprends ta
+    collection ».
+- **Modèle économique — « Licence Scène »** (arbitrage fondateurs, août
+  2026 ; remplace TOUT modèle antérieur, dont le Premium individuel à
+  2,99 € désormais abandonné ; pas encore implémenté) :
+  - Tout est **gratuit, pour tout le monde, pour toujours** : bibliothèque,
+    import, groupes **illimités**, partage, setlists, notes, mode scène.
+  - Seul **ON AIR** est monétisé : gratuit jusqu'à ~10 spectateurs
+    connectés par session et sans la récolte (cœurs/stats/messages) ; la
+    **Licence Scène** (annuelle, attachée au **compte artiste** qui lance
+    les sessions — pas au groupe, pas aux membres) débloque audience
+    illimitée + engagement complet.
+  - Garde-fous intangibles : **JAMAIS de coupure en plein concert** ; le
+    **lien de pourboire de l'artiste reste visible même en gratuit** ; la
+    licence se vend sur l'engagement (audience, cœurs, stats, fanbase),
+    **jamais** sur « plus de paroles ».
+  - **Pourboires** : lien de paiement personnel de l'artiste, l'argent ne
+    transite **jamais** par nous, **AUCUNE commission** (position
+    définitive — l'ancienne commission ~7 % est abandonnée).
+  - Aucun chiffre (prix, seuil de spectateurs) n'est arrêté : ne jamais en
+    afficher tant que les fondateurs ne les ont pas fixés.
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
   par les composants Feedback (règle 10 — dette existante) ; OAuth
   Google/Facebook à configurer ; OCR des PDF scannés ; app native
