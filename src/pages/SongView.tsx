@@ -535,27 +535,33 @@ export function SongView({
         </div>
 
         <div className="versionbar">
-          <span className="lbl help">Version :</span>
-          <select
-            value={current.id}
-            onChange={(e) => onVersionChange(e.target.value)}
-          >
-            {song.versions.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name}
-                {v.bandId !== '' && bandName(v.bandId) !== ''
-                  ? ` · ${bandName(v.bandId)}`
-                  : ''}
-                {v.key !== '' ? ` (${v.key})` : ''}
-              </option>
-            ))}
-            {bandsWithoutVersion.map((b) => (
-              <option key={`__band__:${b.id}`} value={`__band__:${b.id}`}>
-                ＋ Version pour {b.name || 'groupe sans nom'}
-              </option>
-            ))}
-            <option value="__new__">＋ Nouvelle version…</option>
-          </select>
+          {/* Le sélecteur de version n'apparaît qu'à partir de 2 versions
+              (Lot D : un morceau simple n'affiche aucune notion de version). */}
+          {song.versions.length >= 2 && (
+            <>
+              <span className="lbl help">Version :</span>
+              <select
+                value={current.id}
+                onChange={(e) => onVersionChange(e.target.value)}
+              >
+                {song.versions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                    {v.bandId !== '' && bandName(v.bandId) !== ''
+                      ? ` · ${bandName(v.bandId)}`
+                      : ''}
+                    {v.key !== '' ? ` (${v.key})` : ''}
+                  </option>
+                ))}
+                {bandsWithoutVersion.map((b) => (
+                  <option key={`__band__:${b.id}`} value={`__band__:${b.id}`}>
+                    ＋ Version pour {b.name || 'groupe sans nom'}
+                  </option>
+                ))}
+                <option value="__new__">＋ Nouvelle version…</option>
+              </select>
+            </>
+          )}
           <button
             className="btn ai small"
             title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"

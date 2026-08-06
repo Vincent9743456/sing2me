@@ -816,17 +816,24 @@ export function Library() {
         <div className={`libsplit${selectedId ? ' hasdetail' : ''}`}>
           <div>
             {filtered.length === 0 ? (
-              <Empty>
-                {songs.length === 0 ? (
-                  <>
-                    Ta bibliothèque est vide.
-                    <br />
-                    Importe tes morceaux ou crée-en un (boutons en haut).
-                  </>
-                ) : (
-                  'Aucun morceau ne correspond à ta recherche.'
-                )}
-              </Empty>
+              songs.length === 0 ? (
+                <Empty>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6 }}>
+                    Importe tes partitions
+                  </div>
+                  Colle un texte, un lien Ultimate Guitar, un PDF ou un fichier
+                  Word — Sing2Me met tout au propre.
+                  <div className="spacer" />
+                  <button
+                    className="btn"
+                    onClick={() => navigate('/import')}
+                  >
+                    <Icon name="import" size={16} /> Importer mon premier morceau
+                  </button>
+                </Empty>
+              ) : (
+                <Empty>Aucun morceau ne correspond à ta recherche.</Empty>
+              )
             ) : (
               <div className="list">
                 {sort === 'artist'

@@ -236,11 +236,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
     // changements toucheraient la version d'origine (partout).
     if (edit && (item.versionId ?? '') === '') {
       const makeOwn = confirm(
-        "Ce morceau utilise sa version d'origine dans cette setlist.\n\n" +
-          'OK — créer une version propre à cette setlist : tes ' +
-          "modifications ne toucheront pas l'original.\n" +
-          "Annuler — modifier la version d'origine (changement visible " +
-          'partout).',
+        'Adapter ce morceau pour cette setlist ?\n\n' +
+          'OK — tes changements (tonalité, capo, notes) ne valent que pour ' +
+          'cette setlist et ne touchent pas l’original.\n' +
+          'Annuler — modifier le morceau partout.',
       );
       if (makeOwn) {
         const vname =

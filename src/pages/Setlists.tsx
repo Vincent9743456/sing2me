@@ -5,7 +5,7 @@
  */
 import React, { useState } from 'react';
 
-import { Field, Modal, TopBar } from '../components/ui';
+import { Empty, Field, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { creatorMember, versionForBand } from '../lib/model';
 import { generateSetlistAI, repertoireForContext } from '../lib/setlistAI';
@@ -262,7 +262,9 @@ export function Setlists() {
           style={{ justifyContent: 'space-between', gap: 8, marginBottom: 8 }}
         >
           <p className="help" style={{ margin: 0 }}>
-            Tes setlists rangées par contexte. Touche une capsule pour l'ouvrir.
+            {setlists.length === 0
+              ? 'Une setlist = l’ordre de tes morceaux pour un concert ou une répét.'
+              : 'Tes setlists rangées par contexte. Touche une capsule pour l’ouvrir.'}
           </p>
           <button
             className="btn"
@@ -272,6 +274,22 @@ export function Setlists() {
             <Icon name="plus" size={15} /> Créer une setlist
           </button>
         </div>
+
+        {setlists.length === 0 && (
+          <Empty>
+            <div
+              style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 6 }}
+            >
+              Ta première setlist
+            </div>
+            Crée ta première setlist pour ton prochain concert — tu glisseras
+            tes morceaux dans l’ordre.
+            <div className="spacer" />
+            <button className="btn" onClick={() => setCreateOpen(true)}>
+              <Icon name="plus" size={16} /> Créer une setlist
+            </button>
+          </Empty>
+        )}
 
         {/* Solo toujours en premier (setlists solo, hors capsules de contexte). */}
         {capsule(
