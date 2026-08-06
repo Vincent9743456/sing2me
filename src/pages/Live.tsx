@@ -65,16 +65,40 @@ function saveCachedSetlist(list: LivePublicSong[]): void {
   }
 }
 
+/**
+ * Mémoire du rôle « musicien » (bifurcation bœuf) : conservée le temps
+ * d'une soirée (rechargements compris), mais EXPIRE ensuite — un spectateur
+ * qui a regardé les accords à un bœuf ne doit pas retomber dessus au
+ * concert suivant. La vue public reste le défaut.
+ */
+const ROLE_KEY = 'sing2me/liveRole';
+const ROLE_AT_KEY = 'sing2me/liveRoleAt';
+const ROLE_TTL_MS = 6 * 60 * 60 * 1000; // 6 h — large pour un long bœuf
+
+function initialRole(): 'public' | 'musicien' {
+  try {
+    if (localStorage.getItem(ROLE_KEY) !== 'musicien') return 'public';
+    const at = Date.parse(localStorage.getItem(ROLE_AT_KEY) ?? '');
+    if (Number.isNaN(at) || Date.now() - at > ROLE_TTL_MS) return 'public';
+    // Toujours dans la fenêtre : on la fait glisser (soirée qui se prolonge).
+    localStorage.setItem(ROLE_AT_KEY, new Date().toISOString());
+    return 'musicien';
+  } catch {
+    return 'public';
+  }
+}
+
 export function Live() {
   const [state, setState] = useState<LiveState | null>(null);
-  const [role, setRole] = useState<'public' | 'musicien'>(() =>
-    localStorage.getItem('sing2me/liveRole') === 'musicien'
-      ? 'musicien'
-      : 'public',
-  );
+  const [role, setRole] = useState<'public' | 'musicien'>(initialRole);
   function switchRole(r: 'public' | 'musicien') {
     setRole(r);
-    localStorage.setItem('sing2me/liveRole', r);
+    try {
+      localStorage.setItem(ROLE_KEY, r);
+      localStorage.setItem(ROLE_AT_KEY, new Date().toISOString());
+    } catch {
+      /* stockage indisponible */
+    }
   }
   // L'écran du spectateur reste allumé pendant le direct
   useWakeLock();
