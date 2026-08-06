@@ -7,9 +7,12 @@ import { KEY_CHOICES } from '../lib/chords';
 import { importText } from '../lib/importer';
 import {
   activeVersion,
+  duplicateVersion,
   propagateMainKeyCapo,
+  SOLO_BAND_ID,
   switchVersion,
   syncActiveVersion,
+  versionForBand,
 } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -62,6 +65,8 @@ export function SongEdit({ id }: { id: string | null }) {
   ][Math.max(0, bands.findIndex((b) => b.id === versionBandId)) % 7];
   // La version en cours d'édition est-elle l'originale maîtresse ?
   const editingOriginal = draft.versions[0]?.id === draft.activeVersionId;
+  // Version Solo (contexte réservé) : éditable comme une version de groupe.
+  const editingSolo = versionBandId === SOLO_BAND_ID;
 
   function update(patch: Partial<Song>) {
     setDraft((d) => ({ ...d, ...patch }));
@@ -90,6 +95,19 @@ export function SongEdit({ id }: { id: string | null }) {
   function switchEditVersion(vid: string) {
     if (vid === draft.activeVersionId) return;
     const d = switchVersion(bakeDraft(draft), vid);
+    setDraft(d);
+    setVersionName(activeVersion(d).name);
+    setVersionBandId(activeVersion(d).bandId);
+  }
+
+  /** Bascule l'édition sur la version Solo — créée à la volée si besoin
+   *  (le contexte solo existe TOUJOURS, décision Vincent b115/b117). */
+  function editSoloVersion() {
+    const baked = bakeDraft(draft);
+    const already = versionForBand(baked, SOLO_BAND_ID);
+    const d = already
+      ? switchVersion(baked, already.id)
+      : duplicateVersion(baked, 'Solo', SOLO_BAND_ID);
     setDraft(d);
     setVersionName(activeVersion(d).name);
     setVersionBandId(activeVersion(d).bandId);
@@ -262,12 +280,16 @@ export function SongEdit({ id }: { id: string | null }) {
                 Tu modifies :{' '}
                 {editingOriginal
                   ? 'la version originale'
-                  : versionBandId
-                    ? `version du groupe ${editBand?.name || 'sans nom'}`
-                    : `version « ${versionName.trim() || activeVersion(draft).name} »`}
+                  : editingSolo
+                    ? 'la version Solo'
+                    : versionBandId
+                      ? `version du groupe ${editBand?.name || 'sans nom'}`
+                      : `version « ${versionName.trim() || activeVersion(draft).name} »`}
               </span>
               {editingOriginal ? (
                 <span className="vb-solo">pilote</span>
+              ) : editingSolo ? (
+                <span className="vb-solo">solo</span>
               ) : versionBandId ? (
                 <span className="vb-shared">partagée</span>
               ) : (
@@ -279,9 +301,11 @@ export function SongEdit({ id }: { id: string | null }) {
                 ? draft.versions.length > 1
                   ? 'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres versions (tonalité/capo se répercutent).'
                   : 'Version maîtresse, personnelle : la base de ce morceau.'
-                : versionBandId
-                  ? 'À l’enregistrement, tes changements partent vers tous les membres du groupe.'
-                  : 'Modifications privées à cette version — les autres versions gardent leurs réglages.'}
+                : editingSolo
+                  ? 'Ta façon de le jouer en solo — l’originale et les versions de groupe ne bougent pas.'
+                  : versionBandId
+                    ? 'À l’enregistrement, tes changements partent vers tous les membres du groupe.'
+                    : 'Modifications privées à cette version — les autres versions gardent leurs réglages.'}
             </div>
           </div>
         </div>
@@ -311,13 +335,28 @@ export function SongEdit({ id }: { id: string | null }) {
           </Field>
         )}
         {editingOriginal && (
-          <p className="help">
-            🔒 L’originale est toujours <strong>personnelle</strong> et reste
-            dans ta bibliothèque. Pour une version dédiée à un groupe, utilise
-            « Ajouter à… » depuis la partition.
-          </p>
+          <>
+            <p className="help">
+              🔒 L’originale est toujours <strong>personnelle</strong> : la
+              modifier se répercute sur la version Solo et les versions de
+              groupe qui la suivent. Pour une version dédiée à un groupe,
+              utilise « Ajouter à… » depuis la partition.
+            </p>
+            {!isNew && (
+              <div style={{ marginBottom: 'var(--sp-3)' }}>
+                <button
+                  type="button"
+                  className="btn ghost small"
+                  title="Ta version pour jouer seul — modifiable sans toucher l’originale (créée si besoin)"
+                  onClick={editSoloVersion}
+                >
+                  🎙 Modifier plutôt la version Solo
+                </button>
+              </div>
+            )}
+          </>
         )}
-        {bands.length > 0 && !editingOriginal && (
+        {bands.length > 0 && !editingOriginal && !editingSolo && (
           <Field label="Cette version est pour">
             <select
               value={versionBandId}
