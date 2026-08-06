@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { ShareModal } from '../components/ShareModal';
 import { gearIcon } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { CoachMark } from '../components/CoachMark';
@@ -69,7 +68,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
   });
   const [picker, setPicker] = useState(false);
   const [gearPicker, setGearPicker] = useState(false);
-  const [share, setShare] = useState<'groupe' | 'public' | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const isNew = existing === undefined;
@@ -273,69 +271,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
     }
   }
 
-  const payload = useMemo<SharePayload | null>(() => {
-    if (share === null) return null;
-    const groupe = share === 'groupe';
-    const included = draft.items
-      .map((it) => {
-        const found = songById.get(it.songId);
-        if (!found) return null;
-        const song = resolveVersion(found, it.versionId ?? '');
-        const usedVersion =
-          found.versions.find(
-            (v) => v.id === ((it.versionId ?? '') || found.activeVersionId),
-          ) ?? null;
-        const versionBandId = usedVersion?.bandId ?? '';
-        // On applique la tonalité spécifique du concert au contenu partagé.
-        let baked: Song = song;
-        if (it.keyOverride !== '' && song.key !== '') {
-          const semis = semitonesBetween(song.key, it.keyOverride) ?? 0;
-          const flat = spellingForKey(it.keyOverride);
-          baked = {
-            ...song,
-            key: it.keyOverride,
-            lyrics: transposeContent(song.lyrics, semis, flat),
-            structure: song.structure.map((r) => ({
-              ...r,
-              chords: transposeChordSequence(r.chords, semis, flat),
-            })),
-          };
-        }
-        baked = {
-          ...baked,
-          versions: [],
-          mySetup: undefined,
-          idea: undefined,
-          noSolo: undefined,
-          rehearsalNotes: notesForShare(
-            notesForBand(baked.rehearsalNotes, versionBandId),
-            groupe ? 'groupe' : 'public',
-          ),
-          structure: baked.structure.map((r) => ({
-            ...r,
-            comment: groupe ? r.comment : '',
-          })),
-        };
-        return { baked, it };
-      })
-      .filter((x): x is { baked: Song; it: Setlist['items'][number] } => x !== null);
-    return {
-      v: 1,
-      type: 'setlist',
-      view: groupe ? 'complete' : 'paroles',
-      setlist: {
-        name: draft.name,
-        comment: draft.comment,
-        // Sono & scène : partagé au groupe uniquement, jamais au public
-        setup: groupe ? draft.setup : undefined,
-      },
-      songs: included.map((x) => x.baked),
-      itemKeys: included.map((x) =>
-        x.it.keyOverride !== '' ? x.it.keyOverride : (x.baked.key ?? ''),
-      ),
-      itemNotes: included.map((x) => (groupe ? x.it.note : '')),
-    };
-  }, [draft, songById, share]);
 
   return (
     <>
@@ -765,16 +700,9 @@ export function SetlistEdit({ id }: { id: string | null }) {
               </button>
             </>
           )}
-          {draft.items.length > 0 && (
-            <>
-              <button className="btn ghost" onClick={() => setShare('groupe')}>
-                <Icon name="users" size={15} /> Partager au groupe
-              </button>
-              <button className="btn ghost" onClick={() => setShare('public')}>
-                <Icon name="mic" size={15} /> Partager au public
-              </button>
-            </>
-          )}
+          {/* Décision produit (Vincent, août 2026) : les partitions ne
+              circulent QUE par le répertoire de groupe ou le QR ON AIR —
+              pas de partage de setlist par lien. */}
           {!isNew && (
             <button
               className="btn danger"
@@ -873,18 +801,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
             Fermer
           </button>
         </Modal>
-      )}
-
-      {share !== null && payload && (
-        <ShareModal
-          title={
-            share === 'groupe'
-              ? `Partage groupe — ${draft.name}`
-              : `Partage public — ${draft.name}`
-          }
-          payload={payload}
-          onClose={() => setShare(null)}
-        />
       )}
     </>
   );
