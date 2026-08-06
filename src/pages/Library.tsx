@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
-import { Brand } from '../components/Logo';
 import { SongBody } from '../components/SongBody';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
+import { ConfirmSheet, MenuSheet } from '../components/Feedback';
 import { Empty, TopBar } from '../components/ui';
 
 /** Ajout / retrait d'un morceau dans les setlists, sans quitter la liste. */
@@ -238,6 +238,12 @@ export function Library() {
   const account = useAccount();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  // Menu « ⋯ » d'un morceau (Jouer / Modifier / Ajouter à… / Supprimer),
+  // menu « ⋯ » de l'en-tête, et sous-feuilles ouvertes depuis ces menus.
+  const [rowMenu, setRowMenu] = useState<Song | null>(null);
+  const [rowAssign, setRowAssign] = useState<string | null>(null);
+  const [rowDelete, setRowDelete] = useState<Song | null>(null);
+  const [headerMenu, setHeaderMenu] = useState(false);
   // Barre d'outils figée : on mesure l'en-tête + la barre pour la caler
   // juste sous l'en-tête, et positionner le volet d'aperçu en dessous.
   const toolbarRef = useRef<HTMLDivElement | null>(null);
@@ -520,53 +526,31 @@ export function Library() {
                       </button>
                     )}
                     <button
-                      className="btn ghost small"
-                      title="Ajouter à une setlist"
-                      aria-label="Ajouter à une setlist"
+                      className="btn icon"
+                      title="Actions"
+                      aria-label={`Actions pour « ${song.title || 'ce morceau'} »`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setPickerFor(song.id);
+                        setRowMenu(song);
                       }}
                     >
-                      <Icon name="list" size={15} />
+                      <Icon name="more" size={20} />
                     </button>
-                    <button
-                      className="btn ghost small"
-                      style={{ color: 'var(--danger)' }}
-                      title="Supprimer ce morceau"
-                      aria-label="Supprimer ce morceau"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (
-                          confirm(
-                            `Supprimer « ${song.title || '(sans titre)'} » ? ` +
-                              'Le morceau sera aussi retiré des setlists.',
-                          )
-                        ) {
-                          deleteSong(song.id);
-                          if (selectedId === song.id) setSelectedId(null);
-                        }
-                      }}
-                    >
-                      <Icon name="trash" size={15} />
-                    </button>
-                    <span className="chevron">
-                      <Icon name="chevron-right" size={18} />
-                    </span>
                   </div>
   );
 
   return (
     <>
       <TopBar
-        title={<Brand size={24} />}
+        title="Morceaux"
         right={
           <button
-            className="btn small"
-            title="Ajouter un morceau (import, lien, texte…)"
-            onClick={() => navigate('/import')}
+            className="btn icon"
+            title="Plus"
+            aria-label="Plus d'actions"
+            onClick={() => setHeaderMenu(true)}
           >
-            <Icon name="plus" size={15} /> Ajouter
+            <Icon name="more" size={20} />
           </button>
         }
       />
@@ -844,8 +828,79 @@ export function Library() {
         </div>
       </div>
 
+      {/* Action principale unique de l'onglet : importer. */}
+      <button
+        className="btn libfab"
+        title="Importer un morceau (texte, lien Ultimate Guitar, PDF, Word…)"
+        onClick={() => navigate('/import')}
+      >
+        <Icon name="import" size={17} /> Importer
+      </button>
+
       {pickerFor !== null && (
         <SetlistPicker songId={pickerFor} onClose={() => setPickerFor(null)} />
+      )}
+
+      {/* Menu « ⋯ » d'un morceau : 4 actions maximum. */}
+      {rowMenu && (
+        <MenuSheet
+          title={rowMenu.title || 'Ce morceau'}
+          items={[
+            {
+              label: 'Jouer (mode scène)',
+              icon: 'play',
+              onClick: () => navigate(`/stage/song/${rowMenu.id}`),
+            },
+            {
+              label: 'Modifier',
+              icon: 'edit',
+              onClick: () => navigate(`/song/${rowMenu.id}/edit`),
+            },
+            {
+              label: 'Ajouter à…',
+              icon: 'plus',
+              onClick: () => setRowAssign(rowMenu.id),
+            },
+            {
+              label: 'Supprimer',
+              icon: 'trash',
+              danger: true,
+              onClick: () => setRowDelete(rowMenu),
+            },
+          ]}
+          onClose={() => setRowMenu(null)}
+        />
+      )}
+      {rowAssign !== null && (
+        <AssignSheet songId={rowAssign} onClose={() => setRowAssign(null)} />
+      )}
+      {rowDelete && (
+        <ConfirmSheet
+          title={`Supprimer « ${rowDelete.title || 'ce morceau'} » ?`}
+          message="Le morceau sera aussi retiré des setlists."
+          confirmLabel="Supprimer"
+          danger
+          onConfirm={() => {
+            deleteSong(rowDelete.id);
+            if (selectedId === rowDelete.id) setSelectedId(null);
+          }}
+          onClose={() => setRowDelete(null)}
+        />
+      )}
+
+      {/* Menu « ⋯ » de l'en-tête : création manuelle (l'action principale
+          reste « Importer »). */}
+      {headerMenu && (
+        <MenuSheet
+          items={[
+            {
+              label: 'Nouveau morceau vide',
+              icon: 'edit',
+              onClick: () => navigate('/song/new'),
+            },
+          ]}
+          onClose={() => setHeaderMenu(false)}
+        />
       )}
     </>
   );

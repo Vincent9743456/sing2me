@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 
 import { AccountProvider } from './components/Account';
+import { ToastProvider } from './components/Feedback';
 import { NotificationsProvider, useNotifications } from './components/Notifications';
 import { OnAirButton, OnAirProvider } from './components/OnAir';
 import { TabBar } from './components/ui';
@@ -131,11 +132,13 @@ export default function App() {
   return (
     <StoreProvider>
       <AccountProvider>
-        <NotificationsProvider>
-          <OnAirProvider>
-            <Screen />
-          </OnAirProvider>
-        </NotificationsProvider>
+        <ToastProvider>
+          <NotificationsProvider>
+            <OnAirProvider>
+              <Screen />
+            </OnAirProvider>
+          </NotificationsProvider>
+        </ToastProvider>
       </AccountProvider>
     </StoreProvider>
   );

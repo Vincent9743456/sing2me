@@ -39,12 +39,14 @@ export type IconName =
   | 'clipboard'
   | 'speaker'
   | 'zap'
-  | 'plug';
+  | 'plug'
+  | 'more';
 
 const FILLED: Partial<Record<IconName, boolean>> = {
   play: true,
   skip: true,
   grip: true,
+  more: true,
 };
 
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -172,6 +174,13 @@ const PATHS: Record<IconName, React.ReactNode> = {
   zap: <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />,
   plug: (
     <path d="M9 7V2M15 7V2M6 7h12v4a6 6 0 0 1-12 0V7zM12 17v5" />
+  ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="19" cy="12" r="1.6" />
+    </>
   ),
 };
 

@@ -406,6 +406,102 @@ textarea.mono {
   font-size: 1.2rem;
 }
 
+/* Bouton d'action flottant (FAB) — « Importer » sur l'onglet Morceaux. */
+.libfab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(74px + env(safe-area-inset-bottom));
+  z-index: 9;
+  border-radius: var(--radius-pill);
+  padding: 12px 18px;
+  box-shadow: 0 8px 22px rgba(246, 131, 42, 0.4);
+}
+@media (min-width: 900px) {
+  .libfab {
+    right: 24px;
+    bottom: 28px;
+  }
+}
+
+/* ---------- Feedback : feuilles du bas, toast ---------- */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadein 0.16s ease;
+}
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+  animation: slideup 0.2s ease;
+}
+@media (min-width: 640px) {
+  .sheet-backdrop {
+    align-items: center;
+  }
+  .sheet {
+    border-bottom: 1px solid var(--border);
+    border-radius: 18px;
+    margin-bottom: 0;
+  }
+}
+.sheet-grab {
+  width: 36px;
+  height: 4px;
+  background: var(--border-strong);
+  border-radius: 99px;
+  margin: 2px auto 12px;
+}
+.sheet-title {
+  font-size: 0.98rem;
+  margin: 0 0 10px;
+}
+.sheetitem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 13px 6px;
+  font-size: 0.98rem;
+  cursor: pointer;
+  border-radius: var(--radius-s);
+}
+.sheetitem:hover {
+  background: var(--surface-hover);
+}
+.sheetitem.danger {
+  color: var(--danger);
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 600;
+  max-width: min(92vw, 520px);
+  background: var(--surface-high);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  box-shadow: var(--shadow);
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  animation: slideup 0.2s ease;
+}
+
 /* ---------- SongPicker (sélecteur unique d'affectation) ---------- */
 /* Sens 1 — feuille « Ajouter à… » : options à cocher. */
 .pickopt {
