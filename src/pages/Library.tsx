@@ -1298,47 +1298,51 @@ function SongPreview({
       )}
       {!displayReal && (
         <div className="transpose" style={{ marginBottom: 10 }}>
-          <span className="lbl">Transposer</span>
-          <div className="stepper">
-            <button
-              title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
-              onClick={() => {
-                setShift((s) => s - 1);
-                setViewCapo((c) => Math.min(11, c + 1));
-              }}
-            >
-              ♭
-            </button>
-            <span>
-              {shapeKeyShown !== ''
-                ? shapeKeyShown
-                : shift === 0
-                  ? '—'
-                  : `${shift > 6 ? shift - 12 : shift} ½t`}
-            </span>
-            <button
-              title="Accords plus haut (capo −1)"
-              onClick={() => {
-                setShift((s) => s + 1);
-                if (viewCapo > 0) setViewCapo((c) => c - 1);
-              }}
-            >
-              ♯
-            </button>
-          </div>
-          <span className="lbl">Capo</span>
-          <div className="stepper">
-            <button
-              title="Le capo change ce qui sonne, pas les accords affichés"
-              onClick={() => setViewCapo((c) => Math.max(0, c - 1))}
-            >
-              −
-            </button>
-            <span>{viewCapo}</span>
-            <button onClick={() => setViewCapo((c) => Math.min(11, c + 1))}>
-              ＋
-            </button>
-          </div>
+          <span className="transpose-unit">
+            <span className="lbl">Transposer</span>
+            <div className="stepper">
+              <button
+                title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
+                onClick={() => {
+                  setShift((s) => s - 1);
+                  setViewCapo((c) => Math.min(11, c + 1));
+                }}
+              >
+                ♭
+              </button>
+              <span>
+                {shapeKeyShown !== ''
+                  ? shapeKeyShown
+                  : shift === 0
+                    ? '—'
+                    : `${shift > 6 ? shift - 12 : shift} ½t`}
+              </span>
+              <button
+                title="Accords plus haut (capo −1)"
+                onClick={() => {
+                  setShift((s) => s + 1);
+                  if (viewCapo > 0) setViewCapo((c) => c - 1);
+                }}
+              >
+                ♯
+              </button>
+            </div>
+          </span>
+          <span className="transpose-unit">
+            <span className="lbl">Capo</span>
+            <div className="stepper">
+              <button
+                title="Le capo change ce qui sonne, pas les accords affichés"
+                onClick={() => setViewCapo((c) => Math.max(0, c - 1))}
+              >
+                −
+              </button>
+              <span>{viewCapo}</span>
+              <button onClick={() => setViewCapo((c) => Math.min(11, c + 1))}>
+                ＋
+              </button>
+            </div>
+          </span>
           {realKeyShown !== '' && (
             <span className="help" style={{ margin: 0, whiteSpace: 'nowrap' }}>
               🔊 sonne en{' '}

@@ -1,0 +1,480 @@
+{
+  "p1": [
+    {
+      "step": "1-arrivée",
+      "welcome": 1,
+      "exampleRows": 4,
+      "songRows": 2,
+      "note": "cartes accueil=1, lignes=2"
+    },
+    {
+      "step": "2-scène-exemple",
+      "cta": 1,
+      "arriveStage": true
+    },
+    {
+      "step": "3-import",
+      "apercuPartition": 1,
+      "boutonAjouter": 1
+    },
+    {
+      "step": "3b-après-import",
+      "hash": "#/song/msh05z9qrwr9v8ji"
+    },
+    {
+      "step": "errors",
+      "errs": "none"
+    }
+  ],
+  "overflow": [
+    {
+      "label": "landing",
+      "vp": "360x800",
+      "sw": 432,
+      "iw": 360
+    },
+    {
+      "label": "landing",
+      "vp": "390x844",
+      "sw": 468,
+      "iw": 390
+    },
+    {
+      "label": "landing",
+      "vp": "768x1024",
+      "sw": 922,
+      "iw": 768
+    },
+    {
+      "label": "landing",
+      "vp": "1024x768",
+      "sw": 1229,
+      "iw": 1024
+    },
+    {
+      "label": "landing",
+      "vp": "1280x800",
+      "sw": 1536,
+      "iw": 1280
+    },
+    {
+      "label": "landing",
+      "vp": "1600x900",
+      "sw": 1920,
+      "iw": 1600
+    }
+  ],
+  "small": [
+    {
+      "label": "library",
+      "vp": "360x800",
+      "items": [
+        "36x28 « Plus d'actions »",
+        "147x27 « Toutes les partitions »",
+        "134x27 « ✨ Nouveautés (2) »",
+        "68x26 « Solo »",
+        "159x26 « Duo Richard & Vince »",
+        "78x29 « Masquer »",
+        "294x39 « ✓Importe ton premier mor »",
+        "294x39 « ✓Crée ta première setlis »"
+      ]
+    },
+    {
+      "label": "songview",
+      "vp": "360x800",
+      "items": [
+        "38x30 « Retour »",
+        "81x29 « Scène »",
+        "96x29 « Modifier »",
+        "90x30 « Lady Gaga »",
+        "78x30 « 120 BPM »",
+        "51x30 « 3:40 »",
+        "77x30 « Exemple »",
+        "82x30 « Solo ✓ »"
+      ]
+    },
+    {
+      "label": "stage",
+      "vp": "360x800",
+      "items": [
+        "44x29 « OK »",
+        "47x39 «  »",
+        "47x39 « Ajouter une note de répé »",
+        "49x38 « A− »",
+        "79x26 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "setlist-edit",
+      "vp": "360x800",
+      "items": [
+        "38x30 « Retour »",
+        "18x19 « Fermer l'aide »",
+        "38x28 « Voir la partition »",
+        "38x28 « Modifier la partition »",
+        "90x29 « ☆ Réserve »",
+        "40x30 «  »",
+        "83x39 « Placer »",
+        "241x29 « Placer les musiciens du  »"
+      ]
+    },
+    {
+      "label": "band",
+      "vp": "360x800",
+      "items": [
+        "38x30 « Retour »",
+        "36x28 « Plus d'actions »",
+        "79x26 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "artist",
+      "vp": "360x800",
+      "items": [
+        "79x26 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "library",
+      "vp": "390x844",
+      "items": [
+        "36x28 « Plus d'actions »",
+        "147x27 « Toutes les partitions »",
+        "134x27 « ✨ Nouveautés (2) »",
+        "68x26 « Solo »",
+        "159x26 « Duo Richard & Vince »",
+        "78x29 « Masquer »",
+        "324x39 « ✓Importe ton premier mor »",
+        "324x39 « ✓Crée ta première setlis »"
+      ]
+    },
+    {
+      "label": "songview",
+      "vp": "390x844",
+      "items": [
+        "38x30 « Retour »",
+        "81x29 « Scène »",
+        "96x29 « Modifier »",
+        "90x30 « Lady Gaga »",
+        "78x30 « 120 BPM »",
+        "51x30 « 3:40 »",
+        "77x30 « Exemple »",
+        "82x30 « Solo ✓ »"
+      ]
+    },
+    {
+      "label": "stage",
+      "vp": "390x844",
+      "items": [
+        "44x29 « OK »",
+        "47x39 «  »",
+        "47x39 « Ajouter une note de répé »",
+        "49x38 « A− »",
+        "79x26 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "setlist-edit",
+      "vp": "390x844",
+      "items": [
+        "38x30 « Retour »",
+        "18x19 « Fermer l'aide »",
+        "38x28 « Voir la partition »",
+        "38x28 « Modifier la partition »",
+        "90x29 « ☆ Réserve »",
+        "40x30 «  »",
+        "83x39 « Placer »",
+        "241x29 « Placer les musiciens du  »"
+      ]
+    },
+    {
+      "label": "band",
+      "vp": "390x844",
+      "items": [
+        "38x30 « Retour »",
+        "36x28 « Plus d'actions »",
+        "79x26 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "artist",
+      "vp": "390x844",
+      "items": [
+        "79x26 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "library",
+      "vp": "768x1024",
+      "items": [
+        "36x28 « Plus d'actions »",
+        "147x27 « Toutes les partitions »",
+        "134x27 « ✨ Nouveautés (2) »",
+        "68x27 « Solo »",
+        "159x27 « Duo Richard & Vince »",
+        "78x29 « Masquer »",
+        "682x39 « ✓Importe ton premier mor »",
+        "682x39 « ✓Crée ta première setlis »"
+      ]
+    },
+    {
+      "label": "songview",
+      "vp": "768x1024",
+      "items": [
+        "38x30 « Retour »",
+        "81x29 « Scène »",
+        "96x29 « Modifier »",
+        "90x30 « Lady Gaga »",
+        "78x30 « 120 BPM »",
+        "51x30 « 3:40 »",
+        "77x30 « Exemple »",
+        "82x30 « Solo ✓ »"
+      ]
+    },
+    {
+      "label": "stage",
+      "vp": "768x1024",
+      "items": [
+        "44x29 « OK »",
+        "47x39 «  »",
+        "47x39 « Ajouter une note de répé »",
+        "49x38 « A− »",
+        "79x26 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "setlist-edit",
+      "vp": "768x1024",
+      "items": [
+        "38x30 « Retour »",
+        "18x19 « Fermer l'aide »",
+        "38x28 « Voir la partition »",
+        "38x28 « Modifier la partition »",
+        "90x29 « ☆ Réserve »",
+        "40x30 «  »",
+        "83x39 « Placer »",
+        "241x29 « Placer les musiciens du  »"
+      ]
+    },
+    {
+      "label": "band",
+      "vp": "768x1024",
+      "items": [
+        "38x30 « Retour »",
+        "36x28 « Plus d'actions »",
+        "79x26 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "artist",
+      "vp": "768x1024",
+      "items": [
+        "79x26 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "library",
+      "vp": "1024x768",
+      "items": [
+        "36x28 « Plus d'actions »",
+        "158x28 « Toutes les partitions »",
+        "145x28 « ✨ Nouveautés (2) »",
+        "71x28 « Solo »",
+        "171x28 « Duo Richard & Vince »",
+        "83x30 « Masquer »",
+        "529x39 « ✓Importe ton premier mor »",
+        "529x39 « ✓Crée ta première setlis »"
+      ]
+    },
+    {
+      "label": "songview",
+      "vp": "1024x768",
+      "items": [
+        "38x30 « Retour »",
+        "84x30 « Scène »",
+        "101x30 « Modifier »",
+        "96x32 « Lady Gaga »",
+        "83x32 « 120 BPM »",
+        "53x32 « 3:40 »",
+        "82x32 « Exemple »",
+        "87x32 « Solo ✓ »"
+      ]
+    },
+    {
+      "label": "stage",
+      "vp": "1024x768",
+      "items": [
+        "46x30 « OK »",
+        "47x39 «  »",
+        "47x39 « Ajouter une note de répé »",
+        "83x28 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "setlist-edit",
+      "vp": "1024x768",
+      "items": [
+        "38x30 « Retour »",
+        "18x19 « Fermer l'aide »",
+        "38x28 « Voir la partition »",
+        "38x28 « Modifier la partition »",
+        "97x30 « ☆ Réserve »",
+        "40x30 «  »",
+        "259x30 « Placer les musiciens du  »",
+        "274x30 « Piocher le matériel des  »"
+      ]
+    },
+    {
+      "label": "band",
+      "vp": "1024x768",
+      "items": [
+        "38x30 « Retour »",
+        "36x28 « Plus d'actions »",
+        "83x28 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "artist",
+      "vp": "1024x768",
+      "items": [
+        "83x28 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "library",
+      "vp": "1280x800",
+      "items": [
+        "36x28 « Plus d'actions »",
+        "158x28 « Toutes les partitions »",
+        "145x28 « ✨ Nouveautés (2) »",
+        "71x28 « Solo »",
+        "171x28 « Duo Richard & Vince »",
+        "83x30 « Masquer »",
+        "529x39 « ✓Importe ton premier mor »",
+        "529x39 « ✓Crée ta première setlis »"
+      ]
+    },
+    {
+      "label": "songview",
+      "vp": "1280x800",
+      "items": [
+        "38x30 « Retour »",
+        "84x30 « Scène »",
+        "101x30 « Modifier »",
+        "96x32 « Lady Gaga »",
+        "83x32 « 120 BPM »",
+        "53x32 « 3:40 »",
+        "82x32 « Exemple »",
+        "87x32 « Solo ✓ »"
+      ]
+    },
+    {
+      "label": "stage",
+      "vp": "1280x800",
+      "items": [
+        "46x30 « OK »",
+        "47x39 «  »",
+        "47x39 « Ajouter une note de répé »",
+        "83x28 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "setlist-edit",
+      "vp": "1280x800",
+      "items": [
+        "38x30 « Retour »",
+        "18x19 « Fermer l'aide »",
+        "38x28 « Voir la partition »",
+        "38x28 « Modifier la partition »",
+        "97x30 « ☆ Réserve »",
+        "40x30 «  »",
+        "259x30 « Placer les musiciens du  »",
+        "274x30 « Piocher le matériel des  »"
+      ]
+    },
+    {
+      "label": "band",
+      "vp": "1280x800",
+      "items": [
+        "38x30 « Retour »",
+        "36x28 « Plus d'actions »",
+        "83x28 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "artist",
+      "vp": "1280x800",
+      "items": [
+        "83x28 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "library",
+      "vp": "1600x900",
+      "items": [
+        "36x28 « Plus d'actions »",
+        "162x28 « Toutes les partitions »",
+        "148x28 « ✨ Nouveautés (2) »",
+        "72x28 « Solo »",
+        "175x28 « Duo Richard & Vince »",
+        "85x30 « Masquer »",
+        "541x39 « ✓Importe ton premier mor »",
+        "541x39 « ✓Crée ta première setlis »"
+      ]
+    },
+    {
+      "label": "songview",
+      "vp": "1600x900",
+      "items": [
+        "38x30 « Retour »",
+        "85x30 « Scène »",
+        "102x30 « Modifier »",
+        "98x32 « Lady Gaga »",
+        "85x32 « 120 BPM »",
+        "54x32 « 3:40 »",
+        "84x32 « Exemple »",
+        "88x32 « Solo ✓ »"
+      ]
+    },
+    {
+      "label": "stage",
+      "vp": "1600x900",
+      "items": [
+        "46x30 « OK »",
+        "47x39 «  »",
+        "47x39 « Ajouter une note de répé »",
+        "84x28 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "setlist-edit",
+      "vp": "1600x900",
+      "items": [
+        "38x30 « Retour »",
+        "18x19 « Fermer l'aide »",
+        "38x28 « Voir la partition »",
+        "38x28 « Modifier la partition »",
+        "99x31 « ☆ Réserve »",
+        "40x30 «  »",
+        "265x30 « Placer les musiciens du  »",
+        "281x30 « Piocher le matériel des  »"
+      ]
+    },
+    {
+      "label": "band",
+      "vp": "1600x900",
+      "items": [
+        "38x30 « Retour »",
+        "36x28 « Plus d'actions »",
+        "84x28 « ◦ ON AIR »"
+      ]
+    },
+    {
+      "label": "artist",
+      "vp": "1600x900",
+      "items": [
+        "84x28 « ◦ ON AIR »"
+      ]
+    }
+  ]
+}

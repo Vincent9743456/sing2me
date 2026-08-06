@@ -553,7 +553,13 @@ textarea.mono {
   border: none;
   color: var(--text-dim);
   cursor: pointer;
-  padding: 2px;
+  /* Cible tactile confortable (≈ 32 px) même pour une petite croix. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 4px;
   flex-shrink: 0;
 }
 
@@ -1023,6 +1029,15 @@ textarea.mono {
   flex-wrap: wrap;
   gap: 8px 12px;
   margin-bottom: 14px;
+}
+/* Bloc insécable « libellé + molette » : Transposer et Capo ne se coupent
+   jamais en deux ; s'ils ne tiennent pas côte à côte, Capo passe à la ligne
+   entièrement (2ᵉ ligne commençant par « Capo »). */
+.transpose-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 .transpose .lbl {
   color: var(--text-dim);

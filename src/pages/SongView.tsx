@@ -577,38 +577,41 @@ export function SongView({
 
         {showTranspose && (
           <div className="transpose">
-            {/* Transposer les accords affichés (formes) : le capo se recale
-                pour garder la tonalité réelle. Transposer + Capo : une ligne. */}
-            <span className="lbl">Transposer</span>
-            <div className="stepper">
-              <button
-                title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
-                onClick={() => {
-                  setShift((s) => s - 1);
-                  setCapo((c) => Math.min(11, c + 1));
-                }}
-              >
-                ♭
-              </button>
-              <span>
-                {shownKey !== ''
-                  ? shownKey
-                  : shift === 0
-                    ? '—'
-                    : `${shift > 6 ? shift - 12 : shift} ½t`}
-              </span>
-              <button
-                title="Accords plus haut (capo −1)"
-                onClick={() => {
-                  setShift((s) => s + 1);
-                  if (capo > 0) setCapo((c) => c - 1);
-                }}
-              >
-                ♯
-              </button>
-            </div>
+            {/* Chaque bloc « libellé + molette » est insécable : Transposer et
+                Capo restent groupés ; si la place manque, Capo passe à la
+                ligne en entier (une 2ᵉ ligne qui commence par « Capo »). */}
+            <span className="transpose-unit">
+              <span className="lbl">Transposer</span>
+              <div className="stepper">
+                <button
+                  title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
+                  onClick={() => {
+                    setShift((s) => s - 1);
+                    setCapo((c) => Math.min(11, c + 1));
+                  }}
+                >
+                  ♭
+                </button>
+                <span>
+                  {shownKey !== ''
+                    ? shownKey
+                    : shift === 0
+                      ? '—'
+                      : `${shift > 6 ? shift - 12 : shift} ½t`}
+                </span>
+                <button
+                  title="Accords plus haut (capo −1)"
+                  onClick={() => {
+                    setShift((s) => s + 1);
+                    if (capo > 0) setCapo((c) => c - 1);
+                  }}
+                >
+                  ♯
+                </button>
+              </div>
+            </span>
             {!displayReal && (
-              <>
+              <span className="transpose-unit">
                 <span className="lbl">Capo</span>
                 <div className="stepper">
                   <button
@@ -622,7 +625,7 @@ export function SongView({
                     ＋
                   </button>
                 </div>
-              </>
+              </span>
             )}
             {realKeyShown !== '' && (
               <span
