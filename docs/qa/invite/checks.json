@@ -1,0 +1,41 @@
+{
+  "steps": [
+    {
+      "step": "1-landing",
+      "title": "Vincent t'invite à rejoindre « Les Amplifiés »",
+      "reassure": "✓ Gratuit ✓ Le répertoire du groupe arrive tout seul ✓ Tes morceaux restent à toi",
+      "boutons": [
+        "Créer mon compte gratuit pour rejoindre"
+      ]
+    },
+    {
+      "step": "2-clic-creer-compte",
+      "hash": "#/artist",
+      "invitationMemorisee": true,
+      "pending": {
+        "cloudId": "cloud-abc123",
+        "token": "tok-xyz789",
+        "band": "Les Amplifiés"
+      }
+    },
+    {
+      "step": "2b-ecran-compte",
+      "champEmail": 0,
+      "boutonLienMagique": 0,
+      "oauthVisible": 0,
+      "motDePasse": 0
+    },
+    {
+      "step": "3-arrivee",
+      "banniere": 1,
+      "bannerTxt": "🎉 Tu as rejoint Les Amplifiés !",
+      "checklistBlocs": 10
+    },
+    {
+      "step": "4-fiche-groupe",
+      "portes": 0,
+      "portesTxt": []
+    }
+  ],
+  "errors": "none"
+}

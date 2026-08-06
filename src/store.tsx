@@ -150,6 +150,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       seeded = true;
     }
     if (seeded) return;
+    // Sur un lien de partage/invitation (#/s/… ou #/p/…), on ne seede pas et
+    // on ne pose PAS le drapeau : l'invité voit du vrai contenu, et un simple
+    // visiteur de partage garde ses exemples pour sa première vraie ouverture.
+    // (Le drapeau « pendingInvite » n'est posé qu'APRÈS le clic « rejoindre »,
+    // donc trop tard pour couvrir l'atterrissage sur la page d'invitation.)
+    try {
+      if (/^#\/(s|p)\//.test(location.hash)) return;
+    } catch {
+      /* location indisponible */
+    }
     let invited = false;
     try {
       invited = localStorage.getItem('sing2me/pendingInvite') !== null;
