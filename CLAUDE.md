@@ -42,6 +42,25 @@
   (Vercel) : VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_URL,
   SUPABASE_SERVICE_KEY, LIVE_KEY, ANTHROPIC_API_KEY.
 
+## Architecture — les 3 règles d'ergonomie (obligatoires)
+
+Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
+
+1. **Chaque objet a une seule maison.** Les morceaux vivent dans l'onglet
+   Morceaux ; setlists et groupes y *font référence*, jamais de « deuxième
+   bibliothèque ». Toute liste de morceaux ailleurs est une **vue filtrée**.
+2. **Une action = un geste unique appris une fois.** Affecter des morceaux
+   (à une setlist ou à un groupe) passe TOUJOURS par le **même composant
+   sélecteur** (`src/components/SongPicker.tsx`), dans les deux sens :
+   depuis le morceau (`AssignSheet` — feuille « Ajouter à… »), depuis la
+   cible (`SongCollector` — plein écran, recherche + multi-sélection).
+   Ne jamais recréer un picker ad hoc.
+3. **Un écran = une mission, une action principale.** L'avancé (plan de
+   scène, sono, régie, stats, versions) vit derrière des plis ou « ⋯ » et
+   ne coûte rien à qui ne le cherche pas. Jamais de nouvel écran si un
+   existant peut accueillir la fonction ; jamais de deuxième chemin vers
+   une action existante.
+
 ## État actuel & backlog (août 2026)
 
 - Version en production : voir `src/version.ts` (b17 au 5 août 2026 :

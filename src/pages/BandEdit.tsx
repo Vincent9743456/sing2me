@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAccount } from '../components/Account';
 import { GearEditor } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
+import { SongCollector } from '../components/SongPicker';
 import { LinkPreviews } from '../components/LinkPreviews';
 import { ShareModal } from '../components/ShareModal';
 import { Field, Modal, TopBar } from '../components/ui';
@@ -141,36 +142,6 @@ export function BandEdit({ id }: { id: string }) {
       song.title,
       song.artist,
     );
-  }
-
-  /**
-   * Retire un morceau du répertoire du groupe. Acte de niveau groupe :
-   * il sort du répertoire pour TOUS les membres (chacun garde sa copie
-   * personnelle).
-   */
-  function removeFromRepertoire(song: Song) {
-    if (!band) return;
-    const v = versionForBand(song, band.id);
-    if (!v) return;
-    if (
-      !confirm(
-        `Retirer « ${song.title} » du répertoire de ${band.name || 'ce groupe'} ? ` +
-          'Le morceau sortira du répertoire du groupe pour TOUS les membres — ' +
-          'chacun garde sa partition dans sa bibliothèque personnelle.',
-      )
-    )
-      return;
-    saveSong(
-      song.versions.length > 1
-        ? removeVersion(song, v.id)
-        : {
-            ...song,
-            versions: song.versions.map((x) =>
-              x.id === v.id ? { ...x, bandId: '' } : x,
-            ),
-          },
-    );
-    recordBandRemoval(band.id, normalizeTitle(song.title));
   }
 
   // Membres réels (comptes) du groupe publié
@@ -920,60 +891,20 @@ export function BandEdit({ id }: { id: string }) {
         />
       )}
       {repOpen && (
-        <Modal
-          title={`Répertoire — ${band.name || 'groupe'}`}
+        <SongCollector
+          title={`Ajouter au répertoire — ${band.name || 'groupe'}`}
+          alreadyIn={songs
+            .filter((s) => versionForBand(s, band.id) !== null)
+            .map((s) => s.id)}
+          confirmLabel={(n) => `Ajouter ${n} morceau${n > 1 ? 'x' : ''} au répertoire`}
+          onConfirm={(ids) => {
+            for (const id of ids) {
+              const s = songs.find((x) => x.id === id);
+              if (s) addToRepertoire(s);
+            }
+          }}
           onClose={() => setRepOpen(false)}
-        >
-          <p className="help" style={{ marginTop: 0 }}>
-            Ajoute des morceaux de ta bibliothèque au répertoire du groupe. Ils
-            arrivent chez les autres membres en proposition à accepter, et le
-            fil de discussion en est informé.
-          </p>
-          {songs.filter((s) => s.idea !== true && (s.pendingBandId ?? '') === '')
-            .length === 0 && (
-            <p className="help">Ta bibliothèque est vide pour l'instant.</p>
-          )}
-          {[...songs]
-            .filter((s) => s.idea !== true && (s.pendingBandId ?? '') === '')
-            .sort((a, b) => a.title.localeCompare(b.title, 'fr'))
-            .map((song) => {
-              const inRep = versionForBand(song, band.id) !== null;
-              return (
-                <div
-                  className="row"
-                  key={song.id}
-                  onClick={() =>
-                    inRep ? removeFromRepertoire(song) : addToRepertoire(song)
-                  }
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="grow">
-                    <div className="title">{song.title || '(sans titre)'}</div>
-                    <div className="sub">{song.artist}</div>
-                  </div>
-                  {inRep ? (
-                    <span
-                      title="Cliquer pour retirer du répertoire du groupe"
-                      style={{ color: 'var(--accent)', fontWeight: 700 }}
-                    >
-                      ✓ Au répertoire
-                    </span>
-                  ) : (
-                    <span className="chevron">
-                      <Icon name="plus" size={16} />
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          <div className="spacer" />
-          <button
-            className="btn ghost block"
-            onClick={() => setRepOpen(false)}
-          >
-            Fermer
-          </button>
-        </Modal>
+        />
       )}
     </>
   );

@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon';
 import { Brand } from '../components/Logo';
 import { SongBody } from '../components/SongBody';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
+import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { Empty, TopBar } from '../components/ui';
 
 /** Ajout / retrait d'un morceau dans les setlists, sans quitter la liste. */
@@ -932,41 +933,6 @@ function SongPreview({
   // changer ce qui sonne.
   const easyShapes = realKeyShown !== '' ? suggestCapo(realKeyShown) : null;
 
-  // Ajout / retrait du morceau dans une setlist, en un clic.
-  function toggleSetlist(sl: Setlist) {
-    if (!song) return;
-    const has = sl.items.some((it) => it.songId === song.id);
-    if (has) {
-      saveSetlist({
-        ...sl,
-        items: sl.items.filter((it) => it.songId !== song.id),
-      });
-      return;
-    }
-    const bandId = sl.bandId ?? '';
-    let versionId = versionForBand(song, bandId)?.id ?? '';
-    // Ajout à une setlist de GROUPE = entrée automatique au répertoire.
-    if (bandId !== '' && versionId === '') {
-      const b = bands.find((x) => x.id === bandId);
-      const prev = song.activeVersionId;
-      const updated = switchVersion(
-        duplicateVersion(song, b?.name || 'Groupe', bandId),
-        prev,
-      );
-      saveSong(updated);
-      clearBandRemoval(bandId, normalizeTitle(song.title));
-      void announceBandSong(b?.cloudId, author, song.title, song.artist);
-      versionId = versionForBand(updated, bandId)?.id ?? '';
-    }
-    saveSetlist({
-      ...sl,
-      items: [
-        ...sl.items,
-        { id: makeId(), songId: song.id, note: '', keyOverride: '', versionId },
-      ],
-    });
-  }
-
   // Recherche web de la tonalité d'origine (morceaux sans tonalité connue).
   async function findKey() {
     if (!song || keyBusy) return;
@@ -1172,129 +1138,7 @@ function SongPreview({
       </div>
 
       {assocOpen && (
-        <Modal
-          title="Ajouter à un groupe ou une setlist"
-          onClose={() => setAssocOpen(false)}
-        >
-          {bands.length > 0 && (
-            <div className="field">
-              <label>Groupes</label>
-              <div className="hstack" style={{ flexWrap: 'wrap', gap: 6 }}>
-                {bands.map((b, i) => {
-                  const v = versionForBand(song, b.id);
-                  const active = v !== null;
-                  return (
-                    <button
-                      key={b.id}
-                      className={`chip ${active ? '' : 'off'}`}
-                      title={
-                        active
-                          ? `Retirer « ${song.title} » du répertoire de ${b.name || 'ce groupe'}`
-                          : `Ajouter « ${song.title} » au répertoire de ${b.name || 'ce groupe'} (partagé avec tous les membres)`
-                      }
-                      onClick={() => {
-                        if (active && v) {
-                          if (
-                            song.versions.length <= 1 ||
-                            !confirm(
-                              `Retirer « ${song.title} » du répertoire de ` +
-                                `${b.name || 'ce groupe'} ? Le morceau sortira du ` +
-                                'répertoire du groupe pour TOUS les membres — ' +
-                                'chacun garde la partition dans sa bibliothèque ' +
-                                'personnelle.',
-                            )
-                          )
-                            return;
-                          saveSong(removeVersion(song, v.id));
-                          // Retrait PROPAGÉ : le morceau sort du répertoire du
-                          // groupe pour tous les membres (chacun garde sa
-                          // partition en personnel).
-                          recordBandRemoval(b.id, normalizeTitle(song.title));
-                        } else {
-                          // Version créée en arrière-plan : le morceau RESTE sur
-                          // sa version affichée (pas de bascule surprise).
-                          const prev = song.activeVersionId;
-                          saveSong(
-                            switchVersion(
-                              duplicateVersion(song, b.name || 'Groupe', b.id),
-                              prev,
-                            ),
-                          );
-                          // Ré-intégration : on annule un éventuel retrait
-                          clearBandRemoval(b.id, normalizeTitle(song.title));
-                          // Le groupe est informé (best-effort si publié + connecté)
-                          void announceBandSong(
-                            b.cloudId,
-                            author,
-                            song.title,
-                            song.artist,
-                          );
-                        }
-                      }}
-                    >
-                      <span aria-hidden="true" style={{ marginRight: 2 }}>
-                        {active ? '✓' : '＋'}
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          display: 'inline-block',
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          background: BAND_COLORS[i % BAND_COLORS.length],
-                          marginRight: 2,
-                        }}
-                      />
-                      {b.name || 'Groupe sans nom'}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          <div className="field">
-            <label>Setlists</label>
-            <div className="hstack" style={{ flexWrap: 'wrap', gap: 6 }}>
-              {[...setlists]
-                .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-                .map((sl) => {
-                  const has = sl.items.some((it) => it.songId === song.id);
-                  return (
-                    <button
-                      key={sl.id}
-                      className={`chip ${has ? '' : 'off'}`}
-                      title={
-                        has
-                          ? `Retirer « ${song.title} » de « ${sl.name || 'cette setlist'} »`
-                          : `Ajouter « ${song.title} » à « ${sl.name || 'cette setlist'} »`
-                      }
-                      onClick={() => toggleSetlist(sl)}
-                    >
-                      <span aria-hidden="true" style={{ marginRight: 2 }}>
-                        {has ? '✓' : '＋'}
-                      </span>
-                      {sl.name || '(sans nom)'}
-                    </button>
-                  );
-                })}
-              <button
-                className="chip off"
-                title="Créer une nouvelle setlist avec ce morceau"
-                onClick={() => onPickSetlist(song.id)}
-              >
-                ＋ Nouvelle…
-              </button>
-            </div>
-          </div>
-          <div className="spacer" />
-          <button
-            className="btn ghost block"
-            onClick={() => setAssocOpen(false)}
-          >
-            Fermer
-          </button>
-        </Modal>
+        <AssignSheet songId={song.id} onClose={() => setAssocOpen(false)} />
       )}
       {!displayReal && (
         <div className="transpose" style={{ marginBottom: 10 }}>

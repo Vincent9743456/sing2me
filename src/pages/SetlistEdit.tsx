@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ShareModal } from '../components/ShareModal';
 import { gearIcon } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
+import { SongCollector } from '../components/SongPicker';
 import { StagePlan } from '../components/StagePlan';
 import { Field, Modal, TopBar } from '../components/ui';
 import { announceBandSong } from '../lib/bands';
@@ -205,7 +206,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
         { id: makeId(), songId: song.id, note: '', keyOverride: '', versionId },
       ],
     }));
-    setPicker(false);
   }
 
   function moveItem(from: number, to: number) {
@@ -772,34 +772,18 @@ export function SetlistEdit({ id }: { id: string | null }) {
       </div>
 
       {picker && (
-        <Modal title="Ajouter un morceau" onClose={() => setPicker(false)}>
-          {songs.length === 0 && (
-            <p className="help">Ta bibliothèque est vide — importe d'abord des morceaux.</p>
-          )}
-          {[...songs]
-            .sort((a, b) => a.title.localeCompare(b.title, 'fr'))
-            .map((song) => (
-              <div
-                className="row"
-                key={song.id}
-                onClick={() => addSongToSetlist(song)}
-              >
-                <div className="grow">
-                  <div className="title">{song.title}</div>
-                  <div className="sub">
-                    {[song.key, formatDuration(song.durationSec)]
-                      .filter((x) => x !== '')
-                      .join(' · ')}
-                  </div>
-                </div>
-                <span className="chevron"><Icon name="plus" size={16} /></span>
-              </div>
-            ))}
-          <div className="spacer" />
-          <button className="btn ghost block" onClick={() => setPicker(false)}>
-            Fermer
-          </button>
-        </Modal>
+        <SongCollector
+          title="Ajouter des morceaux"
+          alreadyIn={draft.items.map((it) => it.songId)}
+          confirmLabel={(n) => `Ajouter ${n} morceau${n > 1 ? 'x' : ''}`}
+          onConfirm={(ids) => {
+            for (const id of ids) {
+              const s = songs.find((x) => x.id === id);
+              if (s) addSongToSetlist(s);
+            }
+          }}
+          onClose={() => setPicker(false)}
+        />
       )}
 
       {gearPicker && (
