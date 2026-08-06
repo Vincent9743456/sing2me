@@ -1,6 +1,7 @@
 /**
  * Moteur musical : notes, accords, transposition, capo.
  */
+import { isPlainChordLine } from './chordpro';
 
 const SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -102,16 +103,32 @@ export function transposeChord(
   return root + rest + bass;
 }
 
-/** Transpose tous les accords [X] d'un contenu de section. */
+/** Transpose tous les accords [X] d'un contenu de section. Transpose aussi
+ *  les grilles d'accords brutes (« |Em D G| ») pour rester cohérent. */
 export function transposeContent(
   content: string,
   semitones: number,
   preferFlat: Spelling,
 ): string {
   if (semitones === 0) return content;
-  return content.replace(/\[([^\]\n]+)\]/g, (_all, sym: string) => {
-    return '[' + transposeChord(sym, semitones, preferFlat) + ']';
-  });
+  return content
+    .split('\n')
+    .map((line) => {
+      if (line.includes('[')) {
+        return line.replace(/\[([^\]\n]+)\]/g, (_all, sym: string) => {
+          return '[' + transposeChord(sym, semitones, preferFlat) + ']';
+        });
+      }
+      // Grille d'accords sans crochets : transpose chaque jeton (les barres
+      // « | » et l'espacement sont préservés ; un décor reste inchangé).
+      if (isPlainChordLine(line)) {
+        return line.replace(/[^\s|]+/g, (tok) =>
+          transposeChord(tok, semitones, preferFlat),
+        );
+      }
+      return line;
+    })
+    .join('\n');
 }
 
 /** Transpose un nom de tonalité ("Am" → "Cm" pour +3). */

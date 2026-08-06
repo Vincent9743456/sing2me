@@ -22,6 +22,11 @@ export function ChordLine({ line }: { line: ParsedLine }) {
   ) {
     return <div style={{ height: '0.8em' }} />;
   }
+  // Grille d'accords brute (« |Em D G| ») : affichée telle quelle, en
+  // couleur d'accord, sans reflow (espacement et barres préservés).
+  if (line.plainChords) {
+    return <div className="chordrow">{line.segments[0].text}</div>;
+  }
   return (
     <div className="chordline">
       {line.segments.map((seg, i) => (

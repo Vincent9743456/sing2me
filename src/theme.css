@@ -894,6 +894,16 @@ textarea.mono {
 .chordline .lyric {
   white-space: pre-wrap;
 }
+/* Grille d'accords brute (intro « |Em D G| ») : couleur d'accord, mono,
+   espacement et barres de mesure conservés. */
+.chordrow {
+  color: var(--chord);
+  font-weight: 700;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.85em;
+  white-space: pre-wrap;
+  margin-bottom: 2px;
+}
 .notesbox {
   background: var(--surface);
   border: 1px solid var(--border-soft);

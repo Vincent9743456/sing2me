@@ -20,7 +20,6 @@ import {
   notesForBand,
   notesForShare,
   removeVersion,
-  splitVersion,
   switchVersion,
   transposeChordSequence,
   versionForBand,
@@ -532,24 +531,6 @@ export function SongView({
           </button>
           {song.versions.length > 1 && (
             <>
-              <button
-                className="btn ghost small"
-                title="Ce n'était pas la même chanson ? Cette version devient un morceau à part entière."
-                onClick={() => {
-                  const name = prompt(
-                    'Titre du nouveau morceau (la version affichée sera séparée)',
-                    `${song.title} (variante)`,
-                  );
-                  if (name === null || name.trim() === '') return;
-                  const res = splitVersion(song, current.id, name.trim());
-                  if (!res) return;
-                  saveSong(res.remaining);
-                  saveSong(res.created);
-                  navigate(`/song/${res.created.id}`);
-                }}
-              >
-                Séparer en nouveau morceau
-              </button>
               <button
                 className="btn ghost small"
                 style={{ color: 'var(--danger)' }}
