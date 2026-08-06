@@ -165,7 +165,7 @@ export async function pushBandSong(
 /** Envoie n cœurs (public, pendant le direct). Silencieux en cas d'échec. */
 export async function sendHearts(n: number): Promise<number | null> {
   try {
-    const res = await fetch('/api/heart', {
+    const res = await fetch('/api/live-x?fn=heart', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ n }),
@@ -183,7 +183,7 @@ export async function sendHearts(n: number): Promise<number | null> {
 export async function sendMessage(name: string, text: string): Promise<void> {
   let res: Response;
   try {
-    res = await fetch('/api/message', {
+    res = await fetch('/api/live-x?fn=message', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name, text }),
@@ -199,7 +199,7 @@ export async function sendMessage(name: string, text: string): Promise<void> {
 export async function fetchMessages(key: string): Promise<LiveMessage[]> {
   let res: Response;
   try {
-    res = await fetch('/api/message', { headers: { 'x-live-key': key } });
+    res = await fetch('/api/live-x?fn=message', { headers: { 'x-live-key': key } });
   } catch {
     throw new Error(OFFLINE_MSG);
   }
@@ -252,7 +252,7 @@ export async function fetchAudienceSessions(
 ): Promise<LiveSession[]> {
   if (key.trim() === '') return [];
   try {
-    const res = await fetch('/api/live-stats', {
+    const res = await fetch('/api/live-x?fn=live-stats', {
       headers: { 'x-live-key': key },
     });
     const type = res.headers.get('content-type') ?? '';
@@ -268,7 +268,7 @@ export async function fetchAudienceSessions(
 export async function fetchLiveStats(key: string): Promise<LiveStat[]> {
   let res: Response;
   try {
-    res = await fetch('/api/live-stats', { headers: { 'x-live-key': key } });
+    res = await fetch('/api/live-x?fn=live-stats', { headers: { 'x-live-key': key } });
   } catch {
     throw new Error(OFFLINE_MSG);
   }
@@ -353,7 +353,7 @@ export function deviceId(): string {
  */
 export async function pingAttendance(): Promise<void> {
   try {
-    await fetch('/api/attend', {
+    await fetch('/api/live-x?fn=attend', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ device: deviceId() }),

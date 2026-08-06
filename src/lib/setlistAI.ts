@@ -53,7 +53,7 @@ export async function generateSetlistAI(
   }));
   let res: Response;
   try {
-    res = await fetch('/api/setlist-ai', {
+    res = await fetch('/api/ai?fn=setlist', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ library: payload, partyType, minutes }),

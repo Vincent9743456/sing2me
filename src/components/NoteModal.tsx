@@ -15,7 +15,7 @@ import { Field, Modal } from './ui';
 async function aiSummarize(text: string, song: string): Promise<string> {
   let res: Response;
   try {
-    res = await fetch('/api/ai-note', {
+    res = await fetch('/api/ai?fn=note', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ text, song, parts: [] }),

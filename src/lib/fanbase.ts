@@ -12,7 +12,7 @@ export async function followArtist(
   email: string,
   shareEmail: boolean,
 ): Promise<void> {
-  const res = await fetch('/api/follow', {
+  const res = await fetch('/api/fan?fn=follow', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ artist, email, shareEmail }),
@@ -39,7 +39,7 @@ export async function fetchFollowerStats(
   }
   try {
     const res = await fetch(
-      `/api/follow?artist=${encodeURIComponent(artist)}`,
+      `/api/fan?fn=follow&artist=${encodeURIComponent(artist)}`,
       { headers: { 'x-live-key': key } },
     );
     const type = res.headers.get('content-type') ?? '';
@@ -67,7 +67,7 @@ export interface Souvenir {
 /** Setlist souvenir du dernier concert terminé (titres/artistes, sans paroles). */
 export async function fetchSouvenir(): Promise<Souvenir> {
   try {
-    const res = await fetch('/api/souvenir');
+    const res = await fetch('/api/fan?fn=souvenir');
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return { session: null, songs: [] };
     const body = await res.json();

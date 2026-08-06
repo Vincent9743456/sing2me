@@ -23,7 +23,7 @@ export function Report() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/report', {
+      const res = await fetch('/api/fan?fn=report', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({

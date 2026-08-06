@@ -14,8 +14,24 @@ import socialImport from '../server/social-import.js';
 
 const handlers = { fetch: fetchTab, search: searchTabs, social: socialImport };
 
+// Compat : si la réécriture Vercel ne transmet pas ?fn= (anciens bundles
+// appelant l'URL d'origine, ex. /api/fetch-tab), on route par le chemin.
+const byPath = {
+  'fetch-tab': 'fetch',
+  'search-tabs': 'search',
+  'social-import': 'social',
+};
+
 export default async function handler(req, res) {
-  const fn = typeof req.query?.fn === 'string' ? req.query.fn : '';
+  let fn = typeof req.query?.fn === 'string' ? req.query.fn : '';
+  if (fn === '') {
+    const seg = String(req.url || '')
+      .split('?')[0]
+      .split('/')
+      .filter(Boolean)
+      .pop();
+    fn = byPath[seg] ?? '';
+  }
   const h = handlers[fn];
   if (!h) {
     res.status(404).json({ error: 'Fonction inconnue' });

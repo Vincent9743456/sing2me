@@ -14,8 +14,24 @@ import setlist from '../server/setlist-ai.js';
 
 const handlers = { clean, note, setlist };
 
+// Compat : si la réécriture Vercel ne transmet pas ?fn= (anciens bundles
+// appelant l'URL d'origine, ex. /api/ai-clean), on route par le chemin.
+const byPath = {
+  'ai-clean': 'clean',
+  'ai-note': 'note',
+  'setlist-ai': 'setlist',
+};
+
 export default async function handler(req, res) {
-  const fn = typeof req.query?.fn === 'string' ? req.query.fn : '';
+  let fn = typeof req.query?.fn === 'string' ? req.query.fn : '';
+  if (fn === '') {
+    const seg = String(req.url || '')
+      .split('?')[0]
+      .split('/')
+      .filter(Boolean)
+      .pop();
+    fn = byPath[seg] ?? '';
+  }
   const h = handlers[fn];
   if (!h) {
     res.status(404).json({ error: 'Fonction inconnue' });
