@@ -33,6 +33,23 @@ import { navigate } from '../router';
 import { useStore } from '../store';
 import { Modal } from './ui';
 
+/**
+ * « Selon le contexte » : d'après la page sous le panneau ON AIR, renvoie la
+ * route du mode scène à ouvrir en passant en direct — la setlist courante
+ * (vue, édition, aperçu ou lecture d'un de ses morceaux) ou le morceau
+ * courant. Ailleurs (bibliothèque, groupe…) : null (rien ne s'ouvre).
+ */
+function stageTargetFromHash(hash: string): string | null {
+  let m: RegExpMatchArray | null;
+  if ((m = hash.match(/^#\/setlist\/([^/]+)(?:\/song\/\d+|\/edit|\/apercu)?$/))) {
+    return `/stage/${m[1]}`;
+  }
+  if ((m = hash.match(/^#\/song\/([^/]+?)(?:\/edit)?$/))) {
+    return `/stage/song/${m[1]}`;
+  }
+  return null;
+}
+
 interface OnAirValue {
   status: LiveStatus;
   /** Session en cours : concert (public) ou répétition (musiciens seuls). */
@@ -263,6 +280,15 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         setHearts(0);
         // les ❤ de la dernière chanson viennent d'être archivés côté serveur
         window.setTimeout(() => void syncHearts(), 1200);
+      } else if (next === 'on') {
+        // Passage en direct → mode scène « selon le contexte » : le panneau est
+        // une modale par-dessus la page courante ; on ouvre la scène de la
+        // setlist ou du morceau sous-jacent (rien ailleurs).
+        const target = stageTargetFromHash(location.hash);
+        if (target) {
+          setPanel(false);
+          navigate(target);
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Action impossible.');
