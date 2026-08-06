@@ -1,0 +1,150 @@
+/**
+ * Page publique d'un artiste, ouverte par son NOM dictable (chantier 4) :
+ * livemyband.fr/lenom (domaine actuel pour l'instant). Multi-locataire —
+ * la fiche est chargée depuis le serveur (public_pages). Si l'artiste est
+ * en concert (session ON AIR en cours), on propose d'aller le suivre.
+ */
+import React, { useEffect, useState } from 'react';
+
+import { LogoMark } from '../components/Logo';
+import { TipBox } from '../components/TipBox';
+import { fetchLive } from '../lib/live';
+import { fetchPublicPage } from '../lib/publicPages';
+import { navigate } from '../router';
+import { ArtistProfile } from '../types';
+
+export function PublicArtist({ name }: { name: string }) {
+  const [profile, setProfile] = useState<ArtistProfile | null | undefined>(
+    undefined,
+  );
+  const [liveNow, setLiveNow] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const page = await fetchPublicPage(name);
+      if (cancelled) return;
+      setProfile(page ? page.profile : null);
+      // L'artiste est-il en concert en ce moment ? (état live global)
+      try {
+        const live = await fetchLive();
+        const artistName = (page?.profile.name ?? '').trim().toLowerCase();
+        const liveName = (live.artist?.name ?? '').trim().toLowerCase();
+        if (
+          !cancelled &&
+          live.status !== 'off' &&
+          live.mode === 'concert' &&
+          artistName !== '' &&
+          liveName === artistName
+        ) {
+          setLiveNow(true);
+        }
+      } catch {
+        /* pas de direct : page statique */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [name]);
+
+  if (profile === undefined) {
+    return (
+      <div className="public">
+        <p className="help" style={{ textAlign: 'center' }}>
+          Ouverture…
+        </p>
+      </div>
+    );
+  }
+
+  if (profile === null || (profile.name ?? '') === '') {
+    return (
+      <div className="public">
+        <div className="card" style={{ textAlign: 'center' }}>
+          <LogoMark size={40} />
+          <h1 style={{ margin: '10px 0 4px' }}>Page introuvable</h1>
+          <p className="help">
+            Aucun artiste ne correspond à « {name} ».
+          </p>
+          <a
+            className="btn block"
+            href={location.origin + location.pathname.replace(/[^/]*$/, '')}
+          >
+            Découvrir Sing2Me
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const links = (profile.links ?? []).filter((l) => l.url !== '');
+
+  return (
+    <div className="public">
+      {liveNow && (
+        <div style={{ textAlign: 'center', marginBottom: 14 }}>
+          <a className="btn block" href="#/live">
+            🔴 {profile.name} est EN DIRECT — suivre le concert
+          </a>
+        </div>
+      )}
+
+      <div className="artisthead">
+        {profile.photo !== '' && (
+          <img src={profile.photo} alt={profile.name} />
+        )}
+        <h1 style={{ margin: '10px 0 4px' }}>{profile.name}</h1>
+        {profile.bio !== '' && (
+          <p className="help" style={{ whiteSpace: 'pre-wrap' }}>
+            {profile.bio}
+          </p>
+        )}
+        {links.length > 0 && (
+          <div className="links">
+            {links.map((l) => (
+              <a key={l.id} href={l.url} target="_blank" rel="noreferrer">
+                {l.label || l.url}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <TipBox artist={profile} />
+
+      <div className="footer">
+        <a
+          className="ctabanner"
+          href={location.origin + location.pathname.replace(/[^/]*$/, '')}
+        >
+          <LogoMark size={22} /> Découvrez <strong>Sing2Me</strong> — votre
+          songbook, gratuit
+        </a>
+        <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
+          <a href="#/cgu" style={{ color: 'var(--text-dim)' }}>
+            Conditions d'utilisation
+          </a>
+          {' · '}
+          <a href="#/report" style={{ color: 'var(--text-dim)' }}>
+            Signaler un contenu
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Détecte un nom public dictable dans le chemin (livemyband.fr/lenom) :
+ * renvoie le nom si le chemin est un candidat valide, sinon null.
+ */
+export function publicNameFromPath(): string | null {
+  try {
+    const seg = location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+    if (seg === '' || seg.includes('/')) return null;
+    return /^[a-z0-9]{3,30}$/.test(seg) ? seg : null;
+  } catch {
+    return null;
+  }
+}

@@ -26,6 +26,8 @@ import { SongView } from './pages/SongView';
 import { Stage } from './pages/Stage';
 import { Terms } from './pages/Terms';
 import { Report } from './pages/Report';
+import { PublicArtist, publicNameFromPath } from './pages/PublicArtist';
+import { RESERVED_NAMES } from './lib/publicName';
 import { Route, useRoute } from './router';
 import { StoreProvider } from './store';
 
@@ -39,6 +41,13 @@ function Screen() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [routeKey]);
+
+  // Lien dictable (chantier 4) : livemyband.fr/lenom → page publique de
+  // l'artiste. Détecté sur le CHEMIN (pas le hash), donc prioritaire.
+  const pubName = publicNameFromPath();
+  if (pubName && !RESERVED_NAMES.has(pubName)) {
+    return <PublicArtist name={pubName} />;
+  }
 
   // Pages publiques (spectateurs) : sans navigation ni bouton ON AIR
   if (route.name === 'share') {

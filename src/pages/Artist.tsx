@@ -18,6 +18,7 @@ import {
 import { stripChords } from '../lib/chordpro';
 import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
+import { PublicNameCard } from '../components/PublicNameCard';
 import { bandToProfile, creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -469,6 +470,10 @@ export function Artist() {
             placeholder="Quelques lignes sur toi ou ton groupe…"
           />
         </Field>
+
+        <h2 className="pagetitle">Lien public</h2>
+        <PublicNameCard artist={artist} />
+
         <h2 className="pagetitle">Écran public (QR)</h2>
         <Field label="Qui apparaît sur la page du QR ?">
           <select
