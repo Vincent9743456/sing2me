@@ -62,7 +62,12 @@ export function Concerts() {
           <Empty>
             Aucun concert planifié.
             <br />
-            Crée un concert pour générer sa setlist et son QR code public.
+            Date, lieu, setlist : tout au même endroit pour préparer ta
+            prochaine date.
+            <div className="spacer" />
+            <button className="btn" onClick={() => navigate('/concert/new')}>
+              + Planifier un concert
+            </button>
           </Empty>
         )}
         {upcoming.length > 0 && <h2 className="pagetitle">À venir</h2>}

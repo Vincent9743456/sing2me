@@ -231,8 +231,8 @@ export function Onboarding() {
         </button>
         <div className="onbtitle">Bienvenue sur Sing2Me 🎶</div>
         <p className="help" style={{ marginTop: 4 }}>
-          Commence par importer un morceau — colle un texte, un lien Ultimate
-          Guitar, un PDF ou un fichier Word.
+          Commence par importer un morceau — colle un texte, un lien de
+          partition, un PDF ou un fichier Word.
         </p>
         <div className="hstack" style={{ gap: 8, flexWrap: 'wrap' }}>
           <button className="btn" onClick={() => navigate('/import')}>
