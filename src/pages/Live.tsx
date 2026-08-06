@@ -1,20 +1,19 @@
 /**
- * Page spectateur du mode ON AIR (/#/live).
- * En direct : paroles du morceau en cours, rafraîchies automatiquement.
- * En pause : écran d'attente. Hors direct : page artiste seule.
+ * Page spectateur du mode ON AIR — servie par l'ENTRÉE PUBLIQUE LÉGÈRE
+ * (/live → public.html) et, en compatibilité, par l'app (/#/live pour les
+ * QR déjà imprimés).
+ *
+ * Architecture (chantier page publique) :
+ *  - le CŒUR charge en premier : paroles + suivi de position + cœurs +
+ *    lien de pourboire ;
+ *  - les briques d'engagement (setlist, messages, suivre l'artiste,
+ *    souvenir, vue musicien du bœuf) sont des chunks DIFFÉRÉS (React.lazy)
+ *    chargés après le premier affichage ou à la demande.
  */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
 import { LogoMark } from '../components/Logo';
-import { ChordLine } from '../components/SongBody';
 import { TipBox } from '../components/TipBox';
-import { parseContent } from '../lib/chordpro';
-import {
-  spellingForKey,
-  semitonesBetween,
-  transposeContent,
-  transposeKeyName,
-} from '../lib/chords';
 import {
   fetchLive,
   fetchLiveSetlist,
@@ -22,16 +21,18 @@ import {
   LiveState,
   pingAttendance,
   sendHearts,
-  sendMessage,
 } from '../lib/live';
-import {
-  followArtist,
-  fetchSouvenir,
-  Souvenir,
-} from '../lib/fanbase';
-import { decodeHtmlEntities, repairChordedLyrics } from '../lib/textRepair';
+import { fetchSouvenir, Souvenir } from '../lib/fanbase';
+import { decodeHtmlEntities } from '../lib/textRepair';
 import { useWakeLock } from '../lib/wakelock';
 import { defaultPublicScreen } from '../types';
+
+// Briques d'engagement : chunks différés (jamais dans le chargement initial).
+const SetlistBrowser = lazy(() => import('./live/SetlistBrowser'));
+const MessageBox = lazy(() => import('./live/MessageBox'));
+const FollowButton = lazy(() => import('./live/FollowButton'));
+const MusicianLive = lazy(() => import('./live/MusicianLive'));
+const SouvenirCard = lazy(() => import('./live/SouvenirCard'));
 
 const POLL_MS = 4000;
 
@@ -40,7 +41,8 @@ const POLL_MS = 4000;
  * concert (paroles publiques) est mise en cache localStorage dès le premier
  * chargement. Ensuite les appels périodiques ne servent qu'au SUIVI (position
  * + statut) ; si le réseau tombe, le spectateur garde tout le set consultable
- * hors ligne, et le suivi reprend seul au retour du réseau.
+ * hors ligne — y compris dans la vue musicien-invité — et le suivi reprend
+ * seul au retour du réseau.
  */
 const SETLIST_CACHE_KEY = 'sing2me/live/setlist';
 
@@ -61,505 +63,6 @@ function saveCachedSetlist(list: LivePublicSong[]): void {
   } catch {
     /* stockage indisponible */
   }
-}
-
-/** Liens de recherche du morceau sur les plateformes (souvenir de concert). */
-function streamLinks(title: string, artist: string) {
-  const q = encodeURIComponent(`${title} ${artist}`.trim());
-  return [
-    { name: 'Spotify', url: `https://open.spotify.com/search/${q}` },
-    { name: 'Apple Music', url: `https://music.apple.com/search?term=${q}` },
-    { name: 'Deezer', url: `https://www.deezer.com/search/${q}` },
-  ];
-}
-
-/** Parcours de la setlist (public) — fonctionne à partir du set en cache,
- *  donc consultable même hors ligne. */
-function SetlistBrowser({
-  setlist,
-  idx,
-  souvenir,
-  onIdx,
-  onSouvenir,
-  onClose,
-}: {
-  setlist: LivePublicSong[];
-  idx: number | null;
-  souvenir: boolean;
-  onIdx: (i: number | null) => void;
-  onSouvenir: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="stagelist"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="inner">
-        {idx !== null && setlist[idx] ? (
-          <>
-            <button className="btn ghost small" onClick={() => onIdx(null)}>
-              ◀ La setlist
-            </button>
-            <h2 className="livetitle" style={{ marginTop: 10 }}>
-              {setlist[idx].title}
-            </h2>
-            {setlist[idx].artist !== '' && (
-              <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-                {setlist[idx].artist}
-              </p>
-            )}
-            <div className="livelyrics">
-              {decodeHtmlEntities(setlist[idx].lyrics) ||
-                '(paroles non disponibles)'}
-            </div>
-            <div className="rowactions" style={{ justifyContent: 'center' }}>
-              <button
-                className="btn ghost small"
-                disabled={idx <= 0}
-                onClick={() => onIdx(Math.max(0, idx - 1))}
-              >
-                ‹ Précédent
-              </button>
-              <button
-                className="btn ghost small"
-                disabled={idx >= setlist.length - 1}
-                onClick={() => onIdx(Math.min(setlist.length - 1, idx + 1))}
-              >
-                Suivant ›
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-              La setlist du concert — tape un morceau pour lire les paroles.
-            </p>
-            {setlist.length === 0 && (
-              <p className="help" style={{ textAlign: 'center' }}>
-                Setlist momentanément indisponible.
-              </p>
-            )}
-            {setlist.map((s, i) => (
-              <button
-                key={i}
-                className="remoterow"
-                onClick={() => onIdx(i)}
-              >
-                <span className="num">{i + 1}</span>
-                <span className="grow">
-                  <span className="rtitle">{s.title || '(sans titre)'}</span>
-                  {s.artist !== '' && <span className="rsub">{s.artist}</span>}
-                </span>
-                {souvenir && (
-                  <span
-                    style={{ display: 'flex', gap: 6 }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {streamLinks(s.title, s.artist).map((l) => (
-                      <a
-                        key={l.name}
-                        href={l.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn ghost small"
-                        title={`Chercher sur ${l.name}`}
-                      >
-                        {l.name[0]}
-                      </a>
-                    ))}
-                  </span>
-                )}
-              </button>
-            ))}
-            {setlist.length > 0 && (
-              <button
-                className={`btn ${souvenir ? '' : 'ghost'} block`}
-                style={{ marginTop: 8 }}
-                onClick={onSouvenir}
-              >
-                🎧 {souvenir ? 'Masquer' : 'Garder un souvenir'} — écouter sur
-                Spotify / Apple / Deezer
-              </button>
-            )}
-            <button className="btn ghost block" onClick={onClose}>
-              Fermer
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function MessageBox({ songTitle = '' }: { songTitle?: string }) {
-  const [name, setName] = useState(
-    () => localStorage.getItem('sing2me/fanName') ?? '',
-  );
-  const [text, setText] = useState('');
-  const [sent, setSent] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function onSend() {
-    if (text.trim() === '' || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await sendMessage(name.trim(), text.trim());
-      localStorage.setItem('sing2me/fanName', name.trim());
-      setSent(true);
-      setText('');
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "L'envoi a échoué — réessaie dans un instant.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="tipbox">
-      <div className="tiptitle">
-        {songTitle !== ''
-          ? `💬 Un mot sur « ${songTitle} » ?`
-          : '💬 Un mot pour les musiciens ?'}
-      </div>
-      {sent ? (
-        <>
-          <p style={{ margin: '6px 0', fontWeight: 650 }}>
-            ✅ Message transmis aux musiciens — merci ! 🎸
-          </p>
-          <button className="btn ghost small" onClick={() => setSent(false)}>
-            Envoyer un autre mot
-          </button>
-        </>
-      ) : (
-        <>
-          <input
-            type="text"
-            value={name}
-            placeholder="Ton prénom (optionnel)"
-            style={{ marginBottom: 8 }}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <textarea
-            value={text}
-            placeholder="Bravo pour ce concert !…"
-            style={{ minHeight: 70, marginBottom: 8 }}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <button
-            className="btn"
-            disabled={text.trim() === '' || busy}
-            onClick={() => void onSend()}
-          >
-            {busy ? 'Envoi…' : 'Envoyer'}
-          </button>
-          {error && (
-            <p style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-function FollowButton({ artistName }: { artistName: string }) {
-  const [open, setOpen] = useState(false);
-  const [followed, setFollowed] = useState(() => {
-    if (artistName === '') return false;
-    try {
-      const list = JSON.parse(
-        localStorage.getItem('sing2me/following') ?? '[]',
-      ) as string[];
-      return list.includes(artistName);
-    } catch {
-      return false;
-    }
-  });
-  const [email, setEmail] = useState(
-    () => localStorage.getItem('sing2me/fanEmail') ?? '',
-  );
-  const [consent, setConsent] = useState(false);
-  const [share, setShare] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  if (artistName === '') return null;
-
-  function rememberLocal() {
-    try {
-      const list = JSON.parse(
-        localStorage.getItem('sing2me/following') ?? '[]',
-      ) as string[];
-      if (!list.includes(artistName)) {
-        localStorage.setItem(
-          'sing2me/following',
-          JSON.stringify([...list, artistName]),
-        );
-      }
-    } catch {
-      /* stockage indisponible */
-    }
-  }
-
-  async function submit() {
-    if (busy || !consent || !email.includes('@')) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await followArtist(artistName, email.trim(), share);
-      localStorage.setItem('sing2me/fanEmail', email.trim());
-      rememberLocal();
-      setFollowed(true);
-      setOpen(false);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : 'Le suivi a échoué — réessaie.',
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (followed) {
-    return (
-      <div style={{ textAlign: 'center', margin: '14px 0' }}>
-        <button className="btn ghost" disabled>
-          ✓ Tu suis {artistName}
-        </button>
-        <p className="help" style={{ marginTop: 6 }}>
-          Tu seras prévenu(e) de ses prochains concerts.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ margin: '14px 0' }}>
-      {!open ? (
-        <div style={{ textAlign: 'center' }}>
-          <button className="btn" onClick={() => setOpen(true)}>
-            ⭐ Suivre {artistName}
-          </button>
-        </div>
-      ) : (
-        <div className="card">
-          <div className="label" style={{ marginBottom: 6 }}>
-            ⭐ Suivre {artistName}
-          </div>
-          <input
-            type="email"
-            value={email}
-            placeholder="Ton email"
-            autoCapitalize="none"
-            autoCorrect="off"
-            style={{ marginBottom: 8 }}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <label
-            style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}
-          >
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-              style={{ width: 'auto', marginTop: 3 }}
-            />
-            <span className="help" style={{ margin: 0 }}>
-              Je souhaite recevoir les actualités de {artistName} (prochains
-              concerts). Désabonnement possible à tout moment.
-            </span>
-          </label>
-          <label
-            style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}
-          >
-            <input
-              type="checkbox"
-              checked={share}
-              onChange={(e) => setShare(e.target.checked)}
-              style={{ width: 'auto', marginTop: 3 }}
-            />
-            <span className="help" style={{ margin: 0 }}>
-              Partager mon email avec {artistName} (facultatif).
-            </span>
-          </label>
-          <button
-            className="btn block"
-            disabled={busy || !consent || !email.includes('@')}
-            onClick={() => void submit()}
-          >
-            {busy ? '…' : 'Suivre'}
-          </button>
-          {error && (
-            <p style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ArtistBlock({
-  state,
-  showLinks = true,
-}: {
-  state: LiveState;
-  showLinks?: boolean;
-}) {
-  const artist = state.artist;
-  if (!artist || artist.name === '') return null;
-  return (
-    <div className="artisthead">
-      {artist.photo !== '' && <img src={artist.photo} alt={artist.name} />}
-      <h1 style={{ margin: '10px 0 4px' }}>{artist.name}</h1>
-      {artist.bio !== '' && (
-        <p className="help" style={{ whiteSpace: 'pre-wrap' }}>
-          {artist.bio}
-        </p>
-      )}
-      {showLinks && artist.links.length > 0 && (
-        <div className="links">
-          {artist.links
-            .filter((l) => l.url !== '')
-            .map((l) => (
-              <a key={l.id} href={l.url} target="_blank" rel="noreferrer">
-                {l.label || l.url}
-              </a>
-            ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Vue musicien (QR unique) : partition avec accords, transposée. */
-function MusicianLive({
-  state,
-  onPublic,
-}: {
-  state: LiveState;
-  onPublic: () => void;
-}) {
-  const [fontSize, setFontSize] = useState(1.05);
-  // 'shapes' = les formes du leader (+ capo) ; 'real' = les vrais accords.
-  const [chordMode, setChordMode] = useState<'shapes' | 'real'>('shapes');
-  const song = state.song;
-  const active = state.status === 'on' || state.status === 'pause';
-
-  const capo = song?.capo ?? 0;
-  // Tonalité des formes que joue le leader.
-  const shapeKey = song?.playedKey ?? '';
-  // Tonalité réelle (ce qui sonne) = formes + capo.
-  const realKey = shapeKey !== '' ? transposeKeyName(shapeKey, capo) : '';
-  const showReal = chordMode === 'real' && capo > 0;
-
-  const semis = useMemo(() => {
-    if (!song?.chordKey || !shapeKey) return showReal ? capo : 0;
-    if (song.chordKey === '' || shapeKey === '') return showReal ? capo : 0;
-    const toShapes = semitonesBetween(song.chordKey, shapeKey) ?? 0;
-    return toShapes + (showReal ? capo : 0);
-  }, [song, shapeKey, showReal, capo]);
-  const preferFlat = useMemo(() => {
-    return spellingForKey(showReal ? realKey : shapeKey);
-  }, [showReal, realKey, shapeKey]);
-  const lines = useMemo(() => {
-    if (!song) return [];
-    if (song.chords && song.chords !== '') {
-      return parseContent(
-        transposeContent(repairChordedLyrics(song.chords), semis, preferFlat),
-      );
-    }
-    return parseContent(decodeHtmlEntities(song.lyrics));
-  }, [song, semis, preferFlat]);
-
-  return (
-    <>
-      <div
-        className={`livebadge ${state.status === 'pause' ? 'pause' : ''}`}
-      >
-        {state.status === 'pause'
-          ? '⏸ PAUSE'
-          : state.mode === 'repet'
-            ? '🎸 RÉPÉTITION'
-            : '🎸 VUE MUSICIEN'}
-      </div>
-      {!active || !song ? (
-        <p style={{ textAlign: 'center', fontSize: '1.05rem' }}>
-          En attente de la session…
-          <br />
-          <span className="help">
-            Dès que le leader lance un morceau, ta partition s'affiche ici,
-            avec les accords dans la tonalité jouée.
-          </span>
-        </p>
-      ) : (
-        <>
-          <h1 className="livetitle">{song.title}</h1>
-          <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-            {[
-              song.artist,
-              showReal
-                ? realKey !== ''
-                  ? `Accords réels · ${realKey}`
-                  : 'Accords réels'
-                : shapeKey !== ''
-                  ? capo > 0
-                    ? `Formes ${shapeKey} · Capo ${capo} (sonne en ${realKey})`
-                    : `Tonalité ${shapeKey}`
-                  : '',
-            ]
-              .filter((x) => x !== '')
-              .join(' · ')}
-          </p>
-          {capo > 0 && (
-            <div style={{ textAlign: 'center', marginBottom: 8 }}>
-              <button
-                className="btn ghost small"
-                onClick={() =>
-                  setChordMode((m) => (m === 'real' ? 'shapes' : 'real'))
-                }
-              >
-                {showReal
-                  ? `🎸 Voir comme le leader (${shapeKey}, capo ${capo})`
-                  : `🎸 Voir les vrais accords (${realKey})`}
-              </button>
-            </div>
-          )}
-          <div style={{ fontSize: `${fontSize}rem`, padding: '0 4px' }}>
-            {lines.map((line, i) => (
-              <ChordLine key={i} line={line} />
-            ))}
-          </div>
-          <div className="rowactions" style={{ justifyContent: 'center' }}>
-            <button
-              className="btn ghost"
-              onClick={() => setFontSize((f) => Math.max(0.8, +(f - 0.1).toFixed(2)))}
-            >
-              A−
-            </button>
-            <button
-              className="btn ghost"
-              onClick={() => setFontSize((f) => Math.min(1.8, +(f + 0.1).toFixed(2)))}
-            >
-              A＋
-            </button>
-          </div>
-        </>
-      )}
-      <p className="help" style={{ textAlign: 'center' }}>
-        <button className="btn ghost small" onClick={onPublic}>
-          ← Vue public
-        </button>
-      </p>
-    </>
-  );
 }
 
 export function Live() {
@@ -698,14 +201,16 @@ export function Live() {
           </div>
         )}
         {browseOpen && cached && (
-          <SetlistBrowser
-            setlist={cached}
-            idx={browseIdx}
-            souvenir={souvenir}
-            onIdx={setBrowseIdx}
-            onSouvenir={() => setSouvenir((v) => !v)}
-            onClose={() => setBrowseOpen(false)}
-          />
+          <Suspense fallback={null}>
+            <SetlistBrowser
+              setlist={cached}
+              idx={browseIdx}
+              souvenir={souvenir}
+              onIdx={setBrowseIdx}
+              onSouvenir={() => setSouvenir((v) => !v)}
+              onClose={() => setBrowseOpen(false)}
+            />
+          </Suspense>
         )}
       </div>
     );
@@ -719,10 +224,12 @@ export function Live() {
     (state.status === 'pause' || (state.status === 'on' && !state.song));
   // L'artiste choisit ce qui s'affiche (réglages « Écran public »).
   const ps = { ...defaultPublicScreen(), ...(state.artist?.publicScreen ?? {}) };
-  // Consultable dès qu'on a un set (serveur OU cache) — vrai même hors ligne.
+  // Consultable dès qu'on a un set (serveur OU cache) — vrai même hors ligne,
+  // et dans les DEUX rôles (public et musicien-invité).
   const cachedCount = browseSetlist?.length ?? 0;
   const browseCount = state.setlistCount > 0 ? state.setlistCount : cachedCount;
-  const canBrowse = publicSession && browseCount > 0;
+  const canBrowse =
+    (publicSession || role === 'musicien') && browseCount > 0;
 
   async function openBrowse() {
     setBrowseIdx(null);
@@ -747,18 +254,19 @@ export function Live() {
           le retour du réseau.
         </div>
       )}
-      {/* Visible au premier coup d'œil : un musicien bascule sur sa partition */}
+      {/* Bifurcation « bœuf » : un musicien de passage bascule sur la
+          partition complète (accords, transposition perso), sans compte. */}
       {role === 'public' && (
         <div style={{ textAlign: 'center', margin: '0 0 10px' }}>
           <button
             className="btn ghost small"
             onClick={() => switchRole('musicien')}
           >
-            🎸 Tu es musicien ? Vue partition
+            🎸 Tu es musicien ? Suis avec les accords
           </button>
         </div>
       )}
-      {role === 'public' && canBrowse && (
+      {canBrowse && (
         <div style={{ textAlign: 'center', margin: '0 0 12px' }}>
           <button className="btn small" onClick={() => void openBrowse()}>
             📋 Voir la setlist ({browseCount})
@@ -766,7 +274,15 @@ export function Live() {
         </div>
       )}
       {role === 'musicien' ? (
-        <MusicianLive state={state} onPublic={() => switchRole('public')} />
+        <Suspense
+          fallback={
+            <p className="help" style={{ textAlign: 'center' }}>
+              Ouverture de la partition…
+            </p>
+          }
+        >
+          <MusicianLive state={state} onPublic={() => switchRole('public')} />
+        </Suspense>
       ) : liveNow && state.song ? (
         <>
           <div className="livebadge">
@@ -800,7 +316,11 @@ export function Live() {
             </p>
           )}
           {ps.tips && <TipBox artist={state.artist} />}
-          {ps.messages && <MessageBox songTitle={state.song.title} />}
+          {ps.messages && (
+            <Suspense fallback={null}>
+              <MessageBox songTitle={state.song.title} />
+            </Suspense>
+          )}
           {ps.hearts && (
             <button
               className="heartfab"
@@ -828,63 +348,35 @@ export function Live() {
           </p>
           {ps.profile && <ArtistBlock state={state} showLinks={ps.links} />}
           {ps.tips && <TipBox artist={state.artist} />}
-          {ps.messages && <MessageBox />}
+          {ps.messages && (
+            <Suspense fallback={null}>
+              <MessageBox />
+            </Suspense>
+          )}
         </>
       ) : (
         <>
-          {/* Setlist souvenir (fanbase V1) : le dernier concert terminé —
-              titres/artistes seulement, aucune parole. Transforme le concert
-              en fanbase (revoir les morceaux + suivre l'artiste). */}
           {souvenirData && souvenirData.songs.length > 0 && (
-            <div className="card">
-              <div className="label" style={{ marginBottom: 6 }}>
-                🎶 Souvenir du concert
-                {souvenirData.session?.artist
-                  ? ` — ${souvenirData.session.artist}`
-                  : ''}
-              </div>
-              <p className="help" style={{ marginTop: 0 }}>
-                Les morceaux joués — pour les réécouter et t'en souvenir.
-              </p>
-              {souvenirData.songs.map((s, i) => (
-                <div
-                  key={i}
-                  className="remoterow"
-                  style={{ cursor: 'default' }}
-                >
-                  <span className="num">{i + 1}</span>
-                  <span className="grow" style={{ minWidth: 0 }}>
-                    <span className="rtitle">{s.title || '(sans titre)'}</span>
-                    {s.artist !== '' && <span className="rsub">{s.artist}</span>}
-                  </span>
-                  <span style={{ display: 'flex', gap: 6 }}>
-                    {streamLinks(s.title, s.artist).map((l) => (
-                      <a
-                        key={l.name}
-                        href={l.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn ghost small"
-                        title={`Chercher sur ${l.name}`}
-                      >
-                        {l.name[0]}
-                      </a>
-                    ))}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <Suspense fallback={null}>
+              <SouvenirCard data={souvenirData} />
+            </Suspense>
           )}
           {ps.profile && <ArtistBlock state={state} showLinks={ps.links} />}
           {ps.follow && (
-            <FollowButton
-              artistName={
-                state.artist?.name || souvenirData?.session?.artist || ''
-              }
-            />
+            <Suspense fallback={null}>
+              <FollowButton
+                artistName={
+                  state.artist?.name || souvenirData?.session?.artist || ''
+                }
+              />
+            </Suspense>
           )}
           {ps.tips && <TipBox artist={state.artist} />}
-          {ps.messages && <MessageBox />}
+          {ps.messages && (
+            <Suspense fallback={null}>
+              <MessageBox />
+            </Suspense>
+          )}
           {(!state.artist || state.artist.name === '') &&
             !(souvenirData && souvenirData.songs.length > 0) && (
               <p className="help" style={{ textAlign: 'center' }}>
@@ -903,31 +395,67 @@ export function Live() {
             </div>
           </div>
         ) : (
-          <SetlistBrowser
-            setlist={browseSetlist}
-            idx={browseIdx}
-            souvenir={souvenir}
-            onIdx={setBrowseIdx}
-            onSouvenir={() => setSouvenir((v) => !v)}
-            onClose={() => setBrowseOpen(false)}
-          />
+          <Suspense fallback={null}>
+            <SetlistBrowser
+              setlist={browseSetlist}
+              idx={browseIdx}
+              souvenir={souvenir}
+              onIdx={setBrowseIdx}
+              onSouvenir={() => setSouvenir((v) => !v)}
+              onClose={() => setBrowseOpen(false)}
+            />
+          </Suspense>
         ))}
-      {/* Invitation discrète, seulement hors morceau (pause / fin de live) */}
+      {/* Invitation discrète, seulement hors morceau (pause / fin de live).
+          Liens ABSOLUS (/#/…) : la page peut être servie depuis /live. */}
       {!liveNow && role === 'public' && ps.appInvite && (
         <div className="footer">
-          <a className="ctabanner" href={location.origin + location.pathname}>
+          <a className="ctabanner" href={location.origin + '/'}>
             <LogoMark size={22} /> Téléchargez <strong>Sing2Me</strong> — votre
             songbook, gratuit
           </a>
           <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
-            <a href="#/cgu" style={{ color: 'var(--text-dim)' }}>
+            <a href="/#/cgu" style={{ color: 'var(--text-dim)' }}>
               Conditions d'utilisation
             </a>
             {' · '}
-            <a href="#/report" style={{ color: 'var(--text-dim)' }}>
+            <a href="/#/report" style={{ color: 'var(--text-dim)' }}>
               Signaler un contenu
             </a>
           </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ArtistBlock({
+  state,
+  showLinks = true,
+}: {
+  state: LiveState;
+  showLinks?: boolean;
+}) {
+  const artist = state.artist;
+  if (!artist || artist.name === '') return null;
+  return (
+    <div className="artisthead">
+      {artist.photo !== '' && <img src={artist.photo} alt={artist.name} />}
+      <h1 style={{ margin: '10px 0 4px' }}>{artist.name}</h1>
+      {artist.bio !== '' && (
+        <p className="help" style={{ whiteSpace: 'pre-wrap' }}>
+          {artist.bio}
+        </p>
+      )}
+      {showLinks && artist.links.length > 0 && (
+        <div className="links">
+          {artist.links
+            .filter((l) => l.url !== '')
+            .map((l) => (
+              <a key={l.id} href={l.url} target="_blank" rel="noreferrer">
+                {l.label || l.url}
+              </a>
+            ))}
         </div>
       )}
     </div>

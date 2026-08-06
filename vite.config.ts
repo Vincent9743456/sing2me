@@ -10,6 +10,16 @@ export default defineConfig({
   // qu'esbuild réécrive cette syntaxe en équivalents compatibles.
   build: {
     target: ['es2015', 'safari11'],
+    // Deux entrées (chantier « architecture page publique ») :
+    //  - index.html  → l'app musicien complète (PWA) ;
+    //  - public.html → l'entrée SPECTATEUR ultra-légère (/live, /<nom>).
+    // Le spectateur ne télécharge jamais le bundle de l'app musicien.
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        public: 'public.html',
+      },
+    },
   },
   server: {
     host: true, // accessible depuis le téléphone sur le même Wi-Fi

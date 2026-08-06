@@ -2,7 +2,7 @@
  * Client du mode ON AIR : lecture publique de l'état du direct,
  * mise à jour réservée à l'artiste (clé On Air).
  */
-import { normalizeTitle } from './importer';
+import { normalizeTitle } from './normalizeTitle';
 import { ArtistProfile } from '../types';
 
 export type LiveStatus = 'off' | 'on' | 'pause';
@@ -312,9 +312,12 @@ export async function pushLive(
   if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
 }
 
-/** URL publique du direct, à partager / mettre en QR. */
+/** URL publique du direct, à partager / mettre en QR.
+ *  Pointe vers l'ENTRÉE PUBLIQUE LÉGÈRE (/live → public.html) : le
+ *  spectateur ne télécharge jamais le bundle de l'app musicien. Les anciens
+ *  QR (/#/live) restent servis par l'app, en compatibilité. */
 export function liveUrl(): string {
-  return `${location.origin}${location.pathname}#/live`;
+  return `${location.origin}/live`;
 }
 
 /* ------------------------------------------------------------------ */

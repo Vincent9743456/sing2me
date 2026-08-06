@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0a0a0e" />
+    <!-- Pages publiques non indexées (règle projet) : seule /site/ l'est. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      name="description"
+      content="Sing2Me — suivez le concert en direct : paroles, cœurs, pourboire."
+    />
+    <title>Sing2Me — en concert</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      ENTRÉE PUBLIQUE LÉGÈRE (spectateur) — chantier « architecture page
+      publique ». Servie par les réécritures Vercel :
+        /live      → cette page (concert en direct)
+        /<nom>     → cette page (fiche publique dictable d'un artiste)
+      Le spectateur ne télécharge JAMAIS le bundle de l'app musicien.
+
+      Service workers — étanchéité voulue :
+       - PAS de <link rel="manifest"> ici : cette page n'est pas la PWA
+         musicien et ne doit s'installer ni être interceptée par elle ;
+       - le FUTUR service worker des notifications push (fanbase) devra être
+         enregistré ICI (entrée publique), avec son propre fichier sw,
+         distinct de tout éventuel SW de l'app musicien.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/publicEntry.tsx"></script>
+  </body>
+</html>

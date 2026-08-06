@@ -10,7 +10,6 @@ import { LogoMark } from '../components/Logo';
 import { TipBox } from '../components/TipBox';
 import { fetchLive } from '../lib/live';
 import { fetchPublicPage } from '../lib/publicPages';
-import { navigate } from '../router';
 import { ArtistProfile } from '../types';
 
 export function PublicArtist({ name }: { name: string }) {
@@ -84,7 +83,9 @@ export function PublicArtist({ name }: { name: string }) {
     <div className="public">
       {liveNow && (
         <div style={{ textAlign: 'center', marginBottom: 14 }}>
-          <a className="btn block" href="#/live">
+          {/* Lien ABSOLU vers l'entrée publique légère : la page peut être
+              servie depuis /lenom, un hash relatif serait cassé. */}
+          <a className="btn block" href="/live">
             🔴 {profile.name} est EN DIRECT — suivre le concert
           </a>
         </div>
@@ -122,11 +123,11 @@ export function PublicArtist({ name }: { name: string }) {
           songbook, gratuit
         </a>
         <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
-          <a href="#/cgu" style={{ color: 'var(--text-dim)' }}>
+          <a href="/#/cgu" style={{ color: 'var(--text-dim)' }}>
             Conditions d'utilisation
           </a>
           {' · '}
-          <a href="#/report" style={{ color: 'var(--text-dim)' }}>
+          <a href="/#/report" style={{ color: 'var(--text-dim)' }}>
             Signaler un contenu
           </a>
         </p>

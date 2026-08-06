@@ -1,0 +1,83 @@
+/**
+ * Mot du public aux musiciens (engagement). Chargé en différé — jamais
+ * avant l'affichage des paroles.
+ */
+import React, { useState } from 'react';
+
+import { sendMessage } from '../../lib/live';
+
+export default function MessageBox({ songTitle = '' }: { songTitle?: string }) {
+  const [name, setName] = useState(
+    () => localStorage.getItem('sing2me/fanName') ?? '',
+  );
+  const [text, setText] = useState('');
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSend() {
+    if (text.trim() === '' || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await sendMessage(name.trim(), text.trim());
+      localStorage.setItem('sing2me/fanName', name.trim());
+      setSent(true);
+      setText('');
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "L'envoi a échoué — réessaie dans un instant.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="tipbox">
+      <div className="tiptitle">
+        {songTitle !== ''
+          ? `💬 Un mot sur « ${songTitle} » ?`
+          : '💬 Un mot pour les musiciens ?'}
+      </div>
+      {sent ? (
+        <>
+          <p style={{ margin: '6px 0', fontWeight: 650 }}>
+            ✅ Message transmis aux musiciens — merci ! 🎸
+          </p>
+          <button className="btn ghost small" onClick={() => setSent(false)}>
+            Envoyer un autre mot
+          </button>
+        </>
+      ) : (
+        <>
+          <input
+            type="text"
+            value={name}
+            placeholder="Ton prénom (optionnel)"
+            style={{ marginBottom: 8 }}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <textarea
+            value={text}
+            placeholder="Bravo pour ce concert !…"
+            style={{ minHeight: 70, marginBottom: 8 }}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <button
+            className="btn"
+            disabled={text.trim() === '' || busy}
+            onClick={() => void onSend()}
+          >
+            {busy ? 'Envoi…' : 'Envoyer'}
+          </button>
+          {error && (
+            <p style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

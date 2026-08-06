@@ -463,19 +463,8 @@ export function analyzeImport(
 }
 
 /** Normalisation pour la détection de doublons. */
-export function normalizeTitle(title: string): string {
-  return (
-    title
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      // Apostrophes SUPPRIMÉES (pas remplacées par un espace) :
-      // « Ain't » et « Aint » doivent donner le même titre.
-      .replace(/['’`]/g, '')
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim()
-  );
-}
+import { normalizeTitle } from './normalizeTitle';
+export { normalizeTitle };
 
 /** Cherche un doublon probable dans la bibliothèque. */
 export function findDuplicate(songs: Song[], title: string): Song | null {
