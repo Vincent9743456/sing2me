@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { AccountProvider } from './components/Account';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Feedback';
+import { InstallHint } from './components/InstallHint';
 import { NotificationsProvider, useNotifications } from './components/Notifications';
 import { OnAirButton, OnAirProvider } from './components/OnAir';
 import { TabBar } from './components/ui';
@@ -137,6 +138,7 @@ function Screen() {
       {page}
       <TabBar current={route.name} bandsBadge={badge} />
       {!hideLive.has(route.name) && <OnAirButton />}
+      <InstallHint />
     </div>
   );
 }

@@ -13,8 +13,14 @@
     />
     <title>Sing2Me</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <!-- iOS ignore les SVG : icône d'accueil en PNG (Ajouter à l'écran d'accueil) -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Application web installée (plein écran, sans barre du navigateur) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Sing2Me" />
   </head>
   <body>
     <div id="root"></div>

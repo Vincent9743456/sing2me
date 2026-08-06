@@ -2302,6 +2302,35 @@ h2.pagetitle {
   margin-bottom: 8px;
 }
 
+/* ---------- Bannière « Ajouter à l'écran d'accueil » (PWA) ---------- */
+.installhint {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(78px + env(safe-area-inset-bottom));
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 10px 12px;
+  background: var(--surface-high);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-s);
+  box-shadow: var(--shadow-soft);
+}
+.installhint-ico {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+.installhint strong {
+  font-size: 0.92rem;
+}
+.installhint-x {
+  flex-shrink: 0;
+}
+
 /* ---------- Réglages repliés d'un morceau de setlist ---------- */
 .slmore {
   margin-top: 6px;
