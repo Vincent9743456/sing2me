@@ -127,6 +127,12 @@ export function BandEdit({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [headerMenu, setHeaderMenu] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
+  // Fiche d'un membre ouverte au clic (null = fermée). Pour MOI → onglet Artiste.
+  const [viewMember, setViewMember] = useState<{
+    name: string;
+    instrument?: string;
+    photo?: string;
+  } | null>(null);
   // Étape « prénom de l'invité » avant de partager le lien.
   const [invitePrompt, setInvitePrompt] = useState(false);
   const [pendingName, setPendingName] = useState('');
@@ -391,23 +397,23 @@ export function BandEdit({ id }: { id: string }) {
       .map((m) => m.name.trim().toLowerCase())
       .filter((n) => n !== ''),
   );
-  // Membres manuels non déjà représentés par un compte (dé-doublonnage :
-  // évite le créateur affiché deux fois quand il devient membre cloud) — et
-  // hors profils « en attente d'acceptation », comptés à part.
+  const cloudNamesArr = [...cloudNames];
+  // Rapprochement FLOU : un membre local (prénom d'invitation, saisie
+  // manuelle) est considéré déjà représenté par un compte cloud dès que
+  // l'un contient l'autre (« Marco » ↔ « marco.bosio »). Évite le doublon
+  // quand le vrai compte a rejoint sous un nom d'annuaire différent.
+  const nameMatchesCloud = (nm: string): boolean =>
+    nm !== '' && cloudNamesArr.some((cn) => cn.includes(nm) || nm.includes(cn));
+  // Membres manuels non déjà représentés par un compte cloud, hors profils
+  // « en attente d'acceptation » (comptés à part).
   const manualMembers = band.members.filter(
-    (m) =>
-      m.pending !== true &&
-      (m.name.trim() === '' || !cloudNames.has(m.name.trim().toLowerCase())),
+    (m) => m.pending !== true && !nameMatchesCloud(m.name.trim().toLowerCase()),
   );
   // Invités pas encore acceptés. Dès que le vrai compte a rejoint (nom cloud
-  // qui contient le prénom, ou l'inverse — « Marco » → « marco.bosio »),
-  // l'invité n'est plus « en attente » : sa fiche remplace le prénom.
-  const cloudNamesArr = [...cloudNames];
-  const pendingMembers = band.members.filter((m) => {
-    if (m.pending !== true) return false;
-    const nm = m.name.trim().toLowerCase();
-    return !cloudNamesArr.some((cn) => cn.includes(nm) || nm.includes(cn));
-  });
+  // qui contient le prénom, ou l'inverse), l'invité n'est plus « en attente ».
+  const pendingMembers = band.members.filter(
+    (m) => m.pending === true && !nameMatchesCloud(m.name.trim().toLowerCase()),
+  );
 
   // Données des 3 portes.
   const allMembers = [...cloudMembers, ...manualMembers];
@@ -1048,17 +1054,45 @@ export function BandEdit({ id }: { id: string }) {
           {allMembers.length === 0 && pendingMembers.length === 0 && (
             <p className="help">Aucun musicien pour l'instant.</p>
           )}
-          {allMembers.map((m, i) => (
-            <div className="row" key={`a${i}`} style={{ cursor: 'default' }}>
-              <Avatar name={m.name} photo={photoOf(m)} />
-              <div className="grow">
-                <div className="title">{m.name || 'Musicien'}</div>
-                {m.instrument !== '' && (
-                  <div className="sub">{m.instrument}</div>
-                )}
-              </div>
-            </div>
-          ))}
+          {allMembers.map((m, i) => {
+            const isMe =
+              meKey !== '' && m.name.trim().toLowerCase() === meKey;
+            return (
+              <button
+                className="row"
+                key={`a${i}`}
+                style={{
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                }}
+                title={isMe ? 'Voir / modifier ma fiche' : `Voir la fiche de ${m.name}`}
+                onClick={() => {
+                  if (isMe) {
+                    setMembersOpen(false);
+                    navigate('/artist');
+                  } else {
+                    setViewMember({
+                      name: m.name,
+                      instrument: m.instrument,
+                      photo: photoOf(m),
+                    });
+                  }
+                }}
+              >
+                <Avatar name={m.name} photo={photoOf(m)} />
+                <div className="grow">
+                  <div className="title">{m.name || 'Musicien'}</div>
+                  {m.instrument !== '' && (
+                    <div className="sub">{m.instrument}</div>
+                  )}
+                </div>
+                <Icon name="chevron-right" size={16} />
+              </button>
+            );
+          })}
           {pendingMembers.map((m, i) => (
             <div
               className="row"
@@ -1088,6 +1122,33 @@ export function BandEdit({ id }: { id: string }) {
               )}
             </div>
           ))}
+        </Modal>
+      )}
+      {viewMember && (
+        <Modal title="Fiche musicien" onClose={() => setViewMember(null)}>
+          <div style={{ textAlign: 'center', marginBottom: 'var(--sp-3)' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                marginBottom: 8,
+              }}
+            >
+              <Avatar name={viewMember.name} photo={viewMember.photo} />
+            </div>
+            <h2 style={{ margin: '0 0 2px' }}>
+              {viewMember.name || 'Musicien'}
+            </h2>
+            {(viewMember.instrument ?? '') !== '' && (
+              <p className="help" style={{ margin: 0 }}>
+                {viewMember.instrument}
+              </p>
+            )}
+          </div>
+          <p className="help" style={{ textAlign: 'center' }}>
+            La fiche publique complète (bio, liens, pourboire) arrive avec les
+            pages d'artiste. En attendant, tu vois son nom et son instrument.
+          </p>
         </Modal>
       )}
       {headerMenu && (
