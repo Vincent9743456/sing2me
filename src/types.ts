@@ -146,6 +146,8 @@ export interface BandMember {
   id: string;
   name: string;
   instrument: string;
+  /** Photo de profil (annuaire) du membre, si disponible. */
+  photo?: string;
   /** true = le nom vient de la carte de musicien Sing2Me du membre */
   verified?: boolean;
   /** Invité mais pas encore accepté : profil « en attente d'acceptation ». */

@@ -69,6 +69,7 @@ export function creatorMember(
     id: makeId(),
     name: userName || artist.name || 'Moi',
     instrument: '',
+    photo: artist.photo || undefined,
     verified: true,
     gear: artist.gear ? artist.gear.map((g) => ({ ...g })) : [],
   };

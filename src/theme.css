@@ -469,6 +469,15 @@ textarea.mono {
   color: var(--text-dim);
   font-size: 0.82rem;
   margin-bottom: 12px;
+  /* Cliquable : ouvre la liste des musiciens (photos + noms). */
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+}
+.bandhead-members:hover {
+  color: var(--text);
 }
 .avstack {
   display: inline-flex;
@@ -488,6 +497,15 @@ textarea.mono {
 }
 .avstack .av:first-child {
   margin-left: 0;
+}
+.avstack .av {
+  overflow: hidden;
+}
+.avstack .av img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 /* Avatar « en attente d'acceptation » : contour pointillé + estompé. */
 .av.pending {

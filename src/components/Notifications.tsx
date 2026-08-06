@@ -27,10 +27,12 @@ import { useAccount } from './Account';
 import { useToast } from './Feedback';
 
 /** Signature stable de la liste de membres (par nom) pour comparer sans churn. */
-function membersSignature(members: { name: string }[]): string {
+function membersSignature(
+  members: { name: string; photo?: string }[],
+): string {
   return members
-    .map((m) => m.name.trim().toLowerCase())
-    .filter((n) => n !== '')
+    .map((m) => `${m.name.trim().toLowerCase()}#${m.photo ? '1' : '0'}`)
+    .filter((n) => n !== '#0')
     .sort()
     .join('|');
 }
@@ -57,6 +59,8 @@ function mergeCloudMembers(
           ...existing,
           name: m.name || existing.name,
           instrument: m.instrument || existing.instrument,
+          // Photo d'annuaire du membre (si renseignée) : conservée localement.
+          photo: m.photo || existing.photo,
           verified: true,
           // Il a rejoint pour de bon : ce n'est plus « en attente ».
           pending: undefined,
@@ -65,6 +69,7 @@ function mergeCloudMembers(
           id: makeId(),
           name: m.name || 'Musicien',
           instrument: m.instrument,
+          photo: m.photo,
           verified: true,
         };
   });

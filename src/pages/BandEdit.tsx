@@ -126,6 +126,7 @@ export function BandEdit({ id }: { id: string }) {
   // (édition, page publique, suppression) vit derrière « ⋯ ».
   const [editing, setEditing] = useState(false);
   const [headerMenu, setHeaderMenu] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [lastMsg, setLastMsg] = useState<{ text: string; at: string } | null>(
     null,
@@ -451,11 +452,19 @@ export function BandEdit({ id }: { id: string }) {
                 )}
               </button>
               <h1>{band.name || 'Groupe'}</h1>
-              <div className="bandhead-members">
+              <button
+                className="bandhead-members"
+                onClick={() => setMembersOpen(true)}
+                title="Voir les musiciens du groupe"
+              >
                 <span className="avstack" aria-hidden="true">
                   {allMembers.slice(0, 4).map((m, i) => (
                     <span className="av" key={i}>
-                      {(m.name.trim()[0] || '?').toUpperCase()}
+                      {m.photo ? (
+                        <img src={m.photo} alt="" />
+                      ) : (
+                        (m.name.trim()[0] || '?').toUpperCase()
+                      )}
                     </span>
                   ))}
                   {pendingMembers.slice(0, 2).map((m, i) => (
@@ -470,7 +479,7 @@ export function BandEdit({ id }: { id: string }) {
                     ? ` · ${pendingMembers.length} en attente`
                     : ''}
                 </span>
-              </div>
+              </button>
               {isOwner ? (
                 <button
                   className={`btn ${fewMembers ? '' : 'ghost'}`}
@@ -964,6 +973,39 @@ export function BandEdit({ id }: { id: string }) {
         />
       )}
       {/* « ⋯ » de l'en-tête : tout l'avancé du groupe. */}
+      {membersOpen && (
+        <Modal title="Musiciens du groupe" onClose={() => setMembersOpen(false)}>
+          {allMembers.length === 0 && pendingMembers.length === 0 && (
+            <p className="help">Aucun musicien pour l'instant.</p>
+          )}
+          {allMembers.map((m, i) => (
+            <div className="row" key={`a${i}`} style={{ cursor: 'default' }}>
+              <Avatar name={m.name} photo={m.photo} />
+              <div className="grow">
+                <div className="title">{m.name || 'Musicien'}</div>
+                {m.instrument !== '' && (
+                  <div className="sub">{m.instrument}</div>
+                )}
+              </div>
+            </div>
+          ))}
+          {pendingMembers.map((m, i) => (
+            <div
+              className="row"
+              key={`p${i}`}
+              style={{ cursor: 'default', opacity: 0.75 }}
+            >
+              <Avatar name={m.name} photo={m.photo} />
+              <div className="grow">
+                <div className="title">{m.name || '(invité)'}</div>
+                <div className="sub" style={{ color: 'var(--accent)' }}>
+                  ⏳ En attente d'acceptation
+                </div>
+              </div>
+            </div>
+          ))}
+        </Modal>
+      )}
       {headerMenu && (
         <MenuSheet
           title={band.name || 'Groupe'}
