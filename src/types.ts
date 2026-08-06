@@ -355,6 +355,17 @@ export interface ArtistProfile {
   gear?: GearItem[];
   /** Ce que voit le public sur l'écran du QR (tout actif par défaut) */
   publicScreen?: Partial<PublicScreen>;
+  /**
+   * Licence Scène (annuelle, attachée au compte artiste). PRÉVU mais SANS
+   * AUCUN EFFET pour l'instant (chantier 2 — mesure seulement) : aucun seuil,
+   * aucun blocage, aucune notification ne dépend de ce champ tant que les
+   * fondateurs n'ont pas donné le feu vert (mécanique de seuil archivée).
+   */
+  sceneLicense?: boolean;
+  /**
+   * Concert de grâce déjà consommé. PRÉVU mais SANS AUCUN EFFET (chantier 2).
+   */
+  graceUsed?: boolean;
   /** Dernière modification — sert à fusionner le profil entre appareils */
   updatedAt?: string;
 }

@@ -164,13 +164,15 @@ export default async function handler(req, res) {
       if ('concert' in (req.body ?? {})) patch.concert = req.body.concert ?? null;
 
       // Archiver les cœurs de la chanson qui se termine (stats du groupe).
+      let liveRow = null;
       try {
         const cur = await fetch(
-          `${base}/rest/v1/live_state?id=eq.live&select=song,hearts,concert`,
+          `${base}/rest/v1/live_state?id=eq.live&select=song,hearts,concert,status,session_id`,
           { headers: sbHeaders() },
         );
         const rows = cur.ok ? await cur.json() : [];
         const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
+        liveRow = row;
         const prevTitle = row?.song?.title ?? '';
         const nextTitle = patch.song?.title ?? '';
         const songChanged = 'song' in patch && nextTitle !== prevTitle;
@@ -185,6 +187,7 @@ export default async function handler(req, res) {
                 hearts: row.hearts ?? 0,
                 concert_id: row.concert?.id ?? '',
                 concert_title: row.concert?.title ?? '',
+                session_id: row.session_id ?? null,
                 played_at: new Date().toISOString(),
               }),
             });
@@ -208,6 +211,55 @@ export default async function handler(req, res) {
         if (songChanged) patch.hearts = 0;
       } catch {
         // archivage best-effort : ne bloque jamais le direct
+      }
+
+      // Chantier 2 — cycle de session ON AIR (MESURE seulement, best-effort).
+      // GO LIVE (off → on/pause) ouvre une session ; l'arrêt la clôt et fige
+      // le nombre d'uniques. Ne bloque JAMAIS le direct, n'a aucun effet
+      // visible côté public ni musicien.
+      try {
+        const wasLive = !!liveRow && liveRow.status && liveRow.status !== 'off';
+        if (status !== 'off' && !wasLive) {
+          const artistName =
+            patch.artist?.name || liveRow?.artist?.name || '';
+          const s = await fetch(`${base}/rest/v1/live_sessions`, {
+            method: 'POST',
+            headers: { ...sbHeaders(), prefer: 'return=representation' },
+            body: JSON.stringify({ artist_name: artistName }),
+          });
+          if (s.ok) {
+            const arr = await s.json();
+            const sid = Array.isArray(arr) && arr[0] ? arr[0].id : null;
+            if (sid) patch.session_id = sid;
+          }
+        } else if (status === 'off' && liveRow?.session_id) {
+          let uniques = 0;
+          try {
+            const c = await fetch(
+              `${base}/rest/v1/live_attendance?session_id=eq.${liveRow.session_id}&select=device_id`,
+              { headers: { ...sbHeaders(), prefer: 'count=exact' } },
+            );
+            const range = c.headers.get('content-range') || '';
+            const m = /\/(\d+)$/.exec(range);
+            uniques = m ? parseInt(m[1], 10) : 0;
+          } catch {
+            /* comptage best-effort */
+          }
+          await fetch(
+            `${base}/rest/v1/live_sessions?id=eq.${liveRow.session_id}`,
+            {
+              method: 'PATCH',
+              headers: sbHeaders(),
+              body: JSON.stringify({
+                ended_at: new Date().toISOString(),
+                uniques,
+              }),
+            },
+          );
+          patch.session_id = null;
+        }
+      } catch {
+        // mesure best-effort : ne bloque jamais le direct
       }
       const r = await fetch(`${base}/rest/v1/live_state`, {
         method: 'POST',

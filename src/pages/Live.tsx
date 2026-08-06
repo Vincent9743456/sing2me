@@ -20,6 +20,7 @@ import {
   fetchLiveSetlist,
   LivePublicSong,
   LiveState,
+  pingAttendance,
   sendHearts,
   sendMessage,
 } from '../lib/live';
@@ -557,6 +558,15 @@ export function Live() {
       cancelled = true;
       window.clearInterval(id);
     };
+  }, []);
+
+  // Mesure d'audience (chantier 2) : signale la présence de ce spectateur à
+  // la session en cours pour le comptage des uniques. SANS limite ni blocage,
+  // best-effort, silencieux. Un ping au chargement puis toutes les 90 s.
+  useEffect(() => {
+    void pingAttendance();
+    const id = window.setInterval(() => void pingAttendance(), 90000);
+    return () => window.clearInterval(id);
   }, []);
 
   if (state === null) {

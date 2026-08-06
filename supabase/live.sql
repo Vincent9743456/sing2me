@@ -85,3 +85,39 @@ alter table live_state add column if not exists mode text not null default 'conc
 -- ------------------------------------------------------------
 alter table live_state add column if not exists setlist jsonb;
 alter table live_state add column if not exists setlist_count int not null default 0;
+
+-- ============================================================
+-- Chantier 2 — MESURE D'AUDIENCE (mesure seulement, aucune limite)
+-- Enregistre chaque session ON AIR (artiste, début/fin), le nombre de
+-- spectateurs uniques (identifiant d'appareil ANONYME) et permet de relier
+-- les cœurs par chanson à la session. AUCUN seuil, aucun blocage : ces
+-- données servent uniquement aux statistiques de l'artiste et aux métriques
+-- fondateurs (taux de 2ᵉ session). Ré-exécutable sans risque.
+-- ============================================================
+
+-- Une session ON AIR = un passage « en direct » (GO LIVE → arrêt).
+create table if not exists live_sessions (
+  id uuid primary key default gen_random_uuid(),
+  artist_name text not null default '',
+  started_at timestamptz not null default now(),
+  ended_at timestamptz,
+  uniques int not null default 0
+);
+alter table live_sessions enable row level security;
+
+-- La ligne d'état pointe vers la session en cours (renseignée au GO LIVE).
+alter table live_state add column if not exists session_id uuid;
+
+-- Présence des spectateurs : 1 ligne par (session, appareil anonyme).
+-- Le nombre d'uniques d'une session = nombre de lignes correspondantes.
+create table if not exists live_attendance (
+  session_id uuid not null,
+  device_id text not null,
+  first_seen timestamptz not null default now(),
+  last_seen timestamptz not null default now(),
+  primary key (session_id, device_id)
+);
+alter table live_attendance enable row level security;
+
+-- Relier les cœurs archivés à la session (analyse par concert).
+alter table live_stats add column if not exists session_id uuid;

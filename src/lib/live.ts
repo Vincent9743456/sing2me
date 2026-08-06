@@ -229,6 +229,34 @@ export function heartTotals(stats: LiveStat[]): {
   return { get: (title: string) => map.get(normalizeTitle(title)) };
 }
 
+/** Session ON AIR mesurée (chantier 2) : uniques + horaires. */
+export interface LiveSession {
+  id: string;
+  artist_name: string;
+  started_at: string;
+  ended_at: string | null;
+  uniques: number;
+}
+
+/** Sessions ON AIR de l'artiste (audience mesurée). Best-effort → [].
+ *  MESURE SEULEMENT : ces chiffres n'entraînent aucune limite ni blocage. */
+export async function fetchAudienceSessions(
+  key: string,
+): Promise<LiveSession[]> {
+  if (key.trim() === '') return [];
+  try {
+    const res = await fetch('/api/live-stats', {
+      headers: { 'x-live-key': key },
+    });
+    const type = res.headers.get('content-type') ?? '';
+    if (!type.includes('application/json')) return [];
+    const body = await res.json();
+    return Array.isArray(body.sessions) ? body.sessions : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Statistiques des directs (réservé à l'artiste, clé On Air requise). */
 export async function fetchLiveStats(key: string): Promise<LiveStat[]> {
   let res: Response;
@@ -276,4 +304,47 @@ export async function pushLive(
 /** URL publique du direct, à partager / mettre en QR. */
 export function liveUrl(): string {
   return `${location.origin}${location.pathname}#/live`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Chantier 2 — mesure d'audience (SANS limite ni blocage).            */
+/*  Un identifiant d'appareil ANONYME (aléatoire, local) permet au     */
+/*  serveur de compter les spectateurs uniques d'une session ON AIR.   */
+/*  Aucune donnée personnelle ; jamais utilisé pour restreindre.        */
+/* ------------------------------------------------------------------ */
+
+/** Identifiant anonyme et stable de CE navigateur (localStorage). */
+export function deviceId(): string {
+  const KEY = 'sing2me/deviceId';
+  try {
+    let id = localStorage.getItem(KEY);
+    if (!id) {
+      id =
+        'd' +
+        Math.random().toString(36).slice(2) +
+        Math.random().toString(36).slice(2);
+      localStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch {
+    // Stockage indisponible : id éphémère (comptera comme un nouvel unique).
+    return 'd' + Math.random().toString(36).slice(2);
+  }
+}
+
+/**
+ * Signale la présence du spectateur à la session ON AIR en cours (comptage
+ * des uniques, MESURE SEULEMENT). Best-effort, totalement silencieux et
+ * isolé : n'influence jamais l'affichage du direct.
+ */
+export async function pingAttendance(): Promise<void> {
+  try {
+    await fetch('/api/attend', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ device: deviceId() }),
+    });
+  } catch {
+    // mesure best-effort : ne bloque jamais le spectateur
+  }
 }

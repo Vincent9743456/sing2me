@@ -6,10 +6,12 @@ import { GearEditor } from '../components/GearEditor';
 import { LinkPreviews } from '../components/LinkPreviews';
 import { Field, Modal, TopBar } from '../components/ui';
 import {
+  fetchAudienceSessions,
   fetchLiveStats,
   fetchMessages,
   heartTotals,
   LiveMessage,
+  LiveSession,
   LiveStat,
   messagesBySong,
 } from '../lib/live';
@@ -112,6 +114,7 @@ export function Artist() {
   // ouvre le formulaire complet. Profil vide → « Créer le profil artiste ».
   const [editing, setEditing] = useState(false);
   const [stats, setStats] = useState<LiveStat[] | null>(null);
+  const [sessions, setSessions] = useState<LiveSession[] | null>(null);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [messages, setMessages] = useState<LiveMessage[] | null>(null);
 
@@ -873,7 +876,8 @@ export function Artist() {
 
         <h2 className="pagetitle">Statistiques des directs</h2>
         <p className="help">
-          Les ❤ envoyés par le public, chanson par chanson.
+          Les ❤ envoyés par le public, chanson par chanson, et l'audience de
+          tes concerts (spectateurs uniques).
         </p>
         <button
           className="btn ghost small"
@@ -882,6 +886,7 @@ export function Artist() {
             try {
               setStats(await fetchLiveStats(prefs.liveKey));
               setMessages(await fetchMessages(prefs.liveKey));
+              setSessions(await fetchAudienceSessions(prefs.liveKey));
             } catch (e) {
               setStatsError(
                 e instanceof Error ? e.message : 'Chargement impossible.',
@@ -893,6 +898,42 @@ export function Artist() {
         </button>
         {statsError && (
           <p style={{ color: 'var(--danger)' }}>{statsError}</p>
+        )}
+        {sessions !== null && sessions.length > 0 && (
+          <div className="card" style={{ marginTop: 10 }}>
+            <div className="help" style={{ marginBottom: 8 }}>
+              👥 AUDIENCE DE TES CONCERTS
+            </div>
+            {sessions.map((s) => (
+              <div
+                key={s.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  marginBottom: 6,
+                }}
+              >
+                <span>
+                  {new Date(s.started_at).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}{' '}
+                  {new Date(s.started_at).toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                  {s.ended_at === null && (
+                    <em className="stauthor"> · en cours</em>
+                  )}
+                </span>
+                <strong style={{ whiteSpace: 'nowrap' }}>
+                  {s.uniques} spectateur{s.uniques > 1 ? 's' : ''}
+                </strong>
+              </div>
+            ))}
+          </div>
         )}
         {messages !== null && messages.length > 0 && (
           <div className="card" style={{ marginTop: 10 }}>
