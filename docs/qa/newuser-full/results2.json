@@ -1,0 +1,25 @@
+{
+  "steps": [
+    {
+      "step": "6-setlist",
+      "verdict": "✅",
+      "note": "morceaux ajoutés=2, pli réglages + réserve testés"
+    },
+    {
+      "step": "7-setlist-aperçu",
+      "verdict": "✅",
+      "note": "vue imprimable=true"
+    },
+    {
+      "step": "8-groupe",
+      "verdict": "✅",
+      "note": "page groupe=true, portes=3, 1 musicien"
+    },
+    {
+      "step": "9-messages",
+      "verdict": "✅(UI)",
+      "note": "zone de saisie=1, bouton envoyer=1 — synchro réelle = backend cloud (non joignable ici)"
+    }
+  ],
+  "errors": "none"
+}

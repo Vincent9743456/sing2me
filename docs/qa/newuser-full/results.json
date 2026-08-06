@@ -1,0 +1,70 @@
+{
+  "steps": [
+    {
+      "step": "1-arrivée",
+      "verdict": "✅",
+      "note": "accueil=1, morceaux=2"
+    },
+    {
+      "step": "2-import",
+      "verdict": "✅",
+      "note": "aperçu=1, ouvert sur la fiche=true"
+    },
+    {
+      "step": "3-transposition",
+      "verdict": "✅",
+      "note": "tonalité affichée après +2 = 2 ½t"
+    },
+    {
+      "step": "4-note",
+      "verdict": "✅",
+      "note": "note visible=1 (modal ouverte=3)"
+    },
+    {
+      "step": "5-scène",
+      "verdict": "✅",
+      "note": "mode scène=true"
+    },
+    {
+      "step": "6-setlist",
+      "verdict": "⚠️",
+      "note": "picker=0, morceaux ajoutés=0"
+    },
+    {
+      "step": "7-setlist-aperçu",
+      "verdict": "⚠️",
+      "note": "vue imprimable"
+    },
+    {
+      "step": "8-groupe",
+      "verdict": "⚠️",
+      "note": "créé=true, page groupe=false, portes=0"
+    },
+    {
+      "step": "9-messages",
+      "verdict": "⚠️",
+      "note": "zone de saisie=0 — envoi réel = backend cloud (non joignable ici)"
+    },
+    {
+      "step": "10-concert",
+      "verdict": "✅",
+      "note": "concert enregistré=1"
+    },
+    {
+      "step": "11-onair",
+      "verdict": "✅(UI)",
+      "note": "panneau ouvert=2 — diffusion réelle = backend live (non joignable ici)"
+    },
+    {
+      "step": "12-artiste",
+      "verdict": "✅",
+      "note": "profil créé (nom + bio)"
+    },
+    {
+      "step": "13-partage",
+      "verdict": "❌",
+      "note": "exception: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.list .row').first()"
+    }
+  ],
+  "errors": "none"
+}
