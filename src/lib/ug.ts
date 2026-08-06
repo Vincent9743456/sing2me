@@ -67,7 +67,7 @@ async function readJson(res: Response): Promise<any> {
 export async function searchUgTabs(query: string): Promise<UgSearchResult[]> {
   let res: Response;
   try {
-    res = await fetch(`/api/search-tabs?q=${encodeURIComponent(query)}`);
+    res = await fetch(`/api/tabs?fn=search&q=${encodeURIComponent(query)}`);
   } catch {
     throw new Error(OFFLINE_MSG);
   }
@@ -86,7 +86,7 @@ export async function searchUgTabs(query: string): Promise<UgSearchResult[]> {
 export async function aiCleanText(text: string, hint?: string): Promise<string> {
   let res: Response;
   try {
-    res = await fetch('/api/ai-clean', {
+    res = await fetch('/api/ai?fn=clean', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(hint ? { text, hint } : { text }),
@@ -126,7 +126,7 @@ export async function findSongKey(
 export async function fetchUgTab(url: string): Promise<UgTab> {
   let res: Response;
   try {
-    res = await fetch(`/api/fetch-tab?url=${encodeURIComponent(url)}`);
+    res = await fetch(`/api/tabs?fn=fetch&url=${encodeURIComponent(url)}`);
   } catch {
     throw new Error(
       "Impossible de joindre le serveur d'import. Cette fonction nécessite " +
