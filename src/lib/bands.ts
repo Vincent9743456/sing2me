@@ -405,3 +405,34 @@ export async function deleteCloudBand(
   });
   if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
 }
+
+/**
+ * Nettoie les groupes cloud ORPHELINS : ceux dont je suis propriétaire mais
+ * qui n'existent plus dans mon app (supprimés localement, éventuellement avant
+ * que la suppression cloud n'existe). Les membres les verront alors disparaître
+ * à leur tour. Sûr : `localBands` vient de l'état déjà fusionné avec le cloud,
+ * donc un groupe absent est un groupe réellement supprimé. Best-effort.
+ */
+export async function cleanupOrphanCloudBands(
+  s: AuthSession,
+  localBands: { cloudId?: string }[],
+): Promise<void> {
+  try {
+    const res = await sbAuthed(
+      s,
+      `/rest/v1/cloud_bands?owner=eq.${s.userId}&select=id`,
+    );
+    if (!res.ok) return;
+    const rows = (await res.json()) as { id: string }[];
+    const alive = new Set(
+      localBands.map((b) => b.cloudId).filter((x): x is string => !!x),
+    );
+    for (const row of rows) {
+      if (!alive.has(row.id)) {
+        await deleteCloudBand(s, row.id).catch(() => undefined);
+      }
+    }
+  } catch {
+    // best-effort : réessayé à la prochaine synchro
+  }
+}

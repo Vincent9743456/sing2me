@@ -31,6 +31,7 @@ import {
   takeAuthError,
 } from '../lib/auth';
 import {
+  cleanupOrphanCloudBands,
   clearPendingInvite,
   joinBand,
   peekPendingInvite,
@@ -275,6 +276,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         setStatus('ok');
         // Répertoires de groupes (étape 2b), après la bibliothèque perso
         void syncBands(valid);
+        // Groupes cloud orphelins (supprimés localement, y compris avant que
+        // la propagation n'existe) → dissous pour de bon, les membres voient
+        // le groupe disparaître à leur tour. `merged.bands` fait foi.
+        void cleanupOrphanCloudBands(valid, merged.bands);
         // Annuaire : publie sa fiche (nom + photo) pour être trouvable.
         // À défaut de nom d'artiste, on publie le début de l'email (souvent
         // le prénom) pour qu'un compte tout neuf soit quand même trouvable.
