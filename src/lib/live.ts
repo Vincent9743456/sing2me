@@ -295,7 +295,7 @@ export async function pushLive(
 ): Promise<void> {
   if (key.trim() === '') {
     throw new Error(
-      "Renseigne d'abord ta clé On Air dans l'onglet Artiste (la même que la variable LIVE_KEY sur Vercel).",
+      'Le direct est momentanément indisponible — réessaie dans un instant.',
     );
   }
   let res: Response;

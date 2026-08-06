@@ -450,12 +450,8 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 Suivre le morceau en cours →
               </a>
             </p>
-            {prefs.liveKey.trim() === '' && (
-              <p className="help" style={{ textAlign: 'center' }}>
-                ⚠ Renseigne ta clé On Air dans l'onglet Artiste (identique à la
-                variable LIVE_KEY configurée sur Vercel).
-              </p>
-            )}
+            {/* La clé On Air est fournie automatiquement (embarquée au
+                build) : aucun avertissement technique à montrer ici. */}
           </Modal>
         )}
       </StatusContext.Provider>
@@ -463,11 +459,16 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Bouton flottant, présent sur toutes les pages du musicien. */
+/** Bouton flottant, présent sur toutes les pages du musicien.
+ *  N'apparaît qu'une fois la fiche artiste créée (décision Vincent) : un
+ *  débutant n'a pas à voir le mode direct avant d'avoir posé son nom.
+ *  Exception : un direct déjà actif reste toujours pilotable. */
 export function OnAirButton() {
   const ctx = useContext(StatusContext);
+  const { artist } = useStore();
   if (!ctx) return null;
   const { status, hearts, openPanel } = ctx;
+  if (artist.name.trim() === '' && status === 'off') return null;
   return (
     <button
       className={`onair ${status}`}

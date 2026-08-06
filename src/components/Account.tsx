@@ -484,8 +484,8 @@ export function AccountSection() {
   if (!account.available) {
     return (
       <p className="help">
-        ☁ Synchronisation cloud non configurée — ajoute VITE_SUPABASE_URL et
-        VITE_SUPABASE_ANON_KEY sur Vercel puis redéploie (voir README).
+        ☁ Synchronisation indisponible pour le moment — tes données restent
+        enregistrées sur cet appareil, rien n'est perdu.
       </p>
     );
   }

@@ -262,12 +262,15 @@ export function Artist() {
           <div className="empty">
             Ton profil artiste n'est pas encore créé.
             <br />
-            Ta photo, ta bio et tes liens apparaîtront sur ta page publique
-            (QR).
+            Ta photo, ta bio et tes liens apparaîtront sur ta page publique.
             <div className="spacer" />
             <button className="btn" onClick={() => setEditing(true)}>
               Créer le profil artiste
             </button>
+            <p className="help" style={{ marginTop: 10 }}>
+              Créer ta fiche débloque aussi le mode <strong>ON AIR</strong> :
+              tes concerts en direct, avec paroles pour le public.
+            </p>
           </div>
         )}
 
