@@ -631,6 +631,8 @@ export function Library() {
           pendingCount > 0) && (
           <>
             <div className="spacer" />
+            {/* Rangée 1 — VUES particulières (état des morceaux) :
+                tout / propositions / nouveautés / idées. */}
             <div className="chips filterchips">
               <button
                 className={`chip ${bandFilter === null && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
@@ -671,47 +673,6 @@ export function Library() {
                   ✨ Nouveautés ({newCount})
                 </button>
               )}
-              {bands.length > 0 && (
-                <button
-                  className={`chip ${bandFilter === '' && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
-                  title="Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)"
-                  onClick={() => {
-                    setBandFilter('');
-                    setShowIdeas(false);
-                    setShowNew(false);
-                    setShowPending(false);
-                  }}
-                >
-                  <Icon name="mic" size={12} /> Solo
-                </button>
-              )}
-              {bands.map((b, i) => (
-                <button
-                  key={b.id}
-                  className={`chip ${bandFilter === b.id && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
-                  onClick={() => {
-                    setBandFilter(bandFilter === b.id ? null : b.id);
-                    setShowIdeas(false);
-                    setShowNew(false);
-                    setShowPending(false);
-                  }}
-                >
-                  {/* La couleur du groupe = un point discret, pas une
-                      bordure (l'encadrement signale la sélection). */}
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      display: 'inline-block',
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      background: BAND_COLORS[i % BAND_COLORS.length],
-                      marginRight: 2,
-                    }}
-                  />
-                  {b.name || 'Groupe sans nom'}
-                </button>
-              ))}
               {ideaCount > 0 && (
                 <button
                   className={`chip ${showIdeas ? '' : 'off'}`}
@@ -727,6 +688,58 @@ export function Library() {
                 </button>
               )}
             </div>
+            {/* Rangée 2 — RÉPERTOIRES (identification par groupe / solo) :
+                fonction différente, rendue évidente par le libellé et la
+                rangée séparée. */}
+            {bands.length > 0 && (
+              <div
+                className="chips filterchips"
+                style={{ marginTop: 'var(--sp-2)', alignItems: 'center' }}
+              >
+                <span className="help" style={{ margin: 0 }}>
+                  Répertoires :
+                </span>
+                <button
+                  className={`chip ${bandFilter === '' && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
+                  title="Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)"
+                  onClick={() => {
+                    setBandFilter('');
+                    setShowIdeas(false);
+                    setShowNew(false);
+                    setShowPending(false);
+                  }}
+                >
+                  <Icon name="mic" size={12} /> Solo
+                </button>
+                {bands.map((b, i) => (
+                  <button
+                    key={b.id}
+                    className={`chip ${bandFilter === b.id && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
+                    onClick={() => {
+                      setBandFilter(bandFilter === b.id ? null : b.id);
+                      setShowIdeas(false);
+                      setShowNew(false);
+                      setShowPending(false);
+                    }}
+                  >
+                    {/* La couleur du groupe = un point discret, pas une
+                        bordure (l'encadrement signale la sélection). */}
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        display: 'inline-block',
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: BAND_COLORS[i % BAND_COLORS.length],
+                        marginRight: 2,
+                      }}
+                    />
+                    {b.name || 'Groupe sans nom'}
+                  </button>
+                ))}
+              </div>
+            )}
             {showIdeas && (
               <p className="help" style={{ margin: '6px 0 0' }}>
                 Réserve à travailler : jouables partout, mais pas encore
