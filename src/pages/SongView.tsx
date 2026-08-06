@@ -627,15 +627,6 @@ export function SongView({
                 </div>
               </span>
             )}
-            {realKeyShown !== '' && (
-              <span
-                className="help"
-                style={{ margin: 0, whiteSpace: 'nowrap' }}
-              >
-                🔊 sonne en{' '}
-                <strong style={{ color: 'var(--text)' }}>{realKeyShown}</strong>
-              </span>
-            )}
             {/* Une seule fonction « musicien » : afficher les accords à jouer
                 sans capo (pratique pour la basse / la tonalité réelle). */}
             <button
@@ -658,13 +649,6 @@ export function SongView({
               </button>
             )}
           </div>
-        )}
-
-        {view === 'complete' && !displayReal && capo > 0 && realKeyShown !== '' && (
-          <p className="help" style={{ marginTop: -8 }}>
-            🎸 Capo {capo} : tu joues des formes de {shownShapeKey} — ça sonne
-            en {realKeyShown}.
-          </p>
         )}
 
         <SongBody

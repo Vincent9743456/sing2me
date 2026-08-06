@@ -1343,12 +1343,6 @@ function SongPreview({
               </button>
             </div>
           </span>
-          {realKeyShown !== '' && (
-            <span className="help" style={{ margin: 0, whiteSpace: 'nowrap' }}>
-              🔊 sonne en{' '}
-              <strong style={{ color: 'var(--text)' }}>{realKeyShown}</strong>
-            </span>
-          )}
           {(shift !== 0 || viewCapo !== song.capo) && (
             <button
               className="btn ghost small"
