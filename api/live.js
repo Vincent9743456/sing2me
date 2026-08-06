@@ -63,10 +63,18 @@ export default async function handler(req, res) {
         });
         return;
       }
-      const r = await fetch(
+      let r = await fetch(
         `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at,band_id,started_by`,
         { headers: sbHeaders() },
       );
+      // Repli si les colonnes band_id/started_by n'existent pas encore
+      // (migration supabase/live.sql pas rejouée) : ne jamais casser l'état.
+      if (r.status === 400) {
+        r = await fetch(
+          `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at`,
+          { headers: sbHeaders() },
+        );
+      }
       if (!r.ok) {
         res.status(502).json({ error: `Supabase a répondu ${r.status}` });
         return;
@@ -295,11 +303,24 @@ export default async function handler(req, res) {
           // purge best-effort
         }
       }
-      const r = await fetch(`${base}/rest/v1/live_state`, {
+      let r = await fetch(`${base}/rest/v1/live_state`, {
         method: 'POST',
         headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
         body: JSON.stringify(patch),
       });
+      // Repli si band_id/started_by n'existent pas encore côté base
+      // (migration pas rejouée) : on réécrit sans ces colonnes plutôt que
+      // de couper le direct. « Jamais de coupure en plein concert. »
+      if (r.status === 400 && ('band_id' in patch || 'started_by' in patch)) {
+        const { band_id, started_by, ...safe } = patch;
+        void band_id;
+        void started_by;
+        r = await fetch(`${base}/rest/v1/live_state`, {
+          method: 'POST',
+          headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
+          body: JSON.stringify(safe),
+        });
+      }
       if (!r.ok) {
         res.status(502).json({ error: `Supabase a répondu ${r.status}` });
         return;
