@@ -127,6 +127,7 @@ export function BandEdit({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [headerMenu, setHeaderMenu] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [pendingName, setPendingName] = useState('');
   const [confirmDel, setConfirmDel] = useState(false);
   const [lastMsg, setLastMsg] = useState<{ text: string; at: string } | null>(
     null,
@@ -1002,8 +1003,61 @@ export function BandEdit({ id }: { id: string }) {
                   ⏳ En attente d'acceptation
                 </div>
               </div>
+              {isOwner && (
+                <button
+                  className="btn ghost small"
+                  style={{ color: 'var(--danger)' }}
+                  title="Annuler cette invitation"
+                  onClick={() =>
+                    update({
+                      members: band.members.filter((x) => x.id !== m.id),
+                    })
+                  }
+                >
+                  <Icon name="x" size={14} />
+                </button>
+              )}
             </div>
           ))}
+          {isOwner && (
+            <>
+              <div className="spacer" />
+              <p className="help" style={{ marginTop: 0 }}>
+                Tu as envoyé le lien d'invitation à quelqu'un ? Note son prénom
+                pour le suivre « en attente » jusqu'à ce qu'il rejoigne.
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  value={pendingName}
+                  placeholder="Prénom de l'invité·e"
+                  onChange={(e) => setPendingName(e.target.value)}
+                />
+                <button
+                  className="btn"
+                  style={{ flexShrink: 0 }}
+                  disabled={pendingName.trim() === ''}
+                  onClick={() => {
+                    saveBand({
+                      ...band,
+                      members: [
+                        ...band.members,
+                        {
+                          id: makeId(),
+                          name: pendingName.trim(),
+                          instrument: '',
+                          pending: true,
+                        },
+                      ],
+                    });
+                    setPendingName('');
+                  }}
+                >
+                  Ajouter en attente
+                </button>
+              </div>
+            </>
+          )}
         </Modal>
       )}
       {headerMenu && (
