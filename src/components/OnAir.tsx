@@ -256,6 +256,10 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     setBusy(true);
     setError(null);
     try {
+      // Portée « mon groupe » : on tague le direct avec le cloudId du groupe
+      // qui joue (vide en solo → n'apparaît chez aucun autre membre) et le nom
+      // de la personne qui lance (affiché dans la bannière des membres).
+      const liveBand = who === 'solo' ? null : bands.find((x) => x.id === who);
       await pushLive(prefs.liveKey, {
         status: next,
         mode,
@@ -263,6 +267,8 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         bandSong: next === 'off' ? null : lastMetaRef.current,
         setlist: next === 'off' ? null : setlistRef.current,
         artist: performer,
+        bandId: next === 'off' ? '' : (liveBand?.cloudId ?? ''),
+        startedBy: next === 'off' ? '' : artist.name,
         concert:
           next === 'off'
             ? null

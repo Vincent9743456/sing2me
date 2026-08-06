@@ -24,6 +24,11 @@ import {
   sendHearts,
   sendMessage,
 } from '../lib/live';
+import {
+  followArtist,
+  fetchSouvenir,
+  Souvenir,
+} from '../lib/fanbase';
 import { decodeHtmlEntities, repairChordedLyrics } from '../lib/textRepair';
 import { useWakeLock } from '../lib/wakelock';
 import { defaultPublicScreen } from '../types';
@@ -265,9 +270,9 @@ function MessageBox({ songTitle = '' }: { songTitle?: string }) {
   );
 }
 
-function FollowButton({ state }: { state: LiveState }) {
-  const artistName = state.artist?.name ?? '';
-  const [following, setFollowing] = useState(() => {
+function FollowButton({ artistName }: { artistName: string }) {
+  const [open, setOpen] = useState(false);
+  const [followed, setFollowed] = useState(() => {
     if (artistName === '') return false;
     try {
       const list = JSON.parse(
@@ -278,32 +283,125 @@ function FollowButton({ state }: { state: LiveState }) {
       return false;
     }
   });
+  const [email, setEmail] = useState(
+    () => localStorage.getItem('sing2me/fanEmail') ?? '',
+  );
+  const [consent, setConsent] = useState(false);
+  const [share, setShare] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   if (artistName === '') return null;
+
+  function rememberLocal() {
+    try {
+      const list = JSON.parse(
+        localStorage.getItem('sing2me/following') ?? '[]',
+      ) as string[];
+      if (!list.includes(artistName)) {
+        localStorage.setItem(
+          'sing2me/following',
+          JSON.stringify([...list, artistName]),
+        );
+      }
+    } catch {
+      /* stockage indisponible */
+    }
+  }
+
+  async function submit() {
+    if (busy || !consent || !email.includes('@')) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await followArtist(artistName, email.trim(), share);
+      localStorage.setItem('sing2me/fanEmail', email.trim());
+      rememberLocal();
+      setFollowed(true);
+      setOpen(false);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'Le suivi a échoué — réessaie.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (followed) {
+    return (
+      <div style={{ textAlign: 'center', margin: '14px 0' }}>
+        <button className="btn ghost" disabled>
+          ✓ Tu suis {artistName}
+        </button>
+        <p className="help" style={{ marginTop: 6 }}>
+          Tu seras prévenu(e) de ses prochains concerts.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ textAlign: 'center', margin: '14px 0' }}>
-      <button
-        className={`btn ${following ? 'ghost' : ''}`}
-        onClick={() => {
-          try {
-            const list = JSON.parse(
-              localStorage.getItem('sing2me/following') ?? '[]',
-            ) as string[];
-            const next = following
-              ? list.filter((n) => n !== artistName)
-              : [...list, artistName];
-            localStorage.setItem('sing2me/following', JSON.stringify(next));
-            setFollowing(!following);
-          } catch {
-            // stockage indisponible
-          }
-        }}
-      >
-        {following ? '✓ Suivi' : `⭐ Suivre ${artistName}`}
-      </button>
-      <p className="help" style={{ marginTop: 6 }}>
-        Mémorisé sur cet appareil. Les alertes de nouveaux concerts arriveront
-        avec les comptes fans.
-      </p>
+    <div style={{ margin: '14px 0' }}>
+      {!open ? (
+        <div style={{ textAlign: 'center' }}>
+          <button className="btn" onClick={() => setOpen(true)}>
+            ⭐ Suivre {artistName}
+          </button>
+        </div>
+      ) : (
+        <div className="card">
+          <div className="label" style={{ marginBottom: 6 }}>
+            ⭐ Suivre {artistName}
+          </div>
+          <input
+            type="email"
+            value={email}
+            placeholder="Ton email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            style={{ marginBottom: 8 }}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <label
+            style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}
+          >
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              style={{ width: 'auto', marginTop: 3 }}
+            />
+            <span className="help" style={{ margin: 0 }}>
+              Je souhaite recevoir les actualités de {artistName} (prochains
+              concerts). Désabonnement possible à tout moment.
+            </span>
+          </label>
+          <label
+            style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}
+          >
+            <input
+              type="checkbox"
+              checked={share}
+              onChange={(e) => setShare(e.target.checked)}
+              style={{ width: 'auto', marginTop: 3 }}
+            />
+            <span className="help" style={{ margin: 0 }}>
+              Partager mon email avec {artistName} (facultatif).
+            </span>
+          </label>
+          <button
+            className="btn block"
+            disabled={busy || !consent || !email.includes('@')}
+            onClick={() => void submit()}
+          >
+            {busy ? '…' : 'Suivre'}
+          </button>
+          {error && (
+            <p style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -490,6 +588,8 @@ export function Live() {
   );
   const [browseIdx, setBrowseIdx] = useState<number | null>(null);
   const [souvenir, setSouvenir] = useState(false);
+  // Setlist souvenir (fanbase V1) : morceaux du dernier concert terminé.
+  const [souvenirData, setSouvenirData] = useState<Souvenir | null>(null);
   const lastTitle = useRef('');
   // Nombre de morceaux de la dernière setlist préchargée (re-précharge si change).
   const lastSetlistCount = useRef(-1);
@@ -567,6 +667,18 @@ export function Live() {
     void pingAttendance();
     const id = window.setInterval(() => void pingAttendance(), 90000);
     return () => window.clearInterval(id);
+  }, []);
+
+  // Setlist souvenir : chargée une fois (le dernier concert terminé).
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const s = await fetchSouvenir();
+      if (!cancelled) setSouvenirData(s);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (state === null) {
@@ -720,15 +832,65 @@ export function Live() {
         </>
       ) : (
         <>
+          {/* Setlist souvenir (fanbase V1) : le dernier concert terminé —
+              titres/artistes seulement, aucune parole. Transforme le concert
+              en fanbase (revoir les morceaux + suivre l'artiste). */}
+          {souvenirData && souvenirData.songs.length > 0 && (
+            <div className="card">
+              <div className="label" style={{ marginBottom: 6 }}>
+                🎶 Souvenir du concert
+                {souvenirData.session?.artist
+                  ? ` — ${souvenirData.session.artist}`
+                  : ''}
+              </div>
+              <p className="help" style={{ marginTop: 0 }}>
+                Les morceaux joués — pour les réécouter et t'en souvenir.
+              </p>
+              {souvenirData.songs.map((s, i) => (
+                <div
+                  key={i}
+                  className="remoterow"
+                  style={{ cursor: 'default' }}
+                >
+                  <span className="num">{i + 1}</span>
+                  <span className="grow" style={{ minWidth: 0 }}>
+                    <span className="rtitle">{s.title || '(sans titre)'}</span>
+                    {s.artist !== '' && <span className="rsub">{s.artist}</span>}
+                  </span>
+                  <span style={{ display: 'flex', gap: 6 }}>
+                    {streamLinks(s.title, s.artist).map((l) => (
+                      <a
+                        key={l.name}
+                        href={l.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn ghost small"
+                        title={`Chercher sur ${l.name}`}
+                      >
+                        {l.name[0]}
+                      </a>
+                    ))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           {ps.profile && <ArtistBlock state={state} showLinks={ps.links} />}
-          {ps.follow && <FollowButton state={state} />}
+          {ps.follow && (
+            <FollowButton
+              artistName={
+                state.artist?.name || souvenirData?.session?.artist || ''
+              }
+            />
+          )}
           {ps.tips && <TipBox artist={state.artist} />}
           {ps.messages && <MessageBox />}
-          {(!state.artist || state.artist.name === '') && (
-            <p className="help" style={{ textAlign: 'center' }}>
-              Aucun concert en cours.
-            </p>
-          )}
+          {(!state.artist || state.artist.name === '') &&
+            !(souvenirData && souvenirData.songs.length > 0) && (
+              <p className="help" style={{ textAlign: 'center' }}>
+                Aucun concert en cours.
+              </p>
+            )}
         </>
       )}
       {browseOpen &&

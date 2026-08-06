@@ -51,6 +51,11 @@ export interface LiveState {
   /** Nombre de morceaux dans la setlist diffusée (0 = aucune). */
   setlistCount: number;
   updatedAt: string | null;
+  /** cloudId du groupe qui joue ('' = solo / non rattaché à un groupe
+   *  partagé). Permet aux membres de ne voir QUE le live de LEUR groupe. */
+  bandId: string;
+  /** Nom de la personne qui a lancé le direct (affiché aux membres). */
+  startedBy: string;
 }
 
 export interface LiveStat {
@@ -105,6 +110,8 @@ export async function fetchLive(): Promise<LiveState> {
     bandSong: body.bandSong ?? null,
     setlistCount: typeof body.setlistCount === 'number' ? body.setlistCount : 0,
     updatedAt: body.updatedAt ?? null,
+    bandId: typeof body.bandId === 'string' ? body.bandId : '',
+    startedBy: typeof body.startedBy === 'string' ? body.startedBy : '',
   };
 }
 
@@ -280,6 +287,10 @@ export async function pushLive(
     concert?: LiveConcertRef | null;
     bandSong?: BandSong | null;
     setlist?: LivePublicSong[] | null;
+    /** cloudId du groupe qui joue ('' = solo). */
+    bandId?: string;
+    /** Nom de la personne qui lance le direct. */
+    startedBy?: string;
   },
 ): Promise<void> {
   if (key.trim() === '') {

@@ -64,7 +64,7 @@ export default async function handler(req, res) {
         return;
       }
       const r = await fetch(
-        `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at`,
+        `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at,band_id,started_by`,
         { headers: sbHeaders() },
       );
       if (!r.ok) {
@@ -84,6 +84,9 @@ export default async function handler(req, res) {
         setlistCount:
           typeof row.setlist_count === 'number' ? row.setlist_count : 0,
         updatedAt: row.updated_at ?? null,
+        // Portée « mon groupe » + qui a lancé le direct.
+        bandId: typeof row.band_id === 'string' ? row.band_id : '',
+        startedBy: typeof row.started_by === 'string' ? row.started_by : '',
       });
       return;
     }
@@ -154,6 +157,8 @@ export default async function handler(req, res) {
         patch.setlist_count = 0;
         patch.song = null;
         patch.band_song = null;
+        patch.band_id = '';
+        patch.started_by = '';
       }
       if (req.body?.mode === 'repet' || req.body?.mode === 'concert') {
         patch.mode = req.body.mode;
@@ -165,6 +170,16 @@ export default async function handler(req, res) {
       }
       if ('song' in (req.body ?? {})) patch.song = req.body.song ?? null;
       if ('artist' in (req.body ?? {})) patch.artist = req.body.artist ?? null;
+      if (status !== 'off' && 'bandId' in (req.body ?? {})) {
+        patch.band_id =
+          typeof req.body.bandId === 'string' ? req.body.bandId.slice(0, 200) : '';
+      }
+      if (status !== 'off' && 'startedBy' in (req.body ?? {})) {
+        patch.started_by =
+          typeof req.body.startedBy === 'string'
+            ? req.body.startedBy.slice(0, 120)
+            : '';
+      }
       if ('bandSong' in (req.body ?? {})) patch.band_song = req.body.bandSong ?? null;
       if ('concert' in (req.body ?? {})) patch.concert = req.body.concert ?? null;
 
@@ -182,34 +197,34 @@ export default async function handler(req, res) {
         const nextTitle = patch.song?.title ?? '';
         const songChanged = 'song' in patch && nextTitle !== prevTitle;
         if (row && prevTitle !== '' && (songChanged || status === 'off')) {
-          if ((row.hearts ?? 0) > 0) {
-            let ins = await fetch(`${base}/rest/v1/live_stats`, {
+          // On archive CHAQUE morceau joué (même 0 cœur) : c'est le registre
+          // de la « setlist souvenir » (titres/artistes, aucune parole).
+          let ins = await fetch(`${base}/rest/v1/live_stats`, {
+            method: 'POST',
+            headers: sbHeaders(),
+            body: JSON.stringify({
+              song_title: prevTitle,
+              song_artist: row.song?.artist ?? '',
+              hearts: row.hearts ?? 0,
+              concert_id: row.concert?.id ?? '',
+              concert_title: row.concert?.title ?? '',
+              session_id: row.session_id ?? null,
+              played_at: new Date().toISOString(),
+            }),
+          });
+          // Repli si colonnes de contexte absentes (migration pas à jour) :
+          // on archive au moins le morceau et ses cœurs.
+          if (ins.status === 400) {
+            ins = await fetch(`${base}/rest/v1/live_stats`, {
               method: 'POST',
               headers: sbHeaders(),
               body: JSON.stringify({
                 song_title: prevTitle,
                 song_artist: row.song?.artist ?? '',
                 hearts: row.hearts ?? 0,
-                concert_id: row.concert?.id ?? '',
-                concert_title: row.concert?.title ?? '',
-                session_id: row.session_id ?? null,
                 played_at: new Date().toISOString(),
               }),
             });
-            // Repli si colonnes de contexte absentes (migration pas à jour) :
-            // on archive au moins le morceau et ses cœurs.
-            if (ins.status === 400) {
-              ins = await fetch(`${base}/rest/v1/live_stats`, {
-                method: 'POST',
-                headers: sbHeaders(),
-                body: JSON.stringify({
-                  song_title: prevTitle,
-                  song_artist: row.song?.artist ?? '',
-                  hearts: row.hearts ?? 0,
-                  played_at: new Date().toISOString(),
-                }),
-              });
-            }
           }
           patch.hearts = 0;
         }

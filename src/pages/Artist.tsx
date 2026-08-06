@@ -15,6 +15,7 @@ import {
   LiveStat,
   messagesBySong,
 } from '../lib/live';
+import { fetchFollowerStats, FollowerStats } from '../lib/fanbase';
 import { stripChords } from '../lib/chordpro';
 import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
@@ -116,6 +117,7 @@ export function Artist() {
   const [editing, setEditing] = useState(false);
   const [stats, setStats] = useState<LiveStat[] | null>(null);
   const [sessions, setSessions] = useState<LiveSession[] | null>(null);
+  const [followers, setFollowers] = useState<FollowerStats | null>(null);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [messages, setMessages] = useState<LiveMessage[] | null>(null);
 
@@ -892,6 +894,9 @@ export function Artist() {
               setStats(await fetchLiveStats(prefs.liveKey));
               setMessages(await fetchMessages(prefs.liveKey));
               setSessions(await fetchAudienceSessions(prefs.liveKey));
+              setFollowers(
+                await fetchFollowerStats(prefs.liveKey, artist.name),
+              );
             } catch (e) {
               setStatsError(
                 e instanceof Error ? e.message : 'Chargement impossible.',
@@ -903,6 +908,26 @@ export function Artist() {
         </button>
         {statsError && (
           <p style={{ color: 'var(--danger)' }}>{statsError}</p>
+        )}
+        {followers !== null && (
+          <div className="card" style={{ marginTop: 10 }}>
+            <div className="help" style={{ marginBottom: 4 }}>
+              ⭐ TA FANBASE
+            </div>
+            <div style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+              {followers.count} suiveur{followers.count > 1 ? 's' : ''}
+            </div>
+            {followers.sharedEmails.length > 0 && (
+              <>
+                <p className="help" style={{ marginTop: 8, marginBottom: 4 }}>
+                  Emails partagés avec toi ({followers.sharedEmails.length}) :
+                </p>
+                <div className="help" style={{ wordBreak: 'break-all' }}>
+                  {followers.sharedEmails.join(', ')}
+                </div>
+              </>
+            )}
+          </div>
         )}
         {sessions !== null && sessions.length > 0 && (
           <div className="card" style={{ marginTop: 10 }}>

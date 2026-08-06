@@ -121,3 +121,11 @@ alter table live_attendance enable row level security;
 
 -- Relier les cœurs archivés à la session (analyse par concert).
 alter table live_stats add column if not exists session_id uuid;
+
+-- Identité du live (portée « mon groupe » côté membres).
+--  band_id    : cloudId du groupe qui joue ('' = solo / non rattaché à un
+--               groupe partagé → n'apparaît chez aucun autre membre).
+--  started_by : nom de la personne qui a lancé le direct (affiché dans la
+--               bannière « Concert en cours » chez les membres du groupe).
+alter table live_state add column if not exists band_id text not null default '';
+alter table live_state add column if not exists started_by text not null default '';
