@@ -5,23 +5,19 @@ import { useOnAirSetlist, useOnAirSong } from '../components/OnAir';
 import { LivePublicSong } from '../lib/live';
 import { NoteModal } from '../components/NoteModal';
 import { Icon } from '../components/Icon';
-import { ShareModal } from '../components/ShareModal';
 import { SongBody } from '../components/SongBody';
 import { Empty, Field, Modal, TopBar } from '../components/ui';
 import {
   semitonesBetween,
   spellingForKey,
-  transposeContent,
   transposeKeyName,
 } from '../lib/chords';
 import {
   activeVersion,
   duplicateVersion,
   notesForBand,
-  notesForShare,
   removeVersion,
   switchVersion,
-  transposeChordSequence,
   versionForBand,
 } from '../lib/model';
 import { stripChords } from '../lib/chordpro';
@@ -36,7 +32,6 @@ import {
   emptySetlist,
   formatDuration,
   makeId,
-  SharePayload,
   Setlist,
   Song,
   SongNote,
@@ -146,7 +141,6 @@ export function SongView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shift, capo]);
   const [fontSize, setFontSize] = useState(1);
-  const [share, setShare] = useState<'groupe' | 'public' | null>(null);
   // null = fermé · 'new' = nouvelle note · sinon la note à modifier
   const [noteModal, setNoteModal] = useState<'new' | SongNote | null>(null);
   const [ugUpgrade, setUgUpgrade] = useState(false);
@@ -239,40 +233,6 @@ export function SongView({
   );
   useOnAirSetlist(publicSetlist);
 
-  const payload = useMemo<SharePayload | null>(() => {
-    if (!song || share === null) return null;
-    const kind = share === 'groupe' ? 'groupe' : 'public';
-    const bandId = activeVersion(song).bandId;
-    // On partage en tonalité RÉELLE (ce qui sonne), sans capo : la partition
-    // reçue est autonome, chacun remettra le capo qu'il veut.
-    const realShift = shift + capo;
-    const preferFlatReal = spellingForKey(realKeyShown);
-    const baked: Song = {
-      ...song,
-      key: realKeyShown !== '' ? realKeyShown : song.key,
-      capo: 0,
-      lyrics: transposeContent(song.lyrics, realShift, preferFlatReal),
-      structure: song.structure.map((r) => ({
-        ...r,
-        chords: transposeChordSequence(r.chords, realShift, preferFlatReal),
-        comment: share === 'groupe' ? r.comment : '',
-      })),
-      versions: [],
-      mySetup: undefined,
-      idea: undefined,
-      noSolo: undefined,
-      rehearsalNotes: notesForShare(
-        notesForBand(song.rehearsalNotes, bandId),
-        kind,
-      ),
-    };
-    return {
-      v: 1,
-      type: 'song',
-      view: share === 'groupe' ? 'complete' : 'paroles',
-      song: baked,
-    };
-  }, [song, share, shift, capo, realKeyShown]);
 
   if (!song) {
     return (
@@ -865,19 +825,10 @@ export function SongView({
           </p>
         </details>
 
-        <div className="rowactions">
-          <button className="btn ghost" onClick={() => setShare('groupe')}>
-            <Icon name="users" size={15} /> Partager au groupe
-          </button>
-          <button className="btn ghost" onClick={() => setShare('public')}>
-            <Icon name="mic" size={15} /> Partager au public
-          </button>
-        </div>
-        <p className="help">
-          Le partage « groupe » inclut accords, structure et notes partagées
-          (jamais les notes 🔒 personnelles) ; le partage « public » ne montre
-          que les paroles.
-        </p>
+        {/* Décision produit (Vincent, août 2026) : une chanson ne circule
+            QUE de deux façons — poussée dans le répertoire d'un groupe
+            (« Ajouter à… », synchro auto) ou diffusée par QR en mode ON AIR.
+            Aucun envoi de copie par lien depuis la fiche morceau. */}
 
         <div className="spacer" />
         <button
@@ -1012,18 +963,6 @@ export function SongView({
                     ),
             })
           }
-        />
-      )}
-
-      {share !== null && payload && (
-        <ShareModal
-          title={
-            share === 'groupe'
-              ? `Partage groupe — ${song.title}`
-              : `Partage public — ${song.title}`
-          }
-          payload={payload}
-          onClose={() => setShare(null)}
         />
       )}
     </>
