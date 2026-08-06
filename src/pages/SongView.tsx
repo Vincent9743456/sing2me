@@ -140,7 +140,6 @@ export function SongView({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shift, capo]);
-  const [fontSize, setFontSize] = useState(1);
   // null = fermé · 'new' = nouvelle note · sinon la note à modifier
   const [noteModal, setNoteModal] = useState<'new' | SongNote | null>(null);
   const [ugUpgrade, setUgUpgrade] = useState(false);
@@ -407,6 +406,17 @@ export function SongView({
               ❤ {song.hearts}
             </span>
           )}
+          {/* En haut de page (demande Vincent) : proposer une meilleure
+              partition dès l'arrivée sur le morceau. */}
+          {!isBandVersion && song.versions.length < 2 && (
+            <button
+              className="btn ai small"
+              title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
+              onClick={() => setUgUpgrade(true)}
+            >
+              ★ Meilleure version ?
+            </button>
+          )}
         </div>
 
         {/* Bandeau de version : dit toujours CE QUE tu consultes et si c'est
@@ -590,26 +600,12 @@ export function SongView({
           semitones={displayShift}
           capo={0}
           preferFlat={preferFlat}
-          fontSize={fontSize}
+          fontSize={1}
         />
 
-        <div className="rowactions">
-          <button className="btn" onClick={() => navigate(`/stage/song/${song.id}`)}>
-            <Icon name="play" size={14} /> Scène
-          </button>
-          <button
-            className="btn ghost"
-            onClick={() => setFontSize((f) => Math.max(0.8, +(f - 0.1).toFixed(2)))}
-          >
-            A−
-          </button>
-          <button
-            className="btn ghost"
-            onClick={() => setFontSize((f) => Math.min(1.8, +(f + 0.1).toFixed(2)))}
-          >
-            A＋
-          </button>
-        </div>
+        {/* Pas de rangée Scène / A− / A+ ici (décision Vincent) : « Scène »
+            est déjà dans l'en-tête, et la taille du texte se règle en mode
+            scène, là où on en a besoin. */}
 
         {/* Sous la partition (la lecture d'abord) : appartenances (où le
             morceau EST) + accès versions pour un morceau simple. */}
@@ -662,16 +658,10 @@ export function SongView({
         </div>
 
         {/* Morceau simple (1 seule version perso) : accès discret sans jamais
-            afficher la notion de version tant qu'il n'y en a qu'une. */}
+            afficher la notion de version tant qu'il n'y en a qu'une.
+            (« Meilleure version ? » est en haut de page — demande Vincent.) */}
         {!isBandVersion && song.versions.length < 2 && (
           <div className="versionbar">
-            <button
-              className="btn ai small"
-              title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
-              onClick={() => setUgUpgrade(true)}
-            >
-              ★ Meilleure version ?
-            </button>
             <button
               className="btn ghost small"
               title="Créer une variante (arrangement acoustique, autre tonalité…)"
