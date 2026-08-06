@@ -402,6 +402,67 @@ montrait ses limites.)
 
 ---
 
+## 📊 Métriques fondateurs (chantier 5)
+
+> Requêtes SQL à lancer dans **Supabase → SQL Editor**. Pas d'interface :
+> ces chiffres sont pour Vincent + Marco. Les données viennent des sessions
+> ON AIR enregistrées par le chantier 2 (`supabase/live.sql` doit être
+> exécuté). **Mesure seulement — aucun seuil, aucune limite.**
+
+### Taux de « deuxième session » ON AIR
+
+Combien d'artistes ont lancé ≥ 1 puis ≥ 2 concerts, et en combien de temps
+(clé = nom d'artiste enregistré sur la session) :
+
+```sql
+-- Récapitulatif : artistes avec ≥1 et ≥2 sessions
+with s as (
+  select artist_name,
+         count(*)                              as sessions,
+         min(started_at)                       as first_at,
+         (array_agg(started_at order by started_at))[2] as second_at
+  from live_sessions
+  where coalesce(artist_name, '') <> ''
+  group by artist_name
+)
+select
+  count(*)                                   as artistes_1_session,
+  count(*) filter (where sessions >= 2)      as artistes_2_sessions,
+  round(100.0 * count(*) filter (where sessions >= 2) / nullif(count(*),0), 1)
+                                             as taux_2e_session_pct,
+  -- délai médian entre la 1ʳᵉ et la 2ᵉ session
+  percentile_cont(0.5) within group (
+    order by extract(epoch from (second_at - first_at)) / 86400.0
+  ) filter (where second_at is not null)     as delai_median_jours
+from s;
+```
+
+Détail par artiste (audience cumulée, nb de sessions) :
+
+```sql
+select artist_name,
+       count(*)          as sessions,
+       min(started_at)   as premiere,
+       max(started_at)   as derniere,
+       sum(uniques)      as uniques_cumules
+from live_sessions
+group by artist_name
+order by sessions desc, derniere desc;
+```
+
+### Entonnoir d'onboarding — état actuel
+
+⚠️ **À ce jour, l'entonnoir d'onboarding N'EST PAS alimenté en production.**
+Les horodatages de la checklist de démarrage (`sing2me/onb/steps`) sont
+écrits **uniquement en localStorage** (côté navigateur) — ils ne sont jamais
+envoyés au cloud, donc **non interrogeables** côté Supabase. Il n'y a donc
+pas encore de requête possible pour le taux de complétion des étapes.
+
+Pour rendre l'entonnoir mesurable, il faudrait synchroniser ces horodatages
+vers le cloud (table dédiée, ou champ du profil synchronisé). **Décision
+produit à cadrer** avant implémentation (RGPD : ce sont des données de
+comportement rattachées à un compte).
+
 ## 🛠 Commandes utiles
 
 | Commande            | Effet                                |
