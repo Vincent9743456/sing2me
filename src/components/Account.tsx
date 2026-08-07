@@ -522,7 +522,7 @@ export function AccountSection() {
         <strong>Connecte-toi ou crée ton compte (gratuit)</strong> — c'est le
         même champ : entre ton email, le lien reçu te connecte (et crée le
         compte s'il n'existe pas encore). Ta bibliothèque te suit ensuite sur
-        tous tes appareils. Sans compte, tout reste utilisable ici.
+        tous tes appareils.
       </p>
       {sent ? (
         <div>

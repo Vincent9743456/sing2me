@@ -143,6 +143,12 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 
 - Local-first : localStorage est la source ; le cloud est une copie.
   Jamais de fonctionnalité qui exige le réseau pour jouer.
+- **Compte obligatoire (décision Vincent, b120)** : sans session locale,
+  l'app musicien n'affiche qu'un portail de connexion épuré (Welcome).
+  Le test est LOCAL (session en localStorage) — un compte déjà connecté
+  ouvre l'app même en mode avion ; les pages publiques (/live, /nom,
+  /s/…, CGU, signalement) ne sont jamais bloquées ; si l'auth n'est pas
+  configurée (déploiement sans cloud), pas de portail.
 - Variables Vite : accès statique uniquement
   (`import.meta.env.VITE_X`) — jamais d'accès dynamique.
 - Supabase côté client : clé anon + RLS uniquement ; service_role
