@@ -156,6 +156,11 @@ export function BandEdit({ id }: { id: string }) {
   const [reinvited, setReinvited] = useState<Set<string>>(new Set());
   // Musiciens partis de CE groupe, à réinviter (b142).
   const [departures, setDepartures] = useState<BandDeparture[]>([]);
+  // Retrait d'un membre par le créateur (b143) — confirmé, jamais brutal.
+  const [removeMember, setRemoveMember] = useState<{
+    userId: string;
+    name: string;
+  } | null>(null);
 
   // Membres réels (comptes) du groupe publié
   useEffect(() => {
@@ -784,34 +789,6 @@ export function BandEdit({ id }: { id: string }) {
                     <span className="stauthor"> · {m.instrument}</span>
                   )}
                 </span>
-                {/* Renvoyer l'invitation (b140) : un musicien qui a
-                    réinitialisé son application a perdu le groupe de son
-                    côté, alors qu'il est toujours inscrit ici. Ce geste
-                    régénère sa demande — elle l'attend dans son onglet
-                    Groupes. */}
-                <button
-                  className="btn ghost small"
-                  title="Renvoyer l'invitation (s'il a perdu le groupe)"
-                  disabled={reinvited.has(m.user_id)}
-                  onClick={() => {
-                    const cid = band.cloudId;
-                    if (!cid) return;
-                    void (async () => {
-                      try {
-                        const s = await getValidSession();
-                        if (!s) return;
-                        await inviteToBand(s, cid, m.user_id);
-                        setReinvited((prev) =>
-                          new Set(prev).add(m.user_id),
-                        );
-                      } catch {
-                        /* silencieux : le bouton reste disponible */
-                      }
-                    })();
-                  }}
-                >
-                  {reinvited.has(m.user_id) ? '✓ Envoyée' : '↻ Réinviter'}
-                </button>
                 <button
                   className="btn ghost small"
                   style={{ color: 'var(--danger)' }}
@@ -842,7 +819,10 @@ export function BandEdit({ id }: { id: string }) {
             <p className="help">Autres musiciens (saisis à la main) :</p>
           </>
         )}
-        {band.members.map((m) => (
+        {/* Musiciens saisis à la main, SANS ceux qui ont déjà un compte
+            dans la liste au-dessus (b143) : « Dam » invité et « Dam »
+            connecté sont la même personne. */}
+        {manualMembers.map((m) => (
           <div key={m.id} style={{ marginBottom: 10 }}>
           {m.pending === true ? (
             <div className="pendingmember">
@@ -1146,6 +1126,44 @@ export function BandEdit({ id }: { id: string }) {
         />
       )}
       {/* « ⋯ » de l'en-tête : tout l'avancé du groupe. */}
+      {removeMember && (
+        <ConfirmSheet
+          title={`Retirer ${removeMember.name || 'ce musicien'} du groupe ?`}
+          message="Il perdra l'accès au répertoire et aux setlists du groupe. Sa bibliothèque personnelle, elle, ne bouge pas. Tu pourras le réinviter plus tard."
+          confirmLabel="Retirer du groupe"
+          danger
+          onConfirm={() => {
+            const cid = band.cloudId;
+            const target = removeMember.userId;
+            if (!cid) return;
+            void (async () => {
+              try {
+                const s = await getValidSession();
+                if (!s) return;
+                await removeBandMember(s, cid, target);
+                setCloudMembers((list) =>
+                  list.filter((x) => x.user_id !== target),
+                );
+                // Retirer aussi son entrée LOCALE : sinon le musicien
+                // réapparaît juste en dessous, en « saisi à la main ».
+                saveBand({
+                  ...band,
+                  members: band.members.filter(
+                    (x) => !sameMusician(x.name, removeMember.name),
+                  ),
+                });
+                setDepartures((list) =>
+                  list.filter((x) => x.userId !== target),
+                );
+              } catch {
+                /* silencieux : la liste se rafraîchira à la prochaine ouverture */
+              }
+            })();
+          }}
+          onClose={() => setRemoveMember(null)}
+        />
+      )}
+
       {membersOpen && (
         <Modal title="Musiciens du groupe" onClose={() => setMembersOpen(false)}>
           {allMembers.length === 0 && pendingMembers.length === 0 && (
@@ -1154,7 +1172,17 @@ export function BandEdit({ id }: { id: string }) {
           {allMembers.map((m, i) => {
             const isMe =
               meKey !== '' && m.name.trim().toLowerCase() === meKey;
+            // Membre avec compte : le créateur peut le retirer du groupe
+            // (b143). Les musiciens saisis à la main n'ont pas de compte.
+            const cloud = cloudMembers.find((c) => sameMusician(c.name, m.name));
+            const canRemove =
+              band.owned === true && !isMe && cloud !== undefined;
             return (
+              <div
+                className="hstack"
+                key={`w${i}`}
+                style={{ gap: 4, alignItems: 'center' }}
+              >
               <button
                 className="row"
                 key={`a${i}`}
@@ -1188,85 +1216,25 @@ export function BandEdit({ id }: { id: string }) {
                 </div>
                 <Icon name="chevron-right" size={16} />
               </button>
-            );
-          })}
-          {/* Renvoyer l'invitation (b141) : un musicien qui a réinitialisé
-              son application a perdu le groupe de son côté alors qu'il est
-              toujours inscrit ici. Ce geste régénère sa demande — elle
-              l'attend dans son onglet Groupes. */}
-          {band.cloudId !== '' &&
-            cloudMembers.filter((m) => m.user_id !== myId).length > 0 && (
-              <>
-                <div className="spacer" />
-                <p className="help" style={{ marginBottom: 6 }}>
-                  Un musicien ne voit plus le groupe (application
-                  réinitialisée, nouveau téléphone) ? Renvoie-lui la
-                  demande :
-                </p>
-                {cloudMembers
-                  .filter((m) => m.user_id !== myId)
-                  .map((m) => (
-                    <div className="row" key={`ri${m.user_id}`}>
-                      <div className="grow">
-                        <div className="title">{m.name || 'Musicien'}</div>
-                      </div>
-                      <button
-                        className="btn ghost small"
-                        disabled={reinvited.has(m.user_id)}
-                        onClick={() => {
-                          const cid = band.cloudId;
-                          if (!cid) return;
-                          void (async () => {
-                            try {
-                              const s = await getValidSession();
-                              if (!s) return;
-                              await inviteToBand(s, cid, m.user_id);
-                              setReinvited((prev) =>
-                                new Set(prev).add(m.user_id),
-                              );
-                            } catch {
-                              /* silencieux : le bouton reste disponible */
-                            }
-                          })();
-                        }}
-                      >
-                        {reinvited.has(m.user_id)
-                          ? '✓ Envoyée'
-                          : '↻ Réinviter'}
-                      </button>
-                    </div>
-                  ))}
-              </>
-            )}
-          {pendingMembers.map((m, i) => (
-            <div
-              className="row"
-              key={`p${i}`}
-              style={{ cursor: 'default', opacity: 0.75 }}
-            >
-              <Avatar name={m.name} photo={m.photo} />
-              <div className="grow">
-                <div className="title">{m.name || '(invité)'}</div>
-                <div className="sub" style={{ color: 'var(--accent)' }}>
-                  ⏳ En attente d'acceptation
-                </div>
-              </div>
-              {isOwner && (
+              {canRemove && (
                 <button
                   className="btn ghost small"
-                  style={{ color: 'var(--danger)' }}
-                  title="Annuler cette invitation"
+                  style={{ color: 'var(--danger)', flexShrink: 0 }}
+                  title={`Retirer ${m.name || 'ce musicien'} du groupe`}
+                  aria-label={`Retirer ${m.name || 'ce musicien'} du groupe`}
                   onClick={() =>
-                    update({
-                      members: band.members.filter((x) => x.id !== m.id),
+                    setRemoveMember({
+                      userId: cloud!.user_id,
+                      name: m.name,
                     })
                   }
                 >
-                  <Icon name="x" size={14} />
+                  <Icon name="trash" size={15} />
                 </button>
               )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </Modal>
       )}
       {viewMember && (
