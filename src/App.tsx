@@ -30,7 +30,7 @@ import { PublicArtist, publicNameFromPath } from './pages/PublicArtist';
 import { RESERVED_NAMES } from './lib/publicName';
 import { makeKeepSong } from './lib/keepSong';
 import { Welcome } from './pages/Welcome';
-import { Route, useRoute } from './router';
+import { useRoute } from './router';
 import { StoreProvider, useStore } from './store';
 
 /** Page live DANS l'app : on injecte « Garder ce morceau » (store présent).
@@ -157,23 +157,14 @@ function Screen() {
       break;
   }
 
-  // Le bouton « GO LIVE » ne s'affiche que là où lancer un direct a du sens
-  // (bibliothèque, setlists, groupes, artiste…). Sur la fiche d'un morceau,
-  // l'édition, l'import ou une discussion, il n'a rien à faire là et libère la
-  // barre du haut (le titre respire).
-  const hideLive = new Set<Route['name']>([
-    'song',
-    'songEdit',
-    'songInSet',
-    'import',
-    'concert',
-    'bandChat',
-  ]);
+  // Le bouton « GO LIVE » vit DANS la barre de titre de chaque page
+  // (TopBar, prop `live`) : même endroit partout, jamais flottant. Les
+  // pages où lancer un direct n'a pas de sens passent `live={false}`.
+  // Seul le mode scène (sans barre) garde le bouton flottant, ci-dessus.
   return (
     <div className="app">
       {page}
       <TabBar current={route.name} bandsBadge={badge} />
-      {!hideLive.has(route.name) && <OnAirButton />}
       <InstallHint />
     </div>
   );

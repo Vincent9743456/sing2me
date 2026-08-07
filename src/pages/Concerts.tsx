@@ -297,6 +297,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
   return (
     <>
       <TopBar
+        live={false}
         title={isNew ? 'Nouveau concert' : draft.title || 'Concert'}
         onBack={() => history.back()}
       />

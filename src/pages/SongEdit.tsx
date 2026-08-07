@@ -219,6 +219,7 @@ export function SongEdit({ id }: { id: string | null }) {
   return (
     <>
       <TopBar
+        live={false}
         title={isNew ? 'Nouveau morceau' : 'Modifier'}
         onBack={() => history.back()}
       />
