@@ -57,6 +57,9 @@ create policy members_delete on public.cloud_band_members
   );
 
 -- Rejoindre via le jeton d'invitation (validé côté serveur)
+-- `create or replace` ne peut PAS changer le type de retour d'une
+-- fonction déjà installée (erreur 42P13) : on la retire d'abord.
+drop function if exists public.join_band(uuid, text, text, text);
 create or replace function public.join_band(
   p_band uuid,
   p_token text,
@@ -179,24 +182,42 @@ create policy band_messages_delete on public.band_messages
   );
 
 -- Liste des membres (créateur ou membre du groupe)
-create or replace function public.band_members(p_band uuid)
-returns table (user_id uuid, name text, instrument text, joined_at timestamptz)
-language sql security definer set search_path = public as $$
-  select m.user_id, m.name, m.instrument, m.joined_at
-  from public.cloud_band_members m
-  where m.band_id = p_band
-    and (
-      exists (
-        select 1 from public.cloud_bands b
-        where b.id = p_band and b.owner = auth.uid()
-      )
-      or exists (
-        select 1 from public.cloud_band_members me
-        where me.band_id = p_band and me.user_id = auth.uid()
-      )
-    );
-$$;
-grant execute on function public.band_members to authenticated;
+-- ATTENTION (b144) : `directory.sql` installe une version ENRICHIE de
+-- band_members (avec la photo du musicien). Une redéfinition aveugle ici
+-- échouerait (« cannot change return type », erreur 42P13) ou, pire,
+-- écraserait la version enrichie selon l'ordre d'exécution des fichiers.
+-- On ne crée donc la version simple que si la fonction n'existe pas
+-- encore : les deux fichiers deviennent ré-exécutables dans n'importe
+-- quel ordre.
+do $do$
+begin
+  if not exists (
+    select 1 from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'band_members'
+  ) then
+    execute $fn$
+      create function public.band_members(p_band uuid)
+      returns table (user_id uuid, name text, instrument text, joined_at timestamptz)
+      language sql security definer set search_path = public as $body$
+        select m.user_id, m.name, m.instrument, m.joined_at
+        from public.cloud_band_members m
+        where m.band_id = p_band
+          and (
+            exists (
+              select 1 from public.cloud_bands b
+              where b.id = p_band and b.owner = auth.uid()
+            )
+            or exists (
+              select 1 from public.cloud_band_members me
+              where me.band_id = p_band and me.user_id = auth.uid()
+            )
+          );
+      $body$;
+    $fn$;
+    execute 'grant execute on function public.band_members to authenticated';
+  end if;
+end $do$;
 
 -- ------------------------------------------------------------
 -- b140 : quitter un groupe POUR DE BON.
@@ -206,6 +227,9 @@ grant execute on function public.band_members to authenticated;
 -- désormais effectif des deux côtés (le créateur, lui, ne peut pas
 -- quitter son propre groupe : il le supprime ou le transmet).
 -- ------------------------------------------------------------
+-- `create or replace` ne peut PAS changer le type de retour d'une
+-- fonction déjà installée (erreur 42P13) : on la retire d'abord.
+drop function if exists public.leave_band(uuid);
 create or replace function public.leave_band(p_band uuid)
 returns json
 language plpgsql security definer set search_path = public as $$

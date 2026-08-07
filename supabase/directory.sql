@@ -11,6 +11,10 @@
 -- ============================================================
 
 -- ---------- Annuaire ----------
+-- ORDRE D'EXÉCUTION : ce fichier dépend des tables de bands.sql
+-- (cloud_bands, cloud_band_members). Exécuter bands.sql AVANT.
+-- Les deux restent ré-exécutables autant de fois que nécessaire.
+
 create table if not exists public.musician_directory (
   user_id uuid primary key references auth.users (id) on delete cascade,
   name text not null default '',
@@ -29,6 +33,9 @@ create policy musician_directory_self on public.musician_directory
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- Renseigne/actualise sa fiche d'annuaire (nom + photo + instrument).
+-- `create or replace` ne peut PAS changer le type de retour d'une
+-- fonction déjà installée (erreur 42P13) : on la retire d'abord.
+drop function if exists public.upsert_profile(text, text, text);
 create or replace function public.upsert_profile(
   p_name text,
   p_photo text,
@@ -60,6 +67,9 @@ grant execute on function public.upsert_profile to authenticated;
 -- profil nommé « Dam » (le nom stocké est contenu dans la requête) ET
 -- inversement « Dam » retrouve « Damien ». On garde aussi une correspondance
 -- mot à mot (chaque mot de la requête cherché séparément) pour « prénom nom ».
+-- `create or replace` ne peut PAS changer le type de retour d'une
+-- fonction déjà installée (erreur 42P13) : on la retire d'abord.
+drop function if exists public.search_profiles(text);
 create or replace function public.search_profiles(p_query text)
 returns table (user_id uuid, name text, photo text, instrument text)
 language sql security definer set search_path = public as $$
@@ -122,6 +132,9 @@ create policy invites_select on public.band_invites
   );
 
 -- Le créateur invite un musicien de l'annuaire (statut « pending »).
+-- `create or replace` ne peut PAS changer le type de retour d'une
+-- fonction déjà installée (erreur 42P13) : on la retire d'abord.
+drop function if exists public.invite_to_band(uuid, uuid);
 create or replace function public.invite_to_band(p_band uuid, p_user uuid)
 returns json
 language plpgsql security definer set search_path = public as $$
@@ -156,6 +169,9 @@ end $$;
 grant execute on function public.invite_to_band to authenticated;
 
 -- Mes invitations en attente.
+-- `create or replace` ne peut PAS changer le type de retour d'une
+-- fonction déjà installée (erreur 42P13) : on la retire d'abord.
+drop function if exists public.my_invites();
 create or replace function public.my_invites()
 returns table (
   id uuid,
@@ -173,6 +189,9 @@ $$;
 grant execute on function public.my_invites to authenticated;
 
 -- Répondre à une invitation : accepter (= rejoindre) ou refuser.
+-- `create or replace` ne peut PAS changer le type de retour d'une
+-- fonction déjà installée (erreur 42P13) : on la retire d'abord.
+drop function if exists public.respond_invite(uuid, boolean, text, text);
 create or replace function public.respond_invite(
   p_invite uuid,
   p_accept boolean,
@@ -239,6 +258,9 @@ grant execute on function public.band_members to authenticated;
 -- réinviter — `invite_to_band` remet la ligne en 'pending', ce qui la
 -- fait disparaître d'ici.
 -- ------------------------------------------------------------
+-- `create or replace` ne peut PAS changer le type de retour d'une
+-- fonction déjà installée (erreur 42P13) : on la retire d'abord.
+drop function if exists public.my_band_departures();
 create or replace function public.my_band_departures()
 returns table (
   band_id uuid,
