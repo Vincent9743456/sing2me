@@ -163,7 +163,8 @@ export async function signInWithEmail(email: string): Promise<void> {
 }
 
 /**
- * Connexion par CODE à 6 chiffres (le même email que le lien magique).
+ * Connexion par CODE de l'email (longueur selon le projet — 8 chez
+ * nous ; le même email que le lien magique).
  * Indispensable pour l'app installée sur l'écran d'accueil (iOS isole son
  * stockage : un lien ouvert depuis l'email connecte Safari, pas l'app —
  * le code, lui, se saisit directement dedans). Nécessite que le gabarit
@@ -189,7 +190,7 @@ export async function verifyEmailCode(
     const raw = body.msg ?? body.error_description ?? '';
     if (/expired|invalid/i.test(raw)) {
       throw new Error(
-        'Code incorrect ou expiré — vérifie les 6 chiffres, ou redemande un email.',
+        'Code incorrect ou expiré — vérifie les chiffres, ou redemande un email.',
       );
     }
     throw new Error(raw || `Supabase a répondu ${res.status}`);
