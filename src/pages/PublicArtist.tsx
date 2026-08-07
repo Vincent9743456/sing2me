@@ -31,6 +31,12 @@ export function PublicArtist({ name }: { name: string }) {
         if (!cancelled && live && live.mode === 'concert') {
           setLiveNow(true);
           setLiveCode(live.joinCode);
+          // QR unique et éternel : pendant le concert, le scan doit aboutir
+          // DIRECTEMENT aux paroles — on bascule sans attendre de clic (la
+          // fiche reste consultable depuis le direct via la photo d'artiste).
+          location.replace(
+            live.joinCode !== '' ? `/live?c=${live.joinCode}` : '/live',
+          );
         }
       } catch {
         /* pas de direct : page statique */

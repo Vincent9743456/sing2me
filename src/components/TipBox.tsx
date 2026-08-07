@@ -18,7 +18,9 @@ function tipHref(base: string, amount: number | null): string {
 }
 
 export function TipBox({ artist }: { artist: ArtistProfile | null }) {
-  if (!artist || artist.tipUrl.trim() === '') return null;
+  // `?? ''` : une fiche publique publiée AVANT l'ajout du champ tipUrl n'a
+  // pas ce champ — ça ne doit jamais faire tomber toute la page publique.
+  if (!artist || (artist.tipUrl ?? '').trim() === '') return null;
   return (
     <div className="tipbox">
       <div className="tiptitle">💛 Soutenir {artist.name || "l'artiste"}</div>
