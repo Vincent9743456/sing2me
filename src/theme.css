@@ -2410,6 +2410,59 @@ h2.pagetitle {
   margin-bottom: 8px;
 }
 
+/* ---------- Accordéon du design system ---------- */
+.accordion {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.accordion-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius);
+}
+.accordion-title {
+  font-weight: 650;
+  font-size: 0.95rem;
+}
+.accordion-sub {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+.accordion-body {
+  padding: 0 14px 14px;
+}
+
+/* « ✓ Enregistré » : confirmation discrète et transitoire de la
+   sauvegarde automatique (setlists, sono…). */
+.savedhint {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(74px + env(safe-area-inset-bottom));
+  z-index: 40;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-high);
+  border: 1px solid var(--border-soft);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-weight: 650;
+  pointer-events: none;
+  animation: fadein 0.15s ease;
+}
+
 /* ---------- Bannière « Ajouter à l'écran d'accueil » (PWA) ---------- */
 .installhint {
   position: fixed;
