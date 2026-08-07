@@ -101,10 +101,18 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - navigation : les boutons ← des pages vont vers un parent explicite
     (`navigate('/xxx')`), pas `history.back()`.
   - **une partition ne circule QUE par deux canaux** (décision Vincent,
-    b110) : poussée dans le répertoire d'un groupe (« Ajouter à… », synchro
-    auto) ou diffusée par QR en mode ON AIR. Aucun partage de morceau ni de
-    setlist par lien (les boutons « Partager au groupe / au public » ont été
-    retirés ; la page de réception /s/… des anciens liens reste) ;
+    b110, amendée b121) : poussée dans le répertoire d'un groupe
+    (« Ajouter à… », synchro auto) ou diffusée en mode ON AIR (QR **ou code
+    de salon à 6 chiffres**) ; un musicien présent au bœuf peut en garder
+    une **copie personnelle** (« Garder ce morceau » → Idée, jamais
+    partagée ni synchronisée). Aucun partage de morceau ni de setlist par
+    lien (les boutons « Partager au groupe / au public » ont été retirés ;
+    la page de réception /s/… des anciens liens reste) ;
+  - **multi-live (b121)** : plusieurs directs simultanés — table `lives`
+    (une ligne par direct, `join_code` à 6 chiffres + `write_token` du
+    lanceur), plus de scène globale unique ; l'ancienne ligne `live_state`
+    n'est lue qu'en repli pour les vieux bundles. Le code de salon est un
+    SÉLECTEUR de session (fluidité), pas une protection ;
   - **ligne rouge « outil, pas catalogue »** (§A.4 du mémo fondateurs) :
     aucune recherche de morceaux côté serveur, aucune base mutualisée entre
     comptes, aucun préremplissage de bibliothèque ; un morceau ne circule

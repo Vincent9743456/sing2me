@@ -365,3 +365,10 @@ export function useStore(): StoreValue {
   if (!ctx) throw new Error('useStore doit être utilisé dans <StoreProvider>');
   return ctx;
 }
+
+/** Variante tolérante : null hors <StoreProvider> (entrée publique légère).
+ *  Permet aux composants partagés app/spectateur (page Live) d'activer des
+ *  fonctions « app seulement » comme « Garder ce morceau ». */
+export function useStoreMaybe(): StoreValue | null {
+  return useContext(StoreContext);
+}

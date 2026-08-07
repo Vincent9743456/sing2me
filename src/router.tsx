@@ -20,8 +20,8 @@ export type Route =
   | { name: 'bands' }
   | { name: 'band'; id: string }
   | { name: 'bandChat'; id: string }
-  | { name: 'live' }
-  | { name: 'follow' }
+  | { name: 'live'; code: string }
+  | { name: 'follow'; code: string }
   | { name: 'remote'; setlistId: string }
   | { name: 'share'; data: string; shortId?: string }
   | { name: 'cgu' }
@@ -78,9 +78,9 @@ export function parseHash(hash: string): Route {
       if (parts[1]) return { name: 'band', id: parts[1] };
       return { name: 'artist' };
     case 'live':
-      return { name: 'live' };
+      return { name: 'live', code: parts[1] ?? '' };
     case 'follow':
-      return { name: 'follow' };
+      return { name: 'follow', code: parts[1] ?? '' };
     case 'remote':
       if (parts[1]) return { name: 'remote', setlistId: parts[1] };
       return { name: 'setlists' };

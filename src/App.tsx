@@ -28,9 +28,17 @@ import { Terms } from './pages/Terms';
 import { Report } from './pages/Report';
 import { PublicArtist, publicNameFromPath } from './pages/PublicArtist';
 import { RESERVED_NAMES } from './lib/publicName';
+import { makeKeepSong } from './lib/keepSong';
 import { Welcome } from './pages/Welcome';
 import { Route, useRoute } from './router';
-import { StoreProvider } from './store';
+import { StoreProvider, useStore } from './store';
+
+/** Page live DANS l'app : on injecte « Garder ce morceau » (store présent).
+ *  L'entrée publique légère rend <Live /> sans rien — aucun store chargé. */
+function LiveInApp({ code }: { code: string }) {
+  const { songs, saveSong } = useStore();
+  return <Live code={code} onKeep={makeKeepSong({ songs, saveSong })} />;
+}
 
 function Screen() {
   const route = useRoute();
@@ -56,7 +64,7 @@ function Screen() {
     return <SharePage data={route.data} shortId={route.shortId} />;
   }
   if (route.name === 'live') {
-    return <Live />;
+    return <LiveInApp code={route.code} />;
   }
   if (route.name === 'cgu') {
     return (
@@ -142,7 +150,7 @@ function Screen() {
       page = <BandChat id={route.id} key={route.id} />;
       break;
     case 'follow':
-      page = <Follow />;
+      page = <Follow code={route.code} />;
       break;
     case 'remote':
       page = <Remote setlistId={route.setlistId} key={route.setlistId} />;

@@ -4,7 +4,7 @@
  * les accords viennent de l'état du direct (song.chords). Chargée en
  * différé : le spectateur ne télécharge cette brique que s'il la demande.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { ChordLine } from '../../components/SongBody';
 import { parseContent } from '../../lib/chordpro';
@@ -20,10 +20,15 @@ import { decodeHtmlEntities, repairChordedLyrics } from '../../lib/textRepair';
 export default function MusicianLive({
   state,
   onPublic,
+  onKeep,
 }: {
   state: LiveState;
   onPublic: () => void;
+  /** App seulement : copie perso du morceau en cours (Idée). Renvoie un
+   *  message de confirmation (« Gardé » / « Déjà dans ta bibliothèque »). */
+  onKeep?: (song: NonNullable<LiveState['song']>) => string;
 }) {
+  const [keepMsg, setKeepMsg] = useState('');
   const [fontSize, setFontSize] = useState(1.05);
   // 'shapes' = les formes du leader (+ capo) ; 'real' = les vrais accords.
   const [chordMode, setChordMode] = useState<'shapes' | 'real'>('shapes');
@@ -31,6 +36,10 @@ export default function MusicianLive({
   // demi-tons appliqué par-dessus la tonalité du leader — chacun sa vue.
   const [myShift, setMyShift] = useState(0);
   const song = state.song;
+  const songTitle = song?.title ?? '';
+  useEffect(() => {
+    setKeepMsg('');
+  }, [songTitle]);
   const active = state.status === 'on' || state.status === 'pause';
 
   const capo = song?.capo ?? 0;
@@ -159,6 +168,19 @@ export default function MusicianLive({
               <ChordLine key={i} line={line} />
             ))}
           </div>
+          {/* Bœuf : garder une copie PERSONNELLE du morceau en cours
+              (arrive en « Idée » — jamais partagée, décision Vincent). */}
+          {onKeep && (
+            <div style={{ textAlign: 'center', margin: '10px 0' }}>
+              <button
+                className="btn ghost small"
+                disabled={keepMsg !== ''}
+                onClick={() => setKeepMsg(onKeep(song))}
+              >
+                {keepMsg !== '' ? `✓ ${keepMsg}` : '➕ Garder ce morceau'}
+              </button>
+            </div>
+          )}
           <div className="rowactions" style={{ justifyContent: 'center' }}>
             <button
               className="btn ghost"

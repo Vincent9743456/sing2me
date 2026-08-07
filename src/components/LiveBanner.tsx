@@ -11,7 +11,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { fetchLive } from '../lib/live';
+import { fetchLiveForBands } from '../lib/live';
 import { navigate } from '../router';
 import { useStore } from '../store';
 
@@ -28,6 +28,7 @@ export function LiveBanner() {
     title: string;
     by: string;
     group: string;
+    code: string;
   } | null>(null);
   const groupsKey = [...myGroups.keys()].sort().join('|');
   useEffect(() => {
@@ -39,16 +40,19 @@ export function LiveBanner() {
         return;
       }
       try {
-        const s = await fetchLive();
+        // Multi-live (b121) : le serveur résout directement le live actif
+        // d'un de MES groupes — plus de scène globale.
+        const s = await fetchLiveForBands([...myGroups.keys()]);
         if (cancelled) return;
-        const mine = s.bandId !== '' && myGroups.has(s.bandId);
+        const mine = s !== null && s.bandId !== '' && myGroups.has(s.bandId);
         setSession(
-          s.status !== 'off' && mine
+          s && mine
             ? {
                 mode: s.mode,
                 title: s.song?.title ?? s.bandSong?.title ?? '',
                 by: s.startedBy,
                 group: myGroups.get(s.bandId) ?? '',
+                code: s.joinCode,
               }
             : null,
         );
@@ -97,7 +101,12 @@ export function LiveBanner() {
           </span>
         )}
       </span>
-      <button className="btn" onClick={() => navigate('/follow')}>
+      <button
+        className="btn"
+        onClick={() =>
+          navigate(session.code !== '' ? `/follow/${session.code}` : '/follow')
+        }
+      >
         Rejoindre 📡
       </button>
     </div>

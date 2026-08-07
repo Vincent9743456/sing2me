@@ -6,7 +6,13 @@ import React, { useState } from 'react';
 
 import { sendMessage } from '../../lib/live';
 
-export default function MessageBox({ songTitle = '' }: { songTitle?: string }) {
+export default function MessageBox({
+  songTitle = '',
+  liveId = '',
+}: {
+  songTitle?: string;
+  liveId?: string;
+}) {
   const [name, setName] = useState(
     () => localStorage.getItem('sing2me/fanName') ?? '',
   );
@@ -20,7 +26,7 @@ export default function MessageBox({ songTitle = '' }: { songTitle?: string }) {
     setBusy(true);
     setError(null);
     try {
-      await sendMessage(name.trim(), text.trim());
+      await sendMessage(name.trim(), text.trim(), liveId);
       localStorage.setItem('sing2me/fanName', name.trim());
       setSent(true);
       setText('');

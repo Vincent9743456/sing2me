@@ -89,7 +89,27 @@ function initialRole(): 'public' | 'musicien' {
   }
 }
 
-export function Live() {
+export function Live({
+  code = '',
+  onKeep,
+}: {
+  code?: string;
+  /** App seulement : « Garder ce morceau » (copie perso en Idée) — voir
+   *  lib/keepSong. L'entrée publique légère ne passe rien (pas de store). */
+  onKeep?: (song: NonNullable<LiveState['song']>) => string;
+} = {}) {
+  // Code de salon : prop (route de l'app #/live/CODE) ou ?c= (entrée
+  // publique /live?c=482913 — le QR du lanceur l'embarque).
+  const joinCode =
+    code !== ''
+      ? code
+      : (() => {
+          try {
+            return new URLSearchParams(location.search).get('c') ?? '';
+          } catch {
+            return '';
+          }
+        })();
   const [state, setState] = useState<LiveState | null>(null);
   const [role, setRole] = useState<'public' | 'musicien'>(initialRole);
   function switchRole(r: 'public' | 'musicien') {
@@ -126,6 +146,8 @@ export function Live() {
   const pending = useRef(0);
   const flushTimer = useRef<number | null>(null);
   const floatId = useRef(0);
+  // Identifiant du live suivi (pour cœurs / messages / présence).
+  const stateIdRef = useRef('');
 
   function onHeart() {
     // animation immédiate
@@ -143,7 +165,7 @@ export function Live() {
         const n = pending.current;
         pending.current = 0;
         flushTimer.current = null;
-        void sendHearts(n);
+        void sendHearts(n, stateIdRef.current);
       }, 600);
     }
   }
@@ -153,9 +175,10 @@ export function Live() {
     async function tick() {
       try {
         // Appel de SUIVI : position (morceau courant) + statut.
-        const s = await fetchLive();
+        const s = await fetchLive(joinCode);
         if (cancelled) return;
         setState(s);
+        stateIdRef.current = s.id;
         setOffline(false); // réseau OK → reprise silencieuse du suivi
         // remonter en haut quand la chanson change
         const t = s.song?.title ?? '';
@@ -170,7 +193,7 @@ export function Live() {
         if (s.setlistCount !== lastSetlistCount.current) {
           lastSetlistCount.current = s.setlistCount;
           if (s.setlistCount > 0) {
-            const list = await fetchLiveSetlist();
+            const list = await fetchLiveSetlist(joinCode);
             if (!cancelled && list.length > 0) {
               setBrowseSetlist(list);
               saveCachedSetlist(list);
@@ -194,8 +217,11 @@ export function Live() {
   // la session en cours pour le comptage des uniques. SANS limite ni blocage,
   // best-effort, silencieux. Un ping au chargement puis toutes les 90 s.
   useEffect(() => {
-    void pingAttendance();
-    const id = window.setInterval(() => void pingAttendance(), 90000);
+    void pingAttendance(stateIdRef.current);
+    const id = window.setInterval(
+      () => void pingAttendance(stateIdRef.current),
+      90000,
+    );
     return () => window.clearInterval(id);
   }, []);
 
@@ -264,7 +290,7 @@ export function Live() {
     setBrowseOpen(true);
     // Repli réseau : si rien en cache, on tente une récupération (best-effort).
     if (browseSetlist === null) {
-      const list = await fetchLiveSetlist();
+      const list = await fetchLiveSetlist(joinCode);
       if (list.length > 0) {
         setBrowseSetlist(list);
         saveCachedSetlist(list);
@@ -355,7 +381,11 @@ export function Live() {
             </p>
           }
         >
-          <MusicianLive state={state} onPublic={() => switchRole('public')} />
+          <MusicianLive
+            state={state}
+            onPublic={() => switchRole('public')}
+            onKeep={onKeep}
+          />
         </Suspense>
       ) : liveNow && state.song ? (
         <>
@@ -392,7 +422,7 @@ export function Live() {
           {ps.tips && <TipBox artist={state.artist} />}
           {ps.messages && (
             <Suspense fallback={null}>
-              <MessageBox songTitle={state.song.title} />
+              <MessageBox songTitle={state.song.title} liveId={state.id} />
             </Suspense>
           )}
           {ps.hearts && (
@@ -424,7 +454,7 @@ export function Live() {
           {ps.tips && <TipBox artist={state.artist} />}
           {ps.messages && (
             <Suspense fallback={null}>
-              <MessageBox />
+              <MessageBox liveId={state.id} />
             </Suspense>
           )}
         </>
@@ -448,7 +478,7 @@ export function Live() {
           {ps.tips && <TipBox artist={state.artist} />}
           {ps.messages && (
             <Suspense fallback={null}>
-              <MessageBox />
+              <MessageBox liveId={state.id} />
             </Suspense>
           )}
           {(!state.artist || state.artist.name === '') &&

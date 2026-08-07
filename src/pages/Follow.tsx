@@ -17,7 +17,7 @@ import { ViewMode } from '../types';
 
 const POLL_MS = 3000;
 
-export function Follow() {
+export function Follow({ code = '' }: { code?: string } = {}) {
   const { songs, prefs } = useStore();
   const view = 'complete' as ViewMode; // partition entière pour tous
   const [bandSong, setBandSong] = useState<BandSong | null>(null);
@@ -28,7 +28,7 @@ export function Follow() {
     let cancelled = false;
     async function tick() {
       try {
-        const s = await fetchLive();
+        const s = await fetchLive(code);
         if (cancelled) return;
         setOffline(false);
         setBandSong(s.bandSong);

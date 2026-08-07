@@ -5,6 +5,7 @@ import { ShareModal } from '../components/ShareModal';
 import { Icon } from '../components/Icon';
 import { Empty, Field, TopBar } from '../components/ui';
 import {
+  fetchLive,
   fetchLiveStats,
   fetchMessages,
   LiveMessage,
@@ -34,6 +35,28 @@ export function isUpcoming(c: Concert): boolean {
 
 export function Concerts() {
   const { concerts } = useStore();
+  // Rejoindre un direct par code de salon (multi-live b121).
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joinBusy, setJoinBusy] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  async function joinLive() {
+    setJoinBusy(true);
+    setJoinError(null);
+    try {
+      const s = await fetchLive(joinCode);
+      if (s.status === 'off') {
+        setJoinError('Aucun direct avec ce code — vérifie les 6 chiffres.');
+        return;
+      }
+      navigate(`/live/${joinCode}`);
+    } catch {
+      setJoinError('Impossible de vérifier le code — réseau indisponible ?');
+    } finally {
+      setJoinBusy(false);
+    }
+  }
   const sorted = useMemo(
     () =>
       [...concerts].sort((a, b) =>
@@ -51,13 +74,56 @@ export function Concerts() {
       <TopBar title="Concerts" />
       <div className="page">
         <LiveBanner />
-        <button
-          className="btn"
-          style={{ marginBottom: 12 }}
-          onClick={() => navigate('/concert/new')}
+        <div
+          className="hstack"
+          style={{ gap: 8, flexWrap: 'wrap', marginBottom: 12 }}
         >
-          <Icon name="plus" size={16} /> Planifier un concert
-        </button>
+          <button className="btn" onClick={() => navigate('/concert/new')}>
+            <Icon name="plus" size={16} /> Planifier un concert
+          </button>
+          <button
+            className="btn ghost"
+            title="Rejoins un bœuf ou un concert en cours avec son code à 6 chiffres"
+            onClick={() => setJoinOpen((v) => !v)}
+          >
+            🎸 Rejoindre un direct
+          </button>
+        </div>
+        {joinOpen && (
+          <div className="card" style={{ marginBottom: 12 }}>
+            <p className="help" style={{ marginTop: 0 }}>
+              Saisis le code à 6 chiffres donné par la personne qui a lancé
+              le direct (bœuf ou concert).
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                value={joinCode}
+                placeholder="Code à 6 chiffres"
+                inputMode="numeric"
+                maxLength={6}
+                style={{ letterSpacing: 3 }}
+                onChange={(e) => {
+                  setJoinCode(e.target.value.replace(/\D/g, ''));
+                  setJoinError(null);
+                }}
+              />
+              <button
+                className="btn"
+                style={{ flexShrink: 0 }}
+                disabled={joinCode.length !== 6 || joinBusy}
+                onClick={() => void joinLive()}
+              >
+                {joinBusy ? '…' : 'Rejoindre'}
+              </button>
+            </div>
+            {joinError && (
+              <p style={{ color: 'var(--danger)', marginTop: 8 }}>
+                {joinError}
+              </p>
+            )}
+          </div>
+        )}
         {concerts.length === 0 && (
           <Empty>
             Aucun concert planifié.
