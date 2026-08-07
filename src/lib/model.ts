@@ -527,6 +527,18 @@ export function removeVersion(song: Song, versionId: string): Song {
  * Solo reste, elle appartient à son contexte. Les versions qui suivaient
  * la tonalité/capo de l'ancienne originale suivent la nouvelle.
  */
+/** Noms « par défaut » d'une version de référence : remplaçables sans
+ *  scrupule quand elle change de contenu (un nom choisi, jamais). */
+const DEFAULT_VERSION_NAMES = new Set([
+  '',
+  'originale',
+  'original',
+  'version originale',
+  'version de référence',
+  'version de reference',
+  'version 1',
+]);
+
 export function promoteVersionToOriginal(
   song: Song,
   versionId: string,
@@ -539,6 +551,12 @@ export function promoteVersionToOriginal(
   const prevCapo = main.capo;
   const newMain: SongVersion = {
     ...main,
+    // Le nom suit le contenu (retour Marco, b136) : la référence s'appelle
+    // « Version de référence », sauf si l'artiste lui a donné un nom à lui
+    // (on ne remplace que les libellés par défaut, jamais un choix perso).
+    name: DEFAULT_VERSION_NAMES.has(main.name.trim().toLowerCase())
+      ? 'Version de référence'
+      : main.name,
     key: source.key,
     tempo: source.tempo,
     capo: source.capo,

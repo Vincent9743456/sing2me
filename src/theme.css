@@ -1130,6 +1130,18 @@ textarea.mono {
   background: var(--surface-hover);
   color: var(--text-dim);
 }
+/* Version de RÉFÉRENCE : l'étoile porte le sens, la teinte d'accent
+   distingue la pastille des contextes (solo, perso, partagée). */
+.versionbanner .vb-ref {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
 .versionbanner .vb-sub {
   color: var(--text-dim);
   font-size: 0.8rem;
