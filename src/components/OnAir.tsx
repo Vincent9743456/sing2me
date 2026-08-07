@@ -29,7 +29,13 @@ import {
   pushLive,
   pushSetlist,
 } from '../lib/live';
+import { getValidSession } from '../lib/auth';
 import { bandToProfile } from '../lib/model';
+import {
+  cachedPublicName,
+  fetchMyPublicName,
+  rememberPublicName,
+} from '../lib/publicPages';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { Modal } from './ui';
@@ -114,6 +120,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
+  const [qrUrl, setQrUrl] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
   const currentRef = useRef<LiveSong | null>(null);
   const setlistRef = useRef<LivePublicSong[] | null>(null);
@@ -315,12 +322,21 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
 
   async function showQr() {
     try {
-      setQr(
-        await QRCode.toDataURL(liveUrl(currentLiveRef()?.joinCode ?? ''), {
-          width: 440,
-          margin: 1,
-        }),
-      );
+      // QR UNIQUE ET ÉTERNEL (décision Vincent) : il encode l'adresse
+      // PERMANENTE de l'artiste — sa page publique /sonnom, qui file toute
+      // seule aux paroles quand il est en direct. JAMAIS le code de salon
+      // (il change à chaque session) : le même QR imprimé sert à vie.
+      let name = cachedPublicName();
+      if (name === '') {
+        const s = await getValidSession();
+        if (s) {
+          name = (await fetchMyPublicName(s)) ?? '';
+          if (name !== '') rememberPublicName(name);
+        }
+      }
+      const url = name !== '' ? `${location.origin}/${name}` : liveUrl();
+      setQrUrl(url);
+      setQr(await QRCode.toDataURL(url, { width: 440, margin: 1 }));
     } catch {
       setQr(null);
     }
@@ -468,17 +484,25 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
             {qr && (
               <div className="qrbox">
                 <img src={qr} alt="QR unique de tes sessions" />
-                <div className="linkbox">
-                  {liveUrl(currentLiveRef()?.joinCode ?? '')}
-                </div>
+                <div className="linkbox">{qrUrl}</div>
                 <p className="help" style={{ textAlign: 'center' }}>
-                  <strong>Un seul QR pour tout, à imprimer une fois.</strong>
+                  <strong>
+                    Ton QR à toi, toujours le même — imprime-le une fois pour
+                    toutes.
+                  </strong>
                   <br />
                   Concert : le public voit les paroles, un musicien (du groupe
                   ou de passage) touche « 🎸 Je joue » pour sa partition.
                   Répétition : seuls les musiciens voient le morceau. Hors
                   session : ta page artiste.
                 </p>
+                {qrUrl.endsWith('/live') && (
+                  <p className="help" style={{ textAlign: 'center' }}>
+                    💡 Réserve ton nom public (onglet Artiste → « Ton lien
+                    public dictable ») pour un QR à ton nom, valable pour
+                    toujours.
+                  </p>
+                )}
               </div>
             )}
             {error && (

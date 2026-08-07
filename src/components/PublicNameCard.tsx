@@ -11,6 +11,7 @@ import {
   claimPublicPage,
   fetchMyPublicName,
   publicPagesAvailable,
+  rememberPublicName,
 } from '../lib/publicPages';
 import { normalizePublicName, publicNameError } from '../lib/publicName';
 import { ArtistProfile } from '../types';
@@ -32,6 +33,7 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
       if (name) {
         setClaimed(name);
         setInput(name);
+        rememberPublicName(name);
       }
     })();
     return () => {
@@ -64,6 +66,7 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
       }
       await claimPublicPage(s, name, artist);
       setClaimed(name);
+      rememberPublicName(name);
       setSaved(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'La réservation a échoué.');

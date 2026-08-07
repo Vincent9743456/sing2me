@@ -25,6 +25,30 @@ export interface PublicPage {
   profile: ArtistProfile;
 }
 
+/* Cache LOCAL du nom public de CE compte : le QR unique (panneau ON AIR)
+ * doit le connaître même sans réseau — le nom ne change pratiquement
+ * jamais, on le mémorise à chaque lecture/réservation réussie. */
+const NAME_CACHE = 'sing2me/publicName';
+
+/** Nom public mémorisé localement ('' si inconnu). */
+export function cachedPublicName(): string {
+  try {
+    return localStorage.getItem(NAME_CACHE) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/** Mémorise (ou oublie, si '') le nom public de ce compte. */
+export function rememberPublicName(name: string): void {
+  try {
+    if (name === '') localStorage.removeItem(NAME_CACHE);
+    else localStorage.setItem(NAME_CACHE, name);
+  } catch {
+    /* stockage indisponible : tant pis, on redemandera au serveur */
+  }
+}
+
 /** Fiche publique d'un artiste par son nom dictable (lecture anonyme). */
 export async function fetchPublicPage(name: string): Promise<PublicPage | null> {
   if (!publicPagesAvailable() || name === '') return null;
