@@ -131,7 +131,7 @@ function SetlistPicker({
 import { announceBandSong } from '../lib/bands';
 import { LiveBanner } from '../components/LiveBanner';
 import { spellingForKey, transposeKeyName } from '../lib/chords';
-import { normalizeTitle } from '../lib/importer';
+import { songKey } from '../lib/importer';
 import {
   contextVersionId,
   duplicateVersion,
@@ -945,7 +945,7 @@ export function Library() {
                   s.activeVersionId,
                 ),
               );
-              clearBandRemoval(b.id, normalizeTitle(s.title));
+              clearBandRemoval(b.id, songKey(s.title, s.artist));
               void announceBandSong(
                 b.cloudId,
                 prefs.userName || artist.name || 'Moi',

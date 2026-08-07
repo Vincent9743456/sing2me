@@ -20,7 +20,7 @@ import {
   fetchBandMessages,
   postBandMessage,
 } from '../lib/bands';
-import { normalizeTitle } from '../lib/importer';
+import { songKey } from '../lib/importer';
 import { duplicateVersion, switchVersion, versionForBand } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -180,7 +180,7 @@ export function BandChat({ id }: { id: string }) {
             prev,
           ),
         );
-        clearBandRemoval(band.id, normalizeTitle(song.title));
+        clearBandRemoval(band.id, songKey(song.title, song.artist));
       }
       // Annonce dans le fil : visible par tout le groupe.
       await postBandMessage(s, cloudIdRef.current, {

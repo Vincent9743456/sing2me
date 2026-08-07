@@ -7,7 +7,7 @@ import { SongCollector } from '../components/SongPicker';
 import { Accordion, AccordionNav, Field, TopBar } from '../components/ui';
 import { announceBandSong } from '../lib/bands';
 import { semitonesBetween, spellingForKey, transposeContent, transposeKeyName } from '../lib/chords';
-import { normalizeTitle } from '../lib/importer';
+import { songKey } from '../lib/importer';
 import {
   creatorMember,
   duplicateVersion,
@@ -145,7 +145,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
         prev,
       );
       saveSong(updated);
-      clearBandRemoval(bandId, normalizeTitle(song.title));
+      clearBandRemoval(bandId, songKey(song.title, song.artist));
       void announceBandSong(
         b?.cloudId,
         prefs.userName || artist.name || 'Moi',

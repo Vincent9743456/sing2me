@@ -14,7 +14,7 @@
 import React, { useMemo, useState } from 'react';
 
 import { announceBandSong } from '../lib/bands';
-import { normalizeTitle } from '../lib/importer';
+import { songKey } from '../lib/importer';
 import {
   duplicateVersion,
   removeVersion,
@@ -116,7 +116,7 @@ export function AssignSheet({
       const v = versionForBand(workingSong, b.id);
       if (want && !v) {
         workingSong = addBandVersion(workingSong, b.id, b.name || '');
-        clearBandRemoval(b.id, normalizeTitle(song.title));
+        clearBandRemoval(b.id, songKey(song.title, song.artist));
         void announceBandSong(b.cloudId, author, song.title, song.artist);
       } else if (!want && v) {
         // Retrait de répertoire = acte de niveau groupe (propagé à tous).
@@ -139,7 +139,7 @@ export function AssignSheet({
                   x.id === v.id ? { ...x, bandId: '' } : x,
                 ),
               };
-        recordBandRemoval(b.id, normalizeTitle(song.title));
+        recordBandRemoval(b.id, songKey(song.title, song.artist));
       }
     }
 
@@ -154,7 +154,7 @@ export function AssignSheet({
         if (bandId !== '' && versionId === '') {
           const b = bands.find((x) => x.id === bandId);
           workingSong = addBandVersion(workingSong, bandId, b?.name || '');
-          clearBandRemoval(bandId, normalizeTitle(song.title));
+          clearBandRemoval(bandId, songKey(song.title, song.artist));
           void announceBandSong(b?.cloudId, author, song.title, song.artist);
           versionId = versionForBand(workingSong, bandId)?.id ?? '';
         }

@@ -13,7 +13,7 @@ import React, {
   useState,
 } from 'react';
 
-import { normalizeTitle } from './lib/importer';
+import { bandKeysMatch, songKey } from './lib/normalizeTitle';
 import { migrateConcert, migrateSetlist, migrateSong } from './lib/model';
 import { exampleSetlist, exampleSongs, SEED_KEY, SEED_VERSION } from './seed';
 import {
@@ -217,10 +217,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ...sl,
           items: sl.items.filter((it) => it.songId !== songId),
         })),
+        // Pierre tombale avec la clé titre @ artiste (b132) — l'import en
+        // masse et la synchro de groupe comparent en souplesse
+        // (bandKeysMatch), les anciennes tombes « titre seul » valent encore.
         deleted: bury(
           prev.deleted,
           songId,
-          song ? normalizeTitle(song.title) : undefined,
+          song ? songKey(song.title, song.artist) : undefined,
         ),
       };
     });
@@ -323,7 +326,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       bandRemovals: [
         ...prev.bandRemovals.filter(
-          (r) => !(r.bandId === bandId && r.key === key),
+          (r) => !(r.bandId === bandId && bandKeysMatch(r.key, key)),
         ),
       ].slice(-499).concat({ bandId, key, at: new Date().toISOString() }),
     }));
@@ -331,8 +334,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const clearBandRemoval = (bandId: string, key: string) => {
     setState((prev) => ({
       ...prev,
+      // Correspondance souple : une annulation par « titre @ artiste »
+      // efface aussi un vieux retrait « titre seul » (et inversement).
       bandRemovals: prev.bandRemovals.filter(
-        (r) => !(r.bandId === bandId && r.key === key),
+        (r) => !(r.bandId === bandId && bandKeysMatch(r.key, key)),
       ),
     }));
   };
