@@ -16,7 +16,9 @@ import {
   activeVersion,
   duplicateVersion,
   notesForBand,
+  promoteVersionToOriginal,
   removeVersion,
+  renameVersion,
   SOLO_BAND_ID,
   switchVersion,
   versionForBand,
@@ -25,7 +27,12 @@ import { stripChords } from '../lib/chordpro';
 import { songKey } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet } from '../components/SongPicker';
-import { ConfirmSheet, MenuSheet } from '../components/Feedback';
+import {
+  ConfirmSheet,
+  MenuSheet,
+  PromptSheet,
+  useToast,
+} from '../components/Feedback';
 import { CoachMark } from '../components/CoachMark';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -149,6 +156,10 @@ export function SongView({
   // Actions « versions » (menu ⋯), création et suppression de version.
   const [versionMenu, setVersionMenu] = useState(false);
   const [delVersionOpen, setDelVersionOpen] = useState(false);
+  // Promotion en référence + renommage (feedback Marco, b135).
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const toast = useToast();
   const [delSongOpen, setDelSongOpen] = useState(false);
   const scroll = useAutoScroll(undefined, song?.id);
 
@@ -908,6 +919,20 @@ export function SongView({
                   },
                 ]
               : []),
+            ...(!isMainVersion
+              ? [
+                  {
+                    label: '⭐ En faire la version de référence',
+                    icon: 'star' as const,
+                    onClick: () => setPromoteOpen(true),
+                  },
+                ]
+              : []),
+            {
+              label: 'Renommer la version',
+              icon: 'edit' as const,
+              onClick: () => setRenameOpen(true),
+            },
             ...(song.versions.length > 1 && !isMainVersion
               ? [
                   {
@@ -922,6 +947,35 @@ export function SongView({
               : []),
           ]}
           onClose={() => setVersionMenu(false)}
+        />
+      )}
+
+      {promoteOpen && (
+        <ConfirmSheet
+          title={`« ${current.name} » devient la référence ?`}
+          message={
+            (current.bandId ?? '') === ''
+              ? "Son contenu remplace l'originale (l'ancien contenu est effacé), et cette version disparaît — elle EST devenue l'originale. Les autres versions ne bougent pas."
+              : "Son contenu remplace celui de l'originale (l'ancien contenu est effacé). Cette version reste attachée à son contexte."
+          }
+          confirmLabel="En faire la référence"
+          onConfirm={() => {
+            saveSong(promoteVersionToOriginal(song, current.id));
+            setShift(0);
+            toast.show('C’est maintenant la version de référence ⭐');
+          }}
+          onClose={() => setPromoteOpen(false)}
+        />
+      )}
+
+      {renameOpen && (
+        <PromptSheet
+          title="Renommer la version"
+          initialValue={current.name}
+          placeholder="Nom de la version"
+          confirmLabel="Renommer"
+          onSubmit={(name) => saveSong(renameVersion(song, current.id, name))}
+          onClose={() => setRenameOpen(false)}
         />
       )}
 
