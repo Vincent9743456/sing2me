@@ -28,7 +28,10 @@ export function ChordLine({ line }: { line: ParsedLine }) {
     return <div className="chordrow">{line.segments[0].text}</div>;
   }
   return (
-    <div className="chordline">
+    // Ligne d'accords SEULS (intro, ponts…) : les paroles ne sont pas
+    // rendues, donc rien ne sépare les segments — la classe ajoute
+    // l'espacement (sinon « Gm Bb Cm » s'affiche collé « GmBbCm »).
+    <div className={`chordline${line.chordsOnly ? ' chordsonly' : ''}`}>
       {line.segments.map((seg, i) => (
         <span className="seg" key={i}>
           {hasChords && <span className="chord">{seg.chord ?? ' '}</span>}
