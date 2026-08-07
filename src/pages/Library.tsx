@@ -608,12 +608,38 @@ export function Library() {
             accessibles pendant le défilement de la bibliothèque. */}
         <div className="libtoolbar" ref={toolbarRef}>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            type="text"
-            placeholder="Rechercher un morceau, un artiste, un tag…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+            <input
+              type="text"
+              placeholder="Rechercher un morceau, un artiste, un tag…"
+              value={query}
+              style={query !== '' ? { paddingRight: 40, width: '100%' } : { width: '100%' }}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {query !== '' && (
+              <button
+                aria-label="Effacer la recherche"
+                title="Effacer la recherche"
+                onClick={() => setQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: 4,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 32,
+                  height: 32,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-dim)',
+                  fontSize: '1.05rem',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
           <select
             value={sort}
             title="Trier la bibliothèque"
