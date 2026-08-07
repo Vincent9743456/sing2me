@@ -74,10 +74,16 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - modifier une partition ne change jamais la version active par
     défaut d'un morceau ; la tonalité/capo de la version principale se
     propage aux versions qui suivaient les mêmes valeurs ;
-  - **invariant « originale maîtresse »** : la 1ʳᵉ version (`versions[0]`)
-    est TOUJOURS l'originale personnelle (`bandId ''`) — elle reste dans la
-    bibliothèque perso, pilote les autres, n'est jamais absorbée par un
-    groupe ni supprimée. **Modèle simplifié (b113, complété b115)** : un
+  - **invariant « originale maîtresse »** (assoupli b135) : la 1ʳᵉ version
+    (`versions[0]`) est TOUJOURS une version personnelle (`bandId ''`) —
+    elle reste dans la bibliothèque perso, pilote les autres, n'est jamais
+    absorbée par un groupe. Depuis b135 (décisions Vincent + feedback
+    Marco) elle EST supprimable et remplaçable : « ⭐ En faire la version
+    de référence » promeut le contenu d'une autre version dans
+    l'originale, et supprimer l'originale fait monter la version suivante
+    en référence (une secondaire personnelle monte telle quelle ; sinon la
+    première version de contexte est clonée en personnelle). Jamais de
+    morceau sans version personnelle en tête. **Modèle simplifié (b113, complété b115)** : un
     morceau = l'originale + AU PLUS une version par groupe qui l'a au
     répertoire + une version **Solo** optionnelle (« Solo » est un
     contexte à part entière, `SOLO_BAND_ID = 'solo'`, modifiable à part

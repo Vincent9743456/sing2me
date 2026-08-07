@@ -461,12 +461,46 @@ export function addSongAsVersion(
   return activate ? switchVersion(withVersion, version.id) : withVersion;
 }
 
-/** Supprime une version (jamais la dernière, jamais l'originale maîtresse) ;
- *  bascule sur la première restante si besoin. */
+/** Supprime une version (jamais la dernière). L'originale AUSSI est
+ *  supprimable (décision Vincent, b135) : une autre version prend alors la
+ *  place de référence — versions[0] reste structurellement une version
+ *  personnelle. Bascule sur la référence restante si besoin. */
 export function removeVersion(song: Song, versionId: string): Song {
   if (song.versions.length <= 1) return song;
-  // L'originale (versions[0]) est la maîtresse : on ne la supprime jamais.
-  if (song.versions[0]?.id === versionId) return song;
+  // Supprimer l'ORIGINALE (décision Vincent, b135 : possible quand elle
+  // n'est pas bonne) : une autre version prend la place de référence.
+  // L'invariant structurel demeure — versions[0] est TOUJOURS une version
+  // personnelle (bandId '') : une secondaire personnelle monte en tête ;
+  // s'il ne reste que des versions de contexte (groupe, Solo), la première
+  // est CLONÉE en personnelle (le contexte garde la sienne).
+  if (song.versions[0]?.id === versionId) {
+    const rest = song.versions.slice(1);
+    const pIdx = rest.findIndex((v) => (v.bandId ?? '') === '');
+    const versions =
+      pIdx !== -1
+        ? [rest[pIdx], ...rest.filter((_, i) => i !== pIdx)]
+        : [
+            {
+              ...rest[0],
+              id: makeId(),
+              name: 'Originale',
+              bandId: '',
+              updatedAt: new Date().toISOString(),
+            },
+            ...rest,
+          ];
+    const next = versions[0];
+    return {
+      ...song,
+      versions,
+      activeVersionId: next.id,
+      key: next.key,
+      tempo: next.tempo,
+      capo: next.capo,
+      structure: next.structure,
+      lyrics: next.lyrics,
+    };
+  }
   const versions = song.versions.filter((v) => v.id !== versionId);
   let out: Song = { ...song, versions };
   if (song.activeVersionId === versionId) {
