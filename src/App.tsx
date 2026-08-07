@@ -9,6 +9,8 @@ import { NotificationsProvider, useNotifications } from './components/Notificati
 import { OnAirButton, OnAirProvider } from './components/OnAir';
 import { TabBar } from './components/ui';
 import { Artist } from './pages/Artist';
+import { Settings } from './pages/Settings';
+import { Songbook } from './pages/Songbook';
 import { BandChat } from './pages/BandChat';
 import { Bands } from './pages/Bands';
 import { BandEdit } from './pages/BandEdit';
@@ -144,6 +146,12 @@ function Screen() {
       break;
     case 'artist':
       page = <Artist />;
+      break;
+    case 'settings':
+      page = <Settings />;
+      break;
+    case 'songbook':
+      page = <Songbook />;
       break;
     case 'bands':
       page = <Bands />;

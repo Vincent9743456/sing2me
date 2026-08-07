@@ -71,6 +71,17 @@ interface StoreValue extends AppState {
   recordBandRemoval: (bandId: string, key: string) => void;
   /** Annule un retrait (le morceau ré-intègre le répertoire du groupe). */
   clearBandRemoval: (bandId: string, key: string) => void;
+  /** Réinitialise une partie des données (écran Réglages). */
+  resetData: (parts: ResetParts) => void;
+}
+
+/** Ce que l'utilisateur choisit d'effacer (réinitialisation partielle). */
+export interface ResetParts {
+  artist?: boolean;
+  bands?: boolean;
+  songs?: boolean;
+  setlists?: boolean;
+  concerts?: boolean;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -342,6 +353,44 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  /**
+   * Réinitialisation partielle (écran Réglages). Chaque élément effacé
+   * reçoit une pierre tombale PAR ID (sans clé de titre) : la suppression
+   * se propage aux autres appareils via la synchro cloud SANS bloquer un
+   * futur ré-import (seules les tombes avec clé bloquent l'import en
+   * masse). Quitter les groupes est local : le groupe continue d'exister
+   * pour les autres membres.
+   */
+  const resetData = (parts: ResetParts) => {
+    setState((prev) => {
+      const at = new Date().toISOString();
+      let deleted = [...prev.deleted];
+      const buryAll = (items: { id: string }[]) => {
+        deleted = [...deleted, ...items.map((x) => ({ id: x.id, at }))].slice(
+          -500,
+        );
+      };
+      if (parts.songs) buryAll(prev.songs);
+      if (parts.setlists) buryAll(prev.setlists);
+      if (parts.concerts) buryAll(prev.concerts);
+      if (parts.bands) buryAll(prev.bands);
+      return {
+        ...prev,
+        songs: parts.songs ? [] : prev.songs,
+        // Sans leurs morceaux, les setlists gardent leurs réglages mais
+        // perdent les items orphelins au prochain rendu — cohérent.
+        setlists: parts.setlists ? [] : prev.setlists,
+        concerts: parts.concerts ? [] : prev.concerts,
+        bands: parts.bands ? [] : prev.bands,
+        bandRemovals: parts.bands ? [] : prev.bandRemovals,
+        artist: parts.artist
+          ? { ...emptyArtist(), updatedAt: at }
+          : prev.artist,
+        deleted,
+      };
+    });
+  };
+
   const value: StoreValue = {
     ...state,
     hydrate,
@@ -358,6 +407,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteNote,
     recordBandRemoval,
     clearBandRemoval,
+    resetData,
   };
 
   return (

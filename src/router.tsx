@@ -18,6 +18,8 @@ export type Route =
   | { name: 'concerts' }
   | { name: 'concert'; id: string | null }
   | { name: 'artist' }
+  | { name: 'settings' }
+  | { name: 'songbook' }
   | { name: 'bands' }
   | { name: 'band'; id: string }
   | { name: 'bandChat'; id: string }
@@ -75,6 +77,10 @@ export function parseHash(hash: string): Route {
       return { name: 'concert', id: parts[1] === 'new' ? null : (parts[1] ?? null) };
     case 'artist':
       return { name: 'artist' };
+    case 'reglages':
+      return { name: 'settings' };
+    case 'export-pdf':
+      return { name: 'songbook' };
     case 'bands':
       return { name: 'bands' };
     case 'band':
