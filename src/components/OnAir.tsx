@@ -24,6 +24,7 @@ import {
   LiveStatus,
   currentLiveRef,
   liveUrl,
+  messagesBySetlist,
   messagesBySong,
   pushBandSong,
   pushLive,
@@ -65,7 +66,7 @@ interface OnAirValue {
   /** La page courante déclare ce que voit le chanteur. */
   setCurrent: (song: LiveSong | null, meta?: { key: string }) => void;
   /** Une page de setlist déclare la setlist à diffuser au public. */
-  setSetlist: (songs: LivePublicSong[] | null) => void;
+  setSetlist: (songs: LivePublicSong[] | null, name?: string) => void;
 }
 
 const OnAirContext = createContext<OnAirValue | null>(null);
@@ -76,7 +77,16 @@ const StatusContext = createContext<{
 } | null>(null);
 
 export function OnAirProvider({ children }: { children: React.ReactNode }) {
-  const { prefs, artist, bands, songs, saveSong, concerts } = useStore();
+  const {
+    prefs,
+    artist,
+    bands,
+    songs,
+    saveSong,
+    concerts,
+    setlists,
+    saveSetlist,
+  } = useStore();
 
   // Concert du jour (planifié dans l'onglet Concerts) → tague les interactions
   const today = new Date();
@@ -137,7 +147,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   // ne pas clignoter quand on passe d'un morceau à l'autre de la setlist.
   const setlistClearTimer = useRef<number | null>(null);
   const setSetlist = useCallback(
-    (songs: LivePublicSong[] | null) => {
+    (songs: LivePublicSong[] | null, name = '') => {
       setlistRef.current = songs;
       if (statusRef.current !== 'on') return;
       if (songs && songs.length > 0) {
@@ -145,7 +155,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
           window.clearTimeout(setlistClearTimer.current);
           setlistClearTimer.current = null;
         }
-        void pushSetlist(prefs.liveKey, songs);
+        void pushSetlist(prefs.liveKey, songs, name);
       } else {
         if (setlistClearTimer.current !== null) {
           window.clearTimeout(setlistClearTimer.current);
@@ -202,10 +212,42 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   // Reporte les totaux de ❤ (historique des directs) dans la bibliothèque.
   const syncHearts = useCallback(async () => {
     try {
+      // Mon nom d'artiste ET celui de TOUS mes groupes (b139) : chaque
+      // membre garde l'historique des ❤ du groupe dans sa bibliothèque,
+      // pas seulement celui qui a lancé le direct.
+      const names = [
+        artist.name,
+        performer?.name ?? '',
+        ...bands.map((b) => b.name),
+      ].filter((n) => n.trim() !== '');
       const totals = heartTotals(
-        await fetchLiveStats(prefs.liveKey, performer?.name ?? artist.name),
+        await fetchLiveStats(prefs.liveKey, [...new Set(names)]),
       );
-      const bySong = messagesBySong(await fetchMessages(prefs.liveKey));
+      const allMessages = await fetchMessages(prefs.liveKey);
+      const bySong = messagesBySong(allMessages);
+      // Les mots du public appartiennent au CONCERT : ils se rangent dans
+      // la setlist jouée (b139), en plus de la trace laissée sur le
+      // morceau qui passait à cet instant.
+      const bySetlist = messagesBySetlist(allMessages);
+      for (const sl of setlists) {
+        const msgs = bySetlist.get(sl.name);
+        if (msgs.length === 0) continue;
+        const known = new Set((sl.fanMessages ?? []).map((m) => m.id));
+        const fresh = msgs
+          .map((m) => ({
+            id: `${m.created_at}|${m.author}|${m.body.slice(0, 40)}`,
+            author: m.author,
+            text: m.body,
+            createdAt: m.created_at,
+          }))
+          .filter((m) => !known.has(m.id));
+        if (fresh.length > 0) {
+          saveSetlist({
+            ...sl,
+            fanMessages: [...(sl.fanMessages ?? []), ...fresh],
+          });
+        }
+      }
       for (const s of songs) {
         const total = totals.get(s.title);
         const msgs = bySong.get(s.title);
@@ -230,7 +272,16 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // silencieux : la synchro retentera au prochain arrêt de direct
     }
-  }, [prefs.liveKey, songs, saveSong, performer, artist.name]);
+  }, [
+    prefs.liveKey,
+    songs,
+    saveSong,
+    setlists,
+    saveSetlist,
+    performer,
+    artist.name,
+    bands,
+  ]);
 
   // `syncHearts` dépend de la bibliothèque : on le garde dans une référence
   // pour que les minuteries ci-dessous ne se recréent pas à chaque
@@ -670,14 +721,18 @@ export function useOnAirLive(): { status: LiveStatus; mode: LiveMode } {
  * public puisse la parcourir lui-même (diffusée seulement si le direct est
  * actif). Effacée en quittant.
  */
-export function useOnAirSetlist(songs: LivePublicSong[] | null) {
+export function useOnAirSetlist(
+  songs: LivePublicSong[] | null,
+  /** Nom de la setlist : les mots du public s'y rattachent (b139). */
+  name = '',
+) {
   const ctx = useContext(OnAirContext);
   const setSetlist = ctx?.setSetlist;
   const key = songs
-    ? `${songs.length}#${songs.map((s) => s.title).join('|')}`
+    ? `${name}#${songs.length}#${songs.map((s) => s.title).join('|')}`
     : '';
   useEffect(() => {
-    if (setSetlist) setSetlist(songs && songs.length > 0 ? songs : null);
+    if (setSetlist) setSetlist(songs && songs.length > 0 ? songs : null, name);
     return () => {
       if (setSetlist) setSetlist(null);
     };

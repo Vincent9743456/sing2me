@@ -229,6 +229,12 @@ export interface Setlist {
   id: string;
   name: string;
   comment: string;
+  /**
+   * Mots laissés par le public pendant les concerts joués sur cette
+   * setlist (b139) : le mot appartient au CONCERT, pas au morceau qui
+   * passait à cet instant — même s'il en garde la trace.
+   */
+  fanMessages?: FanMessage[];
   /** Groupe auquel cette setlist est affectée ('' = aucun) */
   bandId: string;
   items: SetlistItem[];

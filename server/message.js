@@ -31,19 +31,21 @@ export default async function handler(req, res) {
       // Multi-live (b121) : le spectateur précise SON direct (liveId).
       const liveId = String(req.body?.liveId ?? '').slice(0, 60);
       let song_title = '';
+      let setlist_name = '';
       let performer = '';
       let concert_id = '';
       let concert_title = '';
       try {
         const url =
           liveId !== '' && liveId !== 'legacy'
-            ? `${base}/rest/v1/lives?id=eq.${encodeURIComponent(liveId)}&select=status,song,artist,concert&limit=1`
+            ? `${base}/rest/v1/lives?id=eq.${encodeURIComponent(liveId)}&select=status,song,artist,concert,setlist_name&limit=1`
             : `${base}/rest/v1/live_state?id=eq.live&select=status,song,artist,concert`;
         const cur = await fetch(url, { headers: sbHeaders(false) });
         const rows = cur.ok ? await cur.json() : [];
         const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
         if (row) {
           if (row.status === 'on') song_title = row.song?.title ?? '';
+          setlist_name = row.setlist_name ?? '';
           performer = row.artist?.name ?? '';
           concert_id = row.concert?.id ?? '';
           concert_title = row.concert?.title ?? '';
@@ -66,11 +68,13 @@ export default async function handler(req, res) {
           author,
           body: text,
           song_title,
+          setlist_name,
           performer,
           concert_id,
           concert_title,
           live_id: liveId !== '' && liveId !== 'legacy' ? liveId : null,
         },
+        { author, body: text, song_title, setlist_name, performer },
         { author, body: text, song_title, performer },
         { author, body: text, song_title },
         { author, body: text },
@@ -115,6 +119,7 @@ export default async function handler(req, res) {
       // Même prudence en lecture : si les colonnes de contexte manquent,
       // l'artiste doit quand même voir les mots de son public.
       const selects = [
+        'author,body,song_title,setlist_name,performer,concert_id,concert_title,created_at',
         'author,body,song_title,performer,concert_id,concert_title,created_at',
         'author,body,song_title,performer,created_at',
         'author,body,song_title,created_at',

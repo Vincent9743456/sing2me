@@ -542,6 +542,29 @@ export function SetlistEdit({ id }: { id: string | null }) {
           </p>
         </Field>
         </Accordion>
+        {/* Mots du public reçus pendant les concerts joués sur cette
+            setlist (b139) : ils appartiennent au concert, pas au morceau
+            qui passait à cet instant. */}
+        {(draft.fanMessages ?? []).length > 0 && (
+          <Accordion
+            title="💬 Mots du public"
+            sub={`${(draft.fanMessages ?? []).length} message${
+              (draft.fanMessages ?? []).length > 1 ? 's' : ''
+            } reçu${(draft.fanMessages ?? []).length > 1 ? 's' : ''} en concert`}
+          >
+            {[...(draft.fanMessages ?? [])]
+              .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+              .map((m) => (
+                <div key={m.id} className="notesbox" style={{ marginBottom: 8 }}>
+                  <div style={{ whiteSpace: 'pre-wrap' }}>{m.text}</div>
+                  <div className="help" style={{ marginTop: 4 }}>
+                    {m.author.trim() !== '' ? m.author : 'Un spectateur'}
+                  </div>
+                </div>
+              ))}
+          </Accordion>
+        )}
+
         {/* Sono & scène : écran dédié — la rangée dit si c'est renseigné. */}
         <AccordionNav
           title="🔊 Sono & scène"

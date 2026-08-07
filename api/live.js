@@ -401,6 +401,11 @@ export default async function handler(req, res) {
             const list = sanitizeSetlist(body.setlist);
             patch.setlist = list;
             patch.setlist_count = list.length;
+            // Nom de la setlist jouée : les mots du public s'y rattachent.
+            patch.setlist_name =
+              list.length > 0 && typeof body.setlistName === 'string'
+                ? body.setlistName.slice(0, 200)
+                : '';
           }
           if ('song' in body) patch.song = body.song ?? null;
           if ('artist' in body) patch.artist = body.artist ?? null;

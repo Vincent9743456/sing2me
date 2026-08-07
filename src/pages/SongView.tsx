@@ -241,7 +241,7 @@ export function SongView({
         : null,
     [ctxSetlist, songs],
   );
-  useOnAirSetlist(publicSetlist);
+  useOnAirSetlist(publicSetlist, ctxSetlist?.name ?? '');
 
 
   if (!song) {

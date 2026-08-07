@@ -79,6 +79,8 @@ export interface LiveConcertRef {
 }
 
 export interface LiveMessage {
+  /** Setlist jouée pendant le concert où ce mot a été laissé (b139). */
+  setlist_name?: string;
   author: string;
   body: string;
   song_title: string;
@@ -209,6 +211,8 @@ export async function fetchLiveSetlist(code = ''): Promise<LivePublicSong[]> {
 export async function pushSetlist(
   key: string,
   setlist: LivePublicSong[] | null,
+  /** Nom de la setlist jouée : les mots du public s'y rattachent (b139). */
+  setlistName = '',
 ): Promise<void> {
   if (key.trim() === '') return;
   try {
@@ -217,6 +221,7 @@ export async function pushSetlist(
       headers: { 'content-type': 'application/json', 'x-live-key': key },
       body: JSON.stringify({
         setlist: setlist ?? [],
+        setlistName,
         multi: 1,
         ...(currentLiveRef() ?? {}),
       }),
@@ -327,6 +332,21 @@ export function messagesBySong(msgs: LiveMessage[]): {
   return { get: (title: string) => map.get(normalizeTitle(title)) ?? [] };
 }
 
+/** Mots du public regroupés par SETLIST jouée (b139). */
+export function messagesBySetlist(msgs: LiveMessage[]): {
+  get: (name: string) => LiveMessage[];
+} {
+  const map = new Map<string, LiveMessage[]>();
+  for (const m of msgs) {
+    const k = normalizeTitle(m.setlist_name ?? '');
+    if (k === '') continue;
+    const list = map.get(k) ?? [];
+    list.push(m);
+    map.set(k, list);
+  }
+  return { get: (name: string) => map.get(normalizeTitle(name)) ?? [] };
+}
+
 /** Totaux de ❤ par chanson (agrégés sur tout l'historique des directs). */
 export function heartTotals(stats: LiveStat[]): {
   get: (title: string) => number | undefined;
@@ -371,13 +391,21 @@ export async function fetchAudienceSessions(
 /** Statistiques des directs (réservé à l'artiste, clé On Air requise). */
 export async function fetchLiveStats(
   key: string,
-  /** Nom de l'artiste : ne ramène QUE ses statistiques (b138). */
-  performer = '',
+  /**
+   * Noms à interroger : l'artiste ET ses groupes (b139). Tous les membres
+   * d'un groupe gardent ainsi l'historique des ❤ du groupe, pas seulement
+   * celui qui a lancé le direct. Un seul appel pour tous les noms — un
+   * appel par nom compterait plusieurs fois l'historique antérieur.
+   */
+  performer: string | string[] = '',
 ): Promise<LiveStat[]> {
   let res: Response;
+  const names = (Array.isArray(performer) ? performer : [performer])
+    .map((n) => n.trim())
+    .filter((n) => n !== '');
   const q =
-    performer.trim() !== ''
-      ? `&performer=${encodeURIComponent(performer.trim())}`
+    names.length > 0
+      ? `&performer=${encodeURIComponent(names.join(','))}`
       : '';
   try {
     res = await fetch(`/api/live-x?fn=live-stats${q}`, {
