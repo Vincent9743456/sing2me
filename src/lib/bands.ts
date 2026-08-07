@@ -349,6 +349,51 @@ export async function leaveBand(
   }
 }
 
+/** Un musicien qui a quitté un de MES groupes (b142). */
+export interface BandDeparture {
+  bandId: string;
+  bandName: string;
+  userId: string;
+  name: string;
+  at: string;
+}
+
+/**
+ * Départs à traiter dans mes groupes (b142) : le plus souvent un
+ * musicien qui a réinitialisé son application et n'a donc plus le
+ * groupe. Le réinviter fait disparaître la ligne. Best-effort : [] si
+ * le serveur est injoignable ou la fonction pas encore installée.
+ */
+export async function fetchBandDepartures(
+  s: AuthSession,
+): Promise<BandDeparture[]> {
+  try {
+    const res = await sbAuthed(s, '/rest/v1/rpc/my_band_departures', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) return [];
+    const rows = (await res.json()) as {
+      band_id: string;
+      band_name: string;
+      user_id: string;
+      name: string;
+      at: string;
+    }[];
+    return Array.isArray(rows)
+      ? rows.map((r) => ({
+          bandId: r.band_id,
+          bandName: r.band_name ?? '',
+          userId: r.user_id,
+          name: r.name ?? '',
+          at: r.at ?? '',
+        }))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Mes invitations de groupe en attente (best-effort : [] si indisponible). */
 export async function fetchMyInvites(
   s: AuthSession,

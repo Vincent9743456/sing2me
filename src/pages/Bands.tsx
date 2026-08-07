@@ -10,7 +10,14 @@ import { Icon } from '../components/Icon';
 import { useNotifications } from '../components/Notifications';
 import { Empty, Field, TopBar } from '../components/ui';
 import { getValidSession } from '../lib/auth';
-import { fetchMyInvites, PendingInvite, respondInvite } from '../lib/bands';
+import {
+  BandDeparture,
+  fetchBandDepartures,
+  fetchMyInvites,
+  inviteToBand,
+  PendingInvite,
+  respondInvite,
+} from '../lib/bands';
 import { dedupeMusicians } from '../lib/model';
 import { creatorMember } from '../lib/model';
 import { navigate } from '../router';
@@ -24,6 +31,9 @@ export function Bands() {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [invites, setInvites] = useState<PendingInvite[]>([]);
+  // Musiciens partis de MES groupes, à réinviter (b142).
+  const [departures, setDepartures] = useState<BandDeparture[]>([]);
+  const [reinviteBusy, setReinviteBusy] = useState('');
   const [inviteBusy, setInviteBusy] = useState('');
 
   // Ouvrir l'onglet Groupes = « j'ai vu les arrivées » : on efface cette
@@ -44,11 +54,31 @@ export function Bands() {
       if (!s || cancelled) return;
       const list = await fetchMyInvites(s);
       if (!cancelled) setInvites(list);
+      // Départs à traiter dans MES groupes (b142) : un musicien qui a
+      // réinitialisé son application n'a plus le groupe — il faut le
+      // réinviter, et ça ne se devine pas.
+      const gone = await fetchBandDepartures(s);
+      if (!cancelled) setDepartures(gone);
     })();
     return () => {
       cancelled = true;
     };
   }, [account?.email]);
+
+  /** Renvoie la demande à un musicien parti (b142). */
+  async function reinvite(d: BandDeparture) {
+    setReinviteBusy(d.userId);
+    try {
+      const s = await getValidSession();
+      if (!s) return;
+      await inviteToBand(s, d.bandId, d.userId);
+      setDepartures((list) => list.filter((x) => x.userId !== d.userId));
+    } catch {
+      /* silencieux : la carte reste, on pourra réessayer */
+    } finally {
+      setReinviteBusy('');
+    }
+  }
 
   async function respond(inv: PendingInvite, accept: boolean) {
     setInviteBusy(inv.id);
@@ -118,6 +148,43 @@ export function Bands() {
               >
                 🎉 <strong>{n.memberName}</strong> a rejoint{' '}
                 <strong>« {n.bandName} »</strong>.
+              </div>
+            ))}
+            <div className="spacer" />
+          </>
+        )}
+        {/* Un musicien a quitté un de mes groupes (b142) : le plus
+            souvent parce qu'il a réinitialisé son application. Il ne
+            reviendra pas tout seul — la demande doit être renvoyée. */}
+        {departures.length > 0 && (
+          <>
+            <h2 className="pagetitle" style={{ marginTop: 0 }}>
+              À réinviter
+            </h2>
+            {departures.map((d) => (
+              <div
+                className="card"
+                key={`${d.bandId}|${d.userId}`}
+                style={{
+                  padding: '10px 12px',
+                  marginBottom: 8,
+                  borderColor: 'var(--accent)',
+                }}
+              >
+                <div>
+                  <strong>{d.name || 'Un musicien'}</strong> n'a plus accès à{' '}
+                  <strong>« {d.bandName || 'ton groupe'} »</strong> — son
+                  application a été réinitialisée.
+                </div>
+                <div className="rowactions">
+                  <button
+                    className="btn"
+                    disabled={reinviteBusy === d.userId}
+                    onClick={() => void reinvite(d)}
+                  >
+                    {reinviteBusy === d.userId ? '…' : '↻ Lui renvoyer la demande'}
+                  </button>
+                </div>
               </div>
             ))}
             <div className="spacer" />
