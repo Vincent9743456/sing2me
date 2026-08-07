@@ -341,7 +341,7 @@ export function BandEdit({ id }: { id: string }) {
         <button
           className="btn block"
           onClick={() => navigate(`/band/${band.id}/chat`)}
-          title="Discussion du groupe : préparer les répéts et concerts, proposer des chansons"
+          title="Discussion du groupe : préparer les répéts et concerts, proposer des morceaux"
         >
           💬 Espace du groupe — discussion, répéts, concerts
         </button>
@@ -532,7 +532,7 @@ export function BandEdit({ id }: { id: string }) {
                 <div className="su">
                   {lastMsg
                     ? `« ${lastMsg.text.slice(0, 40)}${lastMsg.text.length > 40 ? '…' : ''} » · ${ago(lastMsg.at)}`
-                    : 'Prépare répéts et concerts, propose des chansons'}
+                    : 'Prépare répéts et concerts, propose des morceaux'}
                 </div>
               </div>
               <span className="chev" aria-hidden="true">
