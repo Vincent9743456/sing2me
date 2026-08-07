@@ -70,6 +70,35 @@ export async function fetchPublicPage(name: string): Promise<PublicPage | null> 
   }
 }
 
+/**
+ * Ce nom public est-il libre ? (b137 — l'artiste peut changer d'adresse
+ * après la réservation automatique.) Lecture anonyme : on ne voit que
+ * l'existence d'une ligne. Renvoie `true` si personne ne l'a pris, ou si
+ * c'est déjà le nôtre ; `null` si la question n'a pas pu être posée
+ * (hors ligne, cloud non configuré) — l'appelant reste alors muet.
+ */
+export async function isPublicNameFree(
+  name: string,
+  myUserId?: string,
+): Promise<boolean | null> {
+  if (!publicPagesAvailable() || name === '') return null;
+  try {
+    const res = await fetch(
+      `${sbUrl()}/rest/v1/public_pages?name=eq.${encodeURIComponent(
+        name,
+      )}&select=user_id`,
+      { headers: { apikey: anon(), authorization: `Bearer ${anon()}` } },
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    if (!row) return true;
+    return myUserId !== undefined && row.user_id === myUserId;
+  } catch {
+    return null;
+  }
+}
+
 /** Nom public actuel de CE compte (s'il en a réservé un). */
 export async function fetchMyPublicName(
   s: AuthSession,

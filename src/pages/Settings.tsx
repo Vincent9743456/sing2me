@@ -15,6 +15,7 @@ import React, { useState } from 'react';
 import { ConfirmSheet, useToast } from '../components/Feedback';
 import { Icon } from '../components/Icon';
 import { AccordionNav, TopBar } from '../components/ui';
+import { LiveStatus, pushLive, pushSetlist } from '../lib/live';
 import { navigate } from '../router';
 import { ResetParts, useStore } from '../store';
 
@@ -49,7 +50,7 @@ const RESET_CHOICES: {
 ];
 
 export function Settings() {
-  const { songs, setlists, concerts, bands, resetData } = useStore();
+  const { songs, setlists, concerts, bands, resetData, prefs } = useStore();
   const toast = useToast();
   const [picked, setPicked] = useState<Set<keyof ResetParts>>(new Set());
   const [confirming, setConfirming] = useState(false);
@@ -146,6 +147,24 @@ export function Settings() {
             const parts: ResetParts = {};
             for (const k of picked) parts[k] = true;
             resetData(parts);
+            // Ce que le PUBLIC voit doit suivre (bug signalé par Marco,
+            // b137) : la setlist et le morceau diffusés vivent sur le
+            // serveur — sans cet effacement, « Voir la setlist » montrait
+            // encore des morceaux supprimés. Best-effort, non bloquant.
+            if (parts.setlists === true || parts.songs === true) {
+              void pushSetlist(prefs.liveKey, null);
+              // Un direct en cours (ou en pause) garde son statut : on ne
+              // vide QUE ce qui est diffusé.
+              const onair = (localStorage.getItem('sing2me/onair') ??
+                'off') as LiveStatus;
+              if (onair !== 'off') {
+                void pushLive(prefs.liveKey, {
+                  status: onair,
+                  song: null,
+                  setlist: null,
+                }).catch(() => {});
+              }
+            }
             setPicked(new Set());
             toast.show('Réinitialisation faite ✓');
           }}

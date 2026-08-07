@@ -20,13 +20,28 @@ export default function MessageBox({
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Livre d'or indisponible sur cette installation : on masque la boîte au
+  // lieu d'exposer une erreur technique au public (b137). Mémorisé pour ne
+  // pas la reproposer à chaque morceau du concert.
+  const [available, setAvailable] = useState(
+    () => localStorage.getItem('sing2me/guestbookOff') === null,
+  );
 
   async function onSend() {
     if (text.trim() === '' || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await sendMessage(name.trim(), text.trim(), liveId);
+      const res = await sendMessage(name.trim(), text.trim(), liveId, songTitle);
+      if (res === 'unavailable') {
+        try {
+          localStorage.setItem('sing2me/guestbookOff', '1');
+        } catch {
+          /* stockage indisponible : on masque au moins pour cette page */
+        }
+        setAvailable(false);
+        return;
+      }
       localStorage.setItem('sing2me/fanName', name.trim());
       setSent(true);
       setText('');
@@ -40,6 +55,8 @@ export default function MessageBox({
       setBusy(false);
     }
   }
+
+  if (!available) return null;
 
   return (
     <div className="tipbox">
