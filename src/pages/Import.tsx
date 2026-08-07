@@ -707,7 +707,7 @@ export function Import() {
       <>
         <div style={{ display: 'flex', gap: 8 }}>
           <div className="field" style={{ flex: 1 }}>
-            <label>Titre (repris automatiquement)</label>
+            <label>Titre</label>
             <input
               type="text"
               value={title}
@@ -715,7 +715,7 @@ export function Import() {
             />
           </div>
           <div className="field" style={{ flex: 1 }}>
-            <label>Artiste (repris automatiquement)</label>
+            <label>Artiste</label>
             <input
               type="text"
               value={artist}
@@ -725,24 +725,21 @@ export function Import() {
         </div>
         {preview && (
           <div className="card">
-            <div className="help" style={{ marginBottom: 6 }}>
-              APERÇU DE L'ANALYSE
-            </div>
             <div>
               Titre : <strong>{title.trim() || preview.song.title}</strong>
               {(artist.trim() || preview.song.artist) !== '' && (
                 <> — Artiste : {artist.trim() || preview.song.artist}</>
               )}
             </div>
+            {/* Message humain — le détail technique (parties, lignes
+                fusionnées) n'apprend rien d'utile ici. */}
             <div className="help" style={{ marginTop: 4 }}>
               {[
-                preview.stats.structureRows > 0
-                  ? `structure : ${preview.stats.structureRows} partie${preview.stats.structureRows > 1 ? 's' : ''}`
-                  : 'pas de structure détectée',
+                preview.stats.mergedChordLines > 0 ||
+                /\[[A-G][#b]?/.test(preview.song.lyrics)
+                  ? '✓ Accords et paroles récupérés'
+                  : '✓ Paroles récupérées',
                 preview.song.key !== '' ? `tonalité ${preview.song.key}` : '',
-                preview.stats.mergedChordLines > 0
-                  ? `${preview.stats.mergedChordLines} lignes d'accords fusionnées`
-                  : '',
               ]
                 .filter((x) => x !== '')
                 .join(' · ')}
@@ -782,7 +779,7 @@ export function Import() {
         {preview && preview.song.lyrics.trim() !== '' && (
           <div className="card importpreview">
             <div className="help" style={{ marginBottom: 6 }}>
-              APERÇU DE LA PARTITION
+              Aperçu de la partition
             </div>
             <div className="importpreview-body">
               <SongBody
@@ -816,14 +813,6 @@ export function Import() {
           </>
         )}
         <button
-          className="btn block"
-          onClick={() => onImport(false)}
-          disabled={text.trim() === ''}
-        >
-          Ajouter à ma bibliothèque
-        </button>
-        <div className="spacer" />
-        <button
           className="btn ghost block"
           onClick={() => onImport(true)}
           disabled={text.trim() === ''}
@@ -836,6 +825,17 @@ export function Import() {
           mais reste dans ta réserve jusqu'à ce que tu la valides dans la
           bibliothèque.
         </p>
+        {/* Action principale COLLANTE : visible même en défilant la longue
+            partition (elle se cale au-dessus de la barre d'onglets). */}
+        <div className="stickyaction">
+          <button
+            className="btn block"
+            onClick={() => onImport(false)}
+            disabled={text.trim() === ''}
+          >
+            Ajouter à ma bibliothèque
+          </button>
+        </div>
       </>
     ) : null;
 
@@ -909,7 +909,11 @@ export function Import() {
         )}
 
         {/* 2 — Un seul chemin visible par défaut : les alternatives vivent
-            derrière ce pli discret (ouvert d'office si l'une est en cours). */}
+            derrière ce pli discret (ouvert d'office si l'une est en cours,
+            masqué dès qu'une partition est chargée : l'écran devient
+            « aperçu et validation », rien d'autre). */}
+        {!(text.trim() !== '' && method === 'ug') && (
+        <>
         <div className="spacer" />
         <details
           className="stfold"
@@ -935,6 +939,8 @@ export function Import() {
             </button>
           </div>
         </details>
+        </>
+        )}
 
         {method === 'doc' && (
           <>

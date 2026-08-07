@@ -948,6 +948,10 @@ textarea.mono {
   display: flex;
   flex-direction: column;
 }
+/* Accords seuls (pas de paroles rendues dessous) : espacer les segments. */
+.chordline.chordsonly {
+  column-gap: 0.6em;
+}
 .chordline .chord {
   color: var(--chord);
   font-weight: 700;
@@ -1653,6 +1657,17 @@ textarea.mono {
 .onair:hover {
   transform: translateY(-1px);
 }
+/* Action principale collante (aperçu d'import) : reste visible pendant le
+   défilement de la partition, au-dessus de la barre d'onglets. */
+.stickyaction {
+  position: sticky;
+  bottom: calc(64px + env(safe-area-inset-bottom));
+  z-index: 5;
+  padding: 8px 0;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+}
+
 /* Badge du bouton « Filtrer » (bibliothèque) : nombre de filtres actifs. */
 .filtercount {
   display: inline-flex;
