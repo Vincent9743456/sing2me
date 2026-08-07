@@ -215,9 +215,16 @@ begin
   end if;
   delete from public.cloud_band_members
     where band_id = p_band and user_id = auth.uid();
-  -- Une invitation en attente n'a plus lieu d'être.
-  delete from public.band_invites
-    where band_id = p_band and invited_user = auth.uid();
+  -- Trace du départ (b142) : le créateur en est informé dans son onglet
+  -- Groupes et peut réinviter d'un geste. `invited_by` reprend le
+  -- propriétaire du groupe (la colonne est obligatoire).
+  insert into public.band_invites
+    (band_id, invited_user, invited_by, band_name, from_name, status)
+  select p_band, auth.uid(), b.owner, b.name, '', 'left'
+  from public.cloud_bands b
+  where b.id = p_band
+  on conflict (band_id, invited_user) do update set
+    status = 'left', created_at = now();
   return json_build_object('ok', true);
 end $$;
 grant execute on function public.leave_band to authenticated;

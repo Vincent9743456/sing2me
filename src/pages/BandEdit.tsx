@@ -20,6 +20,8 @@ import {
   deleteCloudBand,
   DirectoryPerson,
   ensureCloudBand,
+  BandDeparture,
+  fetchBandDepartures,
   fetchBandMembers,
   fetchBandMessages,
   inviteToBand,
@@ -152,6 +154,8 @@ export function BandEdit({ id }: { id: string }) {
   const [invited, setInvited] = useState<Set<string>>(new Set());
   // Invitations RENVOYÉES à des membres déjà inscrits (b140).
   const [reinvited, setReinvited] = useState<Set<string>>(new Set());
+  // Musiciens partis de CE groupe, à réinviter (b142).
+  const [departures, setDepartures] = useState<BandDeparture[]>([]);
 
   // Membres réels (comptes) du groupe publié
   useEffect(() => {
@@ -165,6 +169,11 @@ export function BandEdit({ id }: { id: string }) {
         if (!cancelled) setMyId(s.userId);
         const members = await fetchBandMembers(s, cid);
         if (!cancelled) setCloudMembers(members);
+        // Départs à traiter sur CE groupe (b142).
+        const gone = await fetchBandDepartures(s);
+        if (!cancelled) {
+          setDepartures(gone.filter((d) => d.bandId === cid));
+        }
         // Dernier message pour le sous-titre de la porte « Discussion ».
         try {
           const msgs = await fetchBandMessages(s, cid);
@@ -463,6 +472,48 @@ export function BandEdit({ id }: { id: string }) {
         }
       />
       <div className="page">
+        {/* Un musicien a quitté CE groupe (b142) : signalé haut et clair,
+            avec le geste qui répare juste à côté. */}
+        {departures.length > 0 && (
+          <div
+            className="card"
+            style={{ borderColor: 'var(--accent)', marginBottom: 12 }}
+          >
+            {departures.map((d) => (
+              <div key={d.userId} style={{ marginBottom: 8 }}>
+                <div>
+                  <strong>{d.name || 'Un musicien'}</strong> n'a plus accès au
+                  groupe — son application a été réinitialisée.
+                </div>
+                <div className="rowactions">
+                  <button
+                    className="btn"
+                    disabled={reinvited.has(d.userId)}
+                    onClick={() => {
+                      const cid = band.cloudId;
+                      if (!cid) return;
+                      void (async () => {
+                        try {
+                          const s = await getValidSession();
+                          if (!s) return;
+                          await inviteToBand(s, cid, d.userId);
+                          setReinvited((prev) => new Set(prev).add(d.userId));
+                          setDepartures((list) =>
+                            list.filter((x) => x.userId !== d.userId),
+                          );
+                        } catch {
+                          /* silencieux : la carte reste */
+                        }
+                      })();
+                    }}
+                  >
+                    ↻ Lui renvoyer la demande
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {!editing && (
           <>
             {/* En-tête : photo + nom + membres + Inviter. */}

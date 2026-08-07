@@ -95,11 +95,19 @@ create table if not exists public.band_invites (
   band_name text not null default '',
   from_name text not null default '',
   status text not null default 'pending'
-    check (status in ('pending', 'accepted', 'declined')),
+    check (status in ('pending', 'accepted', 'declined', 'left')),
   created_at timestamptz not null default now(),
   unique (band_id, invited_user)
 );
 alter table public.band_invites enable row level security;
+
+-- b142 : 'left' = ce musicien a quitté le groupe (application
+-- réinitialisée, nouveau téléphone). Le créateur en est informé et peut
+-- le réinviter d'un geste. Migration des bases déjà créées :
+alter table public.band_invites drop constraint if exists band_invites_status_check;
+alter table public.band_invites
+  add constraint band_invites_status_check
+  check (status in ('pending', 'accepted', 'declined', 'left'));
 
 -- L'invité voit ses invitations ; le créateur voit celles de son groupe.
 -- (insertion/réponse uniquement via les fonctions ci-dessous.)
@@ -224,3 +232,31 @@ language sql security definer set search_path = public as $$
     );
 $$;
 grant execute on function public.band_members to authenticated;
+
+-- ------------------------------------------------------------
+-- b142 : départs à traiter dans MES groupes. Le créateur voit qui a
+-- quitté (le plus souvent : application réinitialisée) et peut le
+-- réinviter — `invite_to_band` remet la ligne en 'pending', ce qui la
+-- fait disparaître d'ici.
+-- ------------------------------------------------------------
+create or replace function public.my_band_departures()
+returns table (
+  band_id uuid,
+  band_name text,
+  user_id uuid,
+  name text,
+  at timestamptz
+)
+language sql security definer set search_path = public as $$
+  select i.band_id,
+         i.band_name,
+         i.invited_user as user_id,
+         coalesce(d.name, '') as name,
+         i.created_at as at
+  from public.band_invites i
+  join public.cloud_bands b on b.id = i.band_id
+  left join public.musician_directory d on d.user_id = i.invited_user
+  where i.status = 'left' and b.owner = auth.uid()
+  order by i.created_at desc;
+$$;
+grant execute on function public.my_band_departures to authenticated;

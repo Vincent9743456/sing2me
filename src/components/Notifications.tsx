@@ -19,6 +19,7 @@ import {
   CloudMember,
   fetchBandMembers,
   fetchBandMessages,
+  fetchBandDepartures,
   fetchMyInvites,
 } from '../lib/bands';
 import { useStore } from '../store';
@@ -201,6 +202,7 @@ export function NotificationsProvider({
   children: React.ReactNode;
 }) {
   const account = useAccount();
+  const [departureCount, setDepartureCount] = useState(0);
   const { bands, saveBand, deleteBand } = useStore();
   const toast = useToast();
   const [inviteCount, setInviteCount] = useState(0);
@@ -227,6 +229,11 @@ export function NotificationsProvider({
       try {
         const invites = await fetchMyInvites(s);
         setInviteCount(invites.length);
+        // Musiciens partis de MES groupes, à réinviter (b142) : compte
+        // dans la pastille de l'onglet Groupes — sans quoi personne ne
+        // sait qu'une action est attendue.
+        const gone = await fetchBandDepartures(s);
+        setDepartureCount(gone.length);
       } catch {
         // annuaire indisponible : on garde la valeur précédente
       }
@@ -368,7 +375,7 @@ export function NotificationsProvider({
     memberNews,
     unreadByBand,
     messageUnread,
-    badge: inviteCount + memberNews.length + messageUnread,
+    badge: inviteCount + departureCount + memberNews.length + messageUnread,
     refresh: () => void poll(),
     acknowledgeMembers,
     markMessagesSeen,
