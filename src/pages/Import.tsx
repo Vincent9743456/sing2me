@@ -119,6 +119,9 @@ function ProgressBar({
 export function Import() {
   const { songs, deleted, saveSong } = useStore();
   const [method, setMethod] = useState<AddMethod>('ug');
+  // Pli « Autres façons d'importer » (fermé par défaut : un seul chemin
+  // visible ; forcé ouvert quand une alternative est en cours).
+  const [othersOpen, setOthersOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [text, setText] = useState('');
@@ -261,6 +264,39 @@ export function Import() {
       setUgSearching(false);
     }
   }
+
+  // Recherche AUTOMATIQUE au fil de la frappe : 400 ms après la dernière
+  // touche (plus de bouton « Chercher » — Entrée reste en secours clavier).
+  // Un numéro de série ignore les réponses périmées si on retape entre-temps.
+  const searchSeq = useRef(0);
+  useEffect(() => {
+    const q = ugQuery.trim();
+    if (q.length < 3) return;
+    const t = window.setTimeout(() => {
+      const seq = ++searchSeq.current;
+      setMethod('ug');
+      setError(null);
+      setUgSearching(true);
+      setUgResults(null);
+      searchUgTabs(q)
+        .then((results) => {
+          if (seq !== searchSeq.current) return;
+          setUgResults(results);
+          if (results.length === 0) {
+            setError('Aucune version trouvée pour cette recherche.');
+          }
+        })
+        .catch((e: unknown) => {
+          if (seq !== searchSeq.current) return;
+          setError(e instanceof Error ? e.message : 'La recherche a échoué.');
+        })
+        .finally(() => {
+          if (seq === searchSeq.current) setUgSearching(false);
+        });
+    }, 400);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ugQuery]);
 
   async function onAiClean() {
     if (text.trim() === '' || aiLoading) return;
@@ -810,27 +846,21 @@ export function Import() {
         {/* 1 — Recherche : la première chose visible, toujours en tête */}
         <div className="field">
           <label>Rechercher un morceau</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              type="text"
-              value={ugQuery}
-              placeholder="Titre et artiste — ex. Angie Rolling Stones"
-              onChange={(e) => setUgQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void onUgSearch();
-              }}
-            />
-            <button
-              className="btn"
-              onClick={() => void onUgSearch()}
-              disabled={ugQuery.trim() === '' || ugSearching}
-            >
-              {ugSearching ? '…' : 'Chercher'}
-            </button>
-          </div>
+          {/* La recherche part toute seule pendant la frappe (400 ms) —
+              pas de bouton ; Entrée lance tout de suite (secours clavier). */}
+          <input
+            type="text"
+            value={ugQuery}
+            placeholder="Titre et artiste — ex. Angie Rolling Stones"
+            onChange={(e) => setUgQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void onUgSearch();
+            }}
+          />
           <p className="help" style={{ marginTop: 4 }}>
-            Le plus simple : Sing2Me trouve la meilleure version et importe
-            accords, paroles et structure.
+            {ugSearching
+              ? '🔎 Recherche en cours…'
+              : 'Tape le titre (et l’artiste) : les résultats arrivent tout seuls.'}
           </p>
         </div>
 
@@ -878,33 +908,33 @@ export function Import() {
           </>
         )}
 
-        {/* 2 — Autres façons d'ajouter un morceau, en secondaire, plus bas */}
+        {/* 2 — Un seul chemin visible par défaut : les alternatives vivent
+            derrière ce pli discret (ouvert d'office si l'une est en cours). */}
         <div className="spacer" />
-        <div
-          className="help"
-          style={{
-            fontWeight: 700,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            marginBottom: 6,
-          }}
+        <details
+          className="stfold"
+          open={othersOpen || method !== 'ug'}
+          onToggle={(e) => setOthersOpen((e.target as HTMLDetailsElement).open)}
         >
-          Ou importer autrement
-        </div>
-        <div className="chips" style={{ marginBottom: 12 }}>
-          <button
-            className={`chip ${method === 'doc' ? '' : 'off'}`}
-            onClick={() => setMethod(method === 'doc' ? 'ug' : 'doc')}
-          >
-            Document ou lien
-          </button>
-          <button
-            className={`chip ${method === 'bulk' ? '' : 'off'}`}
-            onClick={() => setMethod(method === 'bulk' ? 'ug' : 'bulk')}
-          >
-            Import en masse
-          </button>
-        </div>
+          <summary>Autres façons d'importer</summary>
+          <div className="chips" style={{ margin: '8px 0 12px' }}>
+            <button
+              className={`chip ${method === 'doc' ? '' : 'off'}`}
+              onClick={() => setMethod(method === 'doc' ? 'ug' : 'doc')}
+            >
+              Document ou lien
+            </button>
+            <button
+              className={`chip ${method === 'bulk' ? '' : 'off'}`}
+              onClick={() => setMethod(method === 'bulk' ? 'ug' : 'bulk')}
+            >
+              Import en masse
+            </button>
+            <button className="chip off" onClick={() => navigate('/song/new')}>
+              Écrire à la main
+            </button>
+          </div>
+        </details>
 
         {method === 'doc' && (
           <>
@@ -1221,14 +1251,8 @@ export function Import() {
           </>
         )}
 
-        <p className="help" style={{ textAlign: 'center' }}>
-          <a
-            href="#/song/new"
-            style={{ color: 'var(--text-dim)' }}
-          >
-            Ou écrire un morceau à la main →
-          </a>
-        </p>
+        {/* « Écrire à la main » vit dans « Autres façons d'importer » —
+            plus de deuxième chemin en bas de page. */}
       </div>
     </>
   );
