@@ -431,9 +431,11 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
             >
               {status === 'off' && (
                 <button className="btn" disabled={busy} onClick={() => act('on')}>
-                  {mode === 'repet'
-                    ? '🎸 Démarrer la répétition'
-                    : '🔴 Démarrer le direct'}
+                  {busy
+                    ? '⏳ Lancement…'
+                    : mode === 'repet'
+                      ? '🎸 Démarrer la répétition'
+                      : '🔴 Démarrer le direct'}
                 </button>
               )}
               {status === 'on' && (
@@ -447,7 +449,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
               )}
               {status === 'pause' && (
                 <button className="btn" disabled={busy} onClick={() => act('on')}>
-                  ▶ Reprendre
+                  {busy ? '⏳ Reprise…' : '▶ Reprendre'}
                 </button>
               )}
               {status !== 'off' && (
@@ -456,7 +458,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                   disabled={busy}
                   onClick={() => act('off')}
                 >
-                  ⏹ Arrêter
+                  {busy ? '⏳ Arrêt…' : '⏹ Arrêter'}
                 </button>
               )}
               <button className="btn ghost" onClick={() => void showQr()}>

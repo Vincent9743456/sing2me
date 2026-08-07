@@ -432,17 +432,10 @@ export default async function handler(req, res) {
           res.status(400).json({ error: 'Statut invalide' });
           return;
         }
-        // Code de salon unique parmi les lives ACTIFS (5 tentatives).
-        let joinCode = randomCode();
-        for (let i = 0; i < 5; i++) {
-          const c = await fetch(
-            `${base}/rest/v1/lives?join_code=eq.${joinCode}&status=neq.off&select=id&limit=1`,
-            { headers: sbHeaders() },
-          );
-          const rows = c.ok ? await c.json() : [];
-          if (!Array.isArray(rows) || rows.length === 0) break;
-          joinCode = randomCode();
-        }
+        // Code de salon : insert direct (collision quasi impossible parmi
+        // les lives actifs, et la résolution prend le plus récent) — la
+        // vérification préalable coûtait des allers-retours au lancement.
+        const joinCode = randomCode();
         const writeToken = randomToken();
         // Session de mesure (chantier 2) — best-effort.
         let sessionId = null;
