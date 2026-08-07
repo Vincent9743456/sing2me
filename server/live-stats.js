@@ -32,10 +32,21 @@ export default async function handler(req, res) {
     // l'installation : sans filtre, chacun voyait la pile de tout le monde
     // — et ses propres morceaux pouvaient sortir des dernières lignes.
     // `performer.eq.` garde l'historique d'avant la colonne.
-    const who = String(req.query?.performer ?? '').slice(0, 120);
+    // `performer` accepte PLUSIEURS noms séparés par des virgules (b139) :
+    // l'artiste ET ses groupes, pour que chaque membre garde l'historique
+    // des ❤ du groupe. Un seul appel — interroger nom par nom compterait
+    // plusieurs fois l'historique non taggué.
+    const who = String(req.query?.performer ?? '').slice(0, 600);
+    const names = who
+      .split(',')
+      .map((n) => n.trim())
+      .filter((n) => n !== '')
+      .slice(0, 20);
     const filter =
-      who !== ''
-        ? `&or=(performer.eq.${encodeURIComponent(who)},performer.eq.)`
+      names.length > 0
+        ? `&or=(${names
+            .map((n) => `performer.eq.${encodeURIComponent(n)}`)
+            .join(',')},performer.eq.)`
         : '';
     const select =
       'song_title,song_artist,hearts,concert_id,concert_title,played_at';

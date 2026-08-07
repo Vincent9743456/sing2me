@@ -182,3 +182,11 @@ alter table live_messages add column if not exists live_id uuid;
 -- ------------------------------------------------------------
 alter table live_stats add column if not exists performer text not null default '';
 create index if not exists live_stats_performer on live_stats (performer);
+
+-- ------------------------------------------------------------
+-- b139 : les mots du public appartiennent au CONCERT (à la setlist
+-- jouée), pas seulement au morceau écouté à cet instant. Le direct
+-- publie le nom de sa setlist ; chaque message le recopie.
+-- ------------------------------------------------------------
+alter table lives add column if not exists setlist_name text not null default '';
+alter table live_messages add column if not exists setlist_name text not null default '';

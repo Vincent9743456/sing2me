@@ -138,7 +138,10 @@ export function Stage({
         : null,
     [setlistId, items],
   );
-  useOnAirSetlist(publicSetlist);
+  useOnAirSetlist(
+    publicSetlist,
+    setlists.find((s) => s.id === setlistId)?.name ?? '',
+  );
   const live = useOnAirLive();
   // Repère discret : la setlist est bien diffusée au public (concert actif).
   const setlistBroadcast =
