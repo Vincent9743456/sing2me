@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { navigate, Route } from '../router';
 import { Icon, IconName } from './Icon';
@@ -139,7 +139,12 @@ const TABS: { route: string; match: Route['name'][]; ico: IconName; label: strin
   },
   { route: '/concerts', match: ['concerts', 'concert'], ico: 'star', label: 'Concerts' },
   { route: '/bands', match: ['bands', 'band', 'bandChat'], ico: 'users', label: 'Groupes' },
-  { route: '/artist', match: ['artist'], ico: 'user', label: 'Artiste' },
+  {
+    route: '/artist',
+    match: ['artist', 'settings', 'songbook'],
+    ico: 'user',
+    label: 'Artiste',
+  },
 ];
 
 export function TabBar({
@@ -150,8 +155,38 @@ export function TabBar({
   /** Pastille de notifications sur l'onglet Groupes. */
   bandsBadge?: number;
 }) {
+  const ref = useRef<HTMLElement | null>(null);
+  // Bug iPad/iOS (PWA plein écran) : WebKit fait parfois défiler le viewport
+  // de MISE EN PAGE (clavier ouvert puis fermé, rotation) sans le réaligner —
+  // une barre `position: fixed` reste alors plantée au milieu de l'écran
+  // (« les menus du bas remontent »). Correctif : quand le bas du viewport
+  // visuel passe SOUS le bas du viewport de mise en page, on recolle la
+  // barre au bas visible. Dans un navigateur sain, le décalage vaut 0 et on
+  // ne touche à rien ; clavier ouvert (décalage négatif), on laisse la barre
+  // à sa place naturelle.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = ref.current;
+    if (!vv || !el) return;
+    const place = () => {
+      const shift = Math.max(
+        0,
+        Math.round(vv.offsetTop + vv.height - window.innerHeight),
+      );
+      el.style.transform = shift > 0 ? `translateY(${shift}px)` : '';
+    };
+    place();
+    vv.addEventListener('resize', place);
+    vv.addEventListener('scroll', place);
+    window.addEventListener('scroll', place, { passive: true });
+    return () => {
+      vv.removeEventListener('resize', place);
+      vv.removeEventListener('scroll', place);
+      window.removeEventListener('scroll', place);
+    };
+  }, []);
   return (
-    <nav className="tabbar">
+    <nav className="tabbar" ref={ref}>
       <div className="brand">
         <Brand size={26} />
       </div>
