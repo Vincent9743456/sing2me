@@ -1177,22 +1177,14 @@ export function BandEdit({ id }: { id: string }) {
             const cloud = cloudMembers.find((c) => sameMusician(c.name, m.name));
             const canRemove =
               band.owned === true && !isMe && cloud !== undefined;
+            // Ligne CLIQUABLE avec ses actions dedans (b145) — un <button>
+            // dans un <button> est invalide en HTML : la corbeille passait
+            // à la ligne, décalée sous le musicien.
             return (
               <div
-                className="hstack"
-                key={`w${i}`}
-                style={{ gap: 4, alignItems: 'center' }}
-              >
-              <button
                 className="row"
                 key={`a${i}`}
-                style={{
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left',
-                  background: 'none',
-                  border: 'none',
-                }}
+                style={{ cursor: 'pointer' }}
                 title={isMe ? 'Voir / modifier ma fiche' : `Voir la fiche de ${m.name}`}
                 onClick={() => {
                   if (isMe) {
@@ -1208,30 +1200,32 @@ export function BandEdit({ id }: { id: string }) {
                 }}
               >
                 <Avatar name={m.name} photo={photoOf(m)} />
-                <div className="grow">
+                <div className="grow" style={{ minWidth: 0 }}>
                   <div className="title">{m.name || 'Musicien'}</div>
                   {m.instrument !== '' && (
                     <div className="sub">{m.instrument}</div>
                   )}
                 </div>
-                <Icon name="chevron-right" size={16} />
-              </button>
-              {canRemove && (
-                <button
-                  className="btn ghost small"
-                  style={{ color: 'var(--danger)', flexShrink: 0 }}
-                  title={`Retirer ${m.name || 'ce musicien'} du groupe`}
-                  aria-label={`Retirer ${m.name || 'ce musicien'} du groupe`}
-                  onClick={() =>
-                    setRemoveMember({
-                      userId: cloud!.user_id,
-                      name: m.name,
-                    })
-                  }
-                >
-                  <Icon name="trash" size={15} />
-                </button>
-              )}
+                {canRemove && (
+                  <button
+                    className="btn icon"
+                    style={{ color: 'var(--danger)', flexShrink: 0 }}
+                    title={`Retirer ${m.name || 'ce musicien'} du groupe`}
+                    aria-label={`Retirer ${m.name || 'ce musicien'} du groupe`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRemoveMember({
+                        userId: cloud!.user_id,
+                        name: m.name,
+                      });
+                    }}
+                  >
+                    <Icon name="trash" size={16} />
+                  </button>
+                )}
+                <span className="chevron" aria-hidden="true">
+                  <Icon name="chevron-right" size={16} />
+                </span>
               </div>
             );
           })}

@@ -303,6 +303,12 @@ button {
   font-size: 1.3rem;
   padding: 4px 8px;
   box-shadow: none;
+  /* Cible tactile confortable même pour une simple icône (b145). */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
 }
 .btn.icon:hover {
   transform: none;
