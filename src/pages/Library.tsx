@@ -398,7 +398,7 @@ export function Library() {
         if (showPending) return (s.pendingBandId ?? '') !== '';
         // Vue « Idées » : uniquement les idées (jamais les propositions).
         if (showIdeas) return s.idea === true;
-        // Vue par défaut « Toutes les partitions » : les morceaux ET les
+        // Vue par défaut « Tous les morceaux » : les morceaux ET les
         // propositions poussées par un groupe (affichées directement, avec un
         // bouton « Accepter » et épinglées en tête) — pour qu'un nouveau venu
         // voie tout de suite ce qui lui est envoyé. On exclut seulement les
@@ -669,7 +669,7 @@ export function Library() {
                   setShowPending(false);
                 }}
               >
-                Toutes les partitions
+                Tous les morceaux
               </button>
               {pendingCount > 0 && (
                 <button

@@ -231,7 +231,7 @@ export function BandChat({ id }: { id: string }) {
       <div className="page">
         <CoachMark
           id="chat-propose"
-          text="Propose une chanson 🎵 — un bouton l'importera directement pour tout le groupe."
+          text="Propose un morceau 🎵 — un bouton l'importera directement pour tout le groupe."
         />
         {messages === null && error === null && (
           <p className="help" style={{ textAlign: 'center' }}>
@@ -245,7 +245,7 @@ export function BandChat({ id }: { id: string }) {
         )}
         {messages !== null && messages.length === 0 && (
           <p className="help" style={{ textAlign: 'center' }}>
-            Premier message à écrire ! Propose une chanson 🎵, une date de
+            Premier message à écrire ! Propose un morceau 🎵, une date de
             répét 🥁, un plan de concert 🎤 — tout le groupe le verra.
           </p>
         )}
@@ -306,7 +306,7 @@ export function BandChat({ id }: { id: string }) {
           onClick={() => setPickOpen(true)}
           title="Choisir un morceau de ton répertoire et l'ajouter au répertoire du groupe"
         >
-          🎵 Proposer une chanson de mon répertoire
+          🎵 Proposer un morceau de mon répertoire
         </button>
         <div className="chips" style={{ marginBottom: 8 }}>
           {KINDS.map((k) => (
@@ -383,7 +383,7 @@ function SongPicker({
   }, [songs, q]);
 
   return (
-    <Modal title="Proposer une chanson au groupe" onClose={onClose}>
+    <Modal title="Proposer un morceau au groupe" onClose={onClose}>
       <p className="help">
         Choisis un morceau de ton répertoire : il rejoint le répertoire du
         groupe et tout le monde en est informé.

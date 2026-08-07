@@ -888,7 +888,7 @@ export function Artist() {
 
         <h2 className="pagetitle">Statistiques des directs</h2>
         <p className="help">
-          Les ❤ envoyés par le public, chanson par chanson, et l'audience de
+          Les ❤ envoyés par le public, morceau par morceau, et l'audience de
           tes concerts (spectateurs uniques).
         </p>
         <button

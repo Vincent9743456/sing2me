@@ -323,7 +323,7 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
   const versionId = makeId();
   const song: Song = {
     id: makeId(),
-    title: (meta.title ?? fallbackTitle).trim() || 'Chanson importée',
+    title: (meta.title ?? fallbackTitle).trim() || 'Morceau importé',
     artist: meta.artist ?? '',
     key: meta.key ?? '',
     tempo: meta.tempo ?? 0,

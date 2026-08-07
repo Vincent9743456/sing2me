@@ -159,7 +159,7 @@ export function Import() {
   const preview = useMemo(() => {
     if (text.trim() === '') return null;
     try {
-      return importText(text, title || 'Chanson importée');
+      return importText(text, title || 'Morceau importé');
     } catch {
       return null;
     }
@@ -280,7 +280,7 @@ export function Import() {
 
   function onImport(asIdea: boolean) {
     if (text.trim() === '') return;
-    const { song } = importText(text, title || 'Chanson importée');
+    const { song } = importText(text, title || 'Morceau importé');
     if (title.trim() !== '') song.title = title.trim();
     if (artist.trim() !== '') song.artist = artist.trim();
     if (asIdea) song.idea = true;
@@ -440,12 +440,12 @@ export function Import() {
             }
           }
           raw = ugTabToImportText(tab);
-          fallbackTitle = tab.title || 'Chanson importée';
+          fallbackTitle = tab.title || 'Morceau importé';
           tabTitle = tab.title;
           tabArtist = tab.artist;
         } else {
           raw = task.text ?? '';
-          fallbackTitle = task.fallbackTitle || 'Chanson importée';
+          fallbackTitle = task.fallbackTitle || 'Morceau importé';
           // Nom de fichier « Titre - Artiste » → les deux champs
           const dash = fallbackTitle.match(/^(.{2,}?)\s+[-–—]\s+(.{2,})$/);
           if (dash) {
@@ -626,7 +626,7 @@ export function Import() {
           .filter((x) => x && x.trim() !== '')
           .join(' — ');
         const cleaned = await aiCleanText(it.raw, hint || undefined);
-        const fresh = importText(cleaned, it.title || 'Chanson importée').song;
+        const fresh = importText(cleaned, it.title || 'Morceau importé').song;
         saveSong({
           ...fresh,
           id: old.id,
@@ -809,7 +809,7 @@ export function Import() {
       <div className="page">
         {/* 1 — Recherche : la première chose visible, toujours en tête */}
         <div className="field">
-          <label>Rechercher une chanson</label>
+          <label>Rechercher un morceau</label>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               type="text"
@@ -966,7 +966,7 @@ export function Import() {
                   '    Am        F\n' +
                   "    Sous le ciel qui s'endort\n\n" +
                   '• ChordPro / OnSong :\n' +
-                  '    {title: Ma chanson}  ou  Title: Ma chanson\n' +
+                  '    {title: Mon morceau}  ou  Title: Mon morceau\n' +
                   "    [Am]Sous le ciel [F]qui s'endort\n\n" +
                   '• Sections : [Couplet 1], Refrain:, [Verse], [Chorus]…'
                 }
