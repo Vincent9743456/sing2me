@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import { AccountProvider } from './components/Account';
+import { AccountProvider, useAccount } from './components/Account';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Feedback';
 import { InstallHint } from './components/InstallHint';
@@ -28,12 +28,14 @@ import { Terms } from './pages/Terms';
 import { Report } from './pages/Report';
 import { PublicArtist, publicNameFromPath } from './pages/PublicArtist';
 import { RESERVED_NAMES } from './lib/publicName';
+import { Welcome } from './pages/Welcome';
 import { Route, useRoute } from './router';
 import { StoreProvider } from './store';
 
 function Screen() {
   const route = useRoute();
   const { badge } = useNotifications();
+  const account = useAccount();
 
   // Chaque page s'ouvre en haut. Les pages à mémoire de position (la
   // bibliothèque) restaurent ensuite leur propre défilement par-dessus.
@@ -70,6 +72,15 @@ function Screen() {
       </div>
     );
   }
+  // Portail d'entrée (décision Vincent, b120) : compte obligatoire pour
+  // l'app musicien. Le test est LOCAL (session en localStorage) — un compte
+  // déjà connecté ouvre l'app même sans réseau (mode avion). Les pages
+  // publiques ci-dessus ne passent jamais par ici ; si l'authentification
+  // n'est pas configurée (déploiement sans cloud), on n'enferme personne.
+  if (account && account.available && account.email === null) {
+    return <Welcome />;
+  }
+
   // Mode scène : plein écran, mais le bouton ON AIR reste accessible
   if (route.name === 'stage') {
     return (
