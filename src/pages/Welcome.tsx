@@ -17,7 +17,10 @@ import { APP_BUILD } from '../version';
 
 export function Welcome() {
   return (
-    <div className="public" style={{ paddingTop: 'var(--sp-6)' }}>
+    <div
+      className="public"
+      style={{ paddingTop: 'calc(var(--sp-6) + env(safe-area-inset-top))' }}
+    >
       <div style={{ textAlign: 'center', marginBottom: 'var(--sp-5)' }}>
         <LogoMark size={64} />
         <h1 style={{ margin: 'var(--sp-3) 0 var(--sp-1)' }}>Sing2Me</h1>
