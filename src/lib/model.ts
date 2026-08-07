@@ -484,6 +484,72 @@ export function removeVersion(song: Song, versionId: string): Song {
   return out;
 }
 
+/**
+ * Fait d'une version LA référence du morceau (feedback Marco, b135) : son
+ * contenu remplace celui de l'originale maîtresse — qui garde son identité
+ * (id, bandId '', nom) pour respecter l'invariant « versions[0] jamais
+ * supprimée ». Une version PERSONNELLE promue disparaît ensuite (c'était
+ * une copie de travail devenue la référence) ; une version de groupe ou
+ * Solo reste, elle appartient à son contexte. Les versions qui suivaient
+ * la tonalité/capo de l'ancienne originale suivent la nouvelle.
+ */
+export function promoteVersionToOriginal(
+  song: Song,
+  versionId: string,
+): Song {
+  const main = song.versions[0];
+  const source = song.versions.find((v) => v.id === versionId);
+  if (!main || !source || source.id === main.id) return song;
+  const now = new Date().toISOString();
+  const prevKey = main.key;
+  const prevCapo = main.capo;
+  const newMain: SongVersion = {
+    ...main,
+    key: source.key,
+    tempo: source.tempo,
+    capo: source.capo,
+    structure: source.structure.map((r) => ({ ...r })),
+    lyrics: source.lyrics,
+    updatedAt: now,
+  };
+  const isPersonal = (source.bandId ?? '') === '';
+  const versions = song.versions
+    .map((v) => (v.id === main.id ? newMain : v))
+    .filter((v) => !(isPersonal && v.id === source.id));
+  // Afficher la référence promue — champs actifs posés directement (surtout
+  // pas switchVersion : syncActiveVersion réécrirait l'ANCIEN contenu actif
+  // dans la nouvelle originale).
+  let out: Song = {
+    ...song,
+    versions,
+    activeVersionId: main.id,
+    key: newMain.key,
+    tempo: newMain.tempo,
+    capo: newMain.capo,
+    structure: newMain.structure,
+    lyrics: newMain.lyrics,
+    updatedAt: now,
+  };
+  out = propagateMainKeyCapo(out, prevKey, prevCapo);
+  return out;
+}
+
+/** Renomme une version (le nom n'est qu'un repère, aucune autre incidence). */
+export function renameVersion(
+  song: Song,
+  versionId: string,
+  name: string,
+): Song {
+  const n = name.trim();
+  if (n === '') return song;
+  return {
+    ...song,
+    versions: song.versions.map((v) =>
+      v.id === versionId ? { ...v, name: n } : v,
+    ),
+  };
+}
+
 /** Profil public d'un groupe (même forme qu'un profil artiste). */
 export function bandToProfile(band: Band): ArtistProfile {
   return {
