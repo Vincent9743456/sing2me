@@ -138,6 +138,12 @@ function fromCloud(raw: unknown): Partial<SyncState> | null {
     deleted: Array.isArray(r.deleted)
       ? (r.deleted as SyncState['deleted'])
       : undefined,
+    // Points zéro des réinitialisations (b137) : sans eux, un reset fait
+    // sur un appareil se ferait annuler par le cloud d'un autre.
+    resetAt:
+      r.resetAt && typeof r.resetAt === 'object'
+        ? (r.resetAt as SyncState['resetAt'])
+        : undefined,
   };
 }
 

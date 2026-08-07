@@ -26,6 +26,23 @@ export interface SyncState {
   deleted?: Tombstone[];
   /** Retraits de morceaux des répertoires de groupes (propagés) */
   bandRemovals?: BandRemoval[];
+  /**
+   * Point zéro d'une réinitialisation, par catégorie (b137). Les pierres
+   * tombales sont plafonnées à 500 : après un reset d'une GROSSE
+   * bibliothèque, les plus anciennes disparaissaient et le cloud
+   * ressuscitait les morceaux effacés (bug signalé par Marco). Cet
+   * horodatage, lui, ne dépend pas du volume : tout élément du cloud
+   * absent en local et plus vieux que la date du reset est ignoré.
+   */
+  resetAt?: ResetMarks;
+}
+
+/** Date de réinitialisation par catégorie (ISO). */
+export interface ResetMarks {
+  songs?: string;
+  setlists?: string;
+  concerts?: string;
+  bands?: string;
 }
 
 interface WithId {
@@ -136,11 +153,52 @@ export function mergeStates(
   }
   const alive = <T extends { id: string }>(items: T[]): T[] =>
     items.filter((x) => !tombs.has(x.id));
+  // Points zéro : le plus récent des deux côtés gagne (un reset fait sur un
+  // appareil vaut pour tous).
+  const resetAt: ResetMarks = {};
+  for (const k of ['songs', 'setlists', 'concerts', 'bands'] as const) {
+    const l = local.resetAt?.[k] ?? '';
+    const c = cloud.resetAt?.[k] ?? '';
+    const best = l > c ? l : c;
+    if (best !== '') resetAt[k] = best;
+  }
+  /**
+   * Ne laisse pas le cloud ressusciter ce qu'une réinitialisation a effacé :
+   * un élément ABSENT en local et plus vieux que le point zéro est écarté.
+   * Un élément modifié APRÈS le reset (autre appareil, geste volontaire)
+   * revient normalement.
+   */
+  const afterReset = <T extends { id: string; updatedAt?: string }>(
+    items: T[],
+    localItems: T[],
+    mark?: string,
+  ): T[] => {
+    if (!mark) return items;
+    const mine = new Set(localItems.map((x) => x.id));
+    return items.filter((x) => mine.has(x.id) || (x.updatedAt ?? '') > mark);
+  };
   return {
-    songs: alive(mergeById(local.songs, cloud.songs ?? [])),
-    setlists: alive(mergeById(local.setlists, cloud.setlists ?? [])),
-    concerts: alive(mergeById(local.concerts, cloud.concerts ?? [])),
-    bands: alive(mergeBandsById(local.bands, cloud.bands ?? [])),
+    songs: afterReset(
+      alive(mergeById(local.songs, cloud.songs ?? [])),
+      local.songs,
+      resetAt.songs,
+    ),
+    setlists: afterReset(
+      alive(mergeById(local.setlists, cloud.setlists ?? [])),
+      local.setlists,
+      resetAt.setlists,
+    ),
+    concerts: afterReset(
+      alive(mergeById(local.concerts, cloud.concerts ?? [])),
+      local.concerts,
+      resetAt.concerts,
+    ),
+    bands: afterReset(
+      alive(mergeBandsById(local.bands, cloud.bands ?? [])),
+      local.bands,
+      resetAt.bands,
+    ),
+    resetAt,
     artist,
     prefs,
     deleted: [...tombs.values()]

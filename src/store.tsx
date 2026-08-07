@@ -14,6 +14,7 @@ import React, {
 } from 'react';
 
 import { bandKeysMatch, songKey } from './lib/normalizeTitle';
+import { ResetMarks } from './lib/sync';
 import { migrateConcert, migrateSetlist, migrateSong } from './lib/model';
 import { exampleSetlist, exampleSongs, SEED_KEY, SEED_VERSION } from './seed';
 import {
@@ -42,6 +43,12 @@ export interface AppState {
   deleted: Tombstone[];
   /** Retraits de morceaux des répertoires de groupes (propagés) */
   bandRemovals: BandRemoval[];
+  /**
+   * Points zéro des réinitialisations (b137) : ce qui est plus vieux que
+   * cette date, côté cloud, ne revient pas. Indispensable au-delà de 500
+   * éléments effacés — les pierres tombales, elles, sont plafonnées.
+   */
+  resetAt?: ResetMarks;
 }
 
 /** Ajoute une pierre tombale (suppression à propager). */
@@ -123,6 +130,7 @@ function loadState(): AppState {
         artist: { ...emptyArtist(), ...(parsed.artist ?? {}) },
         prefs: { ...defaultPrefs(), ...(parsed.prefs ?? {}) },
         deleted: Array.isArray(parsed.deleted) ? parsed.deleted : [],
+        resetAt: parsed.resetAt ?? {},
         bandRemovals: Array.isArray(parsed.bandRemovals)
           ? parsed.bandRemovals
           : [],
@@ -374,6 +382,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (parts.setlists) buryAll(prev.setlists);
       if (parts.concerts) buryAll(prev.concerts);
       if (parts.bands) buryAll(prev.bands);
+      // Point zéro par catégorie : garde-fou qui ne dépend PAS du volume
+      // (au-delà de 500 tombes, le cloud ressuscitait les morceaux).
+      const resetAt: ResetMarks = { ...(prev.resetAt ?? {}) };
+      if (parts.songs) resetAt.songs = at;
+      if (parts.setlists) resetAt.setlists = at;
+      if (parts.concerts) resetAt.concerts = at;
+      if (parts.bands) resetAt.bands = at;
       return {
         ...prev,
         songs: parts.songs ? [] : prev.songs,
@@ -387,6 +402,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ? { ...emptyArtist(), updatedAt: at }
           : prev.artist,
         deleted,
+        resetAt,
       };
     });
   };

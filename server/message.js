@@ -51,10 +51,18 @@ export default async function handler(req, res) {
       } catch {
         // sans contexte, le message part quand même
       }
-      let r = await fetch(`${base}/rest/v1/live_messages`, {
-        method: 'POST',
-        headers: sbHeaders(true),
-        body: JSON.stringify({
+      // Le titre du morceau vient du direct ; à défaut (direct hérité,
+      // lecture impossible) on retient celui que la page publique affichait
+      // — un message doit TOUJOURS pouvoir se rattacher à sa chanson.
+      if (song_title === '') {
+        song_title = (req.body?.songTitle ?? '').toString().trim().slice(0, 200);
+      }
+      // Insertion en CASCADE : chaque essai retire les colonnes que la base
+      // n'a peut-être pas encore (migrations live.sql pas rejouées). Le
+      // dernier essai n'utilise que author + body, présents depuis le
+      // premier jour. Un message ne doit jamais être perdu pour une colonne.
+      const attempts = [
+        {
           author,
           body: text,
           song_title,
@@ -62,19 +70,34 @@ export default async function handler(req, res) {
           concert_id,
           concert_title,
           live_id: liveId !== '' && liveId !== 'legacy' ? liveId : null,
-        }),
-      });
-      // Repli si les colonnes de contexte n'existent pas encore (migration
-      // live.sql pas à jour) : on n'envoie que l'essentiel (auteur + message).
-      if (r.status === 400) {
+        },
+        { author, body: text, song_title, performer },
+        { author, body: text, song_title },
+        { author, body: text },
+      ];
+      let r = null;
+      for (const payload of attempts) {
         r = await fetch(`${base}/rest/v1/live_messages`, {
           method: 'POST',
           headers: sbHeaders(true),
-          body: JSON.stringify({ author, body: text }),
+          body: JSON.stringify(payload),
         });
+        if (r.ok) break;
+        // 400/422 = colonne inconnue ou type invalide → on retente plus
+        // pauvre. Toute autre erreur (404 table absente, 401…) est
+        // définitive : inutile d'insister.
+        if (r.status !== 400 && r.status !== 422) break;
       }
-      if (!r.ok) {
-        res.status(502).json({ error: `Supabase a répondu ${r.status}` });
+      if (!r || !r.ok) {
+        // `unavailable` : le livre d'or n'est pas exploitable sur cette
+        // installation (table absente, droits) — la page publique masque
+        // alors la boîte au lieu d'afficher une erreur au spectateur.
+        const status = r ? r.status : 0;
+        const unavailable = status === 404 || status === 401 || status === 403;
+        res.status(unavailable ? 200 : 502).json({
+          error: `Le livre d'or est indisponible (${status}).`,
+          code: unavailable ? 'unavailable' : 'failed',
+        });
         return;
       }
       res.status(200).json({ ok: true });
@@ -89,12 +112,27 @@ export default async function handler(req, res) {
         res.status(403).json({ error: 'Clé On Air incorrecte' });
         return;
       }
-      const r = await fetch(
-        `${base}/rest/v1/live_messages?select=author,body,song_title,performer,concert_id,concert_title,created_at&order=created_at.desc&limit=200`,
-        { headers: sbHeaders(false) },
-      );
-      if (!r.ok) {
-        res.status(502).json({ error: `Supabase a répondu ${r.status}` });
+      // Même prudence en lecture : si les colonnes de contexte manquent,
+      // l'artiste doit quand même voir les mots de son public.
+      const selects = [
+        'author,body,song_title,performer,concert_id,concert_title,created_at',
+        'author,body,song_title,performer,created_at',
+        'author,body,song_title,created_at',
+        'author,body,created_at',
+      ];
+      let r = null;
+      for (const sel of selects) {
+        r = await fetch(
+          `${base}/rest/v1/live_messages?select=${sel}&order=created_at.desc&limit=200`,
+          { headers: sbHeaders(false) },
+        );
+        if (r.ok) break;
+        if (r.status !== 400 && r.status !== 422) break;
+      }
+      if (!r || !r.ok) {
+        // Livre d'or absent : liste vide plutôt qu'une erreur qui casse
+        // l'écran de statistiques de l'artiste.
+        res.status(200).json({ messages: [] });
         return;
       }
       res.status(200).json({ messages: await r.json() });

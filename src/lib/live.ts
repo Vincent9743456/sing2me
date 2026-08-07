@@ -267,24 +267,36 @@ export async function sendHearts(
   }
 }
 
-/** Envoie un message du public (livre d'or). */
+/**
+ * Envoie un message du public (livre d'or). Le titre du morceau écouté
+ * accompagne le mot : le message se range sous SA chanson chez l'artiste,
+ * comme les cœurs (b137).
+ *
+ * Renvoie 'sent' si c'est parti, 'unavailable' si le livre d'or n'existe
+ * pas sur cette installation — l'appelant masque alors la boîte au lieu
+ * d'exposer une erreur technique au public. Lève encore en cas de vraie
+ * panne passagère (hors ligne, 5xx) : là, réessayer a du sens.
+ */
 export async function sendMessage(
   name: string,
   text: string,
   liveId = '',
-): Promise<void> {
+  songTitle = '',
+): Promise<'sent' | 'unavailable'> {
   let res: Response;
   try {
     res = await fetch('/api/live-x?fn=message', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name, text, liveId }),
+      body: JSON.stringify({ name, text, liveId, songTitle }),
     });
   } catch {
     throw new Error(OFFLINE_MSG);
   }
   const body = await readJson(res);
+  if (body.code === 'unavailable') return 'unavailable';
   if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
+  return 'sent';
 }
 
 /** Messages du public (réservé à l'artiste, clé On Air requise). */
