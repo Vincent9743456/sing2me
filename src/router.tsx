@@ -12,6 +12,7 @@ export type Route =
   | { name: 'setlists' }
   | { name: 'setlist'; id: string }
   | { name: 'setlistEdit'; id: string | null }
+  | { name: 'setlistSono'; id: string }
   | { name: 'songInSet'; setlistId: string; index: number }
   | { name: 'stage'; setlistId: string | null; songId: string | null }
   | { name: 'concerts' }
@@ -56,6 +57,10 @@ export function parseHash(hash: string): Route {
       // Vue d'ensemble imprimable : #/setlist/:id/apercu
       if (parts[1] && parts[2] === 'apercu') {
         return { name: 'setlist', id: parts[1] };
+      }
+      // Écran dédié Sono & scène : #/setlist/:id/sono
+      if (parts[1] && parts[2] === 'sono') {
+        return { name: 'setlistSono', id: parts[1] };
       }
       // Par défaut, ouvrir une setlist = l'éditer directement.
       if (parts[1]) return { name: 'setlistEdit', id: parts[1] };
