@@ -1581,7 +1581,10 @@ textarea.mono {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 50;
+  /* Au-dessus du mode scène (.stage, 100) : le panneau ON AIR doit
+     s'ouvrir PAR-DESSUS la scène (bug b122 : il s'ouvrait derrière).
+     Reste sous le bouton .onair (300) et les feuilles (500+). */
+  z-index: 200;
   animation: fadein 0.15s ease;
 }
 .modal {
