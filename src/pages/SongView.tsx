@@ -933,7 +933,7 @@ export function SongView({
               icon: 'edit' as const,
               onClick: () => setRenameOpen(true),
             },
-            ...(song.versions.length > 1 && !isMainVersion
+            ...(song.versions.length > 1
               ? [
                   {
                     label: isBandVersion
@@ -985,7 +985,9 @@ export function SongView({
           message={
             isBandVersion
               ? 'Le morceau sortira aussi du répertoire du groupe pour tous les membres (chacun garde sa partition personnelle).'
-              : 'Les autres versions du morceau sont conservées.'
+              : isMainVersion
+                ? 'La version suivante devient la référence du morceau.'
+                : 'Les autres versions du morceau sont conservées.'
           }
           confirmLabel="Supprimer la version"
           danger
