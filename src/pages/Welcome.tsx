@@ -1,8 +1,8 @@
 /**
  * Portail d'entrée (décision Vincent, b120) : la connexion / création de
  * compte est OBLIGATOIRE avant d'utiliser l'app. Une seule page, très
- * épurée : logo, une phrase, le bloc de connexion (lien magique + code à
- * 6 chiffres), le lien CGU.
+ * épurée : logo, une phrase, le bloc de connexion (lien magique + code de
+ * connexion), le lien CGU.
  *
  * HORS-LIGNE : cette page n'apparaît que si AUCUN compte n'existe sur cet
  * appareil (session en localStorage). Un compte déjà connecté ouvre l'app
