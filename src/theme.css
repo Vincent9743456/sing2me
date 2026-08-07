@@ -320,10 +320,9 @@ button {
 .field label {
   display: block;
   color: var(--text-dim);
-  font-size: 0.7rem;
+  /* Casse NORMALE (demande Vincent, audit UI) : « Nom », pas « NOM ». */
+  font-size: 0.8rem;
   font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
   margin-bottom: 5px;
 }
 input[type='text'],
