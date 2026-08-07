@@ -369,10 +369,20 @@ export async function fetchAudienceSessions(
 }
 
 /** Statistiques des directs (réservé à l'artiste, clé On Air requise). */
-export async function fetchLiveStats(key: string): Promise<LiveStat[]> {
+export async function fetchLiveStats(
+  key: string,
+  /** Nom de l'artiste : ne ramène QUE ses statistiques (b138). */
+  performer = '',
+): Promise<LiveStat[]> {
   let res: Response;
+  const q =
+    performer.trim() !== ''
+      ? `&performer=${encodeURIComponent(performer.trim())}`
+      : '';
   try {
-    res = await fetch('/api/live-x?fn=live-stats', { headers: { 'x-live-key': key } });
+    res = await fetch(`/api/live-x?fn=live-stats${q}`, {
+      headers: { 'x-live-key': key },
+    });
   } catch {
     throw new Error(OFFLINE_MSG);
   }

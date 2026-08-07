@@ -78,6 +78,9 @@ async function archivePlayedSong(base, row) {
       song_title: title,
       song_artist: row.song?.artist ?? '',
       hearts: row.hearts ?? 0,
+      // À qui appartiennent ces ❤ (b138) : la clé ON AIR étant commune,
+      // c'est le seul moyen de rendre à chacun ses statistiques.
+      performer: row.artist?.name ?? '',
       concert_id: row.concert?.id ?? '',
       concert_title: row.concert?.title ?? '',
       session_id: row.session_id ?? null,

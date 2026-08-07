@@ -500,7 +500,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
                 setInterError(null);
                 try {
                   const [stats, messages] = await Promise.all([
-                    fetchLiveStats(prefs.liveKey),
+                    fetchLiveStats(prefs.liveKey, artist.name),
                     fetchMessages(prefs.liveKey),
                   ]);
                   setInter({

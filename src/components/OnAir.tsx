@@ -179,10 +179,13 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         setHearts(s.hearts);
         // Le serveur peut couper un direct oublié (4 h, ou 1 h sans
-        // partition) : on répercute l'arrêt sur l'UI du leader.
+        // partition) : on répercute l'arrêt sur l'UI du leader — et on
+        // rapatrie les ❤ du direct, que personne n'aurait sinon récupérés
+        // faute de clic sur « Arrêter » (b138).
         if (s.status === 'off') {
           setStatus('off');
           setPanel(false);
+          window.setTimeout(() => void syncHeartsRef.current(), 1200);
         }
       } catch {
         // silencieux
@@ -199,7 +202,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   // Reporte les totaux de ❤ (historique des directs) dans la bibliothèque.
   const syncHearts = useCallback(async () => {
     try {
-      const totals = heartTotals(await fetchLiveStats(prefs.liveKey));
+      const totals = heartTotals(
+        await fetchLiveStats(prefs.liveKey, performer?.name ?? artist.name),
+      );
       const bySong = messagesBySong(await fetchMessages(prefs.liveKey));
       for (const s of songs) {
         const total = totals.get(s.title);
@@ -225,7 +230,34 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // silencieux : la synchro retentera au prochain arrêt de direct
     }
-  }, [prefs.liveKey, songs, saveSong]);
+  }, [prefs.liveKey, songs, saveSong, performer, artist.name]);
+
+  // `syncHearts` dépend de la bibliothèque : on le garde dans une référence
+  // pour que les minuteries ci-dessous ne se recréent pas à chaque
+  // modification d'un morceau.
+  const syncHeartsRef = useRef(syncHearts);
+  syncHeartsRef.current = syncHearts;
+
+  /**
+   * Rapatriement des ❤ et des mots du public (bug signalé par Marco, b138).
+   * Avant, il n'avait lieu QU'au clic sur « Arrêter » : un direct fermé
+   * autrement (app quittée, arrêt automatique du serveur au bout de 4 h)
+   * perdait les cœurs, qui n'apparaissaient jamais en face du morceau.
+   * Désormais : au démarrage de l'app, puis toutes les 60 s pendant un
+   * direct. L'opération est idempotente — les totaux du serveur REMPLACENT
+   * les compteurs locaux, jamais d'addition en double.
+   */
+  useEffect(() => {
+    if (prefs.liveKey.trim() === '') return;
+    const t = window.setTimeout(() => void syncHeartsRef.current(), 1500);
+    return () => window.clearTimeout(t);
+  }, [prefs.liveKey]);
+
+  useEffect(() => {
+    if (status === 'off' || prefs.liveKey.trim() === '') return;
+    const id = window.setInterval(() => void syncHeartsRef.current(), 60000);
+    return () => window.clearInterval(id);
+  }, [status, prefs.liveKey]);
 
   const lastMetaRef = useRef<{ title: string; artist: string; key: string } | null>(
     null,
