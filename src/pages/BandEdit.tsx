@@ -28,8 +28,10 @@ import {
 } from '../lib/bands';
 import {
   bandToProfile,
+  dedupeMusicians,
   duplicateVersion,
   removeVersion,
+  sameMusician,
   switchVersion,
   versionForBand,
 } from '../lib/model';
@@ -405,7 +407,7 @@ export function BandEdit({ id }: { id: string }) {
   // l'un contient l'autre (« Marco » ↔ « marco.bosio »). Évite le doublon
   // quand le vrai compte a rejoint sous un nom d'annuaire différent.
   const nameMatchesCloud = (nm: string): boolean =>
-    nm !== '' && cloudNamesArr.some((cn) => cn.includes(nm) || nm.includes(cn));
+    nm !== '' && cloudNamesArr.some((cn) => sameMusician(cn, nm));
   // Membres manuels non déjà représentés par un compte cloud, hors profils
   // « en attente d'acceptation » (comptés à part).
   const manualMembers = band.members.filter(
@@ -418,7 +420,7 @@ export function BandEdit({ id }: { id: string }) {
   );
 
   // Données des 3 portes.
-  const allMembers = [...cloudMembers, ...manualMembers];
+  const allMembers = dedupeMusicians([...cloudMembers, ...manualMembers]);
   const memberCount = allMembers.length;
   const fewMembers = memberCount < 2;
   const repCount = songs.filter(
@@ -1137,6 +1139,54 @@ export function BandEdit({ id }: { id: string }) {
               </button>
             );
           })}
+          {/* Renvoyer l'invitation (b141) : un musicien qui a réinitialisé
+              son application a perdu le groupe de son côté alors qu'il est
+              toujours inscrit ici. Ce geste régénère sa demande — elle
+              l'attend dans son onglet Groupes. */}
+          {band.cloudId !== '' &&
+            cloudMembers.filter((m) => m.user_id !== myId).length > 0 && (
+              <>
+                <div className="spacer" />
+                <p className="help" style={{ marginBottom: 6 }}>
+                  Un musicien ne voit plus le groupe (application
+                  réinitialisée, nouveau téléphone) ? Renvoie-lui la
+                  demande :
+                </p>
+                {cloudMembers
+                  .filter((m) => m.user_id !== myId)
+                  .map((m) => (
+                    <div className="row" key={`ri${m.user_id}`}>
+                      <div className="grow">
+                        <div className="title">{m.name || 'Musicien'}</div>
+                      </div>
+                      <button
+                        className="btn ghost small"
+                        disabled={reinvited.has(m.user_id)}
+                        onClick={() => {
+                          const cid = band.cloudId;
+                          if (!cid) return;
+                          void (async () => {
+                            try {
+                              const s = await getValidSession();
+                              if (!s) return;
+                              await inviteToBand(s, cid, m.user_id);
+                              setReinvited((prev) =>
+                                new Set(prev).add(m.user_id),
+                              );
+                            } catch {
+                              /* silencieux : le bouton reste disponible */
+                            }
+                          })();
+                        }}
+                      >
+                        {reinvited.has(m.user_id)
+                          ? '✓ Envoyée'
+                          : '↻ Réinviter'}
+                      </button>
+                    </div>
+                  ))}
+              </>
+            )}
           {pendingMembers.map((m, i) => (
             <div
               className="row"

@@ -11,6 +11,7 @@ import { useNotifications } from '../components/Notifications';
 import { Empty, Field, TopBar } from '../components/ui';
 import { getValidSession } from '../lib/auth';
 import { fetchMyInvites, PendingInvite, respondInvite } from '../lib/bands';
+import { dedupeMusicians } from '../lib/model';
 import { creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -189,16 +190,24 @@ export function Bands() {
                   )}
                   <div className="grow">
                     <div className="title">{band.name || '(sans nom)'}</div>
-                    <div className="sub">
-                      {band.members.length} musicien
-                      {band.members.length > 1 ? 's' : ''}
-                      {band.members.length > 0
-                        ? ` · ${band.members
-                            .map((m) => m.name)
-                            .filter((n) => n !== '')
-                            .join(', ')}`
-                        : ''}
-                    </div>
+                    {/* Une personne, une ligne (b141) : le même musicien
+                        pouvait apparaître deux fois — prénom d'invitation
+                        (« Marco ») et identifiant de son compte
+                        (« marco.bosio »). */}
+                    {(() => {
+                      const people = dedupeMusicians(
+                        band.members.filter((m) => m.name.trim() !== ''),
+                      );
+                      const n = people.length;
+                      return (
+                        <div className="sub">
+                          {n} musicien{n > 1 ? 's' : ''}
+                          {n > 0
+                            ? ` · ${people.map((m) => m.name).join(', ')}`
+                            : ''}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
                 <button

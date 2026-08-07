@@ -602,6 +602,39 @@ export function renameVersion(
   };
 }
 
+/**
+ * Deux noms de musicien désignent-ils la même personne ? (b141)
+ * Le même musicien apparaît sous des formes différentes : prénom saisi à
+ * l'invitation (« Marco ») et identifiant de son compte
+ * (« marco.bosio »). On rapproche quand l'un contient l'autre, une fois
+ * la ponctuation retirée.
+ */
+export function sameMusician(a: string, b: string): boolean {
+  const norm = (x: string) =>
+    x
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+  const na = norm(a);
+  const nb = norm(b);
+  if (na === '' || nb === '') return false;
+  return na === nb || na.includes(nb) || nb.includes(na);
+}
+
+/**
+ * Liste de musiciens sans doublon : le premier nom rencontré gagne
+ * (b141) — évite « marco.bosio, Marco » pour une seule personne.
+ */
+export function dedupeMusicians<T extends { name: string }>(list: T[]): T[] {
+  const out: T[] = [];
+  for (const m of list) {
+    if (!out.some((k) => sameMusician(k.name, m.name))) out.push(m);
+  }
+  return out;
+}
+
 /** Profil public d'un groupe (même forme qu'un profil artiste). */
 export function bandToProfile(band: Band): ArtistProfile {
   return {
