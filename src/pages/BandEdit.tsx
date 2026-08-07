@@ -148,6 +148,8 @@ export function BandEdit({ id }: { id: string }) {
   const [dirBusy, setDirBusy] = useState(false);
   const [dirMsg, setDirMsg] = useState<string | null>(null);
   const [invited, setInvited] = useState<Set<string>>(new Set());
+  // Invitations RENVOYÉES à des membres déjà inscrits (b140).
+  const [reinvited, setReinvited] = useState<Set<string>>(new Set());
 
   // Membres réels (comptes) du groupe publié
   useEffect(() => {
@@ -729,6 +731,34 @@ export function BandEdit({ id }: { id: string }) {
                     <span className="stauthor"> · {m.instrument}</span>
                   )}
                 </span>
+                {/* Renvoyer l'invitation (b140) : un musicien qui a
+                    réinitialisé son application a perdu le groupe de son
+                    côté, alors qu'il est toujours inscrit ici. Ce geste
+                    régénère sa demande — elle l'attend dans son onglet
+                    Groupes. */}
+                <button
+                  className="btn ghost small"
+                  title="Renvoyer l'invitation (s'il a perdu le groupe)"
+                  disabled={reinvited.has(m.user_id)}
+                  onClick={() => {
+                    const cid = band.cloudId;
+                    if (!cid) return;
+                    void (async () => {
+                      try {
+                        const s = await getValidSession();
+                        if (!s) return;
+                        await inviteToBand(s, cid, m.user_id);
+                        setReinvited((prev) =>
+                          new Set(prev).add(m.user_id),
+                        );
+                      } catch {
+                        /* silencieux : le bouton reste disponible */
+                      }
+                    })();
+                  }}
+                >
+                  {reinvited.has(m.user_id) ? '✓ Envoyée' : '↻ Réinviter'}
+                </button>
                 <button
                   className="btn ghost small"
                   style={{ color: 'var(--danger)' }}

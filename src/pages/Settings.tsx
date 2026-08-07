@@ -15,6 +15,8 @@ import React, { useState } from 'react';
 import { ConfirmSheet, useToast } from '../components/Feedback';
 import { Icon } from '../components/Icon';
 import { AccordionNav, TopBar } from '../components/ui';
+import { getValidSession } from '../lib/auth';
+import { leaveBand } from '../lib/bands';
 import { LiveStatus, pushLive, pushSetlist } from '../lib/live';
 import { navigate } from '../router';
 import { ResetParts, useStore } from '../store';
@@ -146,6 +148,22 @@ export function Settings() {
           onConfirm={() => {
             const parts: ResetParts = {};
             for (const k of picked) parts[k] = true;
+            // Quitter ses groupes vaut AUSSI côté serveur (b140) : sinon
+            // le créateur garde un membre fantôme et ne peut plus le
+            // réinviter. Lancé avant l'effacement local, tant qu'on
+            // connaît encore les cloudId.
+            if (parts.bands === true) {
+              const cloudIds = bands
+                .map((b) => b.cloudId)
+                .filter((id): id is string => !!id && id !== '');
+              if (cloudIds.length > 0) {
+                void (async () => {
+                  const s = await getValidSession();
+                  if (!s) return;
+                  for (const id of cloudIds) await leaveBand(s, id);
+                })();
+              }
+            }
             resetData(parts);
             // Ce que le PUBLIC voit doit suivre (bug signalé par Marco,
             // b137) : la setlist et le morceau diffusés vivent sur le
