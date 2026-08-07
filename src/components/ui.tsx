@@ -35,6 +35,68 @@ export function DndHint() {
   );
 }
 
+/**
+ * Accordéon du design system : fond de surface, chevron animé, typo
+ * cohérente — remplace les anciens plis « ▸ » orange. `sub` (optionnel)
+ * résume le contenu quand c'est fermé.
+ */
+export function Accordion({
+  title,
+  sub,
+  defaultOpen = false,
+  children,
+}: {
+  title: React.ReactNode;
+  sub?: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={`accordion ${open ? 'open' : ''}`}>
+      <button
+        className="accordion-head"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="grow" style={{ minWidth: 0 }}>
+          <div className="accordion-title">{title}</div>
+          {sub != null && <div className="accordion-sub">{sub}</div>}
+        </div>
+        <span className={`capsule-chevron ${open ? 'open' : ''}`}>
+          <Icon name="chevron-down" size={18} />
+        </span>
+      </button>
+      {open && <div className="accordion-body">{children}</div>}
+    </div>
+  );
+}
+
+/** Rangée de navigation au même gabarit que l'accordéon (écran dédié). */
+export function AccordionNav({
+  title,
+  sub,
+  onClick,
+}: {
+  title: React.ReactNode;
+  sub?: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <div className="accordion">
+      <button className="accordion-head" onClick={onClick}>
+        <div className="grow" style={{ minWidth: 0 }}>
+          <div className="accordion-title">{title}</div>
+          {sub != null && <div className="accordion-sub">{sub}</div>}
+        </div>
+        <span className="capsule-chevron">
+          <Icon name="chevron-right" size={18} />
+        </span>
+      </button>
+    </div>
+  );
+}
+
 export function TopBar({
   title,
   onBack,

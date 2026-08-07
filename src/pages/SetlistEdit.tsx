@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { gearIcon } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { CoachMark } from '../components/CoachMark';
+import { ConfirmSheet, MenuSheet } from '../components/Feedback';
 import { SongCollector } from '../components/SongPicker';
-import { StagePlan } from '../components/StagePlan';
-import { Field, Modal, TopBar } from '../components/ui';
+import { Accordion, AccordionNav, Field, TopBar } from '../components/ui';
 import { announceBandSong } from '../lib/bands';
 import { semitonesBetween, spellingForKey, transposeContent, transposeKeyName } from '../lib/chords';
 import { normalizeTitle } from '../lib/importer';
@@ -32,7 +31,7 @@ import {
   SharePayload,
   Song,
   songSeconds,
-  StageSetup,
+
 } from '../types';
 
 export function SetlistEdit({ id }: { id: string | null }) {
@@ -68,9 +67,15 @@ export function SetlistEdit({ id }: { id: string | null }) {
     return base;
   });
   const [picker, setPicker] = useState(false);
-  const [gearPicker, setGearPicker] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  // Menu « … » de l'en-tête + confirmation de suppression (jamais de
+  // confirm() natif — règle 10).
+  const [headMenu, setHeadMenu] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  // « ✓ Enregistré » discret et transitoire après chaque modification.
+  const [saved, setSaved] = useState(false);
+  const nameRef = useRef<HTMLInputElement | null>(null);
   const isNew = existing === undefined;
 
   // Édition directe : chaque changement est enregistré automatiquement
@@ -83,6 +88,9 @@ export function SetlistEdit({ id }: { id: string | null }) {
       return;
     }
     saveSetlist(draft);
+    setSaved(true);
+    const t = window.setTimeout(() => setSaved(false), 1400);
+    return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft]);
 
@@ -109,70 +117,14 @@ export function SetlistEdit({ id }: { id: string | null }) {
     setDraft((d) => ({ ...d, ...patch }));
   }
 
+  // Sono & scène vit sur son PROPRE écran (#/setlist/:id/sono) — ici on ne
+  // garde que l'état « renseignée ou vide » pour la rangée de navigation.
   const setup = draft.setup ?? emptySetup();
-  function updateSetup(patch: Partial<StageSetup>) {
-    setDraft((d) => ({
-      ...d,
-      setup: { ...(d.setup ?? emptySetup()), ...patch },
-    }));
-  }
-
-  /** Inventaires disponibles : le mien + ceux des musiciens du groupe. */
-  const gearSources = [
-    {
-      owner: prefs.userName || artist.name || 'Moi',
-      items: artist.gear ?? [],
-    },
-    ...(bands.find((b) => b.id === (draft.bandId ?? ''))?.members ?? []).map(
-      (m) => ({ owner: m.name || 'Musicien', items: m.gear ?? [] }),
-    ),
-  ].filter((s) => s.items.length > 0);
-
-  /** Ajoute / retire un matériel du plan de scène. */
-  function toggleGear(gearId: string, name: string, owner: string, category: string) {
-    const placed = setup.positions.some((p) => p.id === gearId);
-    if (placed) {
-      updateSetup({
-        positions: setup.positions.filter((p) => p.id !== gearId),
-      });
-    } else {
-      updateSetup({
-        positions: [
-          ...setup.positions,
-          {
-            id: gearId,
-            label: name,
-            instrument: owner,
-            x: Math.min(0.9, 0.12 + ((setup.positions.length * 0.16) % 0.76)),
-            y: 0.78,
-            kind: 'gear' as const,
-            category: category as StageSetup['positions'][number]['category'],
-          },
-        ],
-      });
-    }
-  }
-
-  /** Place d'un coup les musiciens du groupe sur le plan de scène. */
-  function seedPositions() {
-    const band = bands.find((b) => b.id === (draft.bandId ?? ''));
-    const members = band?.members ?? [];
-    if (members.length === 0) return;
-    const present = new Set(setup.positions.map((p) => p.id));
-    const added = members
-      .filter((m) => !present.has(m.id))
-      .map((m, i) => ({
-        id: m.id,
-        label: m.name || 'Musicien',
-        instrument: m.instrument,
-        x: 0.5 + (i - (members.length - 1) / 2) * 0.22,
-        y: 0.45,
-      }))
-      .map((p) => ({ ...p, x: Math.min(0.92, Math.max(0.08, p.x)) }));
-    if (added.length > 0) {
-      updateSetup({ positions: [...setup.positions, ...added] });
-    }
-  }
+  const sonoFilled =
+    setup.positions.length > 0 ||
+    setup.gear.trim() !== '' ||
+    setup.wiring.trim() !== '' ||
+    setup.sound.trim() !== '';
 
   /**
    * Ajoute un morceau à la setlist. Si la setlist appartient à un GROUPE et
@@ -252,18 +204,58 @@ export function SetlistEdit({ id }: { id: string | null }) {
     }
   }
 
-
   return (
     <>
+      {/* L'en-tête montre le NOM de la setlist (« Sans titre » à défaut) —
+          un tap dessus met le champ Nom en édition. */}
       <TopBar
-        title={isNew ? 'Nouvelle setlist' : draft.name || 'Setlist'}
+        title={
+          <span
+            style={{ cursor: 'pointer' }}
+            title="Modifier le nom"
+            onClick={() => nameRef.current?.focus()}
+          >
+            {draft.name || 'Sans titre'}
+          </span>
+        }
         onBack={() => navigate('/setlists')}
+        right={
+          !isNew ? (
+            <button
+              className="btn icon"
+              title="Autres actions"
+              aria-label="Autres actions"
+              onClick={() => setHeadMenu(true)}
+            >
+              <Icon name="more" size={20} />
+            </button>
+          ) : undefined
+        }
       />
       <div className="page">
-        <CoachMark
-          id="setlist-reorder"
-          text="Glisse les morceaux pour les réordonner. Chaque morceau peut avoir sa tonalité pour ce concert."
-        />
+        {/* Le nom d'abord — premier élément, hors section repliée. */}
+        <Field label="Nom">
+          <input
+            ref={nameRef}
+            type="text"
+            value={draft.name}
+            placeholder="Concert du 15 août"
+            onChange={(e) => update({ name: e.target.value })}
+          />
+        </Field>
+        {/* Action principale de l'écran, visible sans défiler. */}
+        <button className="btn block" onClick={() => setPicker(true)}>
+          <Icon name="plus" size={16} /> Ajouter un morceau
+        </button>
+        <div className="spacer" />
+        {/* L'explication du glisser-déposer n'a de sens qu'à partir de
+            2 morceaux — et tient en une ligne. */}
+        {draft.items.length >= 2 && (
+          <CoachMark
+            id="setlist-reorder"
+            text="Glisse les morceaux pour changer l'ordre."
+          />
+        )}
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
           Morceaux ({playedItems.length}
           {playedSec > 0
@@ -489,25 +481,12 @@ export function SetlistEdit({ id }: { id: string | null }) {
           );
         })}
 
-        <button className="btn ghost block" onClick={() => setPicker(true)}>
-          <Icon name="plus" size={16} /> Ajouter un morceau
-        </button>
-
         <div className="spacer" />
-        <details className="stfold" open={isNew}>
-          <summary>
-            Infos de la setlist — groupe :{' '}
-            {bandName(draft.bandId ?? '') || 'aucun'}
-          </summary>
-          <div className="spacer" />
-        <Field label="Nom">
-          <input
-            type="text"
-            value={draft.name}
-            placeholder="Concert du 15 août"
-            onChange={(e) => update({ name: e.target.value })}
-          />
-        </Field>
+        <Accordion
+          title="Infos de la setlist"
+          sub={`Groupe : ${bandName(draft.bandId ?? '') || 'Solo'}`}
+          defaultOpen={isNew}
+        >
         <Field label="Commentaire">
           <input
             type="text"
@@ -559,63 +538,23 @@ export function SetlistEdit({ id }: { id: string | null }) {
             <option value="__create__">＋ Créer un groupe…</option>
           </select>
           <p className="help" style={{ marginTop: 4 }}>
-            La setlist utilise les versions des morceaux propres à ce groupe
-            (profil complet du groupe : page Artiste 👤 → Mes groupes).
+            La setlist utilise les versions propres à ce groupe.
           </p>
         </Field>
-          <p className="help">
-            Glisse-dépose les morceaux pour réordonner (ou ↑ ↓). Chaque
-            morceau peut avoir une tonalité, une version et une note propres
-            à cette setlist.
-          </p>
-        </details>
-        <details className="stfold">
-          <summary>Sono &amp; scène — matériel, branchements, plan, réglages</summary>
-          <div className="spacer" />
-          <div className="field">
-            <label>Plan de scène (déplace chacun au doigt ou à la souris)</label>
-            <StagePlan
-              positions={setup.positions}
-              onChange={(positions) => updateSetup({ positions })}
-            />
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-              {(draft.bandId ?? '') !== '' && (
-                <button className="btn ghost small" onClick={seedPositions}>
-                  <Icon name="users" size={14} /> Placer les musiciens du groupe
-                </button>
-              )}
-              <button
-                className="btn ghost small"
-                onClick={() => setGearPicker(true)}
-              >
-                <Icon name="speaker" size={14} /> Piocher le matériel des
-                musiciens
-              </button>
-            </div>
-          </div>
-          <Field label="Matériel">
-            <textarea
-              value={setup.gear}
-              placeholder={'Sono 2×12", console 8 pistes, 3 micros SM58, DI basse…'}
-              onChange={(e) => updateSetup({ gear: e.target.value })}
-            />
-          </Field>
-          <Field label="Branchements (patch, DI, retours…)">
-            <textarea
-              value={setup.wiring}
-              placeholder={'Voie 1 : chant lead\nVoie 2 : guitare (DI)\nVoie 3-4 : claviers…'}
-              onChange={(e) => updateSetup({ wiring: e.target.value })}
-            />
-          </Field>
-          <Field label="Effets & réglages sono">
-            <textarea
-              value={setup.sound}
-              placeholder={'Reverb légère sur le chant, delay refrain de « Angie », retours…'}
-              onChange={(e) => updateSetup({ sound: e.target.value })}
-            />
-          </Field>
-        </details>
-
+        </Accordion>
+        {/* Sono & scène : écran dédié — la rangée dit si c'est renseigné. */}
+        <AccordionNav
+          title="🔊 Sono & scène"
+          sub={
+            sonoFilled
+              ? 'Renseignée — matériel, branchements, plan'
+              : 'Vide — matériel, branchements, plan'
+          }
+          onClick={() => {
+            saveSetlist(draft);
+            navigate(`/setlist/${draft.id}/sono`);
+          }}
+        />
 
         <div className="rowactions">
           {draft.items.length > 0 && (
@@ -650,21 +589,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
           )}
           {/* Décision produit (Vincent, août 2026) : les partitions ne
               circulent QUE par le répertoire de groupe ou le QR ON AIR —
-              pas de partage de setlist par lien. */}
-          {!isNew && (
-            <button
-              className="btn danger"
-              onClick={() => {
-                if (confirm(`Supprimer « ${draft.name} » ?`)) {
-                  deleteSetlist(draft.id);
-                  navigate('/setlists');
-                }
-              }}
-            >
-              Supprimer
-            </button>
-          )}
+              pas de partage de setlist par lien. Supprimer vit dans le
+              menu « … » de l'en-tête (une seule occurrence, confirmée). */}
         </div>
+        {saved && <div className="savedhint">✓ Enregistré</div>}
       </div>
 
       {picker && (
@@ -682,73 +610,32 @@ export function SetlistEdit({ id }: { id: string | null }) {
         />
       )}
 
-      {gearPicker && (
-        <Modal
-          title="Matériel des musiciens"
-          onClose={() => setGearPicker(false)}
-        >
-          <p className="help" style={{ marginTop: 0 }}>
-            Pioché dans « Mon matériel » (fiche Artiste) et dans le matériel
-            des musiciens du groupe. Un clic le place sur le plan de scène ;
-            un second l'en retire — de quoi vérifier que rien ne manque.
-          </p>
-          {gearSources.length === 0 && (
-            <p className="help">
-              Aucun matériel déclaré pour l'instant : remplis « Mon
-              matériel » dans l'onglet Artiste, et celui des musiciens dans
-              la fiche du groupe (section Musiciens → Matériel).
-            </p>
-          )}
-          {gearSources.map((src) => (
-            <div key={src.owner} style={{ marginBottom: 10 }}>
-              <div className="help" style={{ fontWeight: 700, marginBottom: 4 }}>
-                {src.owner}
-              </div>
-              {src.items.map((g) => {
-                const placed = setup.positions.some((p) => p.id === g.id);
-                return (
-                  <div
-                    className="row"
-                    key={g.id}
-                    onClick={() =>
-                      toggleGear(
-                        g.id,
-                        (g.qty ?? 1) > 1 ? `${g.name} ×${g.qty}` : g.name,
-                        src.owner,
-                        g.category,
-                      )
-                    }
-                  >
-                    <Icon name={gearIcon(g.category)} size={15} />
-                    <div className="grow">
-                      <div className="title">
-                        {g.name}
-                        {(g.qty ?? 1) > 1 && (
-                          <span className="stauthor"> ×{g.qty}</span>
-                        )}
-                      </div>
-                    </div>
-                    {placed ? (
-                      <span style={{ color: 'var(--accent)', fontWeight: 700 }}>
-                        ✓ Sur le plan
-                      </span>
-                    ) : (
-                      <span className="chevron">
-                        <Icon name="plus" size={16} />
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-          <button
-            className="btn ghost block"
-            onClick={() => setGearPicker(false)}
-          >
-            Fermer
-          </button>
-        </Modal>
+      {headMenu && (
+        <MenuSheet
+          title={draft.name || 'Sans titre'}
+          items={[
+            {
+              label: 'Supprimer la setlist',
+              icon: 'trash',
+              danger: true,
+              onClick: () => setConfirmDelete(true),
+            },
+          ]}
+          onClose={() => setHeadMenu(false)}
+        />
+      )}
+      {confirmDelete && (
+        <ConfirmSheet
+          title={`Supprimer « ${draft.name || 'Sans titre'} » ?`}
+          message="Les morceaux restent dans ta bibliothèque — seule la setlist disparaît."
+          confirmLabel="Supprimer"
+          danger
+          onConfirm={() => {
+            deleteSetlist(draft.id);
+            navigate('/setlists');
+          }}
+          onClose={() => setConfirmDelete(false)}
+        />
       )}
     </>
   );
