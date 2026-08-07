@@ -534,11 +534,14 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Bouton flottant, présent sur toutes les pages du musicien.
+/** Bouton GO LIVE, présent au même endroit sur toutes les pages du
+ *  musicien : INTÉGRÉ à la barre de titre (variante `inBar`, posée par
+ *  TopBar — plus rien de flottant qui chevauche le contenu). La version
+ *  flottante ne subsiste qu'en mode scène, qui n'a pas de barre.
  *  N'apparaît qu'une fois la fiche artiste créée (décision Vincent) : un
  *  débutant n'a pas à voir le mode direct avant d'avoir posé son nom.
  *  Exception : un direct déjà actif reste toujours pilotable. */
-export function OnAirButton() {
+export function OnAirButton({ inBar = false }: { inBar?: boolean } = {}) {
   const ctx = useContext(StatusContext);
   const { artist } = useStore();
   if (!ctx) return null;
@@ -546,7 +549,7 @@ export function OnAirButton() {
   if (artist.name.trim() === '' && status === 'off') return null;
   return (
     <button
-      className={`onair ${status}`}
+      className={`onair ${status}${inBar ? ' inbar' : ''}`}
       onClick={openPanel}
       title={
         status === 'on' || status === 'pause'

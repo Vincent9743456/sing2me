@@ -236,7 +236,7 @@ export function SongView({
   if (!song) {
     return (
       <>
-        <TopBar title="Morceau" onBack={() => navigate('/')} />
+        <TopBar live={false} title="Morceau" onBack={() => navigate('/')} />
         <Empty>Ce morceau n'existe plus.</Empty>
       </>
     );
@@ -304,6 +304,7 @@ export function SongView({
   return (
     <>
       <TopBar
+        live={false}
         title={
           ctxSetlist
             ? `${song.title || '(sans titre)'} · ${ctxSetlist.name || 'Setlist'}`

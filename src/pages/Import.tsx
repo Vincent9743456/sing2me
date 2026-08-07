@@ -805,7 +805,7 @@ export function Import() {
 
   return (
     <>
-      <TopBar title="Ajouter un morceau" onBack={() => history.back()} />
+      <TopBar live={false} title="Ajouter un morceau" onBack={() => history.back()} />
       <div className="page">
         {/* 1 — Recherche : la première chose visible, toujours en tête */}
         <div className="field">

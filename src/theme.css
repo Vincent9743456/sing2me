@@ -145,9 +145,6 @@ h3 {
   justify-content: flex-end;
 }
 @media (max-width: 899px) {
-  .topbar {
-    padding-right: 96px;
-  }
   .topbar .side.right {
     min-width: 0;
   }
@@ -1653,6 +1650,16 @@ textarea.mono {
 .onair:hover {
   transform: translateY(-1px);
 }
+/* Variante INTÉGRÉE à la barre de titre (TopBar) : même place sur toutes
+   les pages, dans le flux — fini le bouton flottant qui chevauche le
+   contenu (l'app installée décalait la version fixe sous la barre via
+   safe-area-inset-top). Mêmes couleurs et clignotement qu'en fixe. */
+.onair.inbar {
+  position: static;
+  z-index: auto;
+  box-shadow: none;
+  flex-shrink: 0;
+}
 /* En direct : ROUGE clignotant — impossible à manquer */
 .onair.on {
   border-color: var(--live);
@@ -1926,14 +1933,10 @@ h2.pagetitle {
     margin-left: auto;
     margin-right: auto;
   }
-  /* Réserver le coin haut-droit au bouton ON AIR (fixe) pour qu'il ne
-     chevauche jamais l'action de droite de la barre (ex. « Ajouter »). */
-  .topbar {
-    padding-right: 112px;
-  }
   .topbar .side.right {
     min-width: 0;
   }
+  /* Mode scène (seul usage restant du bouton fixe) : un peu plus au large. */
   .onair {
     top: 14px;
     right: 18px;

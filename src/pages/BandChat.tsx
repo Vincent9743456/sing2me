@@ -213,7 +213,7 @@ export function BandChat({ id }: { id: string }) {
   if (!band) {
     return (
       <>
-        <TopBar title="Espace du groupe" onBack={() => navigate('/bands')} />
+        <TopBar live={false} title="Espace du groupe" onBack={() => navigate('/bands')} />
         <div className="page">
           <p className="help">Ce groupe n'existe plus.</p>
         </div>
@@ -224,6 +224,7 @@ export function BandChat({ id }: { id: string }) {
   return (
     <>
       <TopBar
+        live={false}
         title={`💬 ${band.name || 'Espace du groupe'}`}
         onBack={() => navigate(`/band/${band.id}`)}
       />

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { navigate, Route } from '../router';
 import { Icon, IconName } from './Icon';
 import { Brand } from './Logo';
+import { OnAirButton } from './OnAir';
 
 /**
  * Astuce « mode concert », affichée une seule fois : l'écran reste allumé
@@ -38,10 +39,15 @@ export function TopBar({
   title,
   onBack,
   right,
+  live = true,
 }: {
   title: React.ReactNode;
   onBack?: () => void;
   right?: React.ReactNode;
+  /** GO LIVE intégré à la barre (même place partout, jamais flottant).
+   *  `false` sur les pages où lancer un direct n'a pas de sens (fiche
+   *  morceau, édition, import, discussion…) : le titre respire. */
+  live?: boolean;
 }) {
   return (
     <div className="topbar">
@@ -53,7 +59,10 @@ export function TopBar({
         )}
       </div>
       <h1>{title}</h1>
-      <div className="side right">{right}</div>
+      <div className="side right">
+        {right}
+        {live && <OnAirButton inBar />}
+      </div>
     </div>
   );
 }
