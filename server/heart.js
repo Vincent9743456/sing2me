@@ -26,6 +26,36 @@ export default async function handler(req, res) {
     const n = Math.max(1, Math.min(10, parseInt(req.body?.n, 10) || 1));
     const base = process.env.SUPABASE_URL.replace(/\/$/, '');
 
+    // Multi-live (b121) : le spectateur précise SON direct.
+    const liveId = String(req.body?.liveId ?? '').slice(0, 60);
+    if (liveId !== '' && liveId !== 'legacy') {
+      const r2 = await fetch(
+        `${base}/rest/v1/lives?id=eq.${encodeURIComponent(liveId)}&select=status,hearts&limit=1`,
+        { headers: sbHeaders() },
+      );
+      const rows2 = r2.ok ? await r2.json() : [];
+      const row2 = Array.isArray(rows2) && rows2[0] ? rows2[0] : null;
+      if (!row2 || row2.status !== 'on') {
+        res.status(409).json({ error: 'Aucun direct en cours' });
+        return;
+      }
+      const hearts2 = (row2.hearts ?? 0) + n;
+      const u2 = await fetch(
+        `${base}/rest/v1/lives?id=eq.${encodeURIComponent(liveId)}`,
+        {
+          method: 'PATCH',
+          headers: sbHeaders(),
+          body: JSON.stringify({ hearts: hearts2 }),
+        },
+      );
+      if (!u2.ok) {
+        res.status(502).json({ error: `Supabase a répondu ${u2.status}` });
+        return;
+      }
+      res.status(200).json({ hearts: hearts2 });
+      return;
+    }
+
     const r = await fetch(
       `${base}/rest/v1/live_state?id=eq.live&select=status,hearts`,
       { headers: sbHeaders() },

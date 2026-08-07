@@ -8,7 +8,7 @@ import React, { useEffect, useState } from 'react';
 
 import { LogoMark } from '../components/Logo';
 import { TipBox } from '../components/TipBox';
-import { fetchLive } from '../lib/live';
+import { fetchLiveForArtist } from '../lib/live';
 import { fetchPublicPage } from '../lib/publicPages';
 import { ArtistProfile } from '../types';
 
@@ -17,6 +17,7 @@ export function PublicArtist({ name }: { name: string }) {
     undefined,
   );
   const [liveNow, setLiveNow] = useState(false);
+  const [liveCode, setLiveCode] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -24,19 +25,12 @@ export function PublicArtist({ name }: { name: string }) {
       const page = await fetchPublicPage(name);
       if (cancelled) return;
       setProfile(page ? page.profile : null);
-      // L'artiste est-il en concert en ce moment ? (état live global)
+      // L'artiste est-il en concert en ce moment ? (multi-live : SON direct)
       try {
-        const live = await fetchLive();
-        const artistName = (page?.profile.name ?? '').trim().toLowerCase();
-        const liveName = (live.artist?.name ?? '').trim().toLowerCase();
-        if (
-          !cancelled &&
-          live.status !== 'off' &&
-          live.mode === 'concert' &&
-          artistName !== '' &&
-          liveName === artistName
-        ) {
+        const live = await fetchLiveForArtist(page?.profile.name ?? '');
+        if (!cancelled && live && live.mode === 'concert') {
           setLiveNow(true);
+          setLiveCode(live.joinCode);
         }
       } catch {
         /* pas de direct : page statique */
@@ -85,7 +79,7 @@ export function PublicArtist({ name }: { name: string }) {
         <div style={{ textAlign: 'center', marginBottom: 14 }}>
           {/* Lien ABSOLU vers l'entrée publique légère : la page peut être
               servie depuis /lenom, un hash relatif serait cassé. */}
-          <a className="btn block" href="/live">
+          <a className="btn block" href={liveCode !== '' ? `/live?c=${liveCode}` : '/live'}>
             🔴 {profile.name} est EN DIRECT — suivre le concert
           </a>
         </div>

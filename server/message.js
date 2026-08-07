@@ -27,16 +27,19 @@ export default async function handler(req, res) {
         res.status(400).json({ error: 'Message vide' });
         return;
       }
-      // Contexte : quel morceau était joué, par qui (best-effort)
+      // Contexte : quel morceau était joué, par qui (best-effort).
+      // Multi-live (b121) : le spectateur précise SON direct (liveId).
+      const liveId = String(req.body?.liveId ?? '').slice(0, 60);
       let song_title = '';
       let performer = '';
       let concert_id = '';
       let concert_title = '';
       try {
-        const cur = await fetch(
-          `${base}/rest/v1/live_state?id=eq.live&select=status,song,artist,concert`,
-          { headers: sbHeaders(false) },
-        );
+        const url =
+          liveId !== '' && liveId !== 'legacy'
+            ? `${base}/rest/v1/lives?id=eq.${encodeURIComponent(liveId)}&select=status,song,artist,concert&limit=1`
+            : `${base}/rest/v1/live_state?id=eq.live&select=status,song,artist,concert`;
+        const cur = await fetch(url, { headers: sbHeaders(false) });
         const rows = cur.ok ? await cur.json() : [];
         const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
         if (row) {
@@ -58,6 +61,7 @@ export default async function handler(req, res) {
           performer,
           concert_id,
           concert_title,
+          live_id: liveId !== '' && liveId !== 'legacy' ? liveId : null,
         }),
       });
       // Repli si les colonnes de contexte n'existent pas encore (migration

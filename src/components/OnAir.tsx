@@ -22,6 +22,7 @@ import {
   LivePublicSong,
   LiveSong,
   LiveStatus,
+  currentLiveRef,
   liveUrl,
   messagesBySong,
   pushBandSong,
@@ -113,6 +114,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
   const currentRef = useRef<LiveSong | null>(null);
   const setlistRef = useRef<LivePublicSong[] | null>(null);
   const statusRef = useRef(status);
@@ -161,7 +163,8 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     const tick = async () => {
       try {
-        const s = await fetchLive();
+        // Multi-live : le leader sonde SON direct (via son code de salon).
+        const s = await fetchLive(currentLiveRef()?.joinCode ?? '');
         if (cancelled) return;
         setHearts(s.hearts);
         // Le serveur peut couper un direct oublié (4 h, ou 1 h sans
@@ -312,7 +315,12 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
 
   async function showQr() {
     try {
-      setQr(await QRCode.toDataURL(liveUrl(), { width: 440, margin: 1 }));
+      setQr(
+        await QRCode.toDataURL(liveUrl(currentLiveRef()?.joinCode ?? ''), {
+          width: 440,
+          margin: 1,
+        }),
+      );
     } catch {
       setQr(null);
     }
@@ -373,6 +381,45 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 </select>
               </div>
             )}
+            {/* Code de salon (multi-live b121) : affiché EN GRAND dès le
+                lancement — se communique à la voix ou par message, et se
+                copie d'un tap. Les musiciens/spectateurs le saisissent dans
+                « Rejoindre un direct » (onglet Concerts) ou via le QR. */}
+            {status !== 'off' && (currentLiveRef()?.joinCode ?? '') !== '' && (
+              <div style={{ textAlign: 'center', margin: '10px 0' }}>
+                <div className="label">Code pour rejoindre</div>
+                <button
+                  className="btn ghost"
+                  title="Copier le code"
+                  style={{
+                    fontSize: '2rem',
+                    letterSpacing: 6,
+                    fontVariantNumeric: 'tabular-nums',
+                    padding: '8px 18px',
+                  }}
+                  onClick={() => {
+                    const c = currentLiveRef()?.joinCode ?? '';
+                    try {
+                      void navigator.clipboard.writeText(c);
+                      setCodeCopied(true);
+                      window.setTimeout(() => setCodeCopied(false), 1800);
+                    } catch {
+                      /* presse-papier indisponible */
+                    }
+                  }}
+                >
+                  {(currentLiveRef()?.joinCode ?? '').replace(
+                    /^(\d{3})(\d{3})$/,
+                    '$1 $2',
+                  )}
+                </button>
+                <p className="help" style={{ margin: '4px 0 0' }}>
+                  {codeCopied
+                    ? '✓ Code copié !'
+                    : 'Dicte-le ou copie-le — musiciens et public le saisissent dans « Rejoindre un direct ».'}
+                </p>
+              </div>
+            )}
             <div
               style={{
                 display: 'flex',
@@ -419,7 +466,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
             {qr && (
               <div className="qrbox">
                 <img src={qr} alt="QR unique de tes sessions" />
-                <div className="linkbox">{liveUrl()}</div>
+                <div className="linkbox">
+                  {liveUrl(currentLiveRef()?.joinCode ?? '')}
+                </div>
                 <p className="help" style={{ textAlign: 'center' }}>
                   <strong>Un seul QR pour tout, à imprimer une fois.</strong>
                   <br />

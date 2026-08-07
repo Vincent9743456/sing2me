@@ -42,6 +42,11 @@ export interface LivePublicSong {
 }
 
 export interface LiveState {
+  /** Identifiant du direct (multi-live b121) — '' hors direct, 'legacy'
+   *  pour un direct lancé par un ancien bundle. */
+  id: string;
+  /** Code de salon à 6 chiffres ('' hors direct). */
+  joinCode: string;
   status: LiveStatus;
   mode: LiveMode;
   song: LiveSong | null;
@@ -92,16 +97,20 @@ async function readJson(res: Response): Promise<any> {
   return res.json();
 }
 
-export async function fetchLive(): Promise<LiveState> {
+export async function fetchLive(code = ''): Promise<LiveState> {
   let res: Response;
   try {
-    res = await fetch('/api/live');
+    res = await fetch(
+      code !== '' ? `/api/live?code=${encodeURIComponent(code)}` : '/api/live',
+    );
   } catch {
     throw new Error(OFFLINE_MSG);
   }
   const body = await readJson(res);
   if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
   return {
+    id: typeof body.id === 'string' ? body.id : '',
+    joinCode: typeof body.joinCode === 'string' ? body.joinCode : '',
     status: body.status === 'on' || body.status === 'pause' ? body.status : 'off',
     mode: body.mode === 'repet' ? 'repet' : 'concert',
     song: body.song ?? null,
@@ -115,10 +124,78 @@ export async function fetchLive(): Promise<LiveState> {
   };
 }
 
-/** Récupère la setlist diffusée (parcours public). Best-effort → []. */
-export async function fetchLiveSetlist(): Promise<LivePublicSong[]> {
+/** Live actif d'un de MES groupes (bannière des membres) — best-effort. */
+export async function fetchLiveForBands(
+  cloudIds: string[],
+): Promise<LiveState | null> {
+  if (cloudIds.length === 0) return null;
   try {
-    const res = await fetch('/api/live?setlist=1');
+    const res = await fetch(
+      `/api/live?band=${encodeURIComponent(cloudIds.join(','))}`,
+    );
+    const type = res.headers.get('content-type') ?? '';
+    if (!type.includes('application/json')) return null;
+    const body = await res.json();
+    if (typeof body.status !== 'string' || body.status === 'off') return null;
+    return {
+      id: typeof body.id === 'string' ? body.id : '',
+      joinCode: typeof body.joinCode === 'string' ? body.joinCode : '',
+      status: body.status === 'pause' ? 'pause' : 'on',
+      mode: body.mode === 'repet' ? 'repet' : 'concert',
+      song: body.song ?? null,
+      artist: body.artist ?? null,
+      hearts: typeof body.hearts === 'number' ? body.hearts : 0,
+      bandSong: body.bandSong ?? null,
+      setlistCount: typeof body.setlistCount === 'number' ? body.setlistCount : 0,
+      updatedAt: body.updatedAt ?? null,
+      bandId: typeof body.bandId === 'string' ? body.bandId : '',
+      startedBy: typeof body.startedBy === 'string' ? body.startedBy : '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Le live actif de CET artiste (page publique /nom). Best-effort → null. */
+export async function fetchLiveForArtist(
+  name: string,
+): Promise<LiveState | null> {
+  if (name.trim() === '') return null;
+  try {
+    const res = await fetch(
+      `/api/live?artist=${encodeURIComponent(name.trim())}`,
+    );
+    const type = res.headers.get('content-type') ?? '';
+    if (!type.includes('application/json')) return null;
+    const body = await res.json();
+    if (typeof body.status !== 'string' || body.status === 'off') return null;
+    return {
+      id: typeof body.id === 'string' ? body.id : '',
+      joinCode: typeof body.joinCode === 'string' ? body.joinCode : '',
+      status: body.status === 'pause' ? 'pause' : 'on',
+      mode: body.mode === 'repet' ? 'repet' : 'concert',
+      song: body.song ?? null,
+      artist: body.artist ?? null,
+      hearts: typeof body.hearts === 'number' ? body.hearts : 0,
+      bandSong: body.bandSong ?? null,
+      setlistCount: typeof body.setlistCount === 'number' ? body.setlistCount : 0,
+      updatedAt: body.updatedAt ?? null,
+      bandId: typeof body.bandId === 'string' ? body.bandId : '',
+      startedBy: typeof body.startedBy === 'string' ? body.startedBy : '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Récupère la setlist diffusée (parcours public). Best-effort → []. */
+export async function fetchLiveSetlist(code = ''): Promise<LivePublicSong[]> {
+  try {
+    const res = await fetch(
+      code !== ''
+        ? `/api/live?setlist=1&code=${encodeURIComponent(code)}`
+        : '/api/live?setlist=1',
+    );
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return [];
     const body = await res.json();
@@ -138,7 +215,11 @@ export async function pushSetlist(
     await fetch('/api/live', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-live-key': key },
-      body: JSON.stringify({ setlist: setlist ?? [] }),
+      body: JSON.stringify({
+        setlist: setlist ?? [],
+        multi: 1,
+        ...(currentLiveRef() ?? {}),
+      }),
     });
   } catch {
     // best-effort : jamais bloquant pour celui qui joue
@@ -155,7 +236,11 @@ export async function pushBandSong(
     await fetch('/api/live', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-live-key': key },
-      body: JSON.stringify({ bandSong: song }),
+      body: JSON.stringify({
+        bandSong: song,
+        multi: 1,
+        ...(currentLiveRef() ?? {}),
+      }),
     });
   } catch {
     // best-effort : jamais bloquant pour celui qui joue
@@ -163,12 +248,15 @@ export async function pushBandSong(
 }
 
 /** Envoie n cœurs (public, pendant le direct). Silencieux en cas d'échec. */
-export async function sendHearts(n: number): Promise<number | null> {
+export async function sendHearts(
+  n: number,
+  liveId = '',
+): Promise<number | null> {
   try {
     const res = await fetch('/api/live-x?fn=heart', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ n }),
+      body: JSON.stringify({ n, liveId }),
     });
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return null;
@@ -180,13 +268,17 @@ export async function sendHearts(n: number): Promise<number | null> {
 }
 
 /** Envoie un message du public (livre d'or). */
-export async function sendMessage(name: string, text: string): Promise<void> {
+export async function sendMessage(
+  name: string,
+  text: string,
+  liveId = '',
+): Promise<void> {
   let res: Response;
   try {
     res = await fetch('/api/live-x?fn=message', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name, text }),
+      body: JSON.stringify({ name, text, liveId }),
     });
   } catch {
     throw new Error(OFFLINE_MSG);
@@ -277,6 +369,40 @@ export async function fetchLiveStats(key: string): Promise<LiveStat[]> {
   return Array.isArray(body.stats) ? body.stats : [];
 }
 
+/* ------------------------------------------------------------------ */
+/* Multi-live (b121) : référence du direct que CE musicien a lancé.    */
+/*  liveId + writeToken (seul le lanceur pilote son live) + joinCode   */
+/*  (code de salon à 6 chiffres, affiché en grand pour communication). */
+/* ------------------------------------------------------------------ */
+
+export interface LiveRef {
+  liveId: string;
+  writeToken: string;
+  joinCode: string;
+}
+
+const LIVE_REF_KEY = 'sing2me/liveRef';
+
+export function currentLiveRef(): LiveRef | null {
+  try {
+    const raw = localStorage.getItem(LIVE_REF_KEY);
+    if (!raw) return null;
+    const r = JSON.parse(raw) as LiveRef;
+    return r.liveId && r.writeToken ? r : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLiveRef(r: LiveRef | null): void {
+  try {
+    if (r) localStorage.setItem(LIVE_REF_KEY, JSON.stringify(r));
+    else localStorage.removeItem(LIVE_REF_KEY);
+  } catch {
+    /* stockage indisponible */
+  }
+}
+
 export async function pushLive(
   key: string,
   update: {
@@ -298,26 +424,47 @@ export async function pushLive(
       'Le direct est momentanément indisponible — réessaie dans un instant.',
     );
   }
+  const ref = currentLiveRef();
+  const payload: Record<string, unknown> = { ...update, multi: 1 };
+  if (ref) {
+    payload.liveId = ref.liveId;
+    payload.writeToken = ref.writeToken;
+  }
   let res: Response;
   try {
     res = await fetch('/api/live', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-live-key': key },
-      body: JSON.stringify(update),
+      body: JSON.stringify(payload),
     });
   } catch {
     throw new Error(OFFLINE_MSG);
   }
   const body = await readJson(res);
+  // Référence périmée (live déjà clos/expiré côté serveur) : on repart
+  // proprement — une clôture est considérée réussie, un lancement recrée.
+  if (res.status === 403 && ref) {
+    saveLiveRef(null);
+    if (update.status === 'off') return;
+    return pushLive(key, update);
+  }
   if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
+  if (!ref && typeof body.liveId === 'string' && body.liveId !== '') {
+    saveLiveRef({
+      liveId: body.liveId,
+      writeToken: String(body.writeToken ?? ''),
+      joinCode: String(body.joinCode ?? ''),
+    });
+  }
+  if (update.status === 'off') saveLiveRef(null);
 }
 
 /** URL publique du direct, à partager / mettre en QR.
  *  Pointe vers l'ENTRÉE PUBLIQUE LÉGÈRE (/live → public.html) : le
  *  spectateur ne télécharge jamais le bundle de l'app musicien. Les anciens
  *  QR (/#/live) restent servis par l'app, en compatibilité. */
-export function liveUrl(): string {
-  return `${location.origin}/live`;
+export function liveUrl(code = ''): string {
+  return `${location.origin}/live${code !== '' ? `?c=${code}` : ''}`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -351,12 +498,12 @@ export function deviceId(): string {
  * des uniques, MESURE SEULEMENT). Best-effort, totalement silencieux et
  * isolé : n'influence jamais l'affichage du direct.
  */
-export async function pingAttendance(): Promise<void> {
+export async function pingAttendance(liveId = ''): Promise<void> {
   try {
     await fetch('/api/live-x?fn=attend', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ device: deviceId() }),
+      body: JSON.stringify({ device: deviceId(), liveId }),
     });
   } catch {
     // mesure best-effort : ne bloque jamais le spectateur

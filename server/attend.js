@@ -42,7 +42,31 @@ export default async function handler(req, res) {
     }
     const base = process.env.SUPABASE_URL.replace(/\/$/, '');
 
-    // Y a-t-il une session ON AIR active ?
+    // Multi-live (b121) : présence rattachée au direct indiqué.
+    const liveId = String(req.body?.liveId ?? '').slice(0, 60);
+    if (liveId !== '' && liveId !== 'legacy') {
+      const r2 = await fetch(
+        `${base}/rest/v1/lives?id=eq.${encodeURIComponent(liveId)}&select=status,session_id&limit=1`,
+        { headers: sbHeaders() },
+      );
+      const rows2 = r2.ok ? await r2.json() : [];
+      const row2 = Array.isArray(rows2) && rows2[0] ? rows2[0] : null;
+      if (row2 && row2.status !== 'off' && row2.session_id) {
+        await fetch(`${base}/rest/v1/live_attendance`, {
+          method: 'POST',
+          headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
+          body: JSON.stringify({
+            session_id: row2.session_id,
+            device_id: device,
+            last_seen: new Date().toISOString(),
+          }),
+        });
+      }
+      res.status(200).json({ ok: true });
+      return;
+    }
+
+    // Y a-t-il une session ON AIR active ? (legacy)
     const r = await fetch(
       `${base}/rest/v1/live_state?id=eq.live&select=status,session_id`,
       { headers: sbHeaders() },

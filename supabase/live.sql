@@ -137,3 +137,38 @@ alter table live_state add column if not exists started_by text not null default
 -- nouvelle partition (last_song_at). Voir api/live.js.
 alter table live_state add column if not exists started_at timestamptz;
 alter table live_state add column if not exists last_song_at timestamptz;
+
+-- ────────────────────────────────────────────────────────────────────────
+-- MULTI-LIVE (chantier prioritaire, b121) : une ligne par direct — fini la
+-- scène globale unique. Chaque GO LIVE crée sa ligne, avec :
+--  join_code    : code de salon à 6 chiffres (rejoindre sans QR) ;
+--  write_token  : jeton d'écriture du lanceur (seul lui pilote SON live).
+-- L'ancienne ligne live_state reste lue en repli (vieux bundles/QR).
+create table if not exists lives (
+  id uuid primary key default gen_random_uuid(),
+  join_code text not null default '',
+  write_token text not null default '',
+  status text not null default 'off',
+  mode text not null default 'concert',
+  song jsonb,
+  artist jsonb,
+  band_song jsonb,
+  concert jsonb,
+  setlist jsonb,
+  setlist_count int not null default 0,
+  hearts int not null default 0,
+  band_id text not null default '',
+  started_by text not null default '',
+  started_at timestamptz,
+  last_song_at timestamptz,
+  session_id uuid,
+  updated_at timestamptz not null default now()
+);
+alter table lives enable row level security;
+create index if not exists lives_active_code
+  on lives (join_code) where status <> 'off';
+create index if not exists lives_active_band
+  on lives (band_id) where status <> 'off';
+
+-- Messages du public rattachés à leur direct (purge ciblée à la clôture).
+alter table live_messages add column if not exists live_id uuid;
