@@ -162,6 +162,48 @@ export async function signInWithEmail(email: string): Promise<void> {
   }
 }
 
+/**
+ * Connexion par CODE à 6 chiffres (le même email que le lien magique).
+ * Indispensable pour l'app installée sur l'écran d'accueil (iOS isole son
+ * stockage : un lien ouvert depuis l'email connecte Safari, pas l'app —
+ * le code, lui, se saisit directement dedans). Nécessite que le gabarit
+ * d'email Supabase « Magic Link » affiche {{ .Token }}.
+ */
+export async function verifyEmailCode(
+  email: string,
+  code: string,
+): Promise<void> {
+  const res = await fetch(`${supabaseUrl()}/auth/v1/verify`, {
+    method: 'POST',
+    headers: { apikey: anonKey(), 'content-type': 'application/json' },
+    body: JSON.stringify({ type: 'email', email, token: code.trim() }),
+  });
+  const body = (await res.json().catch(() => ({}))) as {
+    access_token?: string;
+    refresh_token?: string;
+    expires_in?: number;
+    msg?: string;
+    error_description?: string;
+  };
+  if (!res.ok || !body.access_token) {
+    const raw = body.msg ?? body.error_description ?? '';
+    if (/expired|invalid/i.test(raw)) {
+      throw new Error(
+        'Code incorrect ou expiré — vérifie les 6 chiffres, ou redemande un email.',
+      );
+    }
+    throw new Error(raw || `Supabase a répondu ${res.status}`);
+  }
+  const claims = decodeJwt(body.access_token);
+  saveSession({
+    accessToken: body.access_token,
+    refreshToken: body.refresh_token ?? '',
+    expiresAt: Math.floor(Date.now() / 1000) + (body.expires_in ?? 3600),
+    userId: claims.sub ?? '',
+    email: claims.email ?? email,
+  });
+}
+
 /** Redirige vers Google / Facebook (provider activé dans Supabase). */
 export function signInWithProvider(provider: 'google' | 'facebook'): void {
   location.href =

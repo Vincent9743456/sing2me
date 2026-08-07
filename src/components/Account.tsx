@@ -26,6 +26,7 @@ import {
   pullCloud,
   pushCloud,
   signInWithEmail,
+  verifyEmailCode,
   signInWithProvider,
   signOut,
   takeAuthError,
@@ -476,6 +477,8 @@ export function AccountSection() {
   // dans le champ email → plus de recherche du champ, saisie immédiate.
   const [joining] = useState(() => peekPendingInvite() != null);
   const [sent, setSent] = useState(false);
+  // Code à 6 chiffres (app installée : le lien ouvre Safari, pas l'app).
+  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -530,9 +533,49 @@ export function AccountSection() {
           </p>
           <p className="help">
             Ouvre cet email <strong>sur cet appareil</strong> et touche le
-            lien : tu reviendras ici, connecté (pense aux spams). Rien reçu
-            après une minute ?
+            lien — ou saisis ici le <strong>code à 6 chiffres</strong> de
+            l'email (recommandé si tu utilises l'app installée sur l'écran
+            d'accueil). Pense aux spams.
           </p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <input
+              type="text"
+              value={code}
+              placeholder="Code à 6 chiffres"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              style={{ letterSpacing: 3 }}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            />
+            <button
+              className="btn"
+              style={{ flexShrink: 0 }}
+              disabled={code.length !== 6 || busy}
+              onClick={() => {
+                setBusy(true);
+                setLocalError(null);
+                verifyEmailCode(email.trim(), code)
+                  .then(() => {
+                    // Reconstruction propre (mêmes effets que le retour du
+                    // lien magique) : synchro cloud, comptes, groupes.
+                    location.hash = '#/artist';
+                    location.reload();
+                  })
+                  .catch((e) =>
+                    setLocalError(
+                      e instanceof Error ? e.message : 'Code refusé.',
+                    ),
+                  )
+                  .finally(() => setBusy(false));
+              }}
+            >
+              {busy ? '…' : 'Valider'}
+            </button>
+          </div>
+          {localError && (
+            <p style={{ color: 'var(--danger)', marginTop: 0 }}>{localError}</p>
+          )}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
               className="btn ghost small"
