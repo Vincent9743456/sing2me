@@ -172,3 +172,13 @@ create index if not exists lives_active_band
 
 -- Messages du public rattachés à leur direct (purge ciblée à la clôture).
 alter table live_messages add column if not exists live_id uuid;
+
+-- ------------------------------------------------------------
+-- b138 : à QUI appartiennent ces ❤ ? La clé ON AIR est commune à
+-- l'installation ; sans ce champ, les statistiques d'un artiste se
+-- mélangeaient à celles des autres (et sa chanson pouvait sortir des
+-- 200 dernières lignes). Les lignes antérieures restent lisibles :
+-- la lecture accepte aussi performer = ''.
+-- ------------------------------------------------------------
+alter table live_stats add column if not exists performer text not null default '';
+create index if not exists live_stats_performer on live_stats (performer);

@@ -911,7 +911,7 @@ export function Artist() {
           onClick={async () => {
             setStatsError(null);
             try {
-              setStats(await fetchLiveStats(prefs.liveKey));
+              setStats(await fetchLiveStats(prefs.liveKey, whoProfile.name));
               setMessages(await fetchMessages(prefs.liveKey));
               setSessions(await fetchAudienceSessions(prefs.liveKey));
               setFollowers(
