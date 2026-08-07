@@ -263,24 +263,6 @@ export function Setlists() {
       <TopBar title="Setlists" />
       <div className="page">
         <LiveBanner />
-        <div
-          className="hstack"
-          style={{ justifyContent: 'space-between', gap: 8, marginBottom: 8 }}
-        >
-          <p className="help" style={{ margin: 0 }}>
-            {setlists.length === 0
-              ? 'Une setlist = l’ordre de tes morceaux pour un concert ou une répét.'
-              : 'Tes setlists, rangées par groupe ou contexte. Touche une rangée pour l’ouvrir.'}
-          </p>
-          <button
-            className="btn"
-            style={{ flexShrink: 0 }}
-            onClick={() => setCreateOpen(true)}
-          >
-            <Icon name="plus" size={15} /> Créer une setlist
-          </button>
-        </div>
-
         {setlists.length === 0 && (
           <Empty>
             <div
@@ -343,8 +325,9 @@ export function Setlists() {
             ),
           )}
 
-        {/* Capsule IA : dépliable comme les autres. */}
-        <div className={`stgroup stgroup-ai ${open.has('ai') ? 'open' : ''}`}>
+        {/* Capsule IA : dépliable comme les autres — même style (l'icône ✨
+            suffit à la distinguer, sans bordure ni fond orange). */}
+        <div className={`stgroup ${open.has('ai') ? 'open' : ''}`}>
           <button className="capsule-head" onClick={() => toggle('ai')}>
             <span className="capsule-ai-badge" aria-hidden="true">
               ✨
@@ -373,6 +356,12 @@ export function Setlists() {
           )}
         </div>
       </div>
+
+      {/* Action principale unique, au même endroit que « Nouveau morceau »
+          dans l'onglet Morceaux (bas droite). */}
+      <button className="btn libfab" onClick={() => setCreateOpen(true)}>
+        <Icon name="plus" size={17} /> Créer une setlist
+      </button>
 
       {createOpen && (
         <Modal
