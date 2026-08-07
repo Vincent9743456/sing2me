@@ -34,6 +34,7 @@ const FollowButton = lazy(() => import('./live/FollowButton'));
 const MusicianLive = lazy(() => import('./live/MusicianLive'));
 const SouvenirCard = lazy(() => import('./live/SouvenirCard'));
 const ArtistSheet = lazy(() => import('./live/ArtistSheet'));
+const ShareLive = lazy(() => import('./live/ShareLive'));
 
 const POLL_MS = 4000;
 
@@ -140,6 +141,8 @@ export function Live({
   const [souvenirData, setSouvenirData] = useState<Souvenir | null>(null);
   // Fiche artiste consultable pendant le direct (bouton-avatar).
   const [artistOpen, setArtistOpen] = useState(false);
+  // Panneau « Faire venir du monde » : QR + partage du lien du direct.
+  const [shareOpen, setShareOpen] = useState(false);
   const lastTitle = useRef('');
   // Nombre de morceaux de la dernière setlist préchargée (re-précharge si change).
   const lastSetlistCount = useRef(-1);
@@ -283,6 +286,15 @@ export function Live({
   const browseCount = state.setlistCount > 0 ? state.setlistCount : cachedCount;
   const canBrowse =
     (publicSession || role === 'musicien') && browseCount > 0;
+  // Partage du direct (public comme musicien de passage) : dès qu'une
+  // session est active — un spectateur invite ses amis, un musicien au
+  // bœuf fait venir d'autres musiciens.
+  const sessionActive = state.status === 'on' || state.status === 'pause';
+  const canShare = sessionActive && (publicSession || role === 'musicien');
+  const shareCode = joinCode !== '' ? joinCode : (state.joinCode ?? '');
+  const shareUrl = `${location.origin}/live${
+    shareCode !== '' ? `?c=${shareCode}` : ''
+  }`;
 
   async function openBrowse() {
     setBrowseIdx(null);
@@ -366,12 +378,35 @@ export function Live({
           </button>
         </div>
       )}
-      {canBrowse && (
-        <div style={{ textAlign: 'center', margin: '0 0 12px' }}>
-          <button className="btn small" onClick={() => void openBrowse()}>
-            📋 Voir la setlist ({browseCount})
-          </button>
+      {(canBrowse || canShare) && (
+        <div
+          className="rowactions"
+          style={{ justifyContent: 'center', margin: '0 0 12px' }}
+        >
+          {canBrowse && (
+            <button className="btn small" onClick={() => void openBrowse()}>
+              📋 Voir la setlist ({browseCount})
+            </button>
+          )}
+          {canShare && (
+            <button
+              className="btn ghost small"
+              onClick={() => setShareOpen(true)}
+            >
+              📣 Inviter
+            </button>
+          )}
         </div>
+      )}
+      {shareOpen && (
+        <Suspense fallback={null}>
+          <ShareLive
+            url={shareUrl}
+            artistName={state.artist?.name ?? ''}
+            joinCode={shareCode}
+            onClose={() => setShareOpen(false)}
+          />
+        </Suspense>
       )}
       {role === 'musicien' ? (
         <Suspense
