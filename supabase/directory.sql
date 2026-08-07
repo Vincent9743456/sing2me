@@ -129,12 +129,10 @@ begin
   if not found then
     return json_build_object('error', 'Groupe introuvable');
   end if;
-  if exists (
-    select 1 from public.cloud_band_members m
-    where m.band_id = p_band and m.user_id = p_user
-  ) then
-    return json_build_object('error', 'Déjà membre du groupe');
-  end if;
+  -- b140 : on n'oppose PLUS « déjà membre » — un musicien qui a
+  -- réinitialisé son application a perdu le groupe de son côté alors
+  -- qu'il reste inscrit ici. L'invitation doit pouvoir se regénérer
+  -- pour qu'il retrouve le groupe (demande Vincent, cas Marco).
   select coalesce(name, '') into v_from from public.musician_directory
     where user_id = auth.uid();
   insert into public.band_invites

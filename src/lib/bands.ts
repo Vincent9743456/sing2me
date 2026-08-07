@@ -329,6 +329,26 @@ export async function inviteToBand(
   if (body.error) throw new Error(body.error);
 }
 
+/**
+ * Quitte un groupe côté SERVEUR (b140). Sans cela, réinitialiser son
+ * application laissait un membre fantôme chez le créateur — qui ne
+ * pouvait alors plus le réinviter. Best-effort : un échec réseau ne
+ * bloque jamais la réinitialisation locale.
+ */
+export async function leaveBand(
+  s: AuthSession,
+  cloudId: string,
+): Promise<void> {
+  try {
+    await sbAuthed(s, '/rest/v1/rpc/leave_band', {
+      method: 'POST',
+      body: JSON.stringify({ p_band: cloudId }),
+    });
+  } catch {
+    /* silencieux */
+  }
+}
+
 /** Mes invitations de groupe en attente (best-effort : [] si indisponible). */
 export async function fetchMyInvites(
   s: AuthSession,

@@ -197,3 +197,27 @@ language sql security definer set search_path = public as $$
     );
 $$;
 grant execute on function public.band_members to authenticated;
+
+-- ------------------------------------------------------------
+-- b140 : quitter un groupe POUR DE BON.
+-- Réinitialiser son application retirait le groupe localement, mais
+-- l'inscription restait côté serveur : le créateur continuait de voir
+-- un membre fantôme, et ne pouvait pas le réinviter. Le départ est
+-- désormais effectif des deux côtés (le créateur, lui, ne peut pas
+-- quitter son propre groupe : il le supprime ou le transmet).
+-- ------------------------------------------------------------
+create or replace function public.leave_band(p_band uuid)
+returns json
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then
+    return json_build_object('error', 'Connexion requise');
+  end if;
+  delete from public.cloud_band_members
+    where band_id = p_band and user_id = auth.uid();
+  -- Une invitation en attente n'a plus lieu d'être.
+  delete from public.band_invites
+    where band_id = p_band and invited_user = auth.uid();
+  return json_build_object('ok', true);
+end $$;
+grant execute on function public.leave_band to authenticated;
