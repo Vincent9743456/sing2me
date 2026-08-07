@@ -22,7 +22,7 @@ import {
   versionForBand,
 } from '../lib/model';
 import { stripChords } from '../lib/chordpro';
-import { normalizeTitle } from '../lib/importer';
+import { songKey } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet } from '../components/SongPicker';
 import { ConfirmSheet, MenuSheet } from '../components/Feedback';
@@ -282,7 +282,7 @@ export function SongView({
     const inBand =
       (current.bandId ?? '') !== '' && current.bandId !== SOLO_BAND_ID;
     if (inBand) {
-      recordBandRemoval(current.bandId, normalizeTitle(song.title));
+      recordBandRemoval(current.bandId, songKey(song.title, song.artist));
     }
     saveSong(removeVersion(song, current.id));
   }

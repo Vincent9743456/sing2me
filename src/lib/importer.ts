@@ -463,8 +463,8 @@ export function analyzeImport(
 }
 
 /** Normalisation pour la détection de doublons. */
-import { normalizeTitle } from './normalizeTitle';
-export { normalizeTitle };
+import { bandKeysMatch, normalizeTitle, songKey } from './normalizeTitle';
+export { bandKeysMatch, normalizeTitle, songKey };
 
 /** Cherche un doublon probable dans la bibliothèque. */
 export function findDuplicate(songs: Song[], title: string): Song | null {
@@ -508,10 +508,21 @@ export function findSameSong(
   lyrics: string,
   artist?: string,
 ): Song | null {
-  const exact = findDuplicate(songs, title);
-  if (exact) return exact;
   const nt = normalizeTitle(title);
   const na = normalizeTitle(artist ?? '');
+  // Titre exact — mais JAMAIS entre deux artistes clairement différents :
+  // deux « Hallelujah » (Cohen / autre) sont deux morceaux (b132).
+  for (const s of songs) {
+    if (normalizeTitle(s.title) !== nt || nt === '') continue;
+    const nsa = normalizeTitle(s.artist ?? '');
+    const clash =
+      na !== '' &&
+      nsa !== '' &&
+      na !== nsa &&
+      !na.includes(nsa) &&
+      !nsa.includes(na);
+    if (!clash) return s;
+  }
   // « Aint No Sunshine Bill Withers » = « Ain't No Sunshine » + artiste :
   // on compare aussi les titres débarrassés du nom d'artiste.
   const stripArtist = (t: string, a: string): string => {

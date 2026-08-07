@@ -10,7 +10,8 @@
  * contenu pour éviter les allers-retours ; les notes s'unissent par id.
  * Fonctions pures — testées dans le bac à sable.
  */
-import { findSameSong, normalizeTitle } from './importer';
+import { findSameSong } from './importer';
+import { bandKeysMatch, songKey } from './normalizeTitle';
 import { removeVersion, versionForBand } from './model';
 import {
   makeId,
@@ -39,7 +40,13 @@ export interface SharedVersion {
 }
 
 export interface SharedSong {
-  /** Identifiant partagé : titre normalisé */
+  /**
+   * Identifiant partagé : `songKey(titre, artiste)` depuis b132 — les
+   * vieux blobs contiennent des clés « titre seul », re-canonisées à la
+   * fusion (le titre et l'artiste voyagent dans l'entrée). Toute
+   * comparaison avec une clé STOCKÉE (retraits, items de setlist) passe
+   * par `bandKeysMatch`, jamais par `===`.
+   */
   key: string;
   title: string;
   artist: string;
@@ -115,7 +122,7 @@ export function exportBandData(
   for (const s of songs) {
     const v = versionForBand(s, localBandId);
     if (!v || s.idea === true) continue;
-    const key = normalizeTitle(s.title);
+    const key = songKey(s.title, s.artist);
     if (key === '') continue;
     out.songs.push({
       key,
@@ -148,7 +155,7 @@ export function exportBandData(
       items: sl.items
         .map((it) => {
           const song = bySongId.get(it.songId);
-          const key = song ? normalizeTitle(song.title) : '';
+          const key = song ? songKey(song.title, song.artist) : '';
           return key === ''
             ? null
             : { key, note: it.note, keyOverride: it.keyOverride };
@@ -183,6 +190,31 @@ function mergeNotes(a: SongNote[], b: SongNote[]): SongNote[] {
   return [...map.values()];
 }
 
+/**
+ * Migration douce (b132) : re-canonise la clé d'une entrée depuis son
+ * titre + artiste (les vieux blobs ont des clés « titre seul »).
+ * Idempotent — une entrée déjà canonique ressort identique.
+ */
+function canonSongs(entries: SharedSong[]): SharedSong[] {
+  return entries.map((s) => {
+    const key = songKey(s.title, s.artist) || s.key;
+    return key === s.key ? s : { ...s, key };
+  });
+}
+
+/** Un retrait vise-t-il cette clé ? (clés anciennes et nouvelles mêlées) */
+function removalFor(
+  removed: Map<string, RemovedEntry>,
+  key: string,
+): RemovedEntry | undefined {
+  const exact = removed.get(key);
+  if (exact) return exact;
+  for (const r of removed.values()) {
+    if (bandKeysMatch(r.key, key)) return r;
+  }
+  return undefined;
+}
+
 export function mergeBandData(cloud: BandData, local: BandData): BandData {
   // Retraits : union, le plus récent gagne par titre.
   const removed = new Map<string, RemovedEntry>();
@@ -197,8 +229,8 @@ export function mergeBandData(cloud: BandData, local: BandData): BandData {
     if (!cur || r.at > cur.at) removedNotes.set(r.key, r);
   }
   const songs = new Map<string, SharedSong>();
-  for (const s of cloud.songs) songs.set(s.key, s);
-  for (const s of local.songs) {
+  for (const s of canonSongs(cloud.songs)) songs.set(s.key, s);
+  for (const s of canonSongs(local.songs)) {
     const other = songs.get(s.key);
     if (!other) {
       songs.set(s.key, s);
@@ -240,8 +272,10 @@ export function mergeBandData(cloud: BandData, local: BandData): BandData {
   }
   // Un retrait l'emporte sur le morceau… sauf si le morceau a été
   // (ré)apporté APRÈS le retrait — geste explicite d'un membre.
+  // Correspondance SOUPLE : un retrait « titre seul » (ancien format)
+  // vaut aussi pour la clé « titre @ artiste », et réciproquement.
   const keptSongs = [...songs.values()].filter((s) => {
-    const r = removed.get(s.key);
+    const r = removalFor(removed, s.key);
     return !r || s.updatedAt > r.at;
   });
   return {
@@ -289,7 +323,20 @@ export function applyBandData(
   skipSetlistIds?: Set<string>,
 ): { songs: Song[]; setlists: Setlist[]; changed: boolean } {
   let changed = false;
-  const byKey = new Map(songs.map((s) => [normalizeTitle(s.title), s]));
+  // Index par clé canonique (titre @ artiste). La résolution d'une clé
+  // STOCKÉE (entrée du blob, retrait, item de setlist — potentiellement à
+  // l'ancien format titre seul) passe par `resolve`, en correspondance
+  // souple, jamais par un accès direct avec `===`.
+  const byKey = new Map(songs.map((s) => [songKey(s.title, s.artist), s]));
+  const resolve = (key: string): Song | undefined => {
+    if (key === '') return undefined;
+    const exact = byKey.get(key);
+    if (exact) return exact;
+    for (const [k, s] of byKey) {
+      if (bandKeysMatch(k, key)) return s;
+    }
+    return undefined;
+  };
   let nextSongs = [...songs];
 
   // Notes supprimées par un membre : purge locale (dans tous mes morceaux)
@@ -302,7 +349,7 @@ export function applyBandData(
         ...s,
         rehearsalNotes: s.rehearsalNotes.filter((n) => !deadNotes.has(n.id)),
       };
-      byKey.set(normalizeTitle(s.title), cleaned);
+      byKey.set(songKey(s.title, s.artist), cleaned);
       return cleaned;
     });
   }
@@ -310,7 +357,7 @@ export function applyBandData(
   // Retraits du répertoire : la version « groupe » disparaît de MA
   // bibliothèque (le morceau lui-même reste — en personnel).
   for (const r of cloud.removed ?? []) {
-    const local = byKey.get(r.key);
+    const local = resolve(r.key);
     if (!local) continue;
     if (local.updatedAt > r.at) continue; // ré-apporté après le retrait
     const v = versionForBand(local, localBandId);
@@ -328,7 +375,7 @@ export function applyBandData(
       };
     }
     nextSongs = nextSongs.map((s) => (s.id === local.id ? next : s));
-    byKey.set(r.key, next);
+    byKey.set(songKey(next.title, next.artist), next);
     changed = true;
   }
 
@@ -341,10 +388,17 @@ export function applyBandData(
     // (« Imagine » chez Vincent = « Imagine John Lennon » chez Marco →
     // nouvelle version du même morceau, jamais de doublon).
     const local =
-      byKey.get(e.key) ??
+      resolve(e.key) ??
       findSameSong(nextSongs, e.title, e.version.lyrics, e.artist) ??
       undefined;
-    if (!local && skipKeys?.has(e.key)) continue; // supprimé chez moi
+    // Supprimé chez moi (pierre tombale, anciens et nouveaux formats de
+    // clé mêlés) : ne pas ré-importer.
+    if (
+      !local &&
+      skipKeys &&
+      [...skipKeys].some((k) => bandKeysMatch(k, e.key))
+    )
+      continue;
     if (!local) {
       // Nouveau morceau apporté par un autre membre : PROPOSITION en
       // attente. On le rattache au groupe (pendingBandId) pour ne pas
@@ -385,6 +439,7 @@ export function applyBandData(
       };
       nextSongs.push(song);
       byKey.set(e.key, song);
+      byKey.set(songKey(song.title, song.artist), song);
       changed = true;
       continue;
     }
@@ -470,6 +525,7 @@ export function applyBandData(
       const idx = nextSongs.findIndex((s) => s.id === local.id);
       nextSongs[idx] = song;
       byKey.set(e.key, song);
+      byKey.set(songKey(song.title, song.artist), song);
     }
   }
 
@@ -481,7 +537,7 @@ export function applyBandData(
     const resolveItems = () =>
       e.items
         .map((it) => {
-          const song = byKey.get(it.key);
+          const song = resolve(it.key);
           if (!song) return null;
           return {
             id: makeId(),

@@ -6,11 +6,11 @@ import { extractDocxText } from '../lib/docx';
 import { extractPdfText } from '../lib/pdf';
 import {
   analyzeImport,
-  findDuplicate,
+  bandKeysMatch,
   findSameSong,
   importText,
   lyricsSimilarity,
-  normalizeTitle,
+  songKey,
 } from '../lib/importer';
 import {
   aiCleanText,
@@ -19,6 +19,7 @@ import {
   UgSearchResult,
   ugTabToImportText,
 } from '../lib/ug';
+import { useToast } from '../components/Feedback';
 import { addSongAsVersion } from '../lib/model';
 import { looksGarbled } from '../lib/textRepair';
 import { parseUgTabHtml } from '../lib/ugHtml';
@@ -122,6 +123,7 @@ export function Import() {
   // Pli « Autres façons d'importer » (fermé par défaut : un seul chemin
   // visible ; forcé ouvert quand une alternative est en cours).
   const [othersOpen, setOthersOpen] = useState(false);
+  const toast = useToast();
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [text, setText] = useState('');
@@ -168,10 +170,15 @@ export function Import() {
     }
   }, [text, title]);
 
+  // Jumeau détecté : MÊME logique que la validation (findSameSong — titre,
+  // artiste, paroles), pour que l'annonce de l'aperçu dise exactement ce
+  // qui va se passer (fusion en nouvelle version, jamais de doublon).
   const duplicate = useMemo(() => {
-    const t = title.trim() !== '' ? title : (preview?.song.title ?? '');
-    return findDuplicate(songs, t);
-  }, [songs, title, preview]);
+    if (!preview) return null;
+    const t = title.trim() !== '' ? title : preview.song.title;
+    const a = artist.trim() !== '' ? artist : preview.song.artist;
+    return findSameSong(songs, t, preview.song.lyrics, a);
+  }, [songs, title, artist, preview]);
 
   // Analyse automatique : l'IA n'est suggérée que si elle peut aider.
   const issues = useMemo(
@@ -321,12 +328,21 @@ export function Import() {
     if (artist.trim() !== '') song.artist = artist.trim();
     if (asIdea) song.idea = true;
     // Détection de doublon (titre / artiste / paroles) : si le morceau
-    // existe déjà, on l'ajoute comme NOUVELLE VERSION plutôt que de créer
-    // un doublon dans la bibliothèque.
+    // existe déjà — Idée comprise (b132) — on l'ajoute comme NOUVELLE
+    // VERSION plutôt que de créer un doublon dans la bibliothèque.
     const twin = findSameSong(songs, song.title, song.lyrics, song.artist);
-    if (twin && twin.idea !== true) {
-      const merged = addSongAsVersion(twin, song, 'Version importée');
+    if (twin) {
+      let merged = addSongAsVersion(twin, song, 'Version importée');
+      // « Ajouter à ma bibliothèque » sur un jumeau resté en Idée : le
+      // geste vaut validation — l'idée entre dans la bibliothèque.
+      const validated = !asIdea && merged.idea === true;
+      if (validated) merged = { ...merged, idea: false };
       saveSong(merged);
+      toast.show(
+        `Ajouté comme nouvelle version de « ${twin.title} »${
+          validated ? ' — idée validée ✓' : ''
+        }`,
+      );
       navigate(`/song/${merged.id}`);
       return;
     }
@@ -510,7 +526,12 @@ export function Import() {
           song.lyrics,
           song.artist,
         );
-        if (!existing && removedTitles.has(normalizeTitle(song.title))) {
+        if (
+          !existing &&
+          [...removedTitles].some((k) =>
+            bandKeysMatch(k, songKey(song.title, song.artist)),
+          )
+        ) {
           items[i] = {
             ...items[i],
             status: 'skip',
@@ -767,9 +788,10 @@ export function Import() {
               </div>
             )}
             {duplicate && (
-              <div style={{ color: 'var(--accent)', marginTop: 8 }}>
-                ⚠ Un morceau nommé « {duplicate.title} » existe déjà — tu vas
-                peut-être créer un doublon.
+              <div style={{ marginTop: 8 }}>
+                ℹ Tu as déjà « {duplicate.title} »
+                {duplicate.idea === true ? ' (dans tes idées)' : ''} : cet
+                import le rejoindra comme nouvelle version — aucun doublon.
               </div>
             )}
           </div>
