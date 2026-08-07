@@ -202,6 +202,9 @@ export function Library() {
   const [tag, setTag] = useState<string | null>(null);
   // null = tous · '' = solo (aucun groupe) · sinon id du groupe
   const [bandFilter, setBandFilter] = useState<string | null>(null);
+  // Panneau « Filtrer » : tri + vues + répertoires + tags — replié par
+  // défaut (règle : recherche + liste, rien d'autre).
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const account = useAccount();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
@@ -517,18 +520,8 @@ export function Library() {
                         </span>
                       );
                     })}
-                    {(membership.setlistsBySong.get(song.id) ?? []).length > 0 && (
-                      <span
-                        className="rowicon"
-                        title={`Dans ${
-                          (membership.setlistsBySong.get(song.id) ?? []).length
-                        } setlist(s) : ${(
-                          membership.setlistsBySong.get(song.id) ?? []
-                        ).join(', ')}`}
-                      >
-                        <Icon name="clipboard" size={14} />
-                      </span>
-                    )}
+                    {/* Plus d'icône presse-papier par ligne (bruit) : la
+                        présence en setlist se voit dans « Ajouter à… ». */}
                     {song.hearts > 0 && (
                       <span className="rowhearts" title="Cœurs reçus en concert">
                         <Icon name="heart" size={12} /> {song.hearts}
@@ -569,6 +562,13 @@ export function Library() {
                     </button>
                   </div>
   );
+
+  // Badge du bouton « Filtrer » : nombre de filtres actifs (une vue
+  // particulière, un répertoire, un tag — le tri n'est pas un filtre).
+  const activeFilters =
+    (showIdeas || showNew || showPending ? 1 : 0) +
+    (bandFilter !== null ? 1 : 0) +
+    (tag !== null ? 1 : 0);
 
   return (
     <>
@@ -640,18 +640,39 @@ export function Library() {
               </button>
             )}
           </div>
-          <select
-            value={sort}
-            title="Trier la bibliothèque"
-            style={{ width: 'auto', flexShrink: 0 }}
-            onChange={(e) => changeSort(e.target.value as SortMode)}
+          {/* Tri, vues, répertoires et tags vivent derrière ce bouton :
+              l'écran ne montre que la recherche et la liste. */}
+          <button
+            className={`btn ${filtersOpen || activeFilters > 0 ? '' : 'ghost'}`}
+            style={{ flexShrink: 0, minHeight: 44 }}
+            aria-expanded={filtersOpen}
+            title="Trier et filtrer la bibliothèque"
+            onClick={() => setFiltersOpen((v) => !v)}
           >
-            <option value="title">Tri : titre</option>
-            <option value="artist">Tri : artiste</option>
-            <option value="recent">Tri : récents</option>
-          </select>
+            <Icon name="sliders" size={16} /> Filtrer
+            {activeFilters > 0 && (
+              <span className="filtercount">{activeFilters}</span>
+            )}
+          </button>
         </div>
-        {(bands.length > 0 ||
+        {filtersOpen && (
+          <>
+            <div className="spacer" />
+            <div className="field" style={{ maxWidth: 220 }}>
+              <label>Tri</label>
+              <select
+                value={sort}
+                onChange={(e) => changeSort(e.target.value as SortMode)}
+              >
+                <option value="title">Titre</option>
+                <option value="artist">Artiste</option>
+                <option value="recent">Récents</option>
+              </select>
+            </div>
+          </>
+        )}
+        {filtersOpen &&
+          (bands.length > 0 ||
           ideaCount > 0 ||
           newCount > 0 ||
           pendingCount > 0) && (
@@ -766,6 +787,12 @@ export function Library() {
                 ))}
               </div>
             )}
+          </>
+        )}
+        {/* Résumé du filtre actif : TOUJOURS visible (même panneau fermé),
+            pour que la liste réduite s'explique d'elle-même. */}
+        {(showIdeas || showPending || showNew || bandFilter !== null) && (
+          <>
             {showIdeas && (
               <p className="help" style={{ margin: '6px 0 0' }}>
                 Réserve à travailler : jouables partout, mais pas encore
@@ -805,9 +832,15 @@ export function Library() {
             )}
           </>
         )}
-        </div>
-        <Onboarding />
-        {allTags.length > 0 && (
+        {tag !== null && (
+          <p className="help" style={{ margin: '6px 0 0' }}>
+            Tag : <strong style={{ color: 'var(--accent)' }}>{tag}</strong> ·{' '}
+            <button className="btn ghost small" onClick={() => setTag(null)}>
+              Retirer
+            </button>
+          </p>
+        )}
+        {filtersOpen && allTags.length > 0 && (
           <>
             <div className="spacer" />
             <div className="chips">
@@ -823,6 +856,8 @@ export function Library() {
             </div>
           </>
         )}
+        </div>
+        <Onboarding />
         <div className={`libsplit${selectedId ? ' hasdetail' : ''}`}>
           <div>
             {filtered.length === 0 ? (

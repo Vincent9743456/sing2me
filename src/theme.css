@@ -1653,6 +1653,21 @@ textarea.mono {
 .onair:hover {
   transform: translateY(-1px);
 }
+/* Badge du bouton « Filtrer » (bibliothèque) : nombre de filtres actifs. */
+.filtercount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
 /* Variante INTÉGRÉE à la barre de titre (TopBar) : même place sur toutes
    les pages, dans le flux — fini le bouton flottant qui chevauche le
    contenu (l'app installée décalait la version fixe sous la barre via
