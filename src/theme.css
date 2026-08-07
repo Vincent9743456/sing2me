@@ -1472,6 +1472,37 @@ textarea.mono {
   opacity: 0.72;
 }
 
+/* ---------- Carnet imprimable (export PDF de la bibliothèque) ---------- */
+.sbk-cover {
+  text-align: center;
+  padding: 24px 0 8px;
+}
+.sbk-cover-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+.sbk-cover-sub {
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.sbk-song {
+  margin-top: 24px;
+}
+.sbk-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0 0 2px;
+}
+.sbk-artist {
+  font-weight: 500;
+  color: var(--text-dim);
+}
+.sbk-meta {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
 /* ---------- Impression : uniquement la vue setlist ---------- */
 @media print {
   .topbar,
@@ -1507,6 +1538,29 @@ textarea.mono {
   .slv-gen,
   .slv-chords {
     color: #000;
+  }
+  /* Carnet de bibliothèque : un morceau par page, tout à l'encre. */
+  .songbook .sbk-song {
+    break-before: page;
+    margin-top: 0;
+  }
+  .songbook .sbk-title,
+  .songbook .sbk-cover-name,
+  .songbook .lyric {
+    color: #000;
+  }
+  .songbook .sbk-artist,
+  .songbook .sbk-meta,
+  .songbook .sbk-cover-sub {
+    color: #333;
+  }
+  .songbook .chord,
+  .songbook .chordrow {
+    color: #000;
+    font-weight: 800;
+  }
+  .songbook .stnote {
+    display: none; /* notes de répét : hors du carnet imprimé */
   }
   .slv-perso-block {
     border-top-color: #ccc;

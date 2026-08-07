@@ -1,6 +1,7 @@
 import { LiveBanner } from '../components/LiveBanner';
 import React, { useEffect, useMemo, useState } from 'react';
 
+import { Icon } from '../components/Icon';
 import { ShareModal } from '../components/ShareModal';
 import { AccountSection } from '../components/Account';
 import { GearEditor } from '../components/GearEditor';
@@ -241,7 +242,19 @@ export function Artist() {
 
   return (
     <>
-      <TopBar title="Profil artiste" />
+      <TopBar
+        title="Profil artiste"
+        right={
+          <button
+            className="btn icon"
+            title="Réglages et paramètres"
+            aria-label="Réglages et paramètres"
+            onClick={() => navigate('/reglages')}
+          >
+            <Icon name="sliders" size={20} />
+          </button>
+        }
+      />
       <div className="page">
         <LiveBanner />
         <AccountSection />
