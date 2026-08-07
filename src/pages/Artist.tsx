@@ -22,6 +22,8 @@ import { stripChords } from '../lib/chordpro';
 import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
 import { PublicNameCard } from '../components/PublicNameCard';
+import { getValidSession } from '../lib/auth';
+import { ensurePublicPage } from '../lib/publicPages';
 import { bandToProfile, creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -1150,6 +1152,13 @@ export function Artist() {
               saveArtist(draft);
               setSaved(true);
               setEditing(false);
+              // La fiche publique suit le profil (b136) : elle est republiée
+              // sous le nom déjà réservé, ou un nom dérivé du nom d'artiste
+              // est réservé automatiquement. Best-effort, jamais bloquant.
+              void (async () => {
+                const s = await getValidSession();
+                if (s) await ensurePublicPage(s, draft);
+              })();
             }}
           >
             {saved ? '✓ Enregistré' : 'Enregistrer'}

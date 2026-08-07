@@ -8,6 +8,7 @@
  * si Supabase n'est pas configuré, tout renvoie null sans jamais planter.
  */
 import { AuthSession } from './auth';
+import { normalizePublicName, publicNameError } from './publicName';
 import { ArtistProfile } from '../types';
 
 function sbUrl(): string {
@@ -91,6 +92,55 @@ export async function fetchMyPublicName(
   } catch {
     return null;
   }
+}
+
+/**
+ * Nom public AUTOMATIQUE + fiche à jour (b136 — bug signalé par Marco).
+ *
+ * Deux pièges réglés d'un coup :
+ * 1. la fiche publiée était un INSTANTANÉ pris à la réservation — un artiste
+ *    qui réservait son nom avant de remplir son profil gardait une fiche
+ *    vide, et /sonnom affichait « Page introuvable » ;
+ * 2. il fallait penser à réserver le nom à la main, alors que le QR pointe
+ *    déjà vers /sonnom.
+ *
+ * Cette fonction est donc appelée à chaque enregistrement du profil et au
+ * passage ON AIR : elle republie la fiche sous le nom déjà réservé, ou en
+ * réserve un dérivé du nom d'artiste (suffixe numérique si déjà pris).
+ * Best-effort et silencieuse : elle ne bloque JAMAIS un passage en direct.
+ * Renvoie le nom en service, ou null si rien n'a pu être fait.
+ */
+export async function ensurePublicPage(
+  s: AuthSession,
+  artist: ArtistProfile,
+): Promise<string | null> {
+  if (!publicPagesAvailable()) return null;
+  const existing = (await fetchMyPublicName(s)) ?? '';
+  if (existing !== '') {
+    try {
+      await claimPublicPage(s, existing, artist);
+    } catch {
+      /* republication impossible (hors ligne…) : le nom reste valable */
+    }
+    rememberPublicName(existing);
+    return existing;
+  }
+  const base = normalizePublicName(artist.name);
+  if (base === '' || publicNameError(base) !== null) return null;
+  // Nom pris (ou refusé) → base2, base3… puis on abandonne : l'artiste
+  // gardera la main dans « Ton lien public dictable ».
+  for (let i = 0; i < 5; i++) {
+    const candidate = i === 0 ? base : `${base}${i + 1}`.slice(0, 30);
+    if (publicNameError(candidate) !== null) continue;
+    try {
+      await claimPublicPage(s, candidate, artist);
+      rememberPublicName(candidate);
+      return candidate;
+    } catch {
+      /* déjà pris : on tente le suivant */
+    }
+  }
+  return null;
 }
 
 /**

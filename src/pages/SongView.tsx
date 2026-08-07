@@ -450,7 +450,7 @@ export function SongView({
                     : isSoloVersion
                       ? 'Version Solo'
                       : isMainVersion
-                        ? 'Version originale'
+                        ? 'Version de référence'
                         : `Version « ${current.name} »`}
                 </span>
                 {isBandVersion ? (
@@ -458,7 +458,7 @@ export function SongView({
                 ) : isSoloVersion ? (
                   <span className="vb-solo">solo</span>
                 ) : isMainVersion ? (
-                  <span className="vb-solo">pilote</span>
+                  <span className="vb-ref">⭐ référence</span>
                 ) : (
                   <span className="vb-solo">perso</span>
                 )}
@@ -501,7 +501,7 @@ export function SongView({
             <button
               className="btn ghost small"
               aria-label="Actions sur les versions"
-              title="Versions : meilleure version, nouvelle version, supprimer"
+              title="Versions : référence, renommer, meilleure version, supprimer"
               onClick={() => setVersionMenu(true)}
             >
               ⋯

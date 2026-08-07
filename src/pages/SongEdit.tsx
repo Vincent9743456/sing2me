@@ -280,7 +280,7 @@ export function SongEdit({ id }: { id: string | null }) {
               <span>
                 Tu modifies :{' '}
                 {editingOriginal
-                  ? 'la version originale'
+                  ? 'la version de référence'
                   : editingSolo
                     ? 'la version Solo'
                     : versionBandId
@@ -288,7 +288,7 @@ export function SongEdit({ id }: { id: string | null }) {
                       : `version « ${versionName.trim() || activeVersion(draft).name} »`}
               </span>
               {editingOriginal ? (
-                <span className="vb-solo">pilote</span>
+                <span className="vb-ref">⭐ référence</span>
               ) : editingSolo ? (
                 <span className="vb-solo">solo</span>
               ) : versionBandId ? (

@@ -57,7 +57,11 @@ export function PublicArtist({ name }: { name: string }) {
     );
   }
 
-  if (profile === null || (profile.name ?? '') === '') {
+  // « Page introuvable » UNIQUEMENT si le nom n'existe pas (b136) : une fiche
+  // réservée dont le profil est encore vide s'affiche quand même, sous son
+  // nom public — sinon un artiste qui avait réservé avant de remplir son
+  // profil voyait son propre QR mener à une impasse (signalé par Marco).
+  if (profile === null) {
     return (
       <div className="public">
         <div className="card" style={{ textAlign: 'center' }}>
@@ -78,6 +82,7 @@ export function PublicArtist({ name }: { name: string }) {
   }
 
   const links = (profile.links ?? []).filter((l) => l.url !== '');
+  const shownName = (profile.name ?? '') !== '' ? profile.name : name;
 
   return (
     <div className="public">
@@ -86,16 +91,16 @@ export function PublicArtist({ name }: { name: string }) {
           {/* Lien ABSOLU vers l'entrée publique légère : la page peut être
               servie depuis /lenom, un hash relatif serait cassé. */}
           <a className="btn block" href={liveCode !== '' ? `/live?c=${liveCode}` : '/live'}>
-            🔴 {profile.name} est EN DIRECT — suivre le concert
+            🔴 {shownName} est EN DIRECT — suivre le concert
           </a>
         </div>
       )}
 
       <div className="artisthead">
         {profile.photo !== '' && (
-          <img src={profile.photo} alt={profile.name} />
+          <img src={profile.photo} alt={shownName} />
         )}
-        <h1 style={{ margin: '10px 0 4px' }}>{profile.name}</h1>
+        <h1 style={{ margin: '10px 0 4px' }}>{shownName}</h1>
         {profile.bio !== '' && (
           <p className="help" style={{ whiteSpace: 'pre-wrap' }}>
             {profile.bio}

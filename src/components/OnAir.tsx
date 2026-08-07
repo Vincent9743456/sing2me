@@ -33,6 +33,7 @@ import { getValidSession } from '../lib/auth';
 import { bandToProfile } from '../lib/model';
 import {
   cachedPublicName,
+  ensurePublicPage,
   fetchMyPublicName,
   rememberPublicName,
 } from '../lib/publicPages';
@@ -121,6 +122,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState('');
+  // Nom public dictable : rappelé AVANT le code de salon quand on est en
+  // direct (« dis-leur livemyband.fr/tonnom ») — demande Vincent, b136.
+  const [publicName, setPublicName] = useState(() => cachedPublicName());
   const [codeCopied, setCodeCopied] = useState(false);
   const currentRef = useRef<LiveSong | null>(null);
   const setlistRef = useRef<LivePublicSong[] | null>(null);
@@ -273,6 +277,22 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     setBusy(true);
     setError(null);
     try {
+      // Passage en direct : la fiche publique est publiée/rafraîchie et le
+      // nom dictable réservé automatiquement s'il manquait (b136) — le QR
+      // pointe vers /sonnom, cette page ne doit jamais être vide. Silencieux
+      // et non bloquant : un souci réseau ne retarde pas le concert.
+      if (next !== 'off') {
+        void (async () => {
+          try {
+            const s = await getValidSession();
+            if (!s) return;
+            const name = await ensurePublicPage(s, performer);
+            if (name) setPublicName(name);
+          } catch {
+            /* best-effort */
+          }
+        })();
+      }
       // Portée « mon groupe » : on tague le direct avec le cloudId du groupe
       // qui joue (vide en solo → n'apparaît chez aucun autre membre) et le nom
       // de la personne qui lance (affiché dans la bannière des membres).
@@ -401,6 +421,20 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 lancement — se communique à la voix ou par message, et se
                 copie d'un tap. Les musiciens/spectateurs le saisissent dans
                 « Rejoindre un direct » (onglet Concerts) ou via le QR. */}
+            {/* Le LIEN À DICTER passe AVANT le code (demande Vincent, b136) :
+                c'est ce que l'artiste annonce au public au micro ; le code de
+                salon n'est qu'un raccourci pour les musiciens. */}
+            {status !== 'off' && publicName !== '' && (
+              <div style={{ textAlign: 'center', margin: '10px 0' }}>
+                <div className="label">Adresse à annoncer au public</div>
+                <div
+                  className="linkbox"
+                  style={{ fontSize: '1.1rem', fontWeight: 700 }}
+                >
+                  {location.host}/{publicName}
+                </div>
+              </div>
+            )}
             {status !== 'off' && (currentLiveRef()?.joinCode ?? '') !== '' && (
               <div style={{ textAlign: 'center', margin: '10px 0' }}>
                 <div className="label">Code pour rejoindre</div>
