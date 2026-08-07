@@ -11,7 +11,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { fetchLiveForBands } from '../lib/live';
+import { currentLiveRef, fetchLiveForBands } from '../lib/live';
 import { navigate } from '../router';
 import { useStore } from '../store';
 
@@ -34,8 +34,12 @@ export function LiveBanner() {
   useEffect(() => {
     let cancelled = false;
     async function tick() {
-      // Le leader (ON AIR actif sur cet appareil) n'a pas besoin de bannière.
-      if ((localStorage.getItem('sing2me/onair') ?? 'off') !== 'off') {
+      // Le leader (ON AIR actif sur cet appareil, ou lancement en cours —
+      // la référence de SON live existe) n'a pas besoin de bannière.
+      if (
+        (localStorage.getItem('sing2me/onair') ?? 'off') !== 'off' ||
+        currentLiveRef() !== null
+      ) {
         if (!cancelled) setSession(null);
         return;
       }
