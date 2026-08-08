@@ -56,14 +56,20 @@ function ready() {
 }
 
 /**
- * Enregistre un appel. À appeler SANS await (ou avec .catch()) : une
- * panne de mesure ne doit jamais gêner l'utilisateur.
+ * Enregistre un appel.
+ *
+ * IMPORTANT (corrigé b161) : il faut l'ATTENDRE. Sur Vercel, l'instance
+ * est gelée dès la réponse envoyée — un `void meter(...)` laissait la
+ * requête en vol mourir avec elle, et rien n'arrivait dans la table.
+ * Pour que la mesure ne puisse jamais ralentir l'utilisateur, elle
+ * abandonne d'elle-même au bout de 2 secondes.
  */
 export async function meter(entry) {
   if (!ready()) return;
   try {
     const key = process.env.SUPABASE_SERVICE_KEY;
     await fetch(`${process.env.SUPABASE_URL}/rest/v1/ai_usage`, {
+      signal: AbortSignal.timeout(2000),
       method: 'POST',
       headers: {
         apikey: key,

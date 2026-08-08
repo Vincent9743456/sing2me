@@ -128,11 +128,12 @@ export default async function handler(req, res) {
       return;
     }
     const body = await apiRes.json().catch(() => null);
-    // Mesure de l'appel (b160). La durée exacte n'est pas renvoyée par le
+    // Mesure de l'appel (b160), ATTENDUE (b161 : sinon elle meurt avec
+    // l'instance gelée). La durée exacte n'est pas renvoyée par le
     // service : on l'estime à partir du poids, au débit d'enregistrement
     // du téléphone (32 kbit/s), et on borne à la limite d'une note.
     const seconds = Math.min(90, Math.round((bytes.length * 8) / 32000));
-    void meter({
+    await meter({
       fn: 'transcribe',
       provider: 'openai',
       model,

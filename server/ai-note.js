@@ -137,8 +137,10 @@ export default async function handler(req, res) {
       return;
     }
     const body = await apiRes.json();
-    // Mesure de l'appel (b160) : best-effort, jamais bloquant.
-    void meterClaude('note', model, body?.usage);
+    // Mesure de l'appel (b160). ATTENDUE (b161) : sur Vercel l'instance
+    // est gelée dès la réponse envoyée — une mesure « en vol » mourait
+    // avec elle. Elle abandonne seule au bout de 2 s.
+    await meterClaude('note', model, body?.usage);
     const out = Array.isArray(body.content)
       ? body.content
           .filter((b) => b.type === 'text')
