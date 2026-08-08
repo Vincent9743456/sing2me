@@ -4,16 +4,24 @@
  * Le retour aux paroles est volontairement évident : grand bouton en tête
  * + fermeture d'un tap n'importe où autour du contenu. Chunk différé.
  */
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 
 import { TipBox } from '../../components/TipBox';
 import { ArtistProfile } from '../../types';
 
+// « Suivre » vit ici pendant le concert (b177) : le bouton n'existait que
+// sur l'écran d'APRÈS le direct. Un spectateur conquis pendant le morceau
+// n'avait aucun moyen de suivre l'artiste sans attendre la fin.
+const FollowButton = lazy(() => import('./FollowButton'));
+
 export default function ArtistSheet({
   artist,
+  showFollow = true,
   onClose,
 }: {
   artist: ArtistProfile;
+  /** L'artiste peut retirer « Suivre » de son écran public. */
+  showFollow?: boolean;
   onClose: () => void;
 }) {
   const links = (artist.links ?? []).filter((l) => l.url !== '');
@@ -47,6 +55,11 @@ export default function ArtistSheet({
           )}
         </div>
         <TipBox artist={artist} />
+        {showFollow && artist.name !== '' && (
+          <Suspense fallback={null}>
+            <FollowButton artistName={artist.name} />
+          </Suspense>
+        )}
         <button className="btn ghost block" onClick={onClose}>
           ← Revenir aux paroles
         </button>

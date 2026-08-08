@@ -55,6 +55,13 @@ export function SetlistView({ id }: { id: string }) {
   const seconds = (its: Setlist['items']) =>
     its.reduce((sum, it) => sum + songSeconds(songById.get(it.songId)), 0);
   const playedSec = seconds(played);
+  // Bilan public de ce set : les ❤ des morceaux joués, et les mots que le
+  // public a laissés pendant ce concert (rattachés à la setlist, b139).
+  const setHearts = played.reduce((n, it) => {
+    const s = songs.find((x) => x.id === it.songId);
+    return n + (s?.hearts ?? 0);
+  }, 0);
+  const setMessages = (setlist.fanMessages ?? []).length;
   const reserveSec = seconds(reserve);
   // Une durée est « estimée » dès qu'un morceau joué n'a pas de durée réelle.
   const hasEstimate = played.some(
@@ -203,6 +210,23 @@ export function SetlistView({ id }: { id: string }) {
               </span>
             )}
           </div>
+          {/* Ce que le public a laissé sur CE set (b177) : sa place est ici,
+              pas noyée dans la fiche artiste — c'est le bilan de ce set. */}
+          {(setHearts > 0 || setMessages > 0) && (
+            <div className="slv-duration">
+              {setHearts > 0 && (
+                <span style={{ color: 'var(--live)', fontWeight: 700 }}>
+                  ❤ {setHearts}
+                </span>
+              )}
+              {setHearts > 0 && setMessages > 0 && ' · '}
+              {setMessages > 0 && (
+                <span style={{ color: 'var(--accent)', fontWeight: 700 }}>
+                  💬 {setMessages}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="slv-actions noprint">

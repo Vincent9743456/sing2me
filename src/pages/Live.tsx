@@ -394,6 +394,7 @@ export function Live({
         <Suspense fallback={null}>
           <ArtistSheet
             artist={state.artist}
+            showFollow={ps.follow}
             onClose={() => setArtistOpen(false)}
           />
         </Suspense>
