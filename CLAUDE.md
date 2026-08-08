@@ -283,6 +283,11 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   Vercel : `TRANSCRIBE_API_KEY` (obligatoire), `TRANSCRIBE_URL` et
   `TRANSCRIBE_MODEL` (facultatives, dialecte OpenAI par défaut) — Claude
   ne transcrit pas l'audio, d'où un service tiers.
+- **Diagnostic ON AIR** : `#/concerts?diag=1` — noms de tables, nombre de
+  lignes, tri côté serveur. Réservé au dépannage : il ne s'affiche PAS
+  dans l'app (décision Vincent, b198 — un musicien n'a pas à lire des
+  messages d'erreur SQL). C'est lui qui a fini par livrer la cause du
+  livre d'or muet ; le garder, mais hors de vue.
 - **Tableau de bord fondateur (b160)** : `#/tableau-de-bord`, réservé aux
   e-mails de `ADMIN_EMAILS` (variable Vercel) — le SERVEUR tranche,
   l'app ne fait qu'afficher. Chiffres : comptes, activité, coût des IA.
