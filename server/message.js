@@ -217,10 +217,11 @@ export default async function handler(req, res) {
         .map((n) => n.trim())
         .filter((n) => n !== '')
         .slice(0, 20);
-      const filter =
-        names.length > 0
-          ? `&or=(${['performer.eq.', ...names.map((n) => `performer.eq.${encodeURIComponent(n)}`)].join(',')})`
-          : '';
+      // Le tri « à qui appartient ce mot » se fait EN MÉMOIRE (b175), plus
+      // par un filtre PostgREST. Le filtre `or=(performer.eq.,…)` dépendait
+      // de la présence de la colonne, de l'échappement du nom et d'une
+      // égalité stricte : trois façons de renvoyer une liste vide sans
+      // qu'on sache laquelle. Ici on lit, puis on garde ce qui est à nous.
       const selects = [
         'author,body,song_title,setlist_name,performer,band_id,concert_id,concert_title,created_at',
         'author,body,song_title,setlist_name,performer,concert_id,concert_title,created_at',
@@ -230,9 +231,8 @@ export default async function handler(req, res) {
       ];
       let r = null;
       for (const sel of selects) {
-        const useFilter = sel.includes('performer') ? filter : '';
         r = await fetch(
-          `${base}/rest/v1/live_messages?select=${sel}${useFilter}&order=created_at.desc&limit=200`,
+          `${base}/rest/v1/live_messages?select=${sel}&order=created_at.desc&limit=400`,
           { headers: sbHeaders(false) },
         );
         if (r.ok) break;
@@ -244,7 +244,22 @@ export default async function handler(req, res) {
         res.status(200).json({ messages: [] });
         return;
       }
-      res.status(200).json({ messages: await r.json() });
+      const rows = await r.json();
+      const all = Array.isArray(rows) ? rows : [];
+      // Comparaison SOUPLE : casse et espaces ne doivent pas faire perdre un
+      // mot du public. Un message sans propriétaire (avant b168, ou laissé
+      // hors direct) revient à celui qui demande — sinon il serait invisible
+      // pour tout le monde, ce qui est pire que de le montrer à son auteur.
+      const norm = (v) => String(v ?? '').trim().toLowerCase();
+      const mine = new Set(names.map(norm));
+      const messages =
+        mine.size === 0
+          ? all
+          : all.filter((m) => {
+              const who = norm(m.performer);
+              return who === '' || mine.has(who);
+            });
+      res.status(200).json({ messages });
       return;
     }
 

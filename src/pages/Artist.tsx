@@ -13,6 +13,7 @@ import { stripChords } from '../lib/chordpro';
 import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
 import { PublicNameCard } from '../components/PublicNameCard';
+import { cachedPublicName } from '../lib/publicPages';
 import { getValidSession } from '../lib/auth';
 import { ensurePublicPage } from '../lib/publicPages';
 import { bandToProfile, creatorMember } from '../lib/model';
@@ -1031,6 +1032,14 @@ export function Artist() {
         <ShareModal
           title={t('Page publique de {nom}', { nom: draft.name })}
           payload={payload}
+          // L'adresse À DICTER est celle qu'on partage (b175) : le lien
+          // technique « #/p/… » affiché jusqu'ici n'était pas la page
+          // publique et n'avait donc rien à faire ici.
+          directUrl={
+            cachedPublicName() !== ''
+              ? `${location.origin}/${cachedPublicName()}`
+              : undefined
+          }
           onClose={() => setShare(false)}
         />
       )}

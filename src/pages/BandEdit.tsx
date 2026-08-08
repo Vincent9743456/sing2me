@@ -1409,14 +1409,21 @@ export function BandEdit({ id }: { id: string }) {
               ) && (
                 <LinkPreviews links={memberPage.profile.links ?? []} showChips />
               )}
-              <a
+              {/* Ouverture dans un ONGLET À PART (b175) : dans l'app
+                  installée, un lien ordinaire remplaçait l'écran et il n'y
+                  avait plus aucun moyen de revenir au groupe. */}
+              <button
                 className="btn block"
-                href={`${location.origin}/${memberPage.name}`}
-                target="_blank"
-                rel="noreferrer"
+                onClick={() =>
+                  window.open(
+                    `${location.origin}/${memberPage.name}`,
+                    '_blank',
+                    'noopener,noreferrer',
+                  )
+                }
               >
                 {t('Voir sa page publique')}
-              </a>
+              </button>
             </>
           )}
         </Modal>

@@ -15,11 +15,20 @@ import { Modal } from './ui';
 export function ShareModal({
   title,
   payload,
+  directUrl,
   onClose,
   children,
 }: {
   title: string;
   payload: SharePayload;
+  /**
+   * Adresse à partager telle quelle (b175). Quand elle est fournie, on ne
+   * fabrique AUCUN lien court : le QR et le lien affiché sont exactement
+   * cette adresse. Sert à la page publique de l'artiste, dont l'adresse
+   * dictable est justement ce qu'on veut faire circuler — un lien
+   * technique « #/p/… » à côté n'était qu'une source de confusion.
+   */
+  directUrl?: string;
   onClose: () => void;
   /** options supplémentaires (ex. interrupteur « avec accords ») */
   children?: React.ReactNode;
@@ -39,11 +48,13 @@ export function ShareModal({
       try {
         // 1. Lien court (contenu stocké côté serveur) : QR minuscule,
         //    toujours scannable. 2. Repli : lien long autonome.
-        const short = await createShortLink(prefs.liveKey, payload);
+        const short = directUrl
+          ? directUrl
+          : await createShortLink(prefs.liveKey, payload);
         const u = short ?? shareUrl(await encodeShare(payload));
         if (cancelled) return;
         setUrl(u);
-        setIsShort(short !== null);
+        setIsShort(!directUrl && short !== null);
         try {
           const dataUrl = await QRCode.toDataURL(u, { width: 440, margin: 1 });
           if (!cancelled) setQr(dataUrl);
@@ -57,7 +68,7 @@ export function ShareModal({
     return () => {
       cancelled = true;
     };
-  }, [payload, prefs.liveKey]);
+  }, [payload, prefs.liveKey, directUrl]);
 
   async function copy() {
     if (!url) return;
