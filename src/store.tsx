@@ -265,8 +265,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const saveSetlist = useCallback((setlist: Setlist) => {
     const stamped = { ...setlist, updatedAt: new Date().toISOString() };
+    // RÈGLE (décision Vincent, b174) : mettre un morceau dans une setlist
+    // ENTÉRINE son inscription en bibliothèque. Une idée qu'on va jouer
+    // n'est plus une idée ; une proposition qu'on programme n'a plus à être
+    // acceptée. C'est fait ICI, dans le store, pour que TOUS les chemins
+    // d'ajout (feuille « Ajouter à… », sélecteur plein écran, éditeur de
+    // setlist, génération IA) l'appliquent sans avoir à y penser.
+    const dansLaSetlist = new Set(stamped.items.map((it) => it.songId));
     setState((prev) => ({
       ...prev,
+      songs: prev.songs.map((s) =>
+        dansLaSetlist.has(s.id) &&
+        (s.idea === true || (s.pendingBandId ?? '') !== '')
+          ? {
+              ...s,
+              idea: false,
+              pendingBandId: undefined,
+              updatedAt: new Date().toISOString(),
+            }
+          : s,
+      ),
       setlists: prev.setlists.some((s) => s.id === stamped.id)
         ? prev.setlists.map((s) => (s.id === stamped.id ? stamped : s))
         : [...prev.setlists, stamped],

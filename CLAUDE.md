@@ -109,11 +109,15 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - retirer un morceau du répertoire d'un groupe est un acte de niveau
     groupe propagé à tous (chacun garde sa copie personnelle) ;
   - un morceau ajouté au répertoire d'un groupe arrive chez les autres
-    membres comme **proposition en attente** (`pendingBandId`) : il
-    n'entre pas d'office dans leur bibliothèque personnelle (anti-
-    pollution), reste dispo pour les setlists du groupe (non bloquant),
-    et s'accepte d'un clic (chip « 📥 Propositions » dans la
-    bibliothèque) ;
+    membres **dans les Idées** de leur bibliothèque (décision Vincent,
+    b174 — remplace les « limbes » séparées) : `idea: true` +
+    `pendingBandId` qui ne dit plus que la PROVENANCE. Il ne se mélange
+    donc pas aux morceaux qu'on joue, mais il a une vraie place chez soi.
+    **Le programmer dans une setlist entérine son inscription définitive
+    en bibliothèque** (`idea: false`, `pendingBandId` effacé) — appliqué
+    dans `store.saveSetlist`, donc par TOUS les chemins d'ajout. Le
+    bouton « ✓ Accepter » reste disponible sans passer par une setlist,
+    et le chip « 📥 Propositions » n'est plus qu'une vue filtrée ;
   - un morceau supprimé n'est jamais réimporté par l'import en masse
     (tombstones) ;
   - navigation : les boutons ← des pages vont vers un parent explicite
