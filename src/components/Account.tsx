@@ -198,8 +198,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             .map((r) => ({ key: r.key, at: r.at }));
           // Notes supprimées : pierres tombales marquées « #note »
           const noteRemovals = (st.deleted ?? [])
-            .filter((t) => t.key === '#note')
-            .map((t) => ({ key: t.id, at: t.at }));
+            .filter((tomb) => tomb.key === '#note')
+            .map((tomb) => ({ key: tomb.id, at: tomb.at }));
           const localData = exportBandData(
             songs,
             setlists,
@@ -210,13 +210,13 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           const merged = mergeBandData(cloudData, localData);
           const skipKeys = new Set(
             (st.deleted ?? [])
-              .map((t) => t.key)
+              .map((tomb) => tomb.key)
               .filter((k): k is string => typeof k === 'string' && k !== ''),
           );
           // Setlists supprimées localement (par id) : à ne pas ressusciter
           // depuis le répertoire du groupe.
           const skipSetlistIds = new Set(
-            (st.deleted ?? []).map((t) => t.id),
+            (st.deleted ?? []).map((tomb) => tomb.id),
           );
           const applied = applyBandData(
             merged,
