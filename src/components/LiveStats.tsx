@@ -13,7 +13,7 @@
  * Le détail (morceau par morceau, séances, mots reçus) reste replié : un
  * écran = une mission, l'avancé ne coûte rien à qui ne le cherche pas.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { useToast } from './Feedback';
 import { t } from '../i18n';
@@ -95,6 +95,19 @@ export function LiveStats() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefs.liveKey, namesKey]);
 
+  // Report AUTOMATIQUE (instruction Vincent, b175) : les ❤ descendaient déjà
+  // tout seuls dans la bibliothèque, les mots du public attendaient un clic.
+  // Dès que les chiffres sont là, les deux sont recopiés — sans rien dire,
+  // c'est de la tenue de livres, pas une action de l'artiste.
+  const reporte = useRef(false);
+  useEffect(() => {
+    if (loading || stats === null || messages === null) return;
+    if (reporte.current) return;
+    reporte.current = true;
+    reporter(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, stats, messages]);
+
   // Le direct n'est pas configuré : rien à montrer, et surtout rien à
   // expliquer ici — le réglage vit dans « Modifier ».
   if (prefs.liveKey.trim() === '') return null;
@@ -112,7 +125,7 @@ export function LiveStats() {
     nbFollowers === 0;
 
   /** Recopie ❤ et mots du public sur les morceaux de la bibliothèque. */
-  function reporter() {
+  function reporter(silencieux = false) {
     const totals = heartTotals(stats ?? []);
     const bySong = messagesBySong(messages ?? []);
     let n = 0;
@@ -138,6 +151,7 @@ export function LiveStats() {
         n++;
       }
     }
+    if (silencieux) return; // report de fond : pas de bandeau intempestif
     toast.show(
       n === 0
         ? t('La bibliothèque est déjà à jour.')
@@ -268,7 +282,7 @@ export function LiveStats() {
             )}
 
             {(stats?.length ?? 0) > 0 && (
-              <button className="btn ghost small" onClick={reporter}>
+              <button className="btn ghost small" onClick={() => reporter()}>
                 ↻ {t('Reporter ❤ et messages dans la bibliothèque')}
               </button>
             )}

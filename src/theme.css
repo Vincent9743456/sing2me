@@ -2132,10 +2132,9 @@ textarea.mono {
   font-size: 1.3rem;
   line-height: 1.1;
 }
-/* Le ❤ reste le geste principal : c'est le seul en couleur. */
+/* Le ❤ se distingue par son icône, PAS par un cadre coloré : entouré de
+   rouge, il avait l'air déjà sélectionné (retour Vincent, b175). */
 .pubbar .heart {
-  border-color: var(--live);
-  background: color-mix(in srgb, var(--live) 18%, var(--surface));
   color: var(--heart);
 }
 /* Les paroles ne doivent jamais finir SOUS la barre. */
