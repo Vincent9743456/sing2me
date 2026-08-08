@@ -134,6 +134,12 @@ export function mergeStates(
     defaultView: local.prefs.defaultView,
     userName: pick(local.prefs.userName, cloud.prefs?.userName),
     liveKey: pick(local.prefs.liveKey, cloud.prefs?.liveKey),
+    // Langue choisie à la main (b158) : elle DOIT survivre à la synchro.
+    // Sans cette ligne, le champ disparaissait à la fusion et l'app
+    // retombait en « automatique » quelques secondes après le choix.
+    // Le local prime ; le cloud ne sert qu'à un appareil qui n'a pas
+    // encore de choix (nouveau téléphone).
+    lang: (local.prefs.lang ?? '') !== '' ? local.prefs.lang : cloud.prefs?.lang,
   };
   // Pierres tombales : une suppression sur UN appareil vaut partout.
   // (la clé — titre normalisé — est CONSERVÉE : anti-résurrection groupe)
