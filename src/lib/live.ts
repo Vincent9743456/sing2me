@@ -335,6 +335,37 @@ export async function sendMessage(
   return 'sent';
 }
 
+/** Un direct tel que le serveur l'a enregistré (b182) : une ligne par
+ *  appui sur GO LIVE, conservée après l'arrêt comme trace du concert. */
+export interface PastLiveRow {
+  id: string;
+  artist: { name?: string } | null;
+  band_id: string;
+  /** Qui a appuyé sur GO LIVE (le live d'un groupe porte le nom du groupe). */
+  started_by?: string;
+  setlist_name: string;
+  started_at: string | null;
+  updated_at: string | null;
+  status: string;
+  session_id: string | null;
+}
+
+/** Directs enregistrés (réservé à l'artiste). Best-effort → []. */
+export async function fetchPastLives(key: string): Promise<PastLiveRow[]> {
+  if (key.trim() === '') return [];
+  try {
+    const res = await fetch('/api/live-x?fn=live-stats', {
+      headers: { 'x-live-key': key },
+    });
+    const type = res.headers.get('content-type') ?? '';
+    if (!type.includes('application/json')) return [];
+    const body = await res.json();
+    return Array.isArray(body.lives) ? body.lives : [];
+  } catch {
+    return [];
+  }
+}
+
 /** État d'une table côté serveur (diagnostic ON AIR, b178). */
 export interface DiagTable {
   table: string;

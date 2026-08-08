@@ -144,7 +144,18 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     un code, l'ancienne adresse mourait et il fallait rescanner ; avec le
     nom, la page le retrouve seule. Le `join_code` reste un identifiant
     INTERNE (jamais affiché, jamais saisi) et `?c=` n'est plus lu que pour
-    honorer un lien déjà en circulation ;
+    honorer un lien déjà en circulation. Le direct d'un GROUPE porte le nom
+    du GROUPE : `/api/live?artist=` cherche donc aussi sur `started_by`,
+    sinon la page perso de celui qui a lancé restait muette (b182) ;
+  - **un live = un appui sur GO LIVE** (décision Vincent, b182 — annule le
+    regroupement au temps écoulé de b179) : le lancement crée la ligne
+    `lives`, l'arrêt la clôt. La clôture CONSERVE `started_at`, `artist`,
+    `band_id`, `setlist_name` et `concert` — cette ligne EST la trace du
+    concert. Ne jamais redevenir malin en devinant les frontières au temps
+    écoulé : c'est réservé aux morceaux d'avant b182, dont les bornes ont
+    été effacées. La définition vit à UN seul endroit,
+    `src/lib/pastlives.ts` (historique de l'onglet Live et compteur de la
+    fiche Artiste : même fonction, même chiffre) ;
   - **ligne rouge « outil, pas catalogue »** (§A.4 du mémo fondateurs) :
     aucune recherche de morceaux côté serveur, aucune base mutualisée entre
     comptes, aucun préremplissage de bibliothèque ; un morceau ne circule

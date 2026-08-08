@@ -21,12 +21,15 @@ import {
   fetchAudienceSessions,
   fetchLiveStats,
   fetchMessages,
+  fetchPastLives,
   heartTotals,
   LiveMessage,
   LiveSession,
   LiveStat,
   messagesBySong,
+  PastLiveRow,
 } from '../lib/live';
+import { buildPastLives } from '../lib/pastlives';
 import { fetchFollowerStats, FollowerStats } from '../lib/fanbase';
 import { useStore } from '../store';
 
@@ -48,6 +51,7 @@ export function LiveStats() {
   const [stats, setStats] = useState<LiveStat[] | null>(null);
   const [messages, setMessages] = useState<LiveMessage[] | null>(null);
   const [sessions, setSessions] = useState<LiveSession[] | null>(null);
+  const [rows, setRows] = useState<PastLiveRow[]>([]);
   const [followers, setFollowers] = useState<FollowerStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,13 +72,15 @@ export function LiveStats() {
     void (async () => {
       setLoading(true);
       try {
-        const [st, ms, se, fo] = await Promise.all([
+        const [st, ms, se, fo, lv] = await Promise.all([
           fetchLiveStats(prefs.liveKey, namesKey.split(',')),
           fetchMessages(prefs.liveKey, namesKey.split(',')),
           fetchAudienceSessions(prefs.liveKey),
           fetchFollowerStats(prefs.liveKey, artist.name),
+          fetchPastLives(prefs.liveKey),
         ]);
         if (cancelled) return;
+        setRows(lv);
         setStats(st);
         setMessages(ms);
         setSessions(se);
@@ -113,24 +119,18 @@ export function LiveStats() {
   if (prefs.liveKey.trim() === '') return null;
 
   const totalHearts = (stats ?? []).reduce((n, s) => n + s.hearts, 0);
-  // Nombre de lives (b180) : même découpage que l'historique de l'onglet
-  // Live — deux morceaux séparés de plus de 3 h = deux concerts. Compté
-  // sur les morceaux archivés, pas sur les séances : celles-ci peuvent
-  // manquer sans qu'on le sache (voir LiveHistory).
-  const nbLives = (() => {
-    const TROU_MS = 3 * 60 * 60 * 1000;
-    const joues = [...(stats ?? [])]
-      .map((x) => new Date(x.played_at).getTime())
-      .filter((x) => Number.isFinite(x))
-      .sort((a, b) => a - b);
-    let n = 0;
-    let precedent = -Infinity;
-    for (const at of joues) {
-      if (at - precedent > TROU_MS) n++;
-      precedent = at;
-    }
-    return n;
-  })();
+  // Nombre de lives : EXACTEMENT ceux de l'historique de l'onglet Live —
+  // même fonction, donc jamais deux chiffres qui se contredisent (b182).
+  const nbLives = buildPastLives({
+    rows,
+    sessions,
+    stats: stats ?? [],
+    messages: messages ?? [],
+    names,
+    bandCloudIds: bands.map((b) => b.cloudId ?? ''),
+    me: [artist.name, prefs.userName],
+    artistName: artist.name,
+  }).length;
   const totalPublic = (sessions ?? []).reduce((n, s) => n + s.uniques, 0);
   const nbMessages = messages?.length ?? 0;
   const nbFollowers = followers?.count ?? 0;

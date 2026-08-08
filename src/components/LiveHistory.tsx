@@ -1,16 +1,14 @@
 /**
  * Historique des directs (b176) — sur l'onglet Live.
  *
- * Comment un direct est reconstitué : le serveur ne stocke pas « un concert »
- * mais trois choses séparées — les séances (`live_sessions`), les morceaux
- * archivés à chaque changement de partition (`live_stats`) et les mots du
- * public (`live_messages`). On rattache les deux dernières à la première par
- * leur CRÉNEAU HORAIRE (début → fin, ou début → maintenant si le direct
- * tourne encore). C'est volontairement du recoupement côté client : ça marche
- * avec les données déjà en base, sans migration à rejouer.
+ * Ce composant AFFICHE ; il ne décide pas de ce qu'est un live. Ce découpage
+ * vit dans `src/lib/pastlives.ts`, partagé avec le compteur de la fiche
+ * Artiste : un direct = un appui sur GO LIVE, borné par la ligne que le
+ * serveur enregistre à ce moment-là. Les morceaux archivés et les mots du
+ * public s'y rattachent par leur horaire.
  *
  * Le nom donné après coup vit dans les préférences (`prefs.liveNames`) :
- * côté serveur une séance n'a qu'une date, l'artiste seul sait que c'était
+ * côté serveur un direct n'a qu'une date, l'artiste seul sait que c'était
  * « la soirée chez Marco ».
  */
 import React, { useEffect, useMemo, useState } from 'react';
@@ -23,26 +21,14 @@ import {
   fetchDiag,
   fetchLiveStats,
   fetchMessages,
+  fetchPastLives,
   LiveMessage,
   LiveSession,
   LiveStat,
+  PastLiveRow,
 } from '../lib/live';
+import { buildPastLives, PastLive } from '../lib/pastlives';
 import { useStore } from '../store';
-
-/** Un direct passé, avec tout ce qui s'y est produit. */
-interface PastLive {
-  id: string;
-  startedAt: string;
-  endedAt: string | null;
-  uniques: number;
-  songs: LiveStat[];
-  messages: LiveMessage[];
-  hearts: number;
-  /** Qui jouait : '' = soi (solo), sinon le nom du groupe. */
-  band: string;
-  /** Setlist tournée, '' si aucune (ou SQL pas encore rejoué). */
-  setlist: string;
-}
 
 function jourLong(iso: string): string {
   const d = new Date(iso);
@@ -64,6 +50,7 @@ function heure(iso: string): string {
 export function LiveHistory() {
   const { prefs, artist, bands, savePrefs } = useStore();
   const [sessions, setSessions] = useState<LiveSession[] | null>(null);
+  const [rows, setRows] = useState<PastLiveRow[]>([]);
   const [stats, setStats] = useState<LiveStat[]>([]);
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +62,17 @@ export function LiveHistory() {
     .map((n) => n.trim())
     .filter((n) => n !== '');
   const namesKey = names.join(',');
+  // Un live de groupe porte le NOM DU GROUPE, pas le mien : sans ces deux
+  // repères (qui a lancé, quel groupe), mon propre concert disparaissait de
+  // mon historique dès que le groupe n'était pas encore dans ma bibliothèque.
+  const cloudKey = bands
+    .map((b) => (b.cloudId ?? '').trim())
+    .filter((c) => c !== '')
+    .join(',');
+  const meKey = [artist.name, prefs.userName]
+    .map((n) => n.trim().toLowerCase())
+    .filter((n) => n !== '')
+    .join(',');
 
   useEffect(() => {
     if (prefs.liveKey.trim() === '') {
@@ -84,12 +82,14 @@ export function LiveHistory() {
     let cancelled = false;
     void (async () => {
       try {
-        const [se, st, ms] = await Promise.all([
+        const [se, st, ms, lv] = await Promise.all([
           fetchAudienceSessions(prefs.liveKey),
           fetchLiveStats(prefs.liveKey, namesKey === '' ? [] : namesKey.split(',')),
           fetchMessages(prefs.liveKey, namesKey === '' ? [] : namesKey.split(',')),
+          fetchPastLives(prefs.liveKey),
         ]);
         if (cancelled) return;
+        setRows(lv);
         setSessions(se);
         setStats(st);
         setMessages(ms);
@@ -106,105 +106,23 @@ export function LiveHistory() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefs.liveKey, namesKey]);
 
-  /**
-   * Un live est reconstitué à partir des MORCEAUX ARCHIVÉS (b179), pas de la
-   * table des séances.
-   *
-   * Pourquoi ce changement : la séance n'est créée qu'en « best-effort » au
-   * lancement — si son écriture échoue, rien n'est journalisé et le direct
-   * démarre quand même. L'historique dépendait donc du maillon le plus
-   * fragile de la chaîne. Les morceaux joués, eux, sont archivés à chaque
-   * changement de partition et sont bel et bien là.
-   *
-   * Deux morceaux séparés de plus de TROU_MS appartiennent à deux concerts
-   * différents : personne ne joue une chanson, s'arrête trois heures, puis
-   * reprend le même set. La séance, quand elle existe, sert alors seulement
-   * à ajouter le nombre de spectateurs.
-   */
-  const lives = useMemo<PastLive[]>(() => {
-    const TROU_MS = 3 * 60 * 60 * 1000;
-    // Les mots peuvent arriver juste avant le 1er morceau ou après le
-    // dernier : on élargit un peu le créneau de chaque côté.
-    const MARGE_MS = 30 * 60 * 1000;
-    const mine = new Set(names.map((n) => n.trim().toLowerCase()));
-    const aMoi = (v: string | null | undefined) => {
-      const w = String(v ?? '').trim().toLowerCase();
-      return w === '' || mine.size === 0 || mine.has(w);
-    };
-
-    const joues = [...stats]
-      .filter((x) => Number.isFinite(new Date(x.played_at).getTime()))
-      .sort((a, b) => a.played_at.localeCompare(b.played_at));
-
-    // Découpage en concerts par écart de temps.
-    const groupes: LiveStat[][] = [];
-    for (const s of joues) {
-      const dernier = groupes[groupes.length - 1];
-      const precedent = dernier?.[dernier.length - 1];
-      const ecart = precedent
-        ? new Date(s.played_at).getTime() -
-          new Date(precedent.played_at).getTime()
-        : Infinity;
-      if (!dernier || ecart > TROU_MS) groupes.push([s]);
-      else dernier.push(s);
-    }
-
-    const mesSeances = (sessions ?? []).filter((s) => aMoi(s.artist_name));
-
-    return groupes
-      .map((songs) => {
-        const debut = new Date(songs[0].played_at).getTime();
-        const fin = new Date(songs[songs.length - 1].played_at).getTime();
-        // Séance correspondante (si elle a bien été enregistrée) : elle seule
-        // connaît le nombre de spectateurs uniques.
-        const seance = mesSeances.find((se) => {
-          const d = new Date(se.started_at).getTime();
-          // Séance encore ouverte : elle couvre TOUT ce qui suit son début.
-          // La borner à « maintenant » la faisait rater les morceaux joués
-          // à la seconde près, et dépendre de l'horloge du téléphone.
-          const f = se.ended_at ? new Date(se.ended_at).getTime() : Infinity;
-          return d <= fin + MARGE_MS && f >= debut - MARGE_MS;
-        });
-        const msgs = messages.filter((m) => {
-          const at = new Date(m.created_at).getTime();
-          return (
-            Number.isFinite(at) &&
-            at >= debut - MARGE_MS &&
-            at <= fin + MARGE_MS
-          );
-        });
-        return {
-          // Identifiant stable (sert au nom donné après coup) : la séance si
-          // on l'a, sinon l'heure du premier morceau.
-          id: seance?.id ?? `t:${songs[0].played_at}`,
-          startedAt: seance?.started_at ?? songs[0].played_at,
-          // « en cours » ne se devine pas : seule une séance ouverte le dit.
-          endedAt: seance
-            ? seance.ended_at
-            : songs[songs.length - 1].played_at,
-          uniques: seance?.uniques ?? 0,
-          songs,
-          messages: msgs,
-          hearts: songs.reduce((n, x) => n + x.hearts, 0),
-          // Le `performer` archivé porte le nom du groupe quand c'en était
-          // un ; s'il vaut mon nom d'artiste, c'était en solo.
-          band: (() => {
-            const p = (
-              songs.find((x) => (x.performer ?? '') !== '')?.performer ??
-              seance?.artist_name ??
-              ''
-            ).trim();
-            return p === '' || p.toLowerCase() === artist.name.trim().toLowerCase()
-              ? ''
-              : p;
-          })(),
-          setlist:
-            songs.find((x) => (x.setlist_name ?? '') !== '')?.setlist_name ?? '',
-        };
-      })
-      .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  // La définition d'« un live » vit dans src/lib/pastlives.ts : l'onglet Live
+  // et le compteur de la fiche Artiste doivent compter la MÊME chose.
+  const lives = useMemo<PastLive[]>(
+    () =>
+      buildPastLives({
+        rows,
+        sessions,
+        stats,
+        messages,
+        names,
+        bandCloudIds: cloudKey === '' ? [] : cloudKey.split(','),
+        me: meKey === '' ? [] : meKey.split(','),
+        artistName: artist.name,
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessions, stats, messages, namesKey]);
+    [rows, sessions, stats, messages, namesKey, cloudKey, meKey],
+  );
 
   function nomDe(live: PastLive): string {
     return (prefs.liveNames ?? {})[live.id] ?? '';
