@@ -14,12 +14,15 @@ import heart from '../server/heart.js';
 import message from '../server/message.js';
 import liveStats from '../server/live-stats.js';
 import attend from '../server/attend.js';
+import diag from '../server/diag.js';
 
 const handlers = {
   heart,
   message,
   'live-stats': liveStats,
   attend,
+  // Diagnostic ON AIR (b178) : réservé à l'artiste, aucune URL publique.
+  diag,
 };
 
 // Compat : si la réécriture Vercel ne transmet pas ?fn= (anciens bundles

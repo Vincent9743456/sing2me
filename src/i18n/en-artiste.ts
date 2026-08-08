@@ -92,6 +92,13 @@ export const EN_ARTISTE: Record<string, string> = {
   Live: 'Live',
   'Concerts passés': 'Past gigs',
   'Tes derniers lives': 'Your recent lives',
+  'Tes lives': 'Your lives',
+  'Pourquoi c’est vide ?': 'Why is this empty?',
+  'Vérification…': 'Checking…',
+  'Le direct n’est pas configuré.': 'Live mode isn’t configured.',
+  'inaccessible : {d}': 'unreachable: {d}',
+  vide: 'empty',
+  '{n} ligne(s)': '{n} row(s)',
   'Historique indisponible pour l’instant — il reviendra.':
     'History unavailable right now — it’ll be back.',
   'Aucun live pour l’instant — lance-en un depuis le bouton GO LIVE.':

@@ -331,6 +331,37 @@ export async function sendMessage(
   return 'sent';
 }
 
+/** État d'une table côté serveur (diagnostic ON AIR, b178). */
+export interface DiagTable {
+  table: string;
+  ok: boolean;
+  rows: number | null;
+  last: string | null;
+  detail: string;
+}
+
+/**
+ * Diagnostic ON AIR : ce que la base contient VRAIMENT, table par table.
+ * Réservé à l'artiste. Ne renvoie aucun contenu, seulement des compteurs —
+ * de quoi savoir si un écran vide vient d'une table absente, de droits, ou
+ * simplement d'une absence de données.
+ */
+export async function fetchDiag(
+  key: string,
+): Promise<{ configured: boolean; tables: DiagTable[]; note?: string } | null> {
+  if (key.trim() === '') return null;
+  try {
+    const res = await fetch('/api/live-x?fn=diag', {
+      headers: { 'x-live-key': key },
+    });
+    const type = res.headers.get('content-type') ?? '';
+    if (!res.ok || !type.includes('application/json')) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Messages du public (réservé à l'artiste, clé On Air requise).
  *

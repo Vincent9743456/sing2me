@@ -163,7 +163,7 @@ export function LiveStats() {
 
   return (
     <>
-      <h2 className="pagetitle">{t('Tes directs')}</h2>
+      <h2 className="pagetitle">{t('Tes lives')}</h2>
       {loading && stats === null ? (
         <p className="help">{t('Chargement…')}</p>
       ) : error !== null ? (
@@ -184,10 +184,6 @@ export function LiveStats() {
               <div className="statlabel">
                 👥 {t('spectateurs (toutes séances)')}
               </div>
-            </div>
-            <div className="statcard">
-              <div className="statvalue">{nbMessages}</div>
-              <div className="statlabel">💬 {t('mots du public')}</div>
             </div>
             <div className="statcard">
               <div className="statvalue">{nbFollowers}</div>
@@ -222,27 +218,9 @@ export function LiveStats() {
               </div>
             )}
 
-            {messages !== null && messages.length > 0 && (
-              <div className="card" style={{ marginBottom: 10 }}>
-                <div className="help" style={{ marginBottom: 8 }}>
-                  💬 {t('MESSAGES DU PUBLIC')}
-                </div>
-                {messages.map((m, i) => (
-                  <div key={i} style={{ marginBottom: 10 }}>
-                    « {m.body} »
-                    <div className="stauthor">
-                      — {m.author !== '' ? m.author : t('anonyme')} ·{' '}
-                      {jourHeure(m.created_at)}
-                      {m.song_title !== '' && (
-                        <>{t(' · pendant « {titre} »', { titre: m.song_title })}</>
-                      )}
-                      {m.performer !== '' && <> · {m.performer}</>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
+            {/* Les mots du public vivent dans l'historique des lives
+                (décision Vincent, b178) : ils appartiennent au concert où
+                ils ont été écrits, pas à une pile hors sol. */}
             {stats !== null && stats.length > 0 && (
               <div className="card" style={{ marginBottom: 10 }}>
                 <div className="help" style={{ marginBottom: 8 }}>
