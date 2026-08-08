@@ -6,19 +6,9 @@ import { ShareModal } from '../components/ShareModal';
 import { AccountSection } from '../components/Account';
 import { GearEditor } from '../components/GearEditor';
 import { LinkPreviews } from '../components/LinkPreviews';
+import { LiveStats } from '../components/LiveStats';
 import { Field, Modal, TopBar } from '../components/ui';
 import { t } from '../i18n';
-import {
-  fetchAudienceSessions,
-  fetchLiveStats,
-  fetchMessages,
-  heartTotals,
-  LiveMessage,
-  LiveSession,
-  LiveStat,
-  messagesBySong,
-} from '../lib/live';
-import { fetchFollowerStats, FollowerStats } from '../lib/fanbase';
 import { stripChords } from '../lib/chordpro';
 import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
@@ -120,11 +110,6 @@ export function Artist() {
   // Vue par défaut = profil mis en forme (ce que voit le public) ; « Modifier »
   // ouvre le formulaire complet. Profil vide → « Créer le profil artiste ».
   const [editing, setEditing] = useState(false);
-  const [stats, setStats] = useState<LiveStat[] | null>(null);
-  const [sessions, setSessions] = useState<LiveSession[] | null>(null);
-  const [followers, setFollowers] = useState<FollowerStats | null>(null);
-  const [statsError, setStatsError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<LiveMessage[] | null>(null);
 
 
   const payload = useMemo<SharePayload | null>(() => {
@@ -383,6 +368,9 @@ export function Artist() {
                 </div>
               </>
             )}
+            {/* Les chiffres des directs, visibles SANS passer par « Modifier »
+                (b171). Privés : cette page vit dans l'app, jamais sur le QR. */}
+            <LiveStats />
             {/* Mes groupes : icônes cliquables (accès direct à la fiche). */}
             <h2 className="pagetitle">{t('Mes groupes')}</h2>
             {bands.length === 0 ? (
@@ -925,199 +913,6 @@ export function Artist() {
               onChange={(e) => savePrefs({ ...prefs, liveKey: e.target.value })}
             />
           </>
-        )}
-        <div className="spacer" />
-
-        <h2 className="pagetitle">{t('Statistiques des directs')}</h2>
-        <p className="help">
-          {t(
-            "Les ❤ envoyés par le public, morceau par morceau, et l'audience de tes concerts (spectateurs uniques).",
-          )}
-        </p>
-        <button
-          className="btn ghost small"
-          onClick={async () => {
-            setStatsError(null);
-            try {
-              setStats(await fetchLiveStats(prefs.liveKey, whoProfile.name));
-              setMessages(await fetchMessages(prefs.liveKey, whoProfile.name));
-              setSessions(await fetchAudienceSessions(prefs.liveKey));
-              setFollowers(
-                await fetchFollowerStats(prefs.liveKey, artist.name),
-              );
-            } catch (e) {
-              setStatsError(
-                e instanceof Error ? e.message : t('Chargement impossible.'),
-              );
-            }
-          }}
-        >
-          {t('Voir les statistiques')}
-        </button>
-        {statsError && (
-          <p style={{ color: 'var(--danger)' }}>{statsError}</p>
-        )}
-        {followers !== null && (
-          <div className="card" style={{ marginTop: 10 }}>
-            <div className="help" style={{ marginBottom: 4 }}>
-              ⭐ {t('TA FANBASE')}
-            </div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 700 }}>
-              {followers.count > 1
-                ? t('{n} suiveurs', { n: followers.count })
-                : t('{n} suiveur', { n: followers.count })}
-            </div>
-            {followers.sharedEmails.length > 0 && (
-              <>
-                <p className="help" style={{ marginTop: 8, marginBottom: 4 }}>
-                  {t('Emails partagés avec toi ({n}) :', {
-                    n: followers.sharedEmails.length,
-                  })}
-                </p>
-                <div className="help" style={{ wordBreak: 'break-all' }}>
-                  {followers.sharedEmails.join(', ')}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-        {sessions !== null && sessions.length > 0 && (
-          <div className="card" style={{ marginTop: 10 }}>
-            <div className="help" style={{ marginBottom: 8 }}>
-              👥 {t('AUDIENCE DE TES CONCERTS')}
-            </div>
-            {sessions.map((s) => (
-              <div
-                key={s.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 8,
-                  marginBottom: 6,
-                }}
-              >
-                <span>
-                  {new Date(s.started_at).toLocaleDateString('fr-FR', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}{' '}
-                  {new Date(s.started_at).toLocaleTimeString('fr-FR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                  {s.ended_at === null && (
-                    <em className="stauthor"> · {t('en cours')}</em>
-                  )}
-                </span>
-                <strong style={{ whiteSpace: 'nowrap' }}>
-                  {s.uniques > 1
-                    ? t('{n} spectateurs', { n: s.uniques })
-                    : t('{n} spectateur', { n: s.uniques })}
-                </strong>
-              </div>
-            ))}
-          </div>
-        )}
-        {messages !== null && messages.length > 0 && (
-          <div className="card" style={{ marginTop: 10 }}>
-            <div className="help" style={{ marginBottom: 8 }}>
-              💬 {t('MESSAGES DU PUBLIC')}
-            </div>
-            {messages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 10 }}>
-                « {m.body} »
-                <div className="stauthor">
-                  — {m.author !== '' ? m.author : t('anonyme')} ·{' '}
-                  {new Date(m.created_at).toLocaleDateString('fr-FR', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}{' '}
-                  {new Date(m.created_at).toLocaleTimeString('fr-FR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                  {m.song_title !== '' && (
-                    <>
-                      {t(' · pendant « {titre} »', { titre: m.song_title })}
-                    </>
-                  )}
-                  {m.performer !== '' && <> · {m.performer}</>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {stats !== null && stats.length > 0 && (
-          <button
-            className="btn ghost small"
-            style={{ marginTop: 10 }}
-            onClick={() => {
-              const totals = heartTotals(stats);
-              const bySong = messagesBySong(messages ?? []);
-              let n = 0;
-              for (const s of songs) {
-                const total = totals.get(s.title);
-                const known = new Set(s.fanMessages.map((m) => m.id));
-                const fresh = bySong
-                  .get(s.title)
-                  .map((m) => ({
-                    id: `${m.created_at}|${m.author}|${m.body.slice(0, 40)}`,
-                    author: m.author,
-                    text: m.body,
-                    createdAt: m.created_at,
-                  }))
-                  .filter((m) => !known.has(m.id));
-                const heartsChanged = total !== undefined && total !== s.hearts;
-                if (heartsChanged || fresh.length > 0) {
-                  saveSong({
-                    ...s,
-                    hearts: heartsChanged ? (total as number) : s.hearts,
-                    fanMessages: [...s.fanMessages, ...fresh],
-                  });
-                  n++;
-                }
-              }
-              alert(
-                n > 0
-                  ? n > 1
-                    ? t('❤ et messages reportés sur {n} morceaux.', { n })
-                    : t('❤ et messages reportés sur {n} morceau.', { n })
-                  : t('La bibliothèque est déjà à jour.'),
-              );
-            }}
-          >
-            ↻ {t('Reporter ❤ et messages dans la bibliothèque')}
-          </button>
-        )}
-        {stats !== null && (
-          <div className="card" style={{ marginTop: 10 }}>
-            {stats.length === 0 && (
-              <p className="help">
-                {t('Pas encore de données — lance un direct !')}
-              </p>
-            )}
-            {stats.map((st, i) => (
-              <div className="strow" key={i}>
-                <span className="stlabel">
-                  {new Date(st.played_at).toLocaleDateString('fr-FR', {
-                    day: 'numeric',
-                    month: 'short',
-                  })}
-                </span>
-                <span style={{ flex: 1 }}>
-                  {st.song_title}
-                  {st.concert_title !== '' && (
-                    <span className="stauthor"> · {st.concert_title}</span>
-                  )}
-                </span>
-                <span style={{ color: 'var(--live)', fontWeight: 700 }}>
-                  ❤ {st.hearts}
-                </span>
-              </div>
-            ))}
-          </div>
         )}
         <div className="spacer" />
 
