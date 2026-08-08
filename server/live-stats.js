@@ -124,6 +124,10 @@ export default async function handler(req, res) {
       `select=song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,session_id&order=played_at.desc&limit=800`,
       `select=song_title,song_artist,hearts,concert_id,concert_title,played_at,performer&order=played_at.desc&limit=800`,
       `select=song_title,song_artist,hearts,played_at&order=played_at.desc&limit=800`,
+      // Dernier repli : tout ce que la table a (b195). Voir server/message.js
+      // — une cascade de replis qui nomment tous les mêmes colonnes ne
+      // protège de rien le jour où l'une d'elles manque.
+      `select=*&order=played_at.desc&limit=800`,
     ];
     for (const q of replis) {
       if (r.ok) break;

@@ -235,3 +235,17 @@ create index if not exists live_messages_owner on live_messages (owner_id);
 
 -- Séances de mesure : même rattachement (compteur de spectateurs).
 alter table live_sessions add column if not exists owner_id uuid;
+
+-- ------------------------------------------------------------
+-- b195 : les colonnes de BASE du livre d'or.
+--
+-- `create table if not exists live_messages (…)` ne corrige jamais une
+-- table qui existe DÉJÀ : la nôtre avait été créée avant ce fichier, sans
+-- `author`. Toutes les lectures le demandaient — elles échouaient donc
+-- toutes en 400, pendant que l'écriture (qui interroge le schéma réel)
+-- continuait d'enregistrer les mots du public. Quatre messages en base,
+-- zéro à l'écran, et rien pour le dire.
+-- ------------------------------------------------------------
+alter table live_messages add column if not exists author text not null default '';
+alter table live_messages add column if not exists body text not null default '';
+alter table live_messages add column if not exists created_at timestamptz not null default now();

@@ -234,6 +234,13 @@ export default async function handler(req, res) {
         'author,body,song_title,performer,concert_id,concert_title,created_at',
         'author,body,song_title,performer,created_at',
         'author,body,created_at',
+        // DERNIER REPLI : tout ce que la table a (b195). Les six lignes
+        // au-dessus nommaient des colonnes ; elles supposaient donc toutes
+        // la même chose — et quand cette hypothèse était fausse (`author`
+        // absent d'une table créée avant le fichier SQL), TOUTES échouaient
+        // ensemble. Un `select=*` ne peut pas échouer sur une colonne
+        // inconnue : c'est le filet qui manquait.
+        '*',
       ];
       let r = null;
       for (const sel of selects) {
