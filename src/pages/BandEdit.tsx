@@ -15,6 +15,7 @@ import { ShareModal } from '../components/ShareModal';
 import { Field, Modal, SaveBar, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
+import { findPublicPageByArtist, PublicPage } from '../lib/publicPages';
 import {
   announceBandSong,
   CloudMember,
@@ -142,6 +143,25 @@ export function BandEdit({ id }: { id: string }) {
     instrument?: string;
     photo?: string;
   } | null>(null);
+  // Page publique du musicien affiché (b173) : undefined = on cherche
+  // encore, null = il n'en a pas (ou son nom est porté par plusieurs
+  // artistes — on refuse alors de deviner).
+  const [memberPage, setMemberPage] = useState<PublicPage | null | undefined>(
+    undefined,
+  );
+  useEffect(() => {
+    if (!viewMember) return;
+    let cancelled = false;
+    setMemberPage(undefined);
+    void (async () => {
+      const page = await findPublicPageByArtist(viewMember.name);
+      if (!cancelled) setMemberPage(page);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [viewMember]);
+
   // Étape « prénom de l'invité » avant de partager le lien.
   const [invitePrompt, setInvitePrompt] = useState(false);
   const [pendingName, setPendingName] = useState('');
@@ -1367,11 +1387,38 @@ export function BandEdit({ id }: { id: string }) {
               </p>
             )}
           </div>
-          <p className="help" style={{ textAlign: 'center' }}>
-            {t(
-              "La fiche publique complète (bio, liens, pourboire) arrive avec les pages d'artiste. En attendant, tu vois son nom et son instrument.",
-            )}
-          </p>
+          {memberPage === undefined ? (
+            <p className="help" style={{ textAlign: 'center' }}>
+              {t('Recherche de sa page publique…')}
+            </p>
+          ) : memberPage === null ? (
+            <p className="help" style={{ textAlign: 'center' }}>
+              {t(
+                'Ce musicien n’a pas encore de page publique Sing2Me — ou son nom d’artiste est porté par plusieurs comptes.',
+              )}
+            </p>
+          ) : (
+            <>
+              {(memberPage.profile.bio ?? '') !== '' && (
+                <p className="help" style={{ whiteSpace: 'pre-wrap' }}>
+                  {memberPage.profile.bio}
+                </p>
+              )}
+              {(memberPage.profile.links ?? []).some(
+                (l) => l.url.trim() !== '',
+              ) && (
+                <LinkPreviews links={memberPage.profile.links ?? []} showChips />
+              )}
+              <a
+                className="btn block"
+                href={`${location.origin}/${memberPage.name}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t('Voir sa page publique')}
+              </a>
+            </>
+          )}
         </Modal>
       )}
       {headerMenu && (
