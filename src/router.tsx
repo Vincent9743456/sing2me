@@ -19,6 +19,7 @@ export type Route =
   | { name: 'concert'; id: string | null }
   | { name: 'artist' }
   | { name: 'settings' }
+  | { name: 'dashboard' }
   | { name: 'songbook' }
   | { name: 'bands' }
   | { name: 'band'; id: string }
@@ -79,6 +80,8 @@ export function parseHash(hash: string): Route {
       return { name: 'artist' };
     case 'reglages':
       return { name: 'settings' };
+    case 'tableau-de-bord':
+      return { name: 'dashboard' };
     case 'export-pdf':
       return { name: 'songbook' };
     case 'bands':

@@ -13,6 +13,7 @@
     { "source": "/api/follow", "destination": "/api/fan?fn=follow" },
     { "source": "/api/souvenir", "destination": "/api/fan?fn=souvenir" },
     { "source": "/api/report", "destination": "/api/fan?fn=report" },
+    { "source": "/api/admin-stats", "destination": "/api/fan?fn=stats" },
     { "source": "/api/ai-clean", "destination": "/api/ai?fn=clean" },
     { "source": "/api/ai-note", "destination": "/api/ai?fn=note" },
     { "source": "/api/setlist-ai", "destination": "/api/ai?fn=setlist" },

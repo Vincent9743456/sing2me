@@ -50,4 +50,75 @@ export const EN_COMMUN: Record<string, string> = {
   "Conditions d'utilisation": 'Terms of use',
   'Ces conditions ne sont disponibles qu’en français pour le moment — la version française fait foi.':
     'These terms are currently available in French only — the French version is the binding one.',
+  // Tableau de bord fondateur (b160)
+  "Il faut être connecté.":
+    "You need to be signed in.",
+  "Tableau de bord indisponible — nécessite la version en ligne.":
+    "Dashboard unavailable — requires the online version.",
+  "Impossible de charger les chiffres.":
+    "Couldn't load the figures.",
+  "Rechargement noté ✓":
+    "Top-up recorded ✓",
+  "Tableau de bord":
+    "Dashboard",
+  "Réessayer":
+    "Try again",
+  "Chargement des chiffres…":
+    "Loading the figures…",
+  "Comptes créés":
+    "Accounts created",
+  "Actifs (30 j)":
+    "Active (30 d)",
+  "Nouveaux (7 j)":
+    "New (7 d)",
+  "Connectés (7 j)":
+    "Signed in (7 d)",
+  "Usage":
+    "Usage",
+  "Directs lancés":
+    "Live sessions started",
+  "Morceaux partagés en groupe":
+    "Songs shared with bands",
+  "Coût des IA (30 derniers jours)":
+    "AI cost (last 30 days)",
+  "Total":
+    "Total",
+  "Appels":
+    "Calls",
+  "Aucun appel IA sur la période — rien à facturer.":
+    "No AI calls in this period — nothing billed.",
+  "Crédit restant (estimé)":
+    "Remaining credit (estimated)",
+  "Ni Anthropic ni OpenAI ne publient le solde restant. Il est reconstitué ici : ce que tu as rechargé, moins ce que l’app a réellement consommé.":
+    "Neither Anthropic nor OpenAI publish the remaining balance. It is reconstructed here: what you topped up, minus what the app actually consumed.",
+  "à recharger":
+    "top up soon",
+  "Rechargé {paid} · consommé {used}":
+    "Topped up {paid} · used {used}",
+  "+ Recharge":
+    "+ Top up",
+  "Chiffre d’affaires":
+    "Revenue",
+  "En attente du modèle économique (Licence Scène). Rien n’est affiché tant que les montants ne sont pas arrêtés.":
+    "Waiting on the business model (Stage Licence). Nothing is shown until the amounts are settled.",
+  "Chiffres au {heure} — actualisés chaque minute.":
+    "Figures as of {heure} — refreshed every minute.",
+  "Recharge Anthropic":
+    "Anthropic top-up",
+  "Recharge OpenAI":
+    "OpenAI top-up",
+  "Montant en dollars, tel que tu viens de le payer.":
+    "Amount in dollars, as you just paid it.",
+  "Noter le rechargement":
+    "Record the top-up",
+  "Le rechargement n'a pas pu être noté.":
+    "The top-up couldn't be recorded.",
+  "Pilotage":
+    "Operations",
+  "📊 Tableau de bord":
+    "📊 Dashboard",
+  "Comptes, usage, coût des IA, crédit restant":
+    "Accounts, usage, AI cost, remaining credit",
+  'Réponse inattendue du serveur — chiffres indisponibles.':
+    'Unexpected server response — figures unavailable.',
 };

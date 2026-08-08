@@ -10,7 +10,7 @@
  *   enterré par id (pierres tombales) pour que la suppression se propage
  *   aux autres appareils sans bloquer un futur ré-import.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { ConfirmSheet, useToast } from '../components/Feedback';
 import { Icon } from '../components/Icon';
@@ -58,6 +58,28 @@ export function Settings() {
   const toast = useToast();
   const [picked, setPicked] = useState<Set<keyof ResetParts>>(new Set());
   const [confirming, setConfirming] = useState(false);
+  // Tableau de bord fondateur (b160) : l'entrée n'apparaît que pour les
+  // comptes autorisés — c'est le SERVEUR qui tranche (ADMIN_EMAILS), le
+  // téléphone ne fait que demander. Résultat gardé pour la session.
+  const [isAdmin, setIsAdmin] = useState(
+    () => sessionStorage.getItem('sing2me/isAdmin') === '1',
+  );
+  useEffect(() => {
+    void (async () => {
+      try {
+        const s = await getValidSession();
+        if (!s) return;
+        const r = await fetch('/api/admin-stats', {
+          headers: { authorization: `Bearer ${s.accessToken}` },
+        });
+        const okAdmin = r.ok;
+        setIsAdmin(okAdmin);
+        sessionStorage.setItem('sing2me/isAdmin', okAdmin ? '1' : '0');
+      } catch {
+        // hors ligne : on garde ce qu'on savait
+      }
+    })();
+  }, []);
 
   const counts: Record<keyof ResetParts, number> = {
     songs: songs.length,
@@ -130,6 +152,18 @@ export function Settings() {
             'Tes partitions, paroles, notes et messages ne sont jamais traduits — seule l’interface change de langue.',
           )}
         </p>
+
+        {isAdmin && (
+          <>
+            <div className="spacer" />
+            <h2 className="pagetitle">{t('Pilotage')}</h2>
+            <AccordionNav
+              title={t('📊 Tableau de bord')}
+              sub={t('Comptes, usage, coût des IA, crédit restant')}
+              onClick={() => navigate('/tableau-de-bord')}
+            />
+          </>
+        )}
 
         <div className="spacer" />
         <h2 className="pagetitle">{t('Exporter')}</h2>

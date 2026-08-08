@@ -7,6 +7,8 @@
 
 const MAX_INPUT = 8_000;
 
+import { meterClaude } from './meter.js';
+
 export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') {
@@ -115,6 +117,8 @@ export default async function handler(req, res) {
           '--- TRANSCRIPTION ---\n' +
           text.slice(0, MAX_INPUT);
 
+    // Modèle nommé une seule fois : sert à l'appel ET à la mesure (b160).
+    const model = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
     const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -123,7 +127,7 @@ export default async function handler(req, res) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
+        model,
         max_tokens: 500,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -133,6 +137,8 @@ export default async function handler(req, res) {
       return;
     }
     const body = await apiRes.json();
+    // Mesure de l'appel (b160) : best-effort, jamais bloquant.
+    void meterClaude('note', model, body?.usage);
     const out = Array.isArray(body.content)
       ? body.content
           .filter((b) => b.type === 'text')

@@ -27,6 +27,8 @@
  */
 const MAX_BASE64 = 2_800_000; // ≈ 2 Mo d'audio réel
 
+import { costOfAudio, meter } from './meter.js';
+
 const EXT = {
   'audio/webm': 'webm',
   'audio/ogg': 'ogg',
@@ -126,6 +128,17 @@ export default async function handler(req, res) {
       return;
     }
     const body = await apiRes.json().catch(() => null);
+    // Mesure de l'appel (b160). La durée exacte n'est pas renvoyée par le
+    // service : on l'estime à partir du poids, au débit d'enregistrement
+    // du téléphone (32 kbit/s), et on borne à la limite d'une note.
+    const seconds = Math.min(90, Math.round((bytes.length * 8) / 32000));
+    void meter({
+      fn: 'transcribe',
+      provider: 'openai',
+      model,
+      seconds,
+      cost: costOfAudio(model, seconds),
+    });
     const text = typeof body?.text === 'string' ? body.text.trim() : '';
     if (text === '') {
       res.status(200).json({ text: '', empty: true });

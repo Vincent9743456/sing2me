@@ -6,13 +6,15 @@
  *   /api/follow   → /api/fan?fn=follow
  *   /api/souvenir → /api/fan?fn=souvenir
  *   /api/report   → /api/fan?fn=report
+ *   /api/admin-stats → /api/fan?fn=stats
  * La logique de chaque endpoint vit dans server/.
  */
 import follow from '../server/follow.js';
 import souvenir from '../server/souvenir.js';
 import report from '../server/report.js';
+import stats from '../server/admin-stats.js';
 
-const handlers = { follow, souvenir, report };
+const handlers = { follow, souvenir, report, stats };
 
 // Compat : si la réécriture Vercel ne transmet pas ?fn= (anciens bundles
 // appelant l'URL d'origine, ex. /api/follow), on route par le chemin.
@@ -20,6 +22,7 @@ const byPath = {
   follow: 'follow',
   souvenir: 'souvenir',
   report: 'report',
+  'admin-stats': 'stats',
 };
 
 export default async function handler(req, res) {
