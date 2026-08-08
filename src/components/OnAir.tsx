@@ -51,7 +51,12 @@ import { Modal } from './ui';
  */
 function stageTargetFromHash(hash: string): string | null {
   let m: RegExpMatchArray | null;
-  if ((m = hash.match(/^#\/setlist\/([^/]+)(?:\/song\/\d+|\/edit|\/apercu)?$/))) {
+  // Depuis un morceau DANS la setlist, on emporte sa position : le mode
+  // scène s'ouvre sur CE morceau, pas sur le premier du set (b164).
+  if ((m = hash.match(/^#\/setlist\/([^/]+)\/song\/(\d+)$/))) {
+    return `/stage/${m[1]}/${m[2]}`;
+  }
+  if ((m = hash.match(/^#\/setlist\/([^/]+)(?:\/edit|\/apercu)?$/))) {
     return `/stage/${m[1]}`;
   }
   if ((m = hash.match(/^#\/song\/([^/]+?)(?:\/edit)?$/))) {

@@ -38,12 +38,16 @@ interface StageItem {
 export function Stage({
   setlistId,
   songId,
+  startIndex = 0,
 }: {
   setlistId: string | null;
   songId: string | null;
+  /** Morceau de départ dans la setlist (b164) : le mode scène s'ouvre
+   *  sur celui qu'on regardait, plus au début du set. */
+  startIndex?: number;
 }) {
   const { songs, setlists, prefs, saveSong, replaceNote } = useStore();
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(startIndex);
   const view = 'complete' as ViewMode; // partition entière pour tous
   const [fontSize, setFontSize] = useState(() => {
     const saved = parseFloat(localStorage.getItem('sing2me/stageFont') ?? '');

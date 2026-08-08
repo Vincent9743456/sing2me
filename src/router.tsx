@@ -14,7 +14,13 @@ export type Route =
   | { name: 'setlistEdit'; id: string | null }
   | { name: 'setlistSono'; id: string }
   | { name: 'songInSet'; setlistId: string; index: number }
-  | { name: 'stage'; setlistId: string | null; songId: string | null }
+  | {
+      name: 'stage';
+      setlistId: string | null;
+      songId: string | null;
+      /** Morceau de DÉPART dans la setlist (b164) — 0 par défaut. */
+      index: number;
+    }
   | { name: 'concerts' }
   | { name: 'concert'; id: string | null }
   | { name: 'artist' }
@@ -70,8 +76,15 @@ export function parseHash(hash: string): Route {
       return { name: 'setlists' };
     case 'stage':
       if (parts[1] === 'song' && parts[2])
-        return { name: 'stage', setlistId: null, songId: parts[2] };
-      return { name: 'stage', setlistId: parts[1] ?? null, songId: null };
+        return { name: 'stage', setlistId: null, songId: parts[2], index: 0 };
+      // Le mode scène s'ouvre SUR le morceau qu'on regardait (b164) :
+      // /stage/:setlistId/:index — sans index, on démarre au début.
+      return {
+        name: 'stage',
+        setlistId: parts[1] ?? null,
+        songId: null,
+        index: Math.max(0, Number(parts[2] ?? 0) || 0),
+      };
     case 'concerts':
       return { name: 'concerts' };
     case 'concert':
