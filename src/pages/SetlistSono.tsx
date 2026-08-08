@@ -1,14 +1,14 @@
 /**
  * Sono & scène d'une setlist — ÉCRAN DÉDIÉ (#/setlist/:id/sono), sorti du
  * détail de la setlist (une mission par écran) : plan de scène, matériel,
- * branchements, réglages. Sauvegarde automatique (« ✓ Enregistré »).
+ * branchements, réglages. Validation visible (b149) : barre « Valider / Annuler ».
  */
 import React, { useEffect, useRef, useState } from 'react';
 
 import { gearIcon } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { StagePlan } from '../components/StagePlan';
-import { Field, Modal, TopBar } from '../components/ui';
+import { Field, Modal, SaveBar, TopBar } from '../components/ui';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { emptySetup, Setlist, StageSetup } from '../types';
@@ -22,20 +22,26 @@ export function SetlistSono({ id }: { id: string }) {
   const [gearPicker, setGearPicker] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const firstRender = useRef(true);
-  useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
-    if (draft) {
-      saveSetlist(draft);
-      setSaved(true);
-      const t = window.setTimeout(() => setSaved(false), 1400);
-      return () => window.clearTimeout(t);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft]);
+  /**
+   * Validation explicite (b149) : plus d'enregistrement à la volée — la
+   * barre « Valider / Annuler » apparaît dès la première modification.
+   */
+  const dirty =
+    draft !== null &&
+    existing !== undefined &&
+    JSON.stringify(draft.setup ?? null) !==
+      JSON.stringify(existing.setup ?? null);
+
+  function confirmSetup() {
+    if (!draft) return;
+    saveSetlist(draft);
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1400);
+  }
+
+  function cancelSetup() {
+    if (existing) setDraft({ ...existing });
+  }
 
   if (!draft) {
     return (
@@ -176,8 +182,10 @@ export function SetlistSono({ id }: { id: string }) {
             onChange={(e) => updateSetup({ sound: e.target.value })}
           />
         </Field>
-        {saved && <div className="savedhint">✓ Enregistré</div>}
+        {saved && !dirty && <div className="savedhint">✓ Enregistré</div>}
       </div>
+
+      <SaveBar visible={dirty} onSave={confirmSetup} onCancel={cancelSetup} />
 
       {gearPicker && (
         <Modal

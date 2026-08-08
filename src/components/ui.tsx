@@ -97,6 +97,37 @@ export function AccordionNav({
   );
 }
 
+/**
+ * Barre de VALIDATION commune (b149, demande Vincent) : toute création ou
+ * modification se confirme par un bouton visible. La barre n'apparaît que
+ * lorsqu'il y a des changements non enregistrés — « Valider » les
+ * enregistre, « Annuler » les abandonne. Les gestes fluides (ajout et
+ * déplacement de morceaux) ne passent pas par elle.
+ */
+export function SaveBar({
+  visible,
+  onSave,
+  onCancel,
+  label = 'Valider',
+}: {
+  visible: boolean;
+  onSave: () => void;
+  onCancel: () => void;
+  label?: string;
+}) {
+  if (!visible) return null;
+  return (
+    <div className="savebar" role="toolbar" aria-label="Modifications en attente">
+      <button className="btn ghost" onClick={onCancel}>
+        Annuler
+      </button>
+      <button className="btn" onClick={onSave}>
+        ✓ {label}
+      </button>
+    </div>
+  );
+}
+
 export function TopBar({
   title,
   onBack,
