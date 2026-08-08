@@ -12,17 +12,32 @@ import { useStore } from '../store';
 import { makeId, Song, SongNote } from '../types';
 import { Field, Modal } from './ui';
 
+/**
+ * Synthèse + fusion + PORTÉE (b155) : une seule passe IA classe le
+ * commentaire — « groupe » (visible de tous, y compris quand il vise un
+ * musicien nommé, qui doit pouvoir le lire) ou « perso » (il ne concerne
+ * que celui qui parle) — et met à jour la note vivante correspondante.
+ */
 async function aiSummarize(
   text: string,
   song: string,
-  previous: string,
-): Promise<string> {
+  opts: {
+    previousGroup: string;
+    previousPerso: string;
+    author: string;
+    musicians: string[];
+  } | null,
+): Promise<{ text: string; scope: 'groupe' | 'perso' | '' }> {
   let res: Response;
   try {
     res = await fetch('/api/ai?fn=note', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text, song, parts: [], previous }),
+      body: JSON.stringify(
+        opts
+          ? { text, song, parts: [], detect: true, ...opts }
+          : { text, song, parts: [] },
+      ),
     });
   } catch {
     throw new Error(
@@ -35,9 +50,16 @@ async function aiSummarize(
       "Synthèse indisponible — nécessite la version en ligne (Vercel).",
     );
   }
-  const body = (await res.json()) as { text?: string; error?: string };
+  const body = (await res.json()) as {
+    text?: string;
+    scope?: string;
+    error?: string;
+  };
   if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
-  return body.text ?? '';
+  return {
+    text: body.text ?? '',
+    scope: body.scope === 'perso' || body.scope === 'groupe' ? body.scope : '',
+  };
 }
 
 export function NoteModal({
@@ -93,9 +115,12 @@ export function NoteModal({
   /** Du texte a-t-il été dicté (finalisé) depuis le dernier passage IA ? */
   const dictated = useRef(false);
   const autoAi = useRef(0);
-  // Miroir du texte pour les minuteries (synthèse différée).
+  // Miroirs pour les minuteries (synthèse différée) : le texte et la
+  // visibilité doivent être lus à jour, pas figés dans une fermeture.
   const textRef = useRef(text);
   textRef.current = text;
+  const visibilityRef = useRef(visibility);
+  visibilityRef.current = visibility;
 
   const bandId = existing ? existing.bandId : initialBandId;
   const bandName =
@@ -109,21 +134,34 @@ export function NoteModal({
    * cette note-là ; `mergedWith` vaut son id une fois la fusion faite,
    * et l'enregistrement la remplace alors au lieu d'ajouter.
    */
-  const previous = React.useMemo(() => {
-    if (existing) return null;
-    const cands = song.rehearsalNotes
-      .filter(
-        (n) =>
-          n.bandId === bandId &&
-          n.visibility === visibility &&
-          (visibility === 'groupe' || n.author === author),
-      )
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    return cands.length > 0 ? cands[cands.length - 1] : null;
-  }, [song, bandId, visibility, existing, author]);
+  const livingNote = React.useCallback(
+    (vis: 'groupe' | 'privee'): SongNote | null => {
+      if (existing) return null;
+      const cands = song.rehearsalNotes
+        .filter(
+          (n) =>
+            n.bandId === bandId &&
+            n.visibility === vis &&
+            (vis === 'groupe' || n.author === author),
+        )
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      return cands.length > 0 ? cands[cands.length - 1] : null;
+    },
+    [song, bandId, existing, author],
+  );
+  const prevGroupe = livingNote('groupe');
+  const prevPerso = livingNote('privee');
+  const previous = visibility === 'groupe' ? prevGroupe : prevPerso;
   const mergedWith = useRef<string | null>(null);
-  const previousRef = useRef(previous);
-  previousRef.current = previous;
+  const livingRef = useRef({ prevGroupe, prevPerso });
+  livingRef.current = { prevGroupe, prevPerso };
+  /** Noms des musiciens du contexte — pour que l'IA détecte « Marco : … ». */
+  const musicians =
+    bandId !== ''
+      ? (bands.find((b) => b.id === bandId)?.members ?? [])
+          .map((m) => m.name.trim())
+          .filter((n) => n !== '')
+      : [];
 
   useEffect(() => {
     return () => {
@@ -252,17 +290,45 @@ export function NoteModal({
   async function runAi() {
     const input = textRef.current;
     if (input.trim() === '' || aiBusy) return;
-    const prev = previousRef.current;
+    const living = livingRef.current;
     setError(null);
     setAiBusy(true);
     try {
-      const summary = await aiSummarize(input, song.title, prev?.text ?? '');
-      if (summary.trim() !== '') {
-        setText(summary);
-        // La note affichée contient désormais la fusion : à
-        // l'enregistrement, elle REMPLACE la note vivante.
-        mergedWith.current = prev?.id ?? null;
+      const out = await aiSummarize(
+        input,
+        song.title,
+        existing
+          ? null // édition : simple reformulation, pas de portée
+          : {
+              previousGroup: living.prevGroupe?.text ?? '',
+              previousPerso: living.prevPerso?.text ?? '',
+              author,
+              musicians,
+            },
+      );
+      if (out.text.trim() !== '') {
+        setText(out.text);
         dictated.current = false;
+        if (!existing && out.scope !== '') {
+          // Portée détectée (b155) : la note bascule d'elle-même — et la
+          // fusion remplacera la note vivante de CETTE portée.
+          const vis = out.scope === 'perso' ? 'privee' : 'groupe';
+          mergedWith.current =
+            (out.scope === 'perso' ? living.prevPerso : living.prevGroupe)
+              ?.id ?? null;
+          if (vis !== visibilityRef.current) {
+            setVisibility(vis);
+            setInfo(
+              out.scope === 'perso'
+                ? "🔒 L'IA a classé ce commentaire comme personnel — il ira dans ta note personnelle. Change la visibilité si besoin."
+                : "👥 L'IA a classé ce commentaire pour le groupe. Change la visibilité si besoin.",
+            );
+          }
+        } else if (!existing) {
+          // Portée inconnue (réponse hors format) : prudence — la note
+          // s'AJOUTE, on ne remplace jamais sans fusion certaine.
+          mergedWith.current = null;
+        }
       }
     } catch (e) {
       // IA indisponible (hors-ligne…) : le texte brut reste tel quel.
