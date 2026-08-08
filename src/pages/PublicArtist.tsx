@@ -18,6 +18,42 @@ import { ArtistProfile } from '../types';
  *  avance bascule tout seul quand ça démarre, assez calme pour le réseau. */
 const WATCH_MS = 8000;
 
+/**
+ * Sortie de secours (b187). Cette page est d'abord celle du QR : un
+ * spectateur y arrive directement, il n'a nulle part où revenir et ne doit
+ * voir aucun bouton. Mais on y arrive AUSSI depuis un lien — et dans l'app
+ * installée sur iPhone, la vue s'ouvre sans barre de navigation : on restait
+ * coincé sur la fiche, sans retour possible (signalé deux fois par Vincent).
+ * Le bouton n'apparaît donc que s'il y a vraiment quelque chose derrière.
+ */
+function RetourSiPossible() {
+  const [peut] = useState(() => {
+    try {
+      // `history.length` ne dit rien de fiable (un onglet neuf compte déjà
+      // deux entrées). Ce qui compte, c'est d'où l'on VIENT : un lien depuis
+      // le site laisse un référent de même origine ; un QR scanné depuis
+      // l'appareil photo n'en laisse aucun.
+      return (
+        document.referrer !== '' &&
+        document.referrer.startsWith(location.origin) &&
+        !document.referrer.startsWith(location.href)
+      );
+    } catch {
+      return false;
+    }
+  });
+  if (!peut) return null;
+  return (
+    <button
+      className="btn ghost small"
+      style={{ margin: '0 0 var(--sp-3)' }}
+      onClick={() => window.history.back()}
+    >
+      ← {t('Retour')}
+    </button>
+  );
+}
+
 export function PublicArtist({ name }: { name: string }) {
   const [profile, setProfile] = useState<ArtistProfile | null | undefined>(
     undefined,
@@ -105,6 +141,7 @@ export function PublicArtist({ name }: { name: string }) {
 
   return (
     <div className="public">
+      <RetourSiPossible />
       <div className="artisthead">
         {profile.photo !== '' && (
           <img src={profile.photo} alt={shownName} />

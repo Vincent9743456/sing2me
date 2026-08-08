@@ -131,6 +131,14 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     (tombstones) ;
   - navigation : les boutons ← des pages vont vers un parent explicite
     (`navigate('/xxx')`), pas `history.back()`.
+  - **on ne QUITTE jamais l'app pour montrer quelque chose qu'on peut
+    afficher dedans** (b187) : dans l'app installée sur iPhone, ni un lien
+    ordinaire ni `window.open(_blank)` ne laissent de retour — la vue
+    s'ouvre sans barre de navigation et l'utilisateur est bloqué (signalé
+    deux fois par Vincent, sur la fiche d'un membre du groupe). Une page
+    publique se RECOPIE dans l'écran courant, ou son adresse se copie ;
+    elle ne se visite pas. La page publique porte quand même un « ← Retour »
+    quand le référent est de notre origine (jamais après un QR scanné).
   - **une partition ne circule QUE par deux canaux** (décision Vincent,
     b110, amendée b121) : poussée dans le répertoire d'un groupe
     (« Ajouter à… », synchro auto) ou diffusée en mode ON AIR (QR **ou code
