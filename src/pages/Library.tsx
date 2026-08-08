@@ -383,11 +383,7 @@ export function Library() {
     return [...songs]
       .sort((a, b) => {
         if (pinTop) {
-          // 1) Les propositions d'un groupe tout en haut (à accepter).
-          const pa = isProposal(a);
-          const pb = isProposal(b);
-          if (pa !== pb) return pa ? -1 : 1;
-          // 2) Puis les nouvelles importations de la semaine.
+          // Les nouvelles importations de la semaine, en tête.
           const fa = freshRank(a);
           const fb = freshRank(b);
           if (fa !== fb) return fa ? -1 : 1;
@@ -408,13 +404,12 @@ export function Library() {
       .filter((s) => {
         // Vue « Propositions » : uniquement les propositions en attente.
         if (showPending) return (s.pendingBandId ?? '') !== '';
-        // Vue « Idées » : uniquement les idées (jamais les propositions).
+        // Vue « Idées » : la réserve à travailler — y compris les morceaux
+        // proposés par un groupe, qui arrivent désormais ici (b174).
         if (showIdeas) return s.idea === true;
-        // Vue par défaut « Tous les morceaux » : les morceaux ET les
-        // propositions poussées par un groupe (affichées directement, avec un
-        // bouton « Accepter » et épinglées en tête) — pour qu'un nouveau venu
-        // voie tout de suite ce qui lui est envoyé. On exclut seulement les
-        // idées (réserve à travailler).
+        // Vue par défaut « Tous les morceaux » : ce qu'on joue vraiment. Les
+        // idées (et donc les propositions) attendent dans leur vue ; les
+        // programmer dans une setlist les fait entrer ici pour de bon.
         return s.idea !== true;
       })
       .filter((s) => (showNew ? isRecent(s.createdAt) : true))

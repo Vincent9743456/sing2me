@@ -412,10 +412,12 @@ export function applyBandData(
     )
       continue;
     if (!local) {
-      // Nouveau morceau apporté par un autre membre : PROPOSITION en
-      // attente. On le rattache au groupe (pendingBandId) pour ne pas
-      // envahir la bibliothèque personnelle — il n'y apparaîtra qu'après
-      // acceptation d'un clic. Il reste dispo pour les setlists du groupe.
+      // Nouveau morceau apporté par un autre membre : il arrive dans les
+      // IDÉES de la bibliothèque (décision Vincent, b174). Il ne se mélange
+      // donc pas aux morceaux qu'on joue vraiment, mais il a bien une place
+      // chez soi — plus de limbes séparées. `pendingBandId` ne sert plus
+      // qu'à dire d'où il vient. Le programmer dans une setlist l'inscrit
+      // définitivement en bibliothèque (voir store.saveSetlist).
       const vid = makeId();
       const song: Song = {
         id: makeId(),
@@ -429,6 +431,7 @@ export function applyBandData(
         structure: e.version.structure,
         lyrics: e.version.lyrics,
         pendingBandId: localBandId,
+        idea: true,
         versions: [
           {
             id: vid,

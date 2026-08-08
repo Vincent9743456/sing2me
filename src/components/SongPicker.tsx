@@ -273,11 +273,13 @@ export function SongCollector({
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const present = useMemo(() => new Set(alreadyIn), [alreadyIn]);
 
-  // Bibliothèque personnelle : on exclut les idées et les propositions.
+  // Bibliothèque personnelle. Les idées et les propositions de groupe sont
+  // proposées elles aussi (b174) : les programmer est justement le geste qui
+  // les inscrit définitivement en bibliothèque. Sans ça, la règle serait
+  // inapplicable — on ne pourrait pas les ajouter.
   const library = useMemo(
     () =>
       songs
-        .filter((s) => s.idea !== true && (s.pendingBandId ?? '') === '')
         .sort((a, b) =>
           (a.title || '').localeCompare(b.title || '', 'fr', {
             sensitivity: 'base',

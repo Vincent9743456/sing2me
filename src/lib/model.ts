@@ -996,6 +996,13 @@ export function migrateSong(raw: unknown): Song {
   // historiques au chargement (on garde la plus récemment modifiée).
   base = dedupeBandVersions(base);
 
+  // b174 : une proposition de groupe vit désormais dans les IDÉES. Les
+  // propositions reçues AVANT ce lot n'ont pas le drapeau — on le pose au
+  // chargement, sinon elles resteraient mêlées aux morceaux qu'on joue.
+  if ((base.pendingBandId ?? '') !== '' && base.idea !== true) {
+    base = { ...base, idea: true };
+  }
+
   const { notes: _legacyNotes, ...clean } = base as Song & { notes?: string };
   return clean as Song;
 }
