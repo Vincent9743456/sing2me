@@ -20,6 +20,7 @@ import {
   migrateConcert,
   migrateSetlist,
   migrateSong,
+  removeVersion,
 } from './lib/model';
 import { exampleSetlist, exampleSongs, SEED_KEY, SEED_VERSION } from './seed';
 import {
@@ -340,10 +341,38 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  /**
+   * Quitter (ou dissoudre) un groupe. Mes morceaux restent — c'est la règle :
+   * chacun garde sa copie personnelle. Mais les VERSIONS rattachées à ce
+   * groupe s'en vont avec lui (b185) : sans ça, elles survivaient avec l'id
+   * d'un groupe qui n'existe plus, invisibles et inertes. En cas de retour
+   * dans le même groupe, l'adhésion crée un NOUVEL identifiant local : le
+   * morceau se retrouvait alors avec deux versions pour un seul et même
+   * groupe, dont une fantôme.
+   *
+   * Les setlists, elles, sont seulement DÉTACHÉES : elles portent un travail
+   * d'organisation qui n'appartient pas au groupe seul (et si l'on y revient,
+   * la synchro les rattache — voir applyBandData).
+   */
   const deleteBand = useCallback((bandId: string) => {
     setState((prev) => ({
       ...prev,
       bands: prev.bands.filter((b) => b.id !== bandId),
+      songs: prev.songs.map((s) => {
+        const parties = s.versions.filter((v) => (v.bandId ?? '') === bandId);
+        if (parties.length === 0) return s;
+        const next = parties.reduce((acc, v) => removeVersion(acc, v.id), s);
+        // Le morceau ne venait QUE de ce groupe : `removeVersion` refuse de
+        // laisser un morceau sans version, et c'est heureux. On garde donc la
+        // partition, en la rendant personnelle — un morceau ne doit jamais
+        // rester rattaché à un groupe qui n'existe plus.
+        return {
+          ...next,
+          versions: next.versions.map((v) =>
+            (v.bandId ?? '') === bandId ? { ...v, bandId: '' } : v,
+          ),
+        };
+      }),
       setlists: prev.setlists.map((sl) =>
         sl.bandId === bandId ? { ...sl, bandId: '' } : sl,
       ),
