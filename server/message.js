@@ -222,7 +222,10 @@ export default async function handler(req, res) {
       // de la présence de la colonne, de l'échappement du nom et d'une
       // égalité stricte : trois façons de renvoyer une liste vide sans
       // qu'on sache laquelle. Ici on lit, puis on garde ce qui est à nous.
+      // `live_id` (b186) : rattachement EXACT d'un mot à son concert —
+      // l'heure seule mélangeait les directs de deux musiciens.
       const selects = [
+        'author,body,song_title,setlist_name,performer,band_id,live_id,concert_id,concert_title,created_at',
         'author,body,song_title,setlist_name,performer,band_id,concert_id,concert_title,created_at',
         'author,body,song_title,setlist_name,performer,concert_id,concert_title,created_at',
         'author,body,song_title,performer,concert_id,concert_title,created_at',

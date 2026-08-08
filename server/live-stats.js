@@ -51,8 +51,12 @@ export default async function handler(req, res) {
     // `performer` dit QUI jouait (soi, ou l'un de ses groupes) et
     // `setlist_name` quelle setlist tournait (b180) : c'est ce qui permet
     // à l'historique d'annoncer « Solo » ou « avec Zakoustiks ».
+    // `session_id` (b186) : c'est LUI qui dit à quel live appartient un
+    // morceau archivé. Sans lui, l'historique rattachait au temps écoulé —
+    // et le morceau d'un autre musicien, joué à la même heure, tombait dans
+    // le live de quelqu'un d'autre.
     const select =
-      'song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,setlist_name';
+      'song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,setlist_name,session_id';
     let r = await fetch(
       `${base}/rest/v1/live_stats?select=${select}${filter}&order=played_at.desc&limit=500`,
       { headers: sbHeaders() },
@@ -60,6 +64,7 @@ export default async function handler(req, res) {
     // Colonnes pas encore créées (SQL non rejoué) : on retombe sur des
     // lectures de plus en plus pauvres plutôt que de ne rien renvoyer.
     const replis = [
+      `select=song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,session_id&order=played_at.desc&limit=500`,
       `select=song_title,song_artist,hearts,concert_id,concert_title,played_at,performer&order=played_at.desc&limit=500`,
       `select=song_title,song_artist,hearts,played_at&order=played_at.desc&limit=500`,
     ];
