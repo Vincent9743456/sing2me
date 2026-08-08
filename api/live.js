@@ -135,15 +135,19 @@ async function closeLive(base, row) {
         headers: { ...sbHeaders(), prefer: 'return=representation' },
         body: JSON.stringify({
           status: 'off',
+          // Ce qui n'a plus lieu d'être une fois le direct fini.
           song: null,
           band_song: null,
           setlist: null,
           setlist_count: 0,
-          concert: null,
           join_code: '',
-          started_at: null,
           last_song_at: null,
           hearts: 0,
+          // b182 : on CONSERVE started_at, artist, band_id, setlist_name et
+          // concert. La ligne devient la trace du live : c'est elle qui dit
+          // quand il a commencé, qui jouait et sur quelle setlist. Les
+          // effacer rendait tout historique live-par-live impossible —
+          // il fallait alors deviner les frontières au temps écoulé.
           updated_at: new Date().toISOString(),
         }),
       },
@@ -170,8 +174,10 @@ async function closeLive(base, row) {
   }
 }
 
+// `setlist_name` voyage avec la ligne : sans lui, le morceau archivé à la
+// clôture perdait le nom du set qui tournait (b182).
 const LIVE_COLS =
-  'id,join_code,status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at,band_id,started_by,started_at,last_song_at,session_id';
+  'id,join_code,status,mode,song,artist,hearts,band_song,concert,setlist_count,setlist_name,updated_at,band_id,started_by,started_at,last_song_at,session_id';
 
 /** Résout le live visé par la requête GET (code / id / band / défaut). */
 async function resolveLive(base, q) {
@@ -191,14 +197,32 @@ async function resolveLive(base, q) {
     if (ids.length === 0) return null;
     url = `${base}/rest/v1/lives?band_id=in.(${ids.map(enc).join(',')})&status=neq.off&select=${LIVE_COLS}&order=started_at.desc&limit=1`;
   } else if (q?.artist) {
-    // Page publique d'un artiste : SON live actif (nom exact, insensible à
-    // la casse via ilike sans jokers — les % du nom sont neutralisés).
-    const name = String(q.artist).slice(0, 120).replace(/[%_]/g, '');
-    url = `${base}/rest/v1/lives?artist->>name=ilike.${enc(name)}&status=neq.off&select=${LIVE_COLS}&order=started_at.desc&limit=1`;
+    // Page publique d'un artiste : SON live actif.
+    //
+    // Deux façons d'être « le sien » (b182) : le direct porte son nom, OU
+    // c'est LUI qui l'a lancé. Un concert lancé au nom d'un groupe porte le
+    // nom du GROUPE — la page /sonnom ne trouvait alors plus rien, et le
+    // public restait devant une fiche statique pendant que ça jouait.
+    // `ilike` sans jokers = comparaison exacte insensible à la casse ; les
+    // % et _ du nom sont neutralisés, ainsi que les caractères qui servent
+    // de grammaire à `or=(…)` — un nom vide après nettoyage ne doit surtout
+    // pas se transformer en « n'importe quel direct ».
+    const name = String(q.artist).slice(0, 120).replace(/[%_,()"]/g, '').trim();
+    if (name === '') return null;
+    url =
+      `${base}/rest/v1/lives?status=neq.off&select=${LIVE_COLS}` +
+      `&or=(artist->>name.ilike.${enc(name)},started_by.ilike.${enc(name)})` +
+      `&order=started_at.desc&limit=1`;
   } else {
     url = `${base}/rest/v1/lives?status=neq.off&select=${LIVE_COLS}&order=started_at.desc&limit=1`;
   }
-  const r = await fetch(url, { headers: sbHeaders() });
+  let r = await fetch(url, { headers: sbHeaders() });
+  if (!r.ok && url.includes('setlist_name,')) {
+    // Colonne facultative absente (supabase/live.sql pas rejoué) : on redemande
+    // sans elle plutôt que de rendre le direct introuvable. Jamais de coupure
+    // en plein concert pour un nom de setlist.
+    r = await fetch(url.replace('setlist_name,', ''), { headers: sbHeaders() });
+  }
   if (!r.ok) return null;
   const rows = await r.json();
   return Array.isArray(rows) && rows[0] ? rows[0] : null;

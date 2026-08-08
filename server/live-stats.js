@@ -92,7 +92,24 @@ export default async function handler(req, res) {
     } catch {
       /* audience best-effort */
     }
-    res.status(200).json({ stats, sessions: Array.isArray(sessions) ? sessions : [] });
+    // Les LIVES eux-mêmes (b182) : une ligne par appui sur GO LIVE, avec son
+    // début, sa fin (updated_at à la clôture), qui jouait et quelle setlist.
+    // C'est la seule borne exacte d'un concert — le reste se déduisait.
+    let lives = [];
+    try {
+      const l = await fetch(
+        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,setlist_name,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=100`,
+        { headers: sbHeaders() },
+      );
+      if (l.ok) lives = await l.json();
+    } catch {
+      /* historique best-effort */
+    }
+    res.status(200).json({
+      stats,
+      sessions: Array.isArray(sessions) ? sessions : [],
+      lives: Array.isArray(lives) ? lives : [],
+    });
   } catch {
     res.status(500).json({ error: 'Erreur inattendue côté serveur' });
   }
