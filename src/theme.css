@@ -1257,6 +1257,31 @@ textarea.mono {
   font-size: 0.72rem;
   margin-bottom: 2px;
 }
+/* ---------- Tableau de bord fondateur (b160) ---------- */
+.statgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.statcard {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: var(--sp-3);
+}
+.statvalue {
+  font-size: 1.6rem;
+  font-weight: 750;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.statlabel {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+
 /* Compteur de durée d'enregistrement (b159) : la limite se voit venir. */
 .rectimer {
   flex-shrink: 0;

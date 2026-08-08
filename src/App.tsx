@@ -10,6 +10,7 @@ import { OnAirButton, OnAirProvider } from './components/OnAir';
 import { TabBar } from './components/ui';
 import { Artist } from './pages/Artist';
 import { Settings } from './pages/Settings';
+import { Dashboard } from './pages/Dashboard';
 import { Songbook } from './pages/Songbook';
 import { BandChat } from './pages/BandChat';
 import { Bands } from './pages/Bands';
@@ -166,6 +167,9 @@ function Screen() {
       break;
     case 'settings':
       page = <Settings />;
+      break;
+    case 'dashboard':
+      page = <Dashboard />;
       break;
     case 'songbook':
       page = <Songbook />;

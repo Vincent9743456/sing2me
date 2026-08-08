@@ -157,6 +157,14 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   Vercel : `TRANSCRIBE_API_KEY` (obligatoire), `TRANSCRIBE_URL` et
   `TRANSCRIBE_MODEL` (facultatives, dialecte OpenAI par défaut) — Claude
   ne transcrit pas l'audio, d'où un service tiers.
+- **Tableau de bord fondateur (b160)** : `#/tableau-de-bord`, réservé aux
+  e-mails de `ADMIN_EMAILS` (variable Vercel) — le SERVEUR tranche,
+  l'app ne fait qu'afficher. Chiffres : comptes, activité, coût des IA.
+  Le coût est mesuré PAR NOUS à chaque appel (`server/meter.js` →
+  table `ai_usage`) : ni Anthropic ni OpenAI n'exposent le solde restant
+  par API. Le restant = rechargements saisis (`billing_topups`) moins la
+  dépense mesurée. Tarifs dans `server/meter.js`, à ajuster là et nulle
+  part ailleurs. Après modification : ré-exécuter `supabase/admin.sql`.
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
   par les composants Feedback (règle 10 — dette existante) ; OAuth
   Google/Facebook à configurer ; OCR des PDF scannés ; app native
