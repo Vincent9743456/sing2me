@@ -173,7 +173,9 @@ const TABS: { route: string; match: Route['name'][]; ico: IconName; label: strin
     ico: 'list',
     label: 'Setlists',
   },
-  { route: '/concerts', match: ['concerts', 'concert'], ico: 'star', label: 'Concerts' },
+  // « Live » (décision Vincent, b176) : cet onglet ne sert plus seulement à
+  // planifier des concerts, il porte aussi l'historique des directs joués.
+  { route: '/concerts', match: ['concerts', 'concert'], ico: 'star', label: 'Live' },
   { route: '/bands', match: ['bands', 'band', 'bandChat'], ico: 'users', label: 'Groupes' },
   {
     route: '/artist',
