@@ -365,12 +365,10 @@ export function Stage({
               {song.mySetup.notes}
             </div>
           )}
-        {(view === 'complete' || view === 'structure') &&
-          song.rehearsalNotes.some((n) => n.target === '') && (
+        {view === 'complete' && song.rehearsalNotes.length > 0 && (
             <div className="notesbox">
               <div className="label">Répétition</div>
               {song.rehearsalNotes
-                .filter((n) => n.target === '')
                 .map((n) => (
                   <div key={n.id}>
                     <Icon name={n.visibility === 'privee' ? 'lock' : 'message'} size={13} />{' '}

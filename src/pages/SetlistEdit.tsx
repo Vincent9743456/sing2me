@@ -317,8 +317,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 item.reserve ? 'reserve' : ''
               }`}
               key={item.id}
-              draggable
-              onDragStart={() => setDragIndex(idx)}
               onDragOver={(e) => {
                 e.preventDefault();
                 setOverIndex(idx);
@@ -335,7 +333,17 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 setOverIndex(null);
               }}
             >
-              <span className="drag" title="Glisser pour réordonner">
+              {/* Seule la POIGNÉE est glissable (b147). Quand `draggable`
+                  couvrait toute la ligne, iOS avalait le tap des boutons
+                  enfants : les flèches ↑ ↓ ne répondaient plus sur
+                  téléphone — or sur tactile, elles sont le SEUL moyen de
+                  réordonner (le glisser-déposer HTML5 n'y existe pas). */}
+              <span
+                className="drag"
+                title="Glisser pour réordonner"
+                draggable
+                onDragStart={() => setDragIndex(idx)}
+              >
                 <Icon name="grip" size={18} />
               </span>
               <span className="num">{idx + 1}.</span>
@@ -483,16 +491,22 @@ export function SetlistEdit({ id }: { id: string | null }) {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <button
-                  className="btn ghost small"
+                  className="btn icon slmove"
+                  title="Monter"
+                  aria-label="Monter ce morceau"
+                  disabled={idx === 0}
                   onClick={() => moveItem(idx, idx - 1)}
                 >
-                  <Icon name="chevron-up" size={16} />
+                  <Icon name="chevron-up" size={18} />
                 </button>
                 <button
-                  className="btn ghost small"
+                  className="btn icon slmove"
+                  title="Descendre"
+                  aria-label="Descendre ce morceau"
+                  disabled={idx === draft.items.length - 1}
                   onClick={() => moveItem(idx, idx + 1)}
                 >
-                  <Icon name="chevron-down" size={16} />
+                  <Icon name="chevron-down" size={18} />
                 </button>
                 <button
                   className="btn ghost small"
@@ -514,7 +528,15 @@ export function SetlistEdit({ id }: { id: string | null }) {
         <div className="spacer" />
         <Accordion
           title="Infos de la setlist"
-          sub={`Groupe : ${bandName(draft.bandId ?? '') || 'Solo'}`}
+          sub={[
+            `Groupe : ${bandName(draft.bandId ?? '') || 'Solo'}`,
+            // Auteur rappelé quand ce n'est pas moi (b147).
+            !isAuthor && (draft.createdByName ?? '') !== ''
+              ? `créée par ${draft.createdByName}`
+              : '',
+          ]
+            .filter((x) => x !== '')
+            .join(' · ')}
           defaultOpen={isNew}
         >
         <Field label="Commentaire">

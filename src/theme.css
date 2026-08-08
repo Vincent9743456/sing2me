@@ -1235,6 +1235,25 @@ textarea.mono {
     border-color var(--transition),
     box-shadow var(--transition);
 }
+/* Flèches de déplacement : cible tactile confortable, pas de geste
+   parasite sur mobile (b147). */
+.slmove {
+  min-width: 44px;
+  min-height: 40px;
+  color: var(--text-dim);
+  touch-action: manipulation;
+}
+.slmove:disabled {
+  opacity: 0.3;
+}
+/* La poignée est la seule zone glissable : on l'annonce au doigt. */
+.slitem .drag {
+  cursor: grab;
+  touch-action: none;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
 .slitem.dragover {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
