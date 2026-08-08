@@ -5,6 +5,7 @@
  *  • compteur de suiveurs pour l'artiste (clé On Air).
  * Best-effort : silencieux et non bloquant si le serveur n'est pas configuré.
  */
+import { liveHeaders } from './liveAuth';
 
 /** Enregistre un suivi (le public a coché le consentement). */
 export async function followArtist(
@@ -40,7 +41,7 @@ export async function fetchFollowerStats(
   try {
     const res = await fetch(
       `/api/fan?fn=follow&artist=${encodeURIComponent(artist)}`,
-      { headers: { 'x-live-key': key } },
+      { headers: liveHeaders(key) },
     );
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return { count: 0, sharedEmails: [] };

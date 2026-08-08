@@ -205,6 +205,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'Mes groupes': 'My bands',
   'Mettre à jour la page publique maintenant': 'Update the public page now',
   'Mode ON AIR': 'ON AIR mode',
+  'Ton compte suffit : touche le bouton ON AIR pour lancer le partage avec le public.':
+    'Your account is all it takes: tap the ON AIR button to start sharing with your audience.',
   'Mode scène': 'Stage mode',
   'Modifier': 'Edit',
   'Modifier le groupe': 'Edit the band',

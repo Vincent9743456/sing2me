@@ -18,6 +18,8 @@
  * ou 1 h sans nouvelle partition. L'ancienne ligne `live_state` reste
  * lue/écrite en repli pour les bundles pas encore à jour.
  */
+import { identifie, refuse } from '../server/identity.js';
+
 
 function configured() {
   return (
@@ -83,6 +85,8 @@ async function archivePlayedSong(base, row) {
       performer: row.artist?.name ?? '',
       // Setlist tournée pendant ce live (b180) : l'historique l'annonce.
       setlist_name: row.setlist_name ?? '',
+      // Propriétaire du live (b192) : le seul repère qui ne change jamais.
+      owner_id: row.owner_id ?? null,
       concert_id: row.concert?.id ?? '',
       concert_title: row.concert?.title ?? '',
       session_id: row.session_id ?? null,
@@ -177,7 +181,7 @@ async function closeLive(base, row) {
 // `setlist_name` voyage avec la ligne : sans lui, le morceau archivé à la
 // clôture perdait le nom du set qui tournait (b182).
 const LIVE_COLS =
-  'id,join_code,status,mode,song,artist,hearts,band_song,concert,setlist_count,setlist_name,updated_at,band_id,started_by,started_at,last_song_at,session_id';
+  'id,join_code,status,mode,song,artist,hearts,band_song,concert,setlist_count,setlist_name,updated_at,band_id,started_by,owner_id,started_at,last_song_at,session_id';
 
 /** Résout le live visé par la requête GET (code / id / band / défaut). */
 async function resolveLive(base, q) {
@@ -222,6 +226,12 @@ async function resolveLive(base, q) {
     // sans elle plutôt que de rendre le direct introuvable. Jamais de coupure
     // en plein concert pour un nom de setlist.
     r = await fetch(url.replace('setlist_name,', ''), { headers: sbHeaders() });
+  }
+  if (!r.ok && url.includes('owner_id,')) {
+    // Colonne b192 pas encore créée : on redemande sans elle.
+    r = await fetch(url.replace('owner_id,', '').replace('setlist_name,', ''), {
+      headers: sbHeaders(),
+    });
   }
   if (!r.ok) return null;
   const rows = await r.json();
@@ -357,13 +367,17 @@ export default async function handler(req, res) {
       return;
     }
 
-    /* ── POST : pilotage (clé globale + jeton par live) ─────────────── */
+    /* ── POST : pilotage (compte, ou ancienne clé + jeton par live) ── */
     if (req.method === 'POST') {
-      const provided = req.headers['x-live-key'];
-      if (provided !== process.env.LIVE_KEY) {
-        res.status(403).json({ error: 'Clé On Air incorrecte' });
+      // b192 : c'est le COMPTE qui pilote son direct. La clé reste acceptée
+      // le temps que les applications installées se mettent à jour — jamais
+      // de direct coupé parce qu'un téléphone est en retard d'une version.
+      const qui = await identifie(req);
+      if (!qui.ok) {
+        refuse(res);
         return;
       }
+      const ownerId = qui.user?.id ?? null;
       const body = req.body ?? {};
 
       /* — Chemin MULTI-LIVE (bundles b121+) — */
@@ -476,7 +490,10 @@ export default async function handler(req, res) {
           const s = await fetch(`${base}/rest/v1/live_sessions`, {
             method: 'POST',
             headers: { ...sbHeaders(), prefer: 'return=representation' },
-            body: JSON.stringify({ artist_name: body.artist?.name ?? '' }),
+            body: JSON.stringify({
+              artist_name: body.artist?.name ?? '',
+              owner_id: ownerId,
+            }),
           });
           if (s.ok) {
             const arr = await s.json();
@@ -504,6 +521,9 @@ export default async function handler(req, res) {
             band_id: typeof body.bandId === 'string' ? body.bandId.slice(0, 200) : '',
             started_by:
               typeof body.startedBy === 'string' ? body.startedBy.slice(0, 120) : '',
+            // À QUI est ce direct (b192) : l'identifiant du compte, qui ne
+            // change jamais — contrairement au nom d'artiste.
+            owner_id: ownerId,
             started_at: now,
             last_song_at: now,
             session_id: sessionId,

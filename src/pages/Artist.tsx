@@ -7,6 +7,7 @@ import { AccountSection } from '../components/Account';
 import { GearEditor } from '../components/GearEditor';
 import { LinkPreviews } from '../components/LinkPreviews';
 import { LiveStats } from '../components/LiveStats';
+import { liveReady } from '../lib/liveAuth';
 import { Field, Modal, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { stripChords } from '../lib/chordpro';
@@ -169,7 +170,7 @@ export function Artist() {
   async function pushPublic(value: string) {
     setWhoMsg(null);
     const onair = localStorage.getItem('sing2me/onair') || 'off';
-    if (onair !== 'off' || prefs.liveKey.trim() === '') {
+    if (onair !== 'off' || !liveReady(prefs.liveKey)) {
       setWhoMsg(
         onair !== 'off'
           ? t(
@@ -894,10 +895,13 @@ export function Artist() {
         <div className="spacer" />
 
         <h2 className="pagetitle">{t('Mode ON AIR')}</h2>
-        {import.meta.env.VITE_LIVE_KEY ? (
+        {/* b192 : c'est le COMPTE qui autorise le direct. La clé n'est plus
+            demandée à personne — elle n'est acceptée que le temps que les
+            applications installées se mettent à jour. */}
+        {liveReady(prefs.liveKey) ? (
           <p className="help">
             {t(
-              'Le direct est configuré automatiquement — rien à saisir. Touche le bouton ON AIR pour lancer le partage avec le public.',
+              'Ton compte suffit : touche le bouton ON AIR pour lancer le partage avec le public.',
             )}
           </p>
         ) : (

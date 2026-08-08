@@ -14,6 +14,8 @@
  * cassé.
  */
 
+import { identifie, refuse } from './identity.js';
+
 function sbHeaders(json) {
   const key = process.env.SUPABASE_SERVICE_KEY;
   const h = { apikey: key, authorization: `Bearer ${key}` };
@@ -200,13 +202,14 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'GET') {
-      if (
-        !process.env.LIVE_KEY ||
-        req.headers['x-live-key'] !== process.env.LIVE_KEY
-      ) {
-        res.status(403).json({ error: 'Clé On Air incorrecte' });
+      // b192 : le COMPTE identifie l'appelant ; l'ancienne clé reste
+      // acceptée le temps que les applications se mettent à jour.
+      const qui = await identifie(req);
+      if (!qui.ok) {
+        refuse(res);
         return;
       }
+      const moi = qui.user?.id ?? '';
       // Les mots appartiennent à l'artiste ou au groupe qui jouait : chacun
       // ne lit QUE les siens. La clé ON AIR est commune à l'installation —
       // sans ce filtre, tout le monde voyait les mots de tout le monde.
@@ -280,21 +283,27 @@ export default async function handler(req, res) {
       let mesLives = new Set();
       try {
         const l = await fetch(
-          `${base}/rest/v1/lives?select=id,artist,band_id,started_by&limit=300`,
+          `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id&limit=300`,
           { headers: sbHeaders(false) },
         );
         if (l.ok) {
           const lives = await l.json();
           for (const r0 of Array.isArray(lives) ? lives : []) {
+            // Le propriétaire (b192) tranche avant tout : identifiant de
+            // compte, il ne change jamais. Les noms ne servent qu'aux
+            // lignes d'avant.
+            const proprio = String(r0?.owner_id ?? '').trim();
             const bid = String(r0?.band_id ?? '').trim();
             const par = norm(r0?.started_by);
             const nom = norm(r0?.artist?.name);
             const aMoi =
-              bid !== ''
-                ? mesGroupes.has(bid)
-                : par !== ''
-                  ? mine.has(par)
-                  : nom !== '' && mine.has(nom);
+              proprio !== '' && moi !== ''
+                ? proprio === moi
+                : bid !== ''
+                  ? mesGroupes.has(bid)
+                  : par !== ''
+                    ? mine.has(par)
+                    : nom !== '' && mine.has(nom);
             if (aMoi) mesLives.add(String(r0.id ?? ''));
           }
         }

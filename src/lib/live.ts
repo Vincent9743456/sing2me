@@ -2,6 +2,7 @@
  * Client du mode ON AIR : lecture publique de l'état du direct,
  * mise à jour réservée à l'artiste (clé On Air).
  */
+import { liveHeaders } from './liveAuth';
 import { normalizeTitle } from './normalizeTitle';
 import { ArtistProfile } from '../types';
 
@@ -247,7 +248,7 @@ export async function pushSetlist(
   try {
     await fetch('/api/live', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-live-key': key },
+      headers: liveHeaders(key, { 'content-type': 'application/json' }),
       body: JSON.stringify({
         setlist: setlist ?? [],
         setlistName,
@@ -269,7 +270,7 @@ export async function pushBandSong(
   try {
     await fetch('/api/live', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-live-key': key },
+      headers: liveHeaders(key, { 'content-type': 'application/json' }),
       body: JSON.stringify({
         bandSong: song,
         multi: 1,
@@ -372,7 +373,7 @@ export async function fetchPastLives(
     (cids.length > 0 ? `&bands=${encodeURIComponent(cids.join(','))}` : '');
   try {
     const res = await fetch(`/api/live-x?fn=live-stats${q}`, {
-      headers: { 'x-live-key': key },
+      headers: liveHeaders(key),
     });
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return [];
@@ -404,7 +405,7 @@ export async function fetchDiag(
   if (key.trim() === '') return null;
   try {
     const res = await fetch('/api/live-x?fn=diag', {
-      headers: { 'x-live-key': key },
+      headers: liveHeaders(key),
     });
     const type = res.headers.get('content-type') ?? '';
     if (!res.ok || !type.includes('application/json')) return null;
@@ -438,7 +439,7 @@ export async function fetchMessages(
       `/api/live-x?fn=message` +
         (who.length > 0 ? `&performer=${encodeURIComponent(who.join(','))}` : '') +
         (cids.length > 0 ? `&bands=${encodeURIComponent(cids.join(','))}` : ''),
-      { headers: { 'x-live-key': key } },
+      { headers: liveHeaders(key) },
     );
   } catch {
     throw new Error(OFFLINE_MSG);
@@ -529,7 +530,7 @@ export async function fetchAudienceSessions(
   if (key.trim() === '') return [];
   try {
     const res = await fetch('/api/live-x?fn=live-stats', {
-      headers: { 'x-live-key': key },
+      headers: liveHeaders(key),
     });
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return [];
@@ -569,7 +570,7 @@ export async function fetchLiveStats(
     (cids.length > 0 ? `&bands=${encodeURIComponent(cids.join(','))}` : '');
   try {
     res = await fetch(`/api/live-x?fn=live-stats${q}`, {
-      headers: { 'x-live-key': key },
+      headers: liveHeaders(key),
     });
   } catch {
     throw new Error(OFFLINE_MSG);
@@ -644,7 +645,7 @@ export async function pushLive(
   try {
     res = await fetch('/api/live', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-live-key': key },
+      headers: liveHeaders(key, { 'content-type': 'application/json' }),
       body: JSON.stringify(payload),
     });
   } catch {

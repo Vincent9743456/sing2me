@@ -12,6 +12,8 @@
  * la date de la plus récente. De quoi trancher, rien de plus.
  */
 
+import { identifie, refuse } from './identity.js';
+
 function sbHeaders() {
   const key = process.env.SUPABASE_SERVICE_KEY;
   return { apikey: key, authorization: `Bearer ${key}` };
@@ -57,11 +59,10 @@ export default async function handler(req, res) {
       res.status(405).json({ error: 'Méthode non autorisée' });
       return;
     }
-    if (
-      !process.env.LIVE_KEY ||
-      req.headers['x-live-key'] !== process.env.LIVE_KEY
-    ) {
-      res.status(403).json({ error: 'Clé On Air incorrecte' });
+    // b192 : compte, ou ancienne clé pendant la transition.
+    const qui = await identifie(req);
+    if (!qui.ok) {
+      refuse(res);
       return;
     }
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {

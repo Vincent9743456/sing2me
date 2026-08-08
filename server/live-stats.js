@@ -3,6 +3,8 @@
  * GET /api/live-stats — en-tête requis : x-live-key = LIVE_KEY
  */
 
+import { identifie, refuse } from './identity.js';
+
 function sbHeaders() {
   const key = process.env.SUPABASE_SERVICE_KEY;
   return { apikey: key, authorization: `Bearer ${key}` };
@@ -23,10 +25,14 @@ export default async function handler(req, res) {
       res.status(501).json({ error: 'Mode ON AIR non configuré' });
       return;
     }
-    if (req.headers['x-live-key'] !== process.env.LIVE_KEY) {
-      res.status(403).json({ error: 'Clé On Air incorrecte' });
+    // b192 : le COMPTE identifie l'appelant ; l'ancienne clé reste acceptée
+    // le temps que les applications installées se mettent à jour.
+    const qui = await identifie(req);
+    if (!qui.ok) {
+      refuse(res);
       return;
     }
+    const moi = qui.user?.id ?? '';
     const base = process.env.SUPABASE_URL.replace(/\/$/, '');
 
     /*
@@ -65,10 +71,17 @@ export default async function handler(req, res) {
     // début, sa fin (updated_at à la clôture), qui jouait et quelle setlist.
     let lives = [];
     try {
-      const l = await fetch(
-        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,setlist_name,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
+      let l = await fetch(
+        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id,setlist_name,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
         { headers: sbHeaders() },
       );
+      if (!l.ok) {
+        // Colonne b192 pas encore créée (SQL non rejoué) : sans elle.
+        l = await fetch(
+          `${base}/rest/v1/lives?select=id,artist,band_id,started_by,setlist_name,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
+          { headers: sbHeaders() },
+        );
+      }
       if (l.ok) lives = await l.json();
     } catch {
       /* historique best-effort */
@@ -76,6 +89,11 @@ export default async function handler(req, res) {
     if (!Array.isArray(lives)) lives = [];
     /** Ce live est-il le mien ? Même règle que dans l'app (pastlives.ts). */
     const monLive = (r) => {
+      // Le propriétaire du live (b192) tranche avant tout le reste : c'est
+      // un identifiant de compte, il ne change jamais. Les noms ne servent
+      // plus qu'aux lignes d'avant.
+      const proprio = String(r?.owner_id ?? '').trim();
+      if (proprio !== '' && moi !== '') return proprio === moi;
       const bid = String(r?.band_id ?? '').trim();
       if (bid !== '') return mesGroupes.has(bid); // live de groupe → ses membres
       const par = norm(r?.started_by);
@@ -83,7 +101,10 @@ export default async function handler(req, res) {
       const nom = norm(r?.artist?.name);
       return nom !== '' && mesNoms.has(nom); // vieux live sans lanceur
     };
-    const miens = mesNoms.size === 0 ? lives : lives.filter(monLive);
+    // Aucune identité d'aucune sorte (ni compte, ni nom) : on ne peut rien
+    // trier — c'est le cas d'un très vieux bundle. Sinon on filtre TOUJOURS.
+    const anonyme = moi === '' && mesNoms.size === 0;
+    const miens = anonyme ? lives : lives.filter(monLive);
     const mesSessions = new Set(
       miens.map((r) => String(r.session_id ?? '').trim()).filter((x) => x !== ''),
     );
@@ -124,11 +145,11 @@ export default async function handler(req, res) {
         if (mesSessions.has(sid)) return true;
         // Séance sans live enregistré : on retombe sur le nom, sinon les
         // morceaux d'un vieux direct disparaîtraient de l'historique.
-        if (mesNoms.size === 0) return true;
+        if (anonyme) return true;
         const p0 = norm(x.performer);
         return p0 !== '' && mesNoms.has(p0);
       }
-      if (mesNoms.size === 0) return true;
+      if (anonyme) return true;
       const p = norm(x.performer);
       return p === '' || mesNoms.has(p);
     });
@@ -153,6 +174,7 @@ export default async function handler(req, res) {
       // est à mon nom (archives d'avant les lives enregistrés).
       sessions: sessions.filter(
         (se) =>
+          anonyme ||
           mesSessions.has(String(se.id ?? '')) ||
           (mesNoms.size > 0 && mesNoms.has(norm(se.artist_name))),
       ),

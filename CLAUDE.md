@@ -196,13 +196,21 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     cloudId de ses groupes), puis ne renvoie que les morceaux et les
     séances de CES lives. Les heuristiques par nom ou par créneau horaire
     (b138 → b186) ne survivent que pour les archives sans séance.
-  - **la clé ON AIR unique est une dette connue** : `LIVE_KEY` est commune
-    à toute l'installation, donc le serveur ne sait pas QUI demande — d'où
-    tous les tris par nom. Elle tiendra tant que les comptes se comptent en
-    dizaines ; à l'échelle, elle doit céder la place à l'identité du compte
-    (jeton Supabase déjà présent). À faire AVANT d'ouvrir l'app largement ;
-    le rattachement des lives (ci-dessus) rend l'attente sans danger pour
-    les statistiques, pas pour la confidentialité.
+  - **l'appelant s'identifie par son COMPTE, plus par une clé** (b192,
+    décision Vincent) : tout ce qui est réservé à l'artiste (statistiques,
+    mots du public, séances, diagnostic, pilotage du direct) accepte le
+    jeton Supabase, envoyé en `Authorization: Bearer`. `lives.owner_id`
+    porte l'identifiant du compte qui a lancé — il ne change JAMAIS,
+    contrairement à un nom d'artiste ; `live_stats` et `live_messages` en
+    héritent. Plus aucun tri par nom pour les lignes récentes.
+    **La clé reste acceptée en transition** (les applications installées
+    ne se mettent pas à jour au même instant, et un direct ne doit jamais
+    se couper) ; `LIVE_KEY_LEGACY=0` sur Vercel ferme cette porte le jour
+    voulu, sans toucher au code. `VITE_LIVE_KEY` étant une variable de
+    BUILD, la clé était de toute façon lisible dans le JavaScript livré au
+    navigateur : elle n'a jamais rien protégé. Le PUBLIC reste ouvert —
+    un spectateur n'a pas de compte, cœurs, mots et présence passent sans
+    identité, par construction.
   - **à qui appartient un live** (b183) : je l'ai lancé → il est à moi ; il
     est tagué d'un groupe → il appartient aux MEMBRES de ce groupe (un
     concert de groupe est un acte collectif) ; lancé en solo par quelqu'un
