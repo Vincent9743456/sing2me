@@ -1257,6 +1257,34 @@ textarea.mono {
   font-size: 0.72rem;
   margin-bottom: 2px;
 }
+/* ---------- Connexions sociales & consentement (b165) ---------- */
+.oauthrow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+@media (min-width: 480px) {
+  .oauthrow {
+    flex-direction: row;
+  }
+}
+.consentrow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+.consentrow input {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
 /* ---------- Tableau de bord fondateur (b160) ---------- */
 .statgrid {
   display: grid;

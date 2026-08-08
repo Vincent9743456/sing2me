@@ -22,6 +22,9 @@ import {
   AuthSession,
   getValidSession,
   handleRedirectHash,
+  OAuthProvider,
+  setMarketingConsent,
+  takeProviderName,
   loadSession,
   pullCloud,
   pushCloud,
@@ -96,7 +99,7 @@ interface AccountValue {
   lastSync: string | null;
   error: string | null;
   sendMagicLink: (email: string) => Promise<void>;
-  loginWith: (p: 'google' | 'facebook') => void;
+  loginWith: (p: OAuthProvider) => void;
   logout: () => void;
 }
 
@@ -158,6 +161,42 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   );
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(() => takeAuthError());
+  /**
+   * Nom donné par le fournisseur social (b165). Apple ne le transmet
+   * QU'À LA PREMIÈRE autorisation : on le capte au retour de redirection
+   * et on le pose dans le profil s'il est encore vide — sinon il est
+   * perdu pour toujours. On n'écrase JAMAIS un nom déjà saisi.
+   */
+  // Consentement en attente (choisi avant la redirection) : on le pose
+  // sur le compte dès que la session existe.
+  useEffect(() => {
+    if (!session) return;
+    let pending: string | null = null;
+    try {
+      pending = sessionStorage.getItem('sing2me/consentPending');
+    } catch {
+      pending = null;
+    }
+    if (pending === null) return;
+    try {
+      sessionStorage.removeItem('sing2me/consentPending');
+    } catch {
+      /* stockage indisponible */
+    }
+    void setMarketingConsent(session, pending === '1');
+  }, [session?.userId]);
+
+  useEffect(() => {
+    const given = takeProviderName();
+    if (given === '') return;
+    if ((store.prefs.userName ?? '').trim() === '') {
+      store.savePrefs({ ...store.prefs, userName: given });
+    }
+    if (store.artist.name.trim() === '') {
+      store.saveArtist({ ...store.artist, name: given });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Pas de push tant que la fusion initiale n'a pas eu lieu
   const readyRef = useRef(false);
 
@@ -494,6 +533,19 @@ export function AccountSection() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  /**
+   * Consentement aux nouveautés (b165) : jamais pré-coché. Le choix est
+   * mémorisé AVANT la redirection sociale (on quitte la page), puis posé
+   * sur le compte une fois la session ouverte.
+   */
+  const [consent, setConsent] = useState(false);
+  const rememberConsent = () => {
+    try {
+      sessionStorage.setItem('sing2me/consentPending', consent ? '1' : '0');
+    } catch {
+      // stockage indisponible : le consentement se redemandera
+    }
+  };
 
   if (!account) return null;
 
@@ -659,21 +711,54 @@ export function AccountSection() {
         </Field>
       )}
       {OAUTH_ENABLED && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button
-            className="btn ghost"
-            onClick={() => account.loginWith('google')}
-          >
-            {t('Continuer avec Google')}
-          </button>
-          <button
-            className="btn ghost"
-            onClick={() => account.loginWith('facebook')}
-          >
-            {t('Continuer avec Facebook')}
-          </button>
-        </div>
+        <>
+          <p className="help" style={{ margin: '4px 0 8px' }}>
+            {t('Ou connecte-toi en un geste :')}
+          </p>
+          <div className="oauthrow">
+            <button
+              className="btn ghost block"
+              onClick={() => {
+                rememberConsent();
+                account.loginWith('google');
+              }}
+            >
+              {t('Continuer avec Google')}
+            </button>
+            <button
+              className="btn ghost block"
+              onClick={() => {
+                rememberConsent();
+                account.loginWith('apple');
+              }}
+            >
+              {t('Continuer avec Apple')}
+            </button>
+            <button
+              className="btn ghost block"
+              onClick={() => {
+                rememberConsent();
+                account.loginWith('facebook');
+              }}
+            >
+              {t('Continuer avec Facebook')}
+            </button>
+          </div>
+        </>
       )}
+      {/* Consentement AUX NOUVEAUTÉS uniquement (b165) : case jamais
+          pré-cochée, comme l'exige le RGPD. Les messages de service
+          (invitation d'un groupe, alerte) n'en dépendent pas. */}
+      <label className="consentrow">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+        />
+        <span>
+          {t('Je veux recevoir les nouveautés de Sing2Me (facultatif).')}
+        </span>
+      </label>
       {(localError ?? account.error) && (
         <p style={{ color: 'var(--danger)', marginBottom: 0 }}>
           {localError ?? account.error}
