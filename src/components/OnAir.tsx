@@ -40,6 +40,7 @@ import {
 } from '../lib/publicPages';
 import { navigate } from '../router';
 import { useStore } from '../store';
+import { t } from '../i18n';
 import { Modal } from './ui';
 
 /**
@@ -418,7 +419,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Action impossible.');
+      setError(e instanceof Error ? e.message : t('Action impossible.'));
     } finally {
       setBusy(false);
     }
@@ -453,49 +454,56 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
       >
         {children}
         {panel && (
-          <Modal title="Mode ON AIR" onClose={() => setPanel(false)}>
+          <Modal title={t('Mode ON AIR')} onClose={() => setPanel(false)}>
             <p className="help" style={{ textAlign: 'center' }}>
               {status === 'on' &&
                 (mode === 'repet'
-                  ? '🎸 Répétition en cours — seuls les musiciens voient le morceau ; le public, rien.'
-                  : '🔴 En direct — le public voit les paroles, les musiciens leur partition.')}
+                  ? t(
+                      '🎸 Répétition en cours — seuls les musiciens voient le morceau ; le public, rien.',
+                    )
+                  : t(
+                      '🔴 En direct — le public voit les paroles, les musiciens leur partition.',
+                    ))}
               {status === 'pause' &&
-                '⏸ En pause — le public voit un écran d’attente.'}
+                t('⏸ En pause — le public voit un écran d’attente.')}
               {status === 'off' &&
-                'Hors session — le QR ne montre que ta page artiste.'}
+                t('Hors session — le QR ne montre que ta page artiste.')}
             </p>
             {status === 'off' && todayConcert && (
               <p className="help" style={{ textAlign: 'center' }}>
-                🎪 Concert détecté : <strong>{todayConcert.title}</strong> — les
-                ❤ et messages lui seront rattachés.
+                {t('🎪 Concert détecté : ')}
+                <strong>{todayConcert.title}</strong>
+                {t(' — les ❤ et messages lui seront rattachés.')}
               </p>
             )}
             {status === 'off' && (
               <div className="field" style={{ maxWidth: 320, margin: '0 auto 6px' }}>
-                <label>Type de session</label>
+                <label>{t('Type de session')}</label>
                 <select
                   value={mode}
                   onChange={(e) => setMode(e.target.value as LiveMode)}
                 >
                   <option value="concert">
-                    🎤 Concert — public + musiciens
+                    {t('🎤 Concert — public + musiciens')}
                   </option>
                   <option value="repet">
-                    🎸 Répétition — musiciens seulement
+                    {t('🎸 Répétition — musiciens seulement')}
                   </option>
                 </select>
               </div>
             )}
             {status === 'off' && (
               <div className="field" style={{ maxWidth: 320, margin: '0 auto 6px' }}>
-                <label>Qui joue ce soir ?</label>
+                <label>{t('Qui joue ce soir ?')}</label>
                 <select value={who} onChange={(e) => setWho(e.target.value)}>
                   <option value="solo">
-                    {artist.name !== '' ? `${artist.name} (solo)` : 'Moi (solo)'}
+                    {artist.name !== ''
+                      ? t('{name} (solo)', { name: artist.name })
+                      : t('Moi (solo)')}
                   </option>
                   {bands.map((b) => (
                     <option key={b.id} value={b.id}>
-                      {b.name || 'Groupe sans nom'}
+                      {b.name || t('Groupe sans nom')}
                     </option>
                   ))}
                 </select>
@@ -510,7 +518,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 salon n'est qu'un raccourci pour les musiciens. */}
             {status !== 'off' && publicName !== '' && (
               <div style={{ textAlign: 'center', margin: '10px 0' }}>
-                <div className="label">Adresse à annoncer au public</div>
+                <div className="label">{t('Adresse à annoncer au public')}</div>
                 <div
                   className="linkbox"
                   style={{ fontSize: '1.1rem', fontWeight: 700 }}
@@ -521,10 +529,10 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
             )}
             {status !== 'off' && (currentLiveRef()?.joinCode ?? '') !== '' && (
               <div style={{ textAlign: 'center', margin: '10px 0' }}>
-                <div className="label">Code pour rejoindre</div>
+                <div className="label">{t('Code pour rejoindre')}</div>
                 <button
                   className="btn ghost"
-                  title="Copier le code"
+                  title={t('Copier le code')}
                   style={{
                     fontSize: '2rem',
                     letterSpacing: 6,
@@ -549,8 +557,10 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 </button>
                 <p className="help" style={{ margin: '4px 0 0' }}>
                   {codeCopied
-                    ? '✓ Code copié !'
-                    : 'Dicte-le ou copie-le — musiciens et public le saisissent dans « Rejoindre un direct ».'}
+                    ? t('✓ Code copié !')
+                    : t(
+                        'Dicte-le ou copie-le — musiciens et public le saisissent dans « Rejoindre un direct ».',
+                      )}
                 </p>
               </div>
             )}
@@ -566,10 +576,10 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
               {status === 'off' && (
                 <button className="btn" disabled={busy} onClick={() => act('on')}>
                   {busy
-                    ? '⏳ Lancement…'
+                    ? t('⏳ Lancement…')
                     : mode === 'repet'
-                      ? '🎸 Démarrer la répétition'
-                      : '🔴 Démarrer le direct'}
+                      ? t('🎸 Démarrer la répétition')
+                      : t('🔴 Démarrer le direct')}
                 </button>
               )}
               {status === 'on' && (
@@ -578,12 +588,12 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                   disabled={busy}
                   onClick={() => act('pause')}
                 >
-                  ⏸ Pause
+                  {t('⏸ Pause')}
                 </button>
               )}
               {status === 'pause' && (
                 <button className="btn" disabled={busy} onClick={() => act('on')}>
-                  {busy ? '⏳ Reprise…' : '▶ Reprendre'}
+                  {busy ? t('⏳ Reprise…') : t('▶ Reprendre')}
                 </button>
               )}
               {status !== 'off' && (
@@ -592,33 +602,33 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                   disabled={busy}
                   onClick={() => act('off')}
                 >
-                  {busy ? '⏳ Arrêt…' : '⏹ Arrêter'}
+                  {busy ? t('⏳ Arrêt…') : t('⏹ Arrêter')}
                 </button>
               )}
               <button className="btn ghost" onClick={() => void showQr()}>
-                Mon QR unique
+                {t('Mon QR unique')}
               </button>
             </div>
             {qr && (
               <div className="qrbox">
-                <img src={qr} alt="QR unique de tes sessions" />
+                <img src={qr} alt={t('QR unique de tes sessions')} />
                 <div className="linkbox">{qrUrl}</div>
                 <p className="help" style={{ textAlign: 'center' }}>
                   <strong>
-                    Ton QR à toi, toujours le même — imprime-le une fois pour
-                    toutes.
+                    {t(
+                      'Ton QR à toi, toujours le même — imprime-le une fois pour toutes.',
+                    )}
                   </strong>
                   <br />
-                  Concert : le public voit les paroles, un musicien (du groupe
-                  ou de passage) touche « 🎸 Je joue » pour sa partition.
-                  Répétition : seuls les musiciens voient le morceau. Hors
-                  session : ta page artiste.
+                  {t(
+                    'Concert : le public voit les paroles, un musicien (du groupe ou de passage) touche « 🎸 Je joue » pour sa partition. Répétition : seuls les musiciens voient le morceau. Hors session : ta page artiste.',
+                  )}
                 </p>
                 {qrUrl.endsWith('/live') && (
                   <p className="help" style={{ textAlign: 'center' }}>
-                    💡 Réserve ton nom public (onglet Artiste → « Ton lien
-                    public dictable ») pour un QR à ton nom, valable pour
-                    toujours.
+                    {t(
+                      '💡 Réserve ton nom public (onglet Artiste → « Ton lien public dictable ») pour un QR à ton nom, valable pour toujours.',
+                    )}
                   </p>
                 )}
               </div>
@@ -629,18 +639,20 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
               </p>
             )}
             <p className="help" style={{ textAlign: 'center', margin: '4px 0 10px' }}>
-              📡 Synchro du groupe <strong>automatique</strong> : les musiciens
-              qui suivent voient ton morceau, dans leur vue et leur tonalité.
-              Sans réseau, chacun reprend la main sur sa bibliothèque locale.
+              {t('📡 Synchro du groupe ')}
+              <strong>{t('automatique')}</strong>
+              {t(
+                ' : les musiciens qui suivent voient ton morceau, dans leur vue et leur tonalité. Sans réseau, chacun reprend la main sur sa bibliothèque locale.',
+              )}
             </p>
             <p className="help" style={{ textAlign: 'center' }}>
-              Tu es musicien du groupe ?{' '}
+              {t('Tu es musicien du groupe ?')}{' '}
               <a
                 href="#/follow"
                 style={{ color: 'var(--accent)' }}
                 onClick={() => setPanel(false)}
               >
-                Suivre le morceau en cours →
+                {t('Suivre le morceau en cours →')}
               </a>
             </p>
             {/* La clé On Air est fournie automatiquement (embarquée au
@@ -671,8 +683,8 @@ export function OnAirButton({ inBar = false }: { inBar?: boolean } = {}) {
       onClick={openPanel}
       title={
         status === 'on' || status === 'pause'
-          ? 'Direct en cours — gérer'
-          : 'Passer en direct (public)'
+          ? t('Direct en cours — gérer')
+          : t('Passer en direct (public)')
       }
     >
       {status === 'on' ? (

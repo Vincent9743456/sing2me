@@ -13,6 +13,7 @@
  */
 import React, { useEffect, useState } from 'react';
 
+import { t } from '../i18n';
 import { APP_BUILD } from '../version';
 
 const RELOADED_KEY = 'sing2me/autoReloadFor';
@@ -74,14 +75,15 @@ export function UpdateHint() {
     }
 
     // Ouverture de l'app : vérification rapide.
-    const t = window.setTimeout(() => void check(true), 1500);
+    // (nommé `timerId`, pas `t` : `t` est réservé à la fonction de traduction)
+    const timerId = window.setTimeout(() => void check(true), 1500);
     // Retour au premier plan (app installée « reprise » sans rechargement).
     const onVisible = () => {
       if (document.visibilityState === 'visible') void check(false);
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
-      window.clearTimeout(t);
+      window.clearTimeout(timerId);
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
@@ -89,18 +91,22 @@ export function UpdateHint() {
   if (remote === '') return null;
 
   return (
-    <div className="installhint" role="status" aria-label="Mise à jour disponible">
+    <div
+      className="installhint"
+      role="status"
+      aria-label={t('Mise à jour disponible')}
+    >
       <span className="installhint-ico" aria-hidden="true">
         ✨
       </span>
       <div className="grow" style={{ minWidth: 0 }}>
-        <strong>Nouvelle version disponible</strong>
+        <strong>{t('Nouvelle version disponible')}</strong>
         <div className="help" style={{ margin: 0 }}>
-          Un tap et c'est à jour — tes données ne bougent pas.
+          {t("Un tap et c'est à jour — tes données ne bougent pas.")}
         </div>
       </div>
       <button className="btn small" onClick={() => location.reload()}>
-        Mettre à jour
+        {t('Mettre à jour')}
       </button>
     </div>
   );

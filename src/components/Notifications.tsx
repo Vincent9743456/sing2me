@@ -24,6 +24,7 @@ import {
 } from '../lib/bands';
 import { useStore } from '../store';
 import { BandMember, makeId } from '../types';
+import { t } from '../i18n';
 import { useAccount } from './Account';
 import { useToast } from './Feedback';
 
@@ -269,7 +270,10 @@ export function NotificationsProvider({
             wasMember.delete(cid);
             deleteBandRef.current(band.id);
             toastRef.current.show(
-              `Le groupe « ${band.name || 'ton groupe'} » n'existe plus — tes morceaux restent dans ta bibliothèque.`,
+              t(
+                'Le groupe « {name} » n\'existe plus — tes morceaux restent dans ta bibliothèque.',
+                { name: band.name || t('ton groupe') },
+              ),
             );
             continue;
           }
@@ -281,8 +285,8 @@ export function NotificationsProvider({
             if (!firstTime) {
               fresh.push({
                 key,
-                bandName: band.name || 'ton groupe',
-                memberName: m.name || 'Un musicien',
+                bandName: band.name || t('ton groupe'),
+                memberName: m.name || t('Un musicien'),
               });
             }
           }

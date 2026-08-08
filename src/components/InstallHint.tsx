@@ -8,6 +8,8 @@
  */
 import React, { useEffect, useState } from 'react';
 
+import { t } from '../i18n';
+
 const DISMISS_KEY = 'sing2me/installDismissed';
 
 function isStandalone(): boolean {
@@ -74,16 +76,22 @@ export function InstallHint() {
   };
 
   return (
-    <div className="installhint" role="dialog" aria-label="Installer Sing2Me">
+    <div
+      className="installhint"
+      role="dialog"
+      aria-label={t('Installer Sing2Me')}
+    >
       <span className="installhint-ico" aria-hidden="true">
         📲
       </span>
       <div className="grow" style={{ minWidth: 0 }}>
-        <strong>Installe Sing2Me</strong>
+        <strong>{t('Installe Sing2Me')}</strong>
         <div className="help" style={{ margin: 0 }}>
           {ios
-            ? 'Touche Partager, puis « Sur l’écran d’accueil » — accès direct, plein écran.'
-            : 'Un accès direct depuis ton écran d’accueil, en plein écran.'}
+            ? t(
+                'Touche Partager, puis « Sur l’écran d’accueil » — accès direct, plein écran.',
+              )
+            : t('Un accès direct depuis ton écran d’accueil, en plein écran.')}
         </div>
       </div>
       {!ios && prompt && (
@@ -98,13 +106,13 @@ export function InstallHint() {
             dismiss();
           }}
         >
-          Installer
+          {t('Installer')}
         </button>
       )}
       <button
         className="btn ghost small installhint-x"
         onClick={dismiss}
-        aria-label="Fermer"
+        aria-label={t('Fermer')}
       >
         ✕
       </button>

@@ -1,2 +1,98 @@
 /** Traductions anglaises — domaine composants (clé = chaîne française exacte). */
-export const EN_COMPOSANTS: Record<string, string> = {};
+export const EN_COMPOSANTS: Record<string, string> = {
+  // Onboarding.tsx — checklist de prise en main
+  'Importe ton premier morceau': 'Import your first song',
+  'Joue-le en mode scène': 'Play it in stage mode',
+  'Crée ta première setlist': 'Create your first setlist',
+  'Invite ton groupe': 'Invite your band',
+  'Découvre le répertoire de {name}': 'Discover {name}’s repertoire',
+  'ton groupe': 'your band',
+  'Joue un morceau en mode scène': 'Play a song in stage mode',
+  'Dis bonjour dans la discussion du groupe': 'Say hi in the band chat',
+  'Ajoute tes propres morceaux': 'Add your own songs',
+  // Onboarding.tsx — bannière & carte de bienvenue
+  Fermer: 'Close',
+  '🎉 Tu as rejoint {name} !': '🎉 You joined {name}!',
+  'Son répertoire arrive dans ta bibliothèque. Tes propres morceaux restent à toi.':
+    'Its repertoire is arriving in your library. Your own songs stay yours.',
+  'Voir le groupe': 'View band',
+  'Bienvenue sur Sing2Me 🎶': 'Welcome to Sing2Me 🎶',
+  'Commence par importer un morceau — colle un texte, un lien de partition, un PDF ou un fichier Word.':
+    'Start by importing a song — paste text, a chart link, a PDF, or a Word file.',
+  'Importer mon premier morceau': 'Import my first song',
+  'Voir un exemple en mode scène': 'See an example in stage mode',
+  'Prise en main': 'Getting started',
+  Masquer: 'Hide',
+
+  // CoachMark.tsx
+  "Fermer l'aide": 'Close hint',
+
+  // InstallHint.tsx
+  'Installer Sing2Me': 'Install Sing2Me',
+  'Installe Sing2Me': 'Install Sing2Me',
+  'Touche Partager, puis « Sur l’écran d’accueil » — accès direct, plein écran.':
+    'Tap Share, then “Add to Home Screen” — direct access, full screen.',
+  'Un accès direct depuis ton écran d’accueil, en plein écran.':
+    'Direct access from your home screen, full screen.',
+  Installer: 'Install',
+
+  // UpdateHint.tsx
+  'Mise à jour disponible': 'Update available',
+  'Nouvelle version disponible': 'New version available',
+  "Un tap et c'est à jour — tes données ne bougent pas.":
+    "One tap and you're up to date — your data doesn't move.",
+  'Mettre à jour': 'Update',
+
+  // ErrorBoundary.tsx
+  'Oups — un petit couac': 'Oops — a little hiccup',
+  "L'application a rencontré une erreur inattendue. Tes données sont en sécurité (elles restent sur ton appareil). Recharge pour reprendre.":
+    'The app ran into an unexpected error. Your data is safe (it stays on your device). Reload to continue.',
+  "Recharger l'application": 'Reload the app',
+  'Détail technique': 'Technical details',
+
+  // GearEditor.tsx
+  Instrument: 'Instrument',
+  Micro: 'Mic',
+  Ampli: 'Amp',
+  Sono: 'PA',
+  Effet: 'Effect',
+  Câble: 'Cable',
+  Autre: 'Other',
+  'Quantité de {name}': 'Quantity of {name}',
+  Quantité: 'Quantity',
+  Retirer: 'Remove',
+  'Retirer {name}': 'Remove {name}',
+  'Câble XLR, guitare Takamine, HF Sennheiser…':
+    'XLR cable, Takamine guitar, Sennheiser wireless…',
+  Ajouter: 'Add',
+
+  // SongBody.tsx
+  '🗺 Structure': '🗺 Structure',
+
+  // StagePlan.tsx
+  'FOND DE SCÈNE': 'BACK OF STAGE',
+  PUBLIC: 'AUDIENCE',
+  'Retirer {name} du plan': 'Remove {name} from the plan',
+  'Plan de scène vide.': 'Stage plan is empty.',
+  'Ajoute les musiciens ci-dessous, puis déplace-les au doigt ou à la souris.':
+    'Add musicians below, then drag them into place with your finger or mouse.',
+  Nom: 'Name',
+  Placer: 'Place',
+
+  // AutoScroll.tsx
+  'Plus vite': 'Faster',
+  'Défilement automatique': 'Auto-scroll',
+  'Moins vite': 'Slower',
+  'Défil.': 'Scroll',
+
+  // TipBox.tsx
+  '💛 Soutenir {name}': '💛 Support {name}',
+  "l'artiste": 'the artist',
+  'Montant libre': 'Custom amount',
+  "Paiement sécurisé, directement à l'artiste.":
+    'Secure payment, directly to the artist.',
+
+  // LinkPreviews.tsx
+  'Vidéo YouTube': 'YouTube video',
+  'Écoute Spotify': 'Spotify listen',
+};

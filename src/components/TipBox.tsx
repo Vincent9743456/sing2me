@@ -5,6 +5,7 @@
  */
 import React from 'react';
 
+import { t } from '../i18n';
 import { ArtistProfile } from '../types';
 
 const AMOUNTS = [2, 5, 10];
@@ -23,7 +24,9 @@ export function TipBox({ artist }: { artist: ArtistProfile | null }) {
   if (!artist || (artist.tipUrl ?? '').trim() === '') return null;
   return (
     <div className="tipbox">
-      <div className="tiptitle">💛 Soutenir {artist.name || "l'artiste"}</div>
+      <div className="tiptitle">
+        {t('💛 Soutenir {name}', { name: artist.name || t("l'artiste") })}
+      </div>
       <div className="tipamounts">
         {AMOUNTS.map((a) => (
           <a
@@ -42,11 +45,11 @@ export function TipBox({ artist }: { artist: ArtistProfile | null }) {
           target="_blank"
           rel="noreferrer"
         >
-          Montant libre
+          {t('Montant libre')}
         </a>
       </div>
       <p className="help" style={{ textAlign: 'center', marginTop: 8 }}>
-        Paiement sécurisé, directement à l'artiste.
+        {t("Paiement sécurisé, directement à l'artiste.")}
       </p>
     </div>
   );

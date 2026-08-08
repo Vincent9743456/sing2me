@@ -8,6 +8,8 @@
  */
 import { useEffect, useRef, useState } from 'react';
 
+import { t } from '../i18n';
+
 const GLOBAL_KEY = 'sing2me/scrollSpeed';
 const MIN_SPEED = 10;
 const MAX_SPEED = 150;
@@ -102,19 +104,19 @@ export function AutoScrollFab({
   return (
     <div className="scrollfab">
       {scroll.active && (
-        <button onClick={scroll.faster} title="Plus vite">
+        <button onClick={scroll.faster} title={t('Plus vite')}>
           ＋
         </button>
       )}
       <button
         className={scroll.active ? 'active' : ''}
         onClick={scroll.toggle}
-        title="Défilement automatique"
+        title={t('Défilement automatique')}
       >
         {scroll.active ? '⏸' : '⇣'}
       </button>
       {scroll.active && (
-        <button onClick={scroll.slower} title="Moins vite">
+        <button onClick={scroll.slower} title={t('Moins vite')}>
           −
         </button>
       )}
@@ -131,10 +133,10 @@ export function AutoScrollControls({
     <>
       <button
         className={`btn ${scroll.active ? '' : 'ghost'}`}
-        title="Défilement automatique"
+        title={t('Défilement automatique')}
         onClick={scroll.toggle}
       >
-        {scroll.active ? '⏸' : '⇣'} Défil.
+        {scroll.active ? '⏸' : '⇣'} {t('Défil.')}
       </button>
       {scroll.active && (
         <>

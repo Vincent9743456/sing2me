@@ -9,6 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { createShortLink, encodeShare, shareUrl } from '../lib/share';
 import { useStore } from '../store';
 import { SharePayload } from '../types';
+import { t } from '../i18n';
 import { Modal } from './ui';
 
 export function ShareModal({
