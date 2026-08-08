@@ -108,6 +108,15 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     idempotente par contexte, et la garde dans `removeVersion` ;
   - retirer un morceau du répertoire d'un groupe est un acte de niveau
     groupe propagé à tous (chacun garde sa copie personnelle) ;
+  - **quitter un groupe ne détruit rien, mais ne laisse rien d'orphelin**
+    (b185) : mes morceaux restent (les versions du groupe redeviennent
+    personnelles ou disparaissent au profit de mon originale — jamais de
+    version rattachée à un groupe qui n'existe plus), et mes setlists sont
+    seulement DÉTACHÉES. En cas de RETOUR dans le groupe, l'adhésion crée un
+    nouvel identifiant local : la synchro doit donc rattacher une setlist
+    déjà présente mais détachée, et regarnir une setlist vide — sans quoi le
+    groupe paraît n'avoir aucune setlist (constat de Marco). Le contenu
+    qu'un membre a modifié lui-même n'est jamais écrasé ;
   - un morceau ajouté au répertoire d'un groupe arrive chez les autres
     membres **dans les Idées** de leur bibliothèque (décision Vincent,
     b174 — remplace les « limbes » séparées) : `idea: true` +

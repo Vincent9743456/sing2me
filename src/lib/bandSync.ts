@@ -598,20 +598,41 @@ export function applyBandData(
         updatedAt: e.updatedAt,
       });
       changed = true;
-    } else if (e.updatedAt > nextSetlists[idx].updatedAt) {
-      nextSetlists[idx] = {
-        ...nextSetlists[idx],
-        name: e.name,
-        comment: e.comment,
-        createdBy: e.createdBy ?? nextSetlists[idx].createdBy ?? '',
-        createdByName:
-          e.createdByName ?? nextSetlists[idx].createdByName ?? '',
-        bandId: localBandId,
-        items: resolveItems(),
-        setup: e.setup,
-        updatedAt: e.updatedAt,
-      };
-      changed = true;
+    } else {
+      const local = nextSetlists[idx];
+      const aJour = e.updatedAt > local.updatedAt;
+      /**
+       * RETOUR DANS LE GROUPE (b185). Quitter un groupe DÉTACHE ses setlists
+       * (`bandId` vidé) au lieu de les supprimer — on ne veut pas effacer le
+       * travail de quelqu'un. Mais au retour, le blob du groupe ne porte
+       * aucune date plus récente : rien ne se déclenchait, la setlist restait
+       * hors du groupe, et le groupe semblait n'en avoir aucune. C'est ce que
+       * Marco a vu (« la playlist du groupe est vide »).
+       */
+      const aRattacher = (local.bandId ?? '') !== localBandId;
+      /** Ses morceaux avaient disparu : le groupe les propose, on regarnit. */
+      const aRegarnir = local.items.length === 0 && e.items.length > 0;
+      if (aJour || aRattacher || aRegarnir) {
+        nextSetlists[idx] = {
+          ...local,
+          // Ce que le groupe dicte : l'appartenance, et l'auteur.
+          bandId: localBandId,
+          createdBy: e.createdBy ?? local.createdBy ?? '',
+          createdByName: e.createdByName ?? local.createdByName ?? '',
+          // Le contenu ne change QUE si le groupe est plus à jour que moi —
+          // sinon on écraserait l'ordre et le nom que j'ai choisis.
+          ...(aJour
+            ? {
+                name: e.name,
+                comment: e.comment,
+                setup: e.setup,
+                updatedAt: e.updatedAt,
+              }
+            : {}),
+          items: aJour || aRegarnir ? resolveItems() : local.items,
+        };
+        changed = true;
+      }
     }
   }
 
