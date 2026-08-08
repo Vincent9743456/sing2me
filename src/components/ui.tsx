@@ -261,6 +261,39 @@ export function Empty({ children }: { children: React.ReactNode }) {
   return <div className="empty">{children}</div>;
 }
 
+/**
+ * iOS : le clavier recouvre les éléments `position: fixed` SANS les
+ * déplacer — une feuille ancrée en bas de l'écran naît alors DERRIÈRE le
+ * clavier (bug b152 : modale de note invisible, dictée introuvable). Ce
+ * hook recolle l'élément au bas du viewport VISUEL quand le clavier
+ * mange le bas du viewport de mise en page, et borne sa hauteur à la
+ * zone restée visible. Sans clavier (décalage nul), il ne touche à rien.
+ */
+export function useKeyboardLift(): React.RefObject<HTMLDivElement | null> {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = ref.current;
+    if (!vv || !el) return;
+    const place = () => {
+      const lift = Math.max(
+        0,
+        Math.round(window.innerHeight - (vv.offsetTop + vv.height)),
+      );
+      el.style.transform = lift > 0 ? `translateY(-${lift}px)` : '';
+      el.style.maxHeight = lift > 0 ? `${Math.round(vv.height * 0.92)}px` : '';
+    };
+    place();
+    vv.addEventListener('resize', place);
+    vv.addEventListener('scroll', place);
+    return () => {
+      vv.removeEventListener('resize', place);
+      vv.removeEventListener('scroll', place);
+    };
+  }, []);
+  return ref;
+}
+
 export function Modal({
   title,
   onClose,
@@ -270,6 +303,7 @@ export function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const ref = useKeyboardLift();
   return (
     <div
       className="modal-backdrop"
@@ -277,7 +311,7 @@ export function Modal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="modal">
+      <div className="modal" ref={ref}>
         <h2>{title}</h2>
         {children}
       </div>

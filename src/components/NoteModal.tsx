@@ -195,11 +195,13 @@ export function NoteModal({
       onClose={onClose}
     >
       <Field label="Note">
+        {/* Pas d'autoFocus (b152) : le clavier s'ouvrait dès l'ouverture et
+            recouvrait toute la modale sur iPhone — on choisit d'abord
+            clavier OU dictée, la modale entière sous les yeux. */}
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Départ batterie seule, break avant le pont, fin abrégée…"
-          autoFocus
         />
       </Field>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
