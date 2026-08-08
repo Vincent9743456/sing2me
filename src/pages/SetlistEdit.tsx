@@ -4,7 +4,13 @@ import { Icon } from '../components/Icon';
 import { CoachMark } from '../components/CoachMark';
 import { ConfirmSheet, MenuSheet } from '../components/Feedback';
 import { SongCollector } from '../components/SongPicker';
-import { Accordion, AccordionNav, Field, TopBar } from '../components/ui';
+import {
+  Accordion,
+  AccordionNav,
+  Field,
+  SaveBar,
+  TopBar,
+} from '../components/ui';
 import { announceBandSong } from '../lib/bands';
 import { semitonesBetween, spellingForKey, transposeContent, transposeKeyName } from '../lib/chords';
 import { songKey } from '../lib/importer';
@@ -170,31 +176,99 @@ export function SetlistEdit({ id }: { id: string | null }) {
   const author = draft.createdBy ?? '';
   const isAuthor = author === '' || (myId !== '' && author === myId);
 
-  // Édition directe : chaque changement est enregistré automatiquement
-  // (pas de bouton « Enregistrer »). On saute le tout premier rendu pour
-  // ne pas recréer une nouvelle setlist restée vierge.
+  /**
+   * Deux régimes d'enregistrement (b149, demande Vincent) :
+   * - les GESTES sur les morceaux (ajout, déplacement, retrait, réserve,
+   *   tonalité, version, note d'item) restent FLUIDES : enregistrés
+   *   aussitôt, « ✓ Enregistré » discret ;
+   * - les CHAMPS (nom, commentaire, groupe) attendent une VALIDATION
+   *   visible : la barre « Valider / Annuler » apparaît dès la première
+   *   frappe, rien ne part avant confirmation.
+   * `lastSaved` est la dernière version enregistrée : les gestes morceaux
+   * l'emportent AVEC les champs déjà validés (jamais ceux en cours de
+   * frappe).
+   */
+  const [lastSaved, setLastSaved] = useState<Setlist | null>(
+    existing ? { ...existing, items: existing.items.map((x) => ({ ...x })) } : null,
+  );
+  const metaDirty =
+    draft.name !== (lastSaved?.name ?? '') ||
+    draft.comment !== (lastSaved?.comment ?? '') ||
+    (draft.bandId ?? '') !== (lastSaved?.bandId ?? '');
+
+  const stamp = (sl: Setlist): Setlist =>
+    (sl.createdBy ?? '') === ''
+      ? {
+          ...sl,
+          createdBy: myId,
+          createdByName: prefs.userName || artist.name || '',
+        }
+      : sl;
+
   const firstRender = useRef(true);
   useEffect(() => {
     if (firstRender.current) {
       firstRender.current = false;
       return;
     }
-    // Auteur posé à la toute première sauvegarde (b146) : lui seul pourra
-    // retirer la setlist du groupe.
-    saveSetlist(
-      isNew && (draft.createdBy ?? '') === ''
+    // Geste morceau : on enregistre les items avec les MÉTA validées.
+    const itemsChanged =
+      JSON.stringify(draft.items) !== JSON.stringify(lastSaved?.items ?? []) ||
+      JSON.stringify(draft.setup ?? null) !==
+        JSON.stringify(lastSaved?.setup ?? null);
+    if (!itemsChanged) return;
+    const toSave = stamp(
+      lastSaved
         ? {
             ...draft,
-            createdBy: myId,
-            createdByName: prefs.userName || artist.name || '',
+            name: lastSaved.name,
+            comment: lastSaved.comment,
+            bandId: lastSaved.bandId,
           }
         : draft,
     );
+    saveSetlist(toSave);
+    setLastSaved(toSave);
     setSaved(true);
     const t = window.setTimeout(() => setSaved(false), 1400);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft]);
+
+  /** Valide les champs (nom, commentaire, groupe) — bouton visible. */
+  function confirmMeta() {
+    const toSave = stamp(draft);
+    saveSetlist(toSave);
+    setLastSaved(toSave);
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1400);
+  }
+
+  /** Le brouillon avec les MÉTA validées uniquement — pour les
+   *  enregistrements de passage (navigation), jamais la frappe en cours. */
+  const withValidatedMeta = (d: Setlist): Setlist =>
+    lastSaved
+      ? {
+          ...d,
+          name: lastSaved.name,
+          comment: lastSaved.comment,
+          bandId: lastSaved.bandId,
+        }
+      : d;
+
+  /** Abandonne les champs en attente (les morceaux, eux, sont déjà à jour). */
+  function cancelMeta() {
+    if (!lastSaved) {
+      navigate('/setlists');
+      return;
+    }
+    setDraft((d) => ({
+      ...d,
+      name: lastSaved.name,
+      comment: lastSaved.comment,
+      bandId: lastSaved.bandId,
+    }));
+  }
 
   const songById = useMemo(
     () => new Map(songs.map((s) => [s.id, s])),
@@ -296,7 +370,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
     if (vid !== song.activeVersionId) {
       saveSong(switchVersion(song, vid));
     }
-    saveSetlist(nextDraft); // ne pas perdre les réglages en cours
+    saveSetlist(stamp(withValidatedMeta(nextDraft))); // ne pas perdre les réglages en cours
     if (edit) {
       navigate(`/song/${song.id}/edit`);
     } else {
@@ -670,7 +744,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
               : 'Vide — matériel, branchements, plan'
           }
           onClick={() => {
-            saveSetlist(draft);
+            saveSetlist(stamp(withValidatedMeta(draft)));
             navigate(`/setlist/${draft.id}/sono`);
           }}
         />
@@ -688,7 +762,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
               <button
                 className="btn ghost"
                 onClick={() => {
-                  saveSetlist(draft);
+                  saveSetlist(stamp(withValidatedMeta(draft)));
                   navigate(`/stage/${draft.id}`);
                 }}
               >
@@ -698,7 +772,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 className="btn ghost"
                 title="Vue chanteur sans partition"
                 onClick={() => {
-                  saveSetlist(draft);
+                  saveSetlist(stamp(withValidatedMeta(draft)));
                   navigate(`/remote/${draft.id}`);
                 }}
               >
@@ -711,8 +785,16 @@ export function SetlistEdit({ id }: { id: string | null }) {
               pas de partage de setlist par lien. Supprimer vit dans le
               menu « … » de l'en-tête (une seule occurrence, confirmée). */}
         </div>
-        {saved && <div className="savedhint">✓ Enregistré</div>}
+        {saved && !metaDirty && <div className="savedhint">✓ Enregistré</div>}
       </div>
+
+      {/* Validation visible des champs (b149) : rien ne part sans elle. */}
+      <SaveBar
+        visible={metaDirty}
+        onSave={confirmMeta}
+        onCancel={cancelMeta}
+        label={isNew && lastSaved === null ? 'Créer la setlist' : 'Valider'}
+      />
 
       {picker && (
         <SongCollector

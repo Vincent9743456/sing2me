@@ -12,7 +12,7 @@ import { GearEditor } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { LinkPreviews } from '../components/LinkPreviews';
 import { ShareModal } from '../components/ShareModal';
-import { Field, Modal, TopBar } from '../components/ui';
+import { Field, Modal, SaveBar, TopBar } from '../components/ui';
 import { getValidSession } from '../lib/auth';
 import {
   announceBandSong,
@@ -41,7 +41,7 @@ import { normalizeTitle } from '../lib/importer';
 import { resizePhoto } from '../lib/photo';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { makeId, SharePayload, Song } from '../types';
+import { Band, makeId, SharePayload, Song } from '../types';
 import { isUpcoming } from './Concerts';
 
 const LINK_PRESETS = [
@@ -129,6 +129,10 @@ export function BandEdit({ id }: { id: string }) {
   // Vue par défaut = écran d'accueil du groupe (3 portes) ; l'avancé
   // (édition, page publique, suppression) vit derrière « ⋯ ».
   const [editing, setEditing] = useState(false);
+  // b149 : l'édition passe par un BROUILLON — rien n'est enregistré tant
+  // que « Valider » (barre de validation) n'est pas pressé.
+  const [editDraft, setEditDraft] = useState<Band | null>(null);
+  const [editSaved, setEditSaved] = useState(false);
   const [headerMenu, setHeaderMenu] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   // Fiche d'un membre ouverte au clic (null = fermée). Pour MOI → onglet Artiste.
@@ -370,8 +374,50 @@ export function BandEdit({ id }: { id: string }) {
     );
   }
 
+  /** Copie de travail du groupe (liens et membres dupliqués). */
+  const draftOf = (b: Band): Band => ({
+    ...b,
+    links: b.links.map((l) => ({ ...l })),
+    members: b.members.map((m) => ({
+      ...m,
+      gear: m.gear?.map((g) => ({ ...g })),
+    })),
+  });
+
+  function startEditing() {
+    if (!band) return;
+    setEditDraft(draftOf(band));
+    setEditing(true);
+  }
+
+  function stopEditing() {
+    setEditing(false);
+    setEditDraft(null);
+  }
+
+  // b149 : en mode édition, chaque changement va dans le brouillon ; la
+  // barre « Valider / Annuler » apparaît dès qu'il diffère du groupe.
   function update(patch: Partial<typeof band>) {
-    if (band) saveBand({ ...band, ...patch });
+    setEditDraft((d) => (d === null ? d : { ...d, ...patch }));
+  }
+
+  // Ce que l'écran d'édition AFFICHE : le brouillon (identique au groupe
+  // enregistré hors édition, donc sans effet ailleurs).
+  const shown = editing && editDraft !== null ? editDraft : band;
+  const editDirty =
+    editing &&
+    editDraft !== null &&
+    JSON.stringify(editDraft) !== JSON.stringify(band);
+
+  function confirmEdit() {
+    if (editDraft === null) return;
+    saveBand(editDraft);
+    setEditSaved(true);
+    window.setTimeout(() => setEditSaved(false), 1400);
+  }
+
+  function cancelEdit() {
+    if (band) setEditDraft(draftOf(band));
   }
 
   // Propriétaire = créateur du groupe. Lui seul peut supprimer le groupe,
@@ -424,12 +470,12 @@ export function BandEdit({ id }: { id: string }) {
     nm !== '' && cloudNamesArr.some((cn) => sameMusician(cn, nm));
   // Membres manuels non déjà représentés par un compte cloud, hors profils
   // « en attente d'acceptation » (comptés à part).
-  const manualMembers = band.members.filter(
+  const manualMembers = shown.members.filter(
     (m) => m.pending !== true && !nameMatchesCloud(m.name.trim().toLowerCase()),
   );
   // Invités pas encore acceptés. Dès que le vrai compte a rejoint (nom cloud
   // qui contient le prénom, ou l'inverse), l'invité n'est plus « en attente ».
-  const pendingMembers = band.members.filter(
+  const pendingMembers = shown.members.filter(
     (m) => m.pending === true && !nameMatchesCloud(m.name.trim().toLowerCase()),
   );
 
@@ -462,7 +508,7 @@ export function BandEdit({ id }: { id: string }) {
     <>
       <TopBar
         title={band.name || 'Groupe'}
-        onBack={() => (editing ? setEditing(false) : navigate('/bands'))}
+        onBack={() => (editing ? stopEditing() : navigate('/bands'))}
         right={
           !editing ? (
             <button
@@ -526,7 +572,7 @@ export function BandEdit({ id }: { id: string }) {
               <button
                 className="bandhead-photo"
                 title="Modifier le groupe (photo, nom…)"
-                onClick={() => setEditing(true)}
+                onClick={() => startEditing()}
               >
                 {band.photo !== '' ? (
                   <img src={band.photo} alt={band.name} />
@@ -646,10 +692,10 @@ export function BandEdit({ id }: { id: string }) {
         {editing && (
           <>
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          {band.photo !== '' ? (
+          {shown.photo !== '' ? (
             <img
-              src={band.photo}
-              alt={band.name}
+              src={shown.photo}
+              alt={shown.name}
               style={{
                 width: 96,
                 height: 96,
@@ -676,7 +722,7 @@ export function BandEdit({ id }: { id: string }) {
           )}
           <div className="spacer" />
           <label className="btn ghost small" style={{ cursor: 'pointer' }}>
-            {band.photo !== '' ? 'Changer la photo' : 'Ajouter une photo'}
+            {shown.photo !== '' ? 'Changer la photo' : 'Ajouter une photo'}
             <input
               type="file"
               accept="image/*"
@@ -697,13 +743,13 @@ export function BandEdit({ id }: { id: string }) {
         <Field label="Nom du groupe">
           <input
             type="text"
-            value={band.name}
+            value={shown.name}
             onChange={(e) => update({ name: e.target.value })}
           />
         </Field>
         <Field label="Biographie">
           <textarea
-            value={band.bio}
+            value={shown.bio}
             onChange={(e) => update({ bio: e.target.value })}
             placeholder="Quelques lignes sur le groupe…"
           />
@@ -711,14 +757,14 @@ export function BandEdit({ id }: { id: string }) {
         <Field label="Lien de pourboire (PayPal.me, Lydia…)">
           <input
             type="url"
-            value={band.tipUrl}
+            value={shown.tipUrl}
             placeholder="https://paypal.me/legroupe"
             onChange={(e) => update({ tipUrl: e.target.value })}
           />
         </Field>
 
         <h2 className="pagetitle">Streaming & réseaux</h2>
-        {band.links.map((link) => (
+        {shown.links.map((link) => (
           <div key={link.id} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <input
               type="text"
@@ -728,7 +774,7 @@ export function BandEdit({ id }: { id: string }) {
               style={{ flex: '0 0 132px' }}
               onChange={(e) =>
                 update({
-                  links: band.links.map((l) =>
+                  links: shown.links.map((l) =>
                     l.id === link.id ? { ...l, label: e.target.value } : l,
                   ),
                 })
@@ -740,7 +786,7 @@ export function BandEdit({ id }: { id: string }) {
               placeholder="https://…"
               onChange={(e) =>
                 update({
-                  links: band.links.map((l) =>
+                  links: shown.links.map((l) =>
                     l.id === link.id ? { ...l, url: e.target.value } : l,
                   ),
                 })
@@ -750,7 +796,7 @@ export function BandEdit({ id }: { id: string }) {
               className="btn ghost small"
               style={{ color: 'var(--danger)' }}
               onClick={() =>
-                update({ links: band.links.filter((l) => l.id !== link.id) })
+                update({ links: shown.links.filter((l) => l.id !== link.id) })
               }
             >
               ✕
@@ -765,7 +811,7 @@ export function BandEdit({ id }: { id: string }) {
         <button
           className="btn ghost block"
           onClick={() =>
-            update({ links: [...band.links, { id: makeId(), label: '', url: '' }] })
+            update({ links: [...shown.links, { id: makeId(), label: '', url: '' }] })
           }
         >
           ＋ Ajouter un lien
@@ -841,7 +887,7 @@ export function BandEdit({ id }: { id: string }) {
                 style={{ color: 'var(--danger)' }}
                 title="Annuler l'invitation"
                 onClick={() =>
-                  update({ members: band.members.filter((x) => x.id !== m.id) })
+                  update({ members: shown.members.filter((x) => x.id !== m.id) })
                 }
               >
                 <Icon name="x" size={14} />
@@ -883,7 +929,7 @@ export function BandEdit({ id }: { id: string }) {
                 placeholder="Nom du musicien"
                 onChange={(e) =>
                   update({
-                    members: band.members.map((x) =>
+                    members: shown.members.map((x) =>
                       x.id === m.id ? { ...x, name: e.target.value } : x,
                     ),
                   })
@@ -897,7 +943,7 @@ export function BandEdit({ id }: { id: string }) {
               style={{ maxWidth: 160 }}
               onChange={(e) =>
                 update({
-                  members: band.members.map((x) =>
+                  members: shown.members.map((x) =>
                     x.id === m.id ? { ...x, instrument: e.target.value } : x,
                   ),
                 })
@@ -909,7 +955,7 @@ export function BandEdit({ id }: { id: string }) {
                 style={{ color: 'var(--danger)' }}
                 title="Retirer ce musicien"
                 onClick={() =>
-                  update({ members: band.members.filter((x) => x.id !== m.id) })
+                  update({ members: shown.members.filter((x) => x.id !== m.id) })
                 }
               >
                 <Icon name="x" size={14} />
@@ -926,7 +972,7 @@ export function BandEdit({ id }: { id: string }) {
               items={m.gear ?? []}
               onChange={(gear) =>
                 update({
-                  members: band.members.map((x) =>
+                  members: shown.members.map((x) =>
                     x.id === m.id ? { ...x, gear } : x,
                   ),
                 })
@@ -942,7 +988,7 @@ export function BandEdit({ id }: { id: string }) {
             className="btn ghost block"
             onClick={() =>
               update({
-                members: [...band.members, { id: makeId(), name: '', instrument: '' }],
+                members: [...shown.members, { id: makeId(), name: '', instrument: '' }],
               })
             }
           >
@@ -980,16 +1026,22 @@ export function BandEdit({ id }: { id: string }) {
           en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa
           « carte de musicien » (l'ouvrir ici met à jour la liste manuelle).
         </p>
+        {editSaved && !editDirty && <div className="savedhint">✓ Enregistré</div>}
         <div className="spacer" />
-        <button
-          className="btn ghost small"
-          onClick={() => setEditing(false)}
-        >
-          ← Terminer
-        </button>
+        {/* Sortie visible seulement quand tout est enregistré : quand le
+            brouillon diffère, la barre Valider / Annuler prend la main. */}
+        {!editDirty && (
+          <button
+            className="btn ghost small"
+            onClick={() => stopEditing()}
+          >
+            ← Terminer
+          </button>
+        )}
           </>
         )}
       </div>
+      <SaveBar visible={editDirty} onSave={confirmEdit} onCancel={cancelEdit} />
 
       {addOpen && (
         <Modal title="Ajouter un membre" onClose={() => setAddOpen(false)}>
@@ -1268,7 +1320,7 @@ export function BandEdit({ id }: { id: string }) {
             {
               label: 'Modifier le groupe',
               icon: 'edit',
-              onClick: () => setEditing(true),
+              onClick: () => startEditing(),
             },
             {
               label: 'Page publique / QR',

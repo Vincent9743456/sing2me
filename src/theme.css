@@ -2538,6 +2538,26 @@ h2.pagetitle {
   padding: 0 14px 14px;
 }
 
+/* Barre de validation (b149) : flotte au-dessus de la barre d'onglets,
+   uniquement quand des modifications attendent d'être confirmées. */
+.savebar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(64px + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border-soft);
+}
+.savebar .btn {
+  min-width: 130px;
+}
+
 /* « ✓ Enregistré » : confirmation discrète et transitoire de la
    sauvegarde automatique (setlists, sono…). */
 .savedhint {
