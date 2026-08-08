@@ -7,6 +7,7 @@
 import React from 'react';
 
 import { TopBar } from '../components/ui';
+import { getLang, t } from '../i18n';
 import { navigate } from '../router';
 
 const CONTACT = 'vtessier6@gmail.com';
@@ -14,8 +15,21 @@ const CONTACT = 'vtessier6@gmail.com';
 export function Terms() {
   return (
     <>
-      <TopBar title="Conditions d'utilisation" onBack={() => history.back()} />
+      <TopBar
+        title={t("Conditions d'utilisation")}
+        onBack={() => history.back()}
+      />
       <div className="page" style={{ maxWidth: 760 }}>
+        {/* Décision Vincent : les CGU restent EN FRANÇAIS (texte
+            juridique). En anglais, on le dit clairement plutôt que de
+            laisser croire à un oubli de traduction. */}
+        {getLang() === 'en' && (
+          <p className="help" style={{ marginTop: 0 }}>
+            {t(
+              'Ces conditions ne sont disponibles qu’en français pour le moment — la version française fait foi.',
+            )}
+          </p>
+        )}
         <p className="help">
           Version simple et de bonne foi — elle sera précisée avec le
           développement de l'application.

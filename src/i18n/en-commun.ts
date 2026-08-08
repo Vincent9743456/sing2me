@@ -45,4 +45,9 @@ export const EN_COMMUN: Record<string, string> = {
     'This is permanent, there is no going back — and the deletion will propagate to your other devices.',
   'Effacer définitivement': 'Erase permanently',
   'Réinitialisation faite ✓': 'Reset done ✓',
+  // CGU : volontairement NON traduites (décision Vincent) — seul cet
+  // avertissement l'est, pour qu'un lecteur anglophone comprenne.
+  "Conditions d'utilisation": 'Terms of use',
+  'Ces conditions ne sont disponibles qu’en français pour le moment — la version française fait foi.':
+    'These terms are currently available in French only — the French version is the binding one.',
 };

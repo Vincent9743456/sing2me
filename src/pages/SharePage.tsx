@@ -319,20 +319,23 @@ export function SharePage({
               fontSize: '0.86rem',
             }}
           >
-            <span>✓ Gratuit</span>
-            <span>✓ Le répertoire du groupe arrive tout seul</span>
-            <span>✓ Tes morceaux restent à toi</span>
+            <span>✓ {t('Gratuit')}</span>
+            <span>✓ {t('Le répertoire du groupe arrive tout seul')}</span>
+            <span>✓ {t('Tes morceaux restent à toi')}</span>
           </div>
           {joined !== null ? (
             <p style={{ color: 'var(--accent)', fontWeight: 700, margin: 0 }}>
-              ✓ Tu fais partie de «&nbsp;{joined}&nbsp;» ! Ouvre ton onglet
-              Groupes.
+              {t(
+                '✓ Tu fais partie de « {band} » ! Ouvre ton onglet Groupes.',
+                { band: joined },
+              )}
             </p>
           ) : !payload.invite.cloudId ? (
             <p className="help" style={{ margin: 0 }}>
-              Pour rejoindre en un clic, demande à {payload.invite.from}{' '}
-              d'ouvrir l'invitation en étant connecté(e) à son compte, puis de
-              te renvoyer le lien.
+              {t(
+                "Pour rejoindre en un clic, demande à {from} d'ouvrir l'invitation en étant connecté(e) à son compte, puis de te renvoyer le lien.",
+                { from: payload.invite.from },
+              )}
             </p>
           ) : account?.email != null ? (
             <button
@@ -340,7 +343,9 @@ export function SharePage({
               disabled={joinBusy}
               onClick={() => void joinCloudBand()}
             >
-              {joinBusy ? '…' : `🤝 Rejoindre « ${payload.invite.band} »`}
+              {joinBusy
+                ? '…'
+                : t('🤝 Rejoindre « {band} »', { band: payload.invite.band })}
             </button>
           ) : (
             <>
@@ -358,12 +363,14 @@ export function SharePage({
                   navigate('/artist');
                 }}
               >
-                Créer mon compte gratuit pour rejoindre
+                {t('Créer mon compte gratuit pour rejoindre')}
               </button>
               <p className="help" style={{ margin: 0 }}>
-                Tu deviens membre du groupe <strong>automatiquement</strong>{' '}
-                après la création de ton compte. Déjà inscrit(e) ? Le même
-                bouton te connecte.
+                {t('Tu deviens membre du groupe')}{' '}
+                <strong>{t('automatiquement')}</strong>{' '}
+                {t(
+                  "après la création de ton compte. Déjà inscrit(e) ? Le même bouton te connecte.",
+                )}
               </p>
             </>
           )}

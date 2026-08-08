@@ -191,3 +191,16 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - Langue = `prefs.lang` ('' = automatique, suit le téléphone), réglable
     dans Réglages. En ajoutant un écran : enrichir le dictionnaire du
     domaine concerné dans le même lot.
+  - **Chacun voit l'app dans SA langue** (décision Vincent) : les pages
+    publiques (spectateur du QR, musicien invité à un bœuf) suivent la
+    langue du téléphone du LECTEUR, jamais celle de l'artiste —
+    `publicEntry.tsx` fait `setLang(detectLang())`.
+  - Dictionnaire ENFICHABLE (`registerTranslations`) : l'app musicien
+    charge tous les domaines, l'entrée publique légère ne charge que
+    `en-public.ts` (budget de poids : ~25 Ko, à ne pas gonfler avec des
+    traductions que le spectateur ne voit jamais).
+  - **CGU en français uniquement** (décision Vincent, août 2026) : texte
+    juridique non traduit ; en anglais, un avertissement dit que la
+    version française fait foi.
+  - Vérification : `node scripts/check-i18n.mjs` doit rester à
+    « Couverture complète » avant toute livraison.
