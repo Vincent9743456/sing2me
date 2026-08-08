@@ -11,6 +11,7 @@ import { ShareModal } from '../components/ShareModal';
 import { StagePlan } from '../components/StagePlan';
 import { SongBody } from '../components/SongBody';
 import { TipBox } from '../components/TipBox';
+import { t } from '../i18n';
 import { findSameSong } from '../lib/importer';
 import { migrateSong } from '../lib/model';
 import { getValidSession } from '../lib/auth';
@@ -70,7 +71,7 @@ function DateLine({
           target="_blank"
           rel="noreferrer"
         >
-          📅 Événement
+          {t('📅 Événement')}
         </a>
       ) : null}
     </div>
@@ -166,7 +167,7 @@ export function SharePage({
       setJoined(bandName || inv.band);
     } catch (e) {
       setJoinError(
-        e instanceof Error ? e.message : "L'adhésion a échoué — réessaie.",
+        e instanceof Error ? e.message : t("L'adhésion a échoué — réessaie."),
       );
     } finally {
       setJoinBusy(false);
@@ -182,13 +183,13 @@ export function SharePage({
     let name = (artist.name || prefs.userName).trim();
     if (name === '') {
       const asked = prompt(
-        "Ton nom d'artiste (il remplacera ton nom dans le groupe)",
+        t("Ton nom d'artiste (il remplacera ton nom dans le groupe)"),
       );
       if (asked === null || asked.trim() === '') return;
       name = asked.trim();
     }
     const instrument = (
-      prompt('Ton instrument (facultatif — chant, guitare, basse…)') ?? ''
+      prompt(t('Ton instrument (facultatif — chant, guitare, basse…)')) ?? ''
     ).trim();
     setCard({
       v: 1,
@@ -220,11 +221,18 @@ export function SharePage({
       count++;
     }
     setAdded(true);
-    alert(
-      `${count} morceau${count > 1 ? 'x' : ''} ajouté${count > 1 ? 's' : ''} à ta bibliothèque` +
-        (skipped > 0 ? ` (${skipped} déjà présent${skipped > 1 ? 's' : ''})` : '') +
-        '.',
-    );
+    const skippedPart =
+      skipped > 0
+        ? ' ' +
+          (skipped > 1
+            ? t('({n} déjà présents)', { n: skipped })
+            : t('({n} déjà présent)', { n: skipped }))
+        : '';
+    const base =
+      count > 1
+        ? t('{n} morceaux ajoutés à ta bibliothèque', { n: count })
+        : t('{n} morceau ajouté à ta bibliothèque', { n: count });
+    alert(base + skippedPart + '.');
   }
 
   useEffect(() => {
@@ -255,7 +263,7 @@ export function SharePage({
     return (
       <div className="public">
         <p style={{ textAlign: 'center' }}>
-          Ce lien de partage est invalide ou incomplet.
+          {t('Ce lien de partage est invalide ou incomplet.')}
         </p>
       </div>
     );
@@ -264,7 +272,7 @@ export function SharePage({
     return (
       <div className="public">
         <p className="help" style={{ textAlign: 'center' }}>
-          Ouverture…
+          {t('Ouverture…')}
         </p>
       </div>
     );
@@ -296,8 +304,10 @@ export function SharePage({
         >
           <LogoMark size={48} />
           <h1 style={{ margin: 0 }}>
-            {payload.invite.from} t'invite à rejoindre «&nbsp;
-            {payload.invite.band}&nbsp;»
+            {t("{from} t'invite à rejoindre « {band} »", {
+              from: payload.invite.from,
+              band: payload.invite.band,
+            })}
           </h1>
           <div
             className="hstack"

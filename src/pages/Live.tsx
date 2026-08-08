@@ -14,6 +14,7 @@ import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
 import { LogoMark } from '../components/Logo';
 import { TipBox } from '../components/TipBox';
+import { t } from '../i18n';
 import {
   fetchLive,
   fetchLiveSetlist,
@@ -184,9 +185,10 @@ export function Live({
         stateIdRef.current = s.id;
         setOffline(false); // réseau OK → reprise silencieuse du suivi
         // remonter en haut quand la chanson change
-        const t = s.song?.title ?? '';
-        if (t !== lastTitle.current) {
-          lastTitle.current = t;
+        // (variable renommée : `t` masquait la fonction de traduction)
+        const newTitle = s.song?.title ?? '';
+        if (newTitle !== lastTitle.current) {
+          lastTitle.current = newTitle;
           setLocalHearts(0);
           window.scrollTo({ top: 0 });
         }
@@ -247,12 +249,14 @@ export function Live({
     return (
       <div className="public">
         <p className="help" style={{ textAlign: 'center' }}>
-          {offline ? 'Hors ligne — reconnexion au direct…' : 'Connexion au direct…'}
+          {offline
+            ? t('Hors ligne — reconnexion au direct…')
+            : t('Connexion au direct…')}
         </p>
         {offline && cached && cached.length > 0 && (
           <div style={{ textAlign: 'center' }}>
             <button className="btn small" onClick={() => void openBrowse()}>
-              📋 Revoir la setlist ({cached.length})
+              {t('📋 Revoir la setlist ({n})', { n: cached.length })}
             </button>
           </div>
         )}
@@ -315,8 +319,9 @@ export function Live({
       {/* Mode dégradé : suivi interrompu, le set reste consultable à la main. */}
       {offline && (
         <div className="offlinebanner" role="status">
-          ⚠ Suivi interrompu — fais défiler à la main. Reprise automatique dès
-          le retour du réseau.
+          {t(
+            '⚠ Suivi interrompu — fais défiler à la main. Reprise automatique dès le retour du réseau.',
+          )}
         </div>
       )}
       {/* Fiche artiste pendant le concert : bouton-avatar (photo du groupe /
@@ -329,8 +334,8 @@ export function Live({
         state.artist.name !== '' &&
         ps.profile && (
           <button
-            aria-label={`Voir la page de ${state.artist.name}`}
-            title={`Voir la page de ${state.artist.name}`}
+            aria-label={t('Voir la page de {name}', { name: state.artist.name })}
+            title={t('Voir la page de {name}', { name: state.artist.name })}
             onClick={() => setArtistOpen(true)}
             style={{
               position: 'fixed',
@@ -374,7 +379,7 @@ export function Live({
             className="btn ghost small"
             onClick={() => switchRole('musicien')}
           >
-            🎸 Tu es musicien ? Suis avec les accords
+            {t('🎸 Tu es musicien ? Suis avec les accords')}
           </button>
         </div>
       )}
@@ -385,7 +390,7 @@ export function Live({
         >
           {canBrowse && (
             <button className="btn small" onClick={() => void openBrowse()}>
-              📋 Voir la setlist ({browseCount})
+              {t('📋 Voir la setlist ({n})', { n: browseCount })}
             </button>
           )}
           {canShare && (
@@ -393,7 +398,7 @@ export function Live({
               className="btn ghost small"
               onClick={() => setShareOpen(true)}
             >
-              📣 Inviter
+              {t('📣 Inviter')}
             </button>
           )}
         </div>
@@ -412,7 +417,7 @@ export function Live({
         <Suspense
           fallback={
             <p className="help" style={{ textAlign: 'center' }}>
-              Ouverture de la partition…
+              {t('Ouverture de la partition…')}
             </p>
           }
         >
@@ -425,7 +430,7 @@ export function Live({
       ) : liveNow && state.song ? (
         <>
           <div className="livebadge">
-            <span className="dot" /> EN DIRECT
+            <span className="dot" /> {t('EN DIRECT')}
             {ps.hearts && (
               <span className="livehearts">
                 ❤ {Math.max(state.hearts, localHearts)}
@@ -451,7 +456,7 @@ export function Live({
             </div>
           ) : (
             <p style={{ textAlign: 'center', fontSize: '1.2rem' }}>
-              🎶 Concert en cours — profitez du moment !
+              {t('🎶 Concert en cours — profitez du moment !')}
             </p>
           )}
           {ps.tips && <TipBox artist={state.artist} />}
@@ -464,7 +469,7 @@ export function Live({
             <button
               className="heartfab"
               onClick={onHeart}
-              aria-label="Envoyer un cœur"
+              aria-label={t('Envoyer un cœur')}
             >
               ❤
               {floats.map((f) => (
@@ -481,9 +486,9 @@ export function Live({
         </>
       ) : pauseNow ? (
         <>
-          <div className="livebadge pause">⏸ PAUSE</div>
+          <div className="livebadge pause">{t('⏸ PAUSE')}</div>
           <p style={{ textAlign: 'center', fontSize: '1.1rem' }}>
-            Le concert reprend dans un instant…
+            {t('Le concert reprend dans un instant…')}
           </p>
           {ps.profile && <ArtistBlock state={state} showLinks={ps.links} />}
           {ps.tips && <TipBox artist={state.artist} />}
@@ -519,7 +524,7 @@ export function Live({
           {(!state.artist || state.artist.name === '') &&
             !(souvenirData && souvenirData.songs.length > 0) && (
               <p className="help" style={{ textAlign: 'center' }}>
-                Aucun concert en cours.
+                {t('Aucun concert en cours.')}
               </p>
             )}
         </>
@@ -529,7 +534,7 @@ export function Live({
           <div className="stagelist" onClick={() => setBrowseOpen(false)}>
             <div className="inner">
               <p className="help" style={{ textAlign: 'center' }}>
-                Chargement de la setlist…
+                {t('Chargement de la setlist…')}
               </p>
             </div>
           </div>
@@ -550,16 +555,16 @@ export function Live({
       {!liveNow && role === 'public' && ps.appInvite && (
         <div className="footer">
           <a className="ctabanner" href={location.origin + '/'}>
-            <LogoMark size={22} /> Téléchargez <strong>Sing2Me</strong> — votre
-            songbook, gratuit
+            <LogoMark size={22} /> {t('Téléchargez')} <strong>Sing2Me</strong>{' '}
+            {t('— votre songbook, gratuit')}
           </a>
           <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
             <a href="/#/cgu" style={{ color: 'var(--text-dim)' }}>
-              Conditions d'utilisation
+              {t("Conditions d'utilisation")}
             </a>
             {' · '}
             <a href="/#/report" style={{ color: 'var(--text-dim)' }}>
-              Signaler un contenu
+              {t('Signaler un contenu')}
             </a>
           </p>
         </div>

@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 
 import { LogoMark } from '../components/Logo';
 import { TipBox } from '../components/TipBox';
+import { t } from '../i18n';
 import { fetchLiveForArtist } from '../lib/live';
 import { fetchPublicPage } from '../lib/publicPages';
 import { ArtistProfile } from '../types';
@@ -51,7 +52,7 @@ export function PublicArtist({ name }: { name: string }) {
     return (
       <div className="public">
         <p className="help" style={{ textAlign: 'center' }}>
-          Ouverture…
+          {t('Ouverture…')}
         </p>
       </div>
     );
@@ -66,15 +67,15 @@ export function PublicArtist({ name }: { name: string }) {
       <div className="public">
         <div className="card" style={{ textAlign: 'center' }}>
           <LogoMark size={40} />
-          <h1 style={{ margin: '10px 0 4px' }}>Page introuvable</h1>
+          <h1 style={{ margin: '10px 0 4px' }}>{t('Page introuvable')}</h1>
           <p className="help">
-            Aucun artiste ne correspond à « {name} ».
+            {t('Aucun artiste ne correspond à « {name} ».', { name })}
           </p>
           <a
             className="btn block"
             href={location.origin + location.pathname.replace(/[^/]*$/, '')}
           >
-            Découvrir Sing2Me
+            {t('Découvrir Sing2Me')}
           </a>
         </div>
       </div>
@@ -91,7 +92,7 @@ export function PublicArtist({ name }: { name: string }) {
           {/* Lien ABSOLU vers l'entrée publique légère : la page peut être
               servie depuis /lenom, un hash relatif serait cassé. */}
           <a className="btn block" href={liveCode !== '' ? `/live?c=${liveCode}` : '/live'}>
-            🔴 {shownName} est EN DIRECT — suivre le concert
+            🔴 {t('{name} est EN DIRECT — suivre le concert', { name: shownName })}
           </a>
         </div>
       )}
@@ -124,16 +125,16 @@ export function PublicArtist({ name }: { name: string }) {
           className="ctabanner"
           href={location.origin + location.pathname.replace(/[^/]*$/, '')}
         >
-          <LogoMark size={22} /> Découvrez <strong>Sing2Me</strong> — votre
-          songbook, gratuit
+          <LogoMark size={22} /> {t('Découvrez')} <strong>Sing2Me</strong>{' '}
+          {t('— votre songbook, gratuit')}
         </a>
         <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
           <a href="/#/cgu" style={{ color: 'var(--text-dim)' }}>
-            Conditions d'utilisation
+            {t("Conditions d'utilisation")}
           </a>
           {' · '}
           <a href="/#/report" style={{ color: 'var(--text-dim)' }}>
-            Signaler un contenu
+            {t('Signaler un contenu')}
           </a>
         </p>
       </div>
