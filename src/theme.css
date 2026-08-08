@@ -1242,6 +1242,21 @@ textarea.mono {
   font-weight: 500;
   color: var(--text-dim);
 }
+/* Note vivante (b154) : rappel de la note actuelle dans la modale. */
+.prevnote {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+.prevnote-label {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  margin-bottom: 2px;
+}
 /* Transcription provisoire, affichée en direct pendant la dictée. */
 .recinterim {
   font-weight: 400;

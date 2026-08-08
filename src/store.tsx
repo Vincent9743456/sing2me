@@ -31,6 +31,7 @@ import {
   Prefs,
   Setlist,
   Song,
+  SongNote,
   Tombstone,
   BandRemoval,
 } from './types';
@@ -79,6 +80,8 @@ interface StoreValue extends AppState {
   deleteBand: (bandId: string) => void;
   /** Supprime une note de répétition (suppression propagée partout). */
   deleteNote: (songId: string, noteId: string) => void;
+  /** Remplace une note par sa version à jour (note vivante, b154). */
+  replaceNote: (songId: string, oldNoteId: string, note: SongNote) => void;
   /** Retire un morceau (titre normalisé) du répertoire d'un groupe. */
   recordBandRemoval: (bandId: string, key: string) => void;
   /** Annule un retrait (le morceau ré-intègre le répertoire du groupe). */
@@ -334,6 +337,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState(next);
   }, []);
 
+  /**
+   * Note VIVANTE (b154) : la fusion IA remplace l'ancienne note par la
+   * version à jour — en un seul geste atomique : retrait de l'ancienne,
+   * pierre tombale « #note » (pour qu'elle disparaisse aussi chez les
+   * autres membres — la synchro n'échange les notes que par ajout d'id),
+   * et ajout de la nouvelle.
+   */
+  const replaceNote = (songId: string, oldNoteId: string, note: SongNote) => {
+    setState((prev) => ({
+      ...prev,
+      songs: prev.songs.map((sg) =>
+        sg.id === songId
+          ? {
+              ...sg,
+              rehearsalNotes: [
+                ...sg.rehearsalNotes.filter((n) => n.id !== oldNoteId),
+                note,
+              ],
+              updatedAt: new Date().toISOString(),
+            }
+          : sg,
+      ),
+      deleted: bury(prev.deleted, oldNoteId, '#note'),
+    }));
+  };
   const deleteNote = (songId: string, noteId: string) => {
     setState((prev) => ({
       ...prev,
@@ -470,6 +498,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     saveBand,
     deleteBand,
     deleteNote,
+    replaceNote,
     recordBandRemoval,
     clearBandRemoval,
     resetData,

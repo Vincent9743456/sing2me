@@ -93,6 +93,7 @@ export function SongView({
     recordBandRemoval,
     clearBandRemoval,
     deleteNote,
+    replaceNote,
   } = useStore();
 
   // Contexte setlist : le morceau vient de l'item courant
@@ -1002,7 +1003,13 @@ export function SongView({
           initialBandId={current.bandId}
           existing={noteModal === 'new' ? undefined : noteModal}
           onClose={() => setNoteModal(null)}
-          onSave={(note) =>
+          onSave={(note, replaces) => {
+            // Note vivante (b154) : la fusion IA remplace l'ancienne note
+            // (retrait + pierre tombale + ajout), sinon ajout/édition.
+            if (noteModal === 'new' && replaces) {
+              replaceNote(song.id, replaces, note);
+              return;
+            }
             saveSong({
               ...song,
               rehearsalNotes:
@@ -1011,8 +1018,8 @@ export function SongView({
                   : song.rehearsalNotes.map((n) =>
                       n.id === note.id ? note : n,
                     ),
-            })
-          }
+            });
+          }}
         />
       )}
     </>
