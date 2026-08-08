@@ -19,6 +19,7 @@ import {
   transposeChordSequence,
   versionForBand,
 } from '../lib/model';
+import { getValidSession } from '../lib/auth';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -40,6 +41,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
     setlists,
     saveSetlist,
     deleteSetlist,
+    removeSetlistFromBand,
     bands,
     saveBand,
     saveSong,
@@ -57,9 +59,11 @@ export function SetlistEdit({ id }: { id: string | null }) {
     const base = emptySetlist();
     try {
       const b = sessionStorage.getItem('sing2me/newSetlistBand');
+      const ctx = sessionStorage.getItem('sing2me/newSetlistContext');
       if (b !== null) {
         sessionStorage.removeItem('sing2me/newSetlistBand');
-        return { ...base, bandId: b };
+        sessionStorage.removeItem('sing2me/newSetlistContext');
+        return { ...base, bandId: b, context: ctx ?? '' };
       }
     } catch {
       /* stockage indisponible */
@@ -77,6 +81,22 @@ export function SetlistEdit({ id }: { id: string | null }) {
   const [saved, setSaved] = useState(false);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const isNew = existing === undefined;
+  // Mon identifiant de compte : sert à savoir si JE suis l'auteur.
+  const [myId, setMyId] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const s = await getValidSession();
+      if (s && !cancelled) setMyId(s.userId);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  // Qui peut retirer cette setlist du groupe ? Son auteur uniquement
+  // (b146). Sans auteur connu (setlists d'avant), chacun garde la main.
+  const author = draft.createdBy ?? '';
+  const isAuthor = author === '' || (myId !== '' && author === myId);
 
   // Édition directe : chaque changement est enregistré automatiquement
   // (pas de bouton « Enregistrer »). On saute le tout premier rendu pour
@@ -87,7 +107,17 @@ export function SetlistEdit({ id }: { id: string | null }) {
       firstRender.current = false;
       return;
     }
-    saveSetlist(draft);
+    // Auteur posé à la toute première sauvegarde (b146) : lui seul pourra
+    // retirer la setlist du groupe.
+    saveSetlist(
+      isNew && (draft.createdBy ?? '') === ''
+        ? {
+            ...draft,
+            createdBy: myId,
+            createdByName: prefs.userName || artist.name || '',
+          }
+        : draft,
+    );
     setSaved(true);
     const t = window.setTimeout(() => setSaved(false), 1400);
     return () => window.clearTimeout(t);
@@ -636,25 +666,50 @@ export function SetlistEdit({ id }: { id: string | null }) {
       {headMenu && (
         <MenuSheet
           title={draft.name || 'Sans titre'}
-          items={[
-            {
-              label: 'Supprimer la setlist',
-              icon: 'trash',
-              danger: true,
-              onClick: () => setConfirmDelete(true),
-            },
-          ]}
+          items={
+            isAuthor
+              ? [
+                  {
+                    label: 'Supprimer la setlist',
+                    icon: 'trash' as const,
+                    danger: true,
+                    onClick: () => setConfirmDelete(true),
+                  },
+                ]
+              : [
+                  {
+                    // Seul l'auteur retire une setlist de groupe (b146) :
+                    // on le DIT plutôt que de masquer l'action sans raison.
+                    label: `Créée par ${
+                      draft.createdByName || 'un autre musicien'
+                    } — elle seule peut la supprimer`,
+                    icon: 'lock' as const,
+                    onClick: () => undefined,
+                  },
+                ]
+          }
           onClose={() => setHeadMenu(false)}
         />
       )}
       {confirmDelete && (
         <ConfirmSheet
           title={`Supprimer « ${draft.name || 'Sans titre'} » ?`}
-          message="Les morceaux restent dans ta bibliothèque — seule la setlist disparaît."
+          message={
+            (draft.bandId ?? '') !== ''
+              ? 'Elle disparaîtra pour tous les membres du groupe. Tu la garderas dans tes setlists, simplement détachée du groupe.'
+              : 'Les morceaux restent dans ta bibliothèque — seule la setlist disparaît.'
+          }
           confirmLabel="Supprimer"
           danger
           onConfirm={() => {
-            deleteSetlist(draft.id);
+            // Setlist de GROUPE : elle disparaît chez les membres mais
+            // reste chez son auteur, détachée (b146). Solo : suppression
+            // franche.
+            if ((draft.bandId ?? '') !== '') {
+              removeSetlistFromBand(draft.id);
+            } else {
+              deleteSetlist(draft.id);
+            }
             navigate('/setlists');
           }}
           onClose={() => setConfirmDelete(false)}

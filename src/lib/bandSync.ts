@@ -62,6 +62,9 @@ export interface SharedSetlist {
   id: string;
   name: string;
   comment: string;
+  /** Auteur de la setlist (b146) : lui seul peut la retirer du groupe. */
+  createdBy?: string;
+  createdByName?: string;
   /** Items par titre normalisé (les ids de morceaux sont locaux) */
   items: { key: string; note: string; keyOverride: string }[];
   setup?: StageSetup;
@@ -152,6 +155,8 @@ export function exportBandData(
       id: sl.id,
       name: sl.name,
       comment: sl.comment,
+      createdBy: sl.createdBy ?? '',
+      createdByName: sl.createdByName ?? '',
       items: sl.items
         .map((it) => {
           const song = bySongId.get(it.songId);
@@ -255,6 +260,13 @@ export function mergeBandData(cloud: BandData, local: BandData): BandData {
       notes: mergeNotes(other.notes, s.notes),
     });
   }
+  // Setlists retirées du groupe (b146) : la clé « #setlist:<id> » voyage
+  // dans les mêmes retraits que les morceaux.
+  const goneSetlists = new Set(
+    [...removed.values()]
+      .filter((r) => r.key.startsWith('#setlist:'))
+      .map((r) => r.key.slice('#setlist:'.length)),
+  );
   const setlists = new Map<string, SharedSetlist>();
   for (const sl of cloud.setlists) setlists.set(sl.id, sl);
   for (const sl of local.setlists) {
@@ -283,7 +295,7 @@ export function mergeBandData(cloud: BandData, local: BandData): BandData {
       ...s,
       notes: s.notes.filter((n) => !removedNotes.has(n.id)),
     })),
-    setlists: [...setlists.values()],
+    setlists: [...setlists.values()].filter((sl) => !goneSetlists.has(sl.id)),
     removed: [...removed.values()]
       .sort((a, b) => a.at.localeCompare(b.at))
       .slice(-300),
@@ -529,11 +541,29 @@ export function applyBandData(
     }
   }
 
-  // Setlists du groupe
-  const nextSetlists = [...setlists];
+  // Setlists retirées du groupe par leur auteur (b146) : elles
+  // disparaissent chez les AUTRES membres. Chez l'auteur, elles ont déjà
+  // été détachées (bandId vide) — on ne touche donc jamais à une setlist
+  // qui n'appartient plus au groupe.
+  let nextSetlists = [...setlists];
+  for (const r of cloud.removed ?? []) {
+    if (!r.key.startsWith('#setlist:')) continue;
+    const slId = r.key.slice('#setlist:'.length);
+    nextSetlists = nextSetlists.filter((sl) => {
+      const mine = (sl.bandId ?? '') === localBandId;
+      if (sl.id !== slId || !mine) return true;
+      changed = true;
+      return false;
+    });
+  }
+
   for (const e of cloud.setlists) {
     // Setlist supprimée localement : ne pas la ressusciter depuis le groupe.
     if (skipSetlistIds?.has(e.id)) continue;
+    // Retirée du groupe par son auteur : idem.
+    if ((cloud.removed ?? []).some((r) => r.key === `#setlist:${e.id}`)) {
+      continue;
+    }
     const resolveItems = () =>
       e.items
         .map((it) => {
@@ -554,6 +584,10 @@ export function applyBandData(
         id: e.id,
         name: e.name,
         comment: e.comment,
+        // L'auteur voyage avec la setlist (b146) : lui seul pourra la
+        // retirer du groupe, et les autres savent à qui elle est.
+        createdBy: e.createdBy ?? '',
+        createdByName: e.createdByName ?? '',
         bandId: localBandId,
         items: resolveItems(),
         setup: e.setup,
@@ -566,6 +600,9 @@ export function applyBandData(
         ...nextSetlists[idx],
         name: e.name,
         comment: e.comment,
+        createdBy: e.createdBy ?? nextSetlists[idx].createdBy ?? '',
+        createdByName:
+          e.createdByName ?? nextSetlists[idx].createdByName ?? '',
         bandId: localBandId,
         items: resolveItems(),
         setup: e.setup,

@@ -635,6 +635,33 @@ export function dedupeMusicians<T extends { name: string }>(list: T[]): T[] {
   return out;
 }
 
+/**
+ * Une setlist n'est-elle qu'une COQUILLE abandonnée ? (b146)
+ * Sans nom, sans morceau, sans commentaire, sans sono : elle vient du
+ * défaut corrigé en b146 (la setlist était enregistrée avant toute
+ * saisie). On ne purge que celles laissées depuis plus de 10 minutes,
+ * pour ne jamais effacer celle qu'un membre est en train de remplir.
+ */
+export function isAbandonedSetlist(sl: Setlist, now = Date.now()): boolean {
+  const setup = sl.setup;
+  const hasSetup =
+    setup !== undefined &&
+    ((setup.positions?.length ?? 0) > 0 ||
+      setup.gear.trim() !== '' ||
+      setup.wiring.trim() !== '' ||
+      setup.sound.trim() !== '');
+  if (
+    sl.name.trim() !== '' ||
+    sl.items.length > 0 ||
+    sl.comment.trim() !== '' ||
+    hasSetup
+  ) {
+    return false;
+  }
+  const t = Date.parse(sl.updatedAt);
+  return !Number.isFinite(t) || now - t > 10 * 60 * 1000;
+}
+
 /** Profil public d'un groupe (même forme qu'un profil artiste). */
 export function bandToProfile(band: Band): ArtistProfile {
   return {
