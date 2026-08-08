@@ -19,8 +19,10 @@ import {
   promoteVersionToOriginal,
   removeVersion,
   renameVersion,
+  setSongCapo,
   SOLO_BAND_ID,
   switchVersion,
+  transposeSong,
   versionForBand,
 } from '../lib/model';
 import { stripChords } from '../lib/chordpro';
@@ -107,50 +109,21 @@ export function SongView({
 
   // Vue unique : tout le monde voit la partition en entier.
   const view: ViewMode = 'complete';
-  const [shift, setShift] = useState(0);
-  const [capo, setCapo] = useState(song?.capo ?? 0);
-  // Tonalité/capo choisis en lecture : mémorisés par morceau + version
-  // (sur cet appareil), sans modifier la partition elle-même.
-  const viewPrefLoaded = useRef(false);
+  // b169 — la tonalité et le capo ne sont PLUS des réglages d'écran mémorisés
+  // sur l'appareil : transposer modifie la version, poser un capo modifie la
+  // version. C'est la seule façon pour que le mode scène et le direct voient
+  // la même chose que le musicien qui lit sa partition.
+  //
+  // Seule exception, documentée : dans une setlist, la tonalité choisie pour
+  // CE concert (`keyOverride`) reste un décalage d'affichage — elle appartient
+  // au concert, pas à la version.
   const inSetlistOverride =
     !!fromSetlist && !!ctxItem && ctxItem.keyOverride !== '';
-  useEffect(() => {
-    if (!song) return;
-    viewPrefLoaded.current = false;
-    if (!inSetlistOverride) {
-      try {
-        const raw = localStorage.getItem(
-          `sing2me/viewkey/${song.id}/${song.activeVersionId}`,
-        );
-        if (raw !== null) {
-          const v = JSON.parse(raw) as { shift?: number; capo?: number };
-          setShift(typeof v.shift === 'number' ? ((v.shift % 12) + 12) % 12 : 0);
-          setCapo(typeof v.capo === 'number' ? v.capo : song.capo);
-        } else {
-          setShift(0);
-          setCapo(song.capo);
-        }
-      } catch {
-        /* stockage indisponible */
-      }
-    }
-    viewPrefLoaded.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [song?.id, song?.activeVersionId]);
-  useEffect(() => {
-    if (!song || !viewPrefLoaded.current || inSetlistOverride) return;
-    try {
-      const key = `sing2me/viewkey/${song.id}/${song.activeVersionId}`;
-      if (shift === 0 && capo === song.capo) {
-        localStorage.removeItem(key); // réglages par défaut : rien à retenir
-      } else {
-        localStorage.setItem(key, JSON.stringify({ shift, capo }));
-      }
-    } catch {
-      /* stockage indisponible */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shift, capo]);
+  const shift =
+    inSetlistOverride && song && song.key !== ''
+      ? (((semitonesBetween(song.key, ctxItem.keyOverride) ?? 0) % 12) + 12) % 12
+      : 0;
+  const capo = song?.capo ?? 0;
   // null = fermé · 'new' = nouvelle note · sinon la note à modifier
   const [noteModal, setNoteModal] = useState<'new' | SongNote | null>(null);
   const [ugUpgrade, setUgUpgrade] = useState(false);
@@ -175,9 +148,7 @@ export function SongView({
       saveSong(switchVersion(song, vid));
       return; // l'effet repassera avec la bonne version en place
     }
-    if (ctxItem.keyOverride !== '' && song.key !== '') {
-      setShift(((semitonesBetween(song.key, ctxItem.keyOverride) ?? 0) + 12) % 12);
-    }
+    // La tonalité du concert (keyOverride) est appliquée par `shift`, dérivé.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromSetlist?.index, song?.activeVersionId]);
 
@@ -279,12 +250,54 @@ export function SongView({
   const bandName = (bid: string) =>
     bands.find((b) => b.id === bid)?.name ?? '';
 
+  /**
+   * Transpose (b169). Deux cibles, selon où l'on se trouve — et le repli de
+   * l'écran le dit (« Tonalité » vs « Tonalité de ce concert ») :
+   *  • en lecture normale, on modifie LA VERSION : les accords sont réécrits,
+   *    la scène et le direct voient le changement ;
+   *  • en lecture de setlist, on modifie la tonalité de CE concert
+   *    (`keyOverride` de l'item) — la version des autres concerts est intacte.
+   * `withCapo` : le ♭ pose un capo de plus et le ♯ en retire un, pour que ce
+   * qui SONNE ne change pas quand on déplace les formes d'accords.
+   */
+  function transpose(semitones: number, withCapo: boolean) {
+    if (!song) return;
+    if (inSetlistOverride || (fromSetlist && ctxItem)) {
+      const base = ctxItem?.keyOverride !== '' ? ctxItem?.keyOverride : song.key;
+      if (!base || base === '') return;
+      setItemKey(transposeKeyName(base, semitones));
+      return;
+    }
+    let next = transposeSong(song, semitones);
+    if (withCapo) {
+      next = setSongCapo(next, semitones < 0 ? capo + 1 : Math.max(0, capo - 1));
+    }
+    saveSong(next);
+  }
+
+  /** Pose le capo SUR LA VERSION : la scène et le direct doivent le voir. */
+  function changeCapo(value: number) {
+    if (!song) return;
+    saveSong(setSongCapo(song, value));
+  }
+
+  /** Tonalité de ce concert (item de setlist) — '' = celle de la version. */
+  function setItemKey(key: string) {
+    if (!ctxSetlist || !ctxItem) return;
+    saveSetlist({
+      ...ctxSetlist,
+      items: ctxSetlist.items.map((it) =>
+        it.id === ctxItem.id ? { ...it, keyOverride: key } : it,
+      ),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   /** Bascule vers une autre version existante (le sélecteur ne propose plus
    *  que de vraies versions — la création passe par le menu ⋯). */
   function onVersionChange(value: string) {
     if (!song) return;
     saveSong(switchVersion(song, value));
-    setShift(0);
   }
 
 
@@ -312,7 +325,6 @@ export function SongView({
     if (!song) return;
     saveSong(applyUgTextToSong(song, text, mode));
     setUgUpgrade(false);
-    setShift(0);
   }
 
   return (
@@ -554,7 +566,8 @@ export function SongView({
         {showTranspose && (
           <details className="stfold">
             <summary>
-              {t('🎵 Tonalité')}{shownKey !== '' ? ` ${shownKey}` : ''}
+              {inSetlistOverride ? t('🎵 Tonalité de ce concert') : t('🎵 Tonalité')}
+              {shownKey !== '' ? ` ${shownKey}` : ''}
               {capo > 0 ? ` · ${t('Capo')} ${capo}` : ''} — {t('transposer')}
             </summary>
             <div className="spacer" />
@@ -569,10 +582,7 @@ export function SongView({
                   title={t(
                     'Accords plus bas (capo +1) — la tonalité réelle ne change pas',
                   )}
-                  onClick={() => {
-                    setShift((s) => s - 1);
-                    setCapo((c) => Math.min(11, c + 1));
-                  }}
+                  onClick={() => transpose(-1, true)}
                 >
                   ♭
                 </button>
@@ -585,10 +595,7 @@ export function SongView({
                 </span>
                 <button
                   title={t('Accords plus haut (capo −1)')}
-                  onClick={() => {
-                    setShift((s) => s + 1);
-                    if (capo > 0) setCapo((c) => c - 1);
-                  }}
+                  onClick={() => transpose(1, true)}
                 >
                   ♯
                 </button>
@@ -600,14 +607,12 @@ export function SongView({
                 <div className="stepper">
                   <button
                     title={t('Le capo change ce qui sonne, pas les accords affichés')}
-                    onClick={() => setCapo((c) => Math.max(0, c - 1))}
+                    onClick={() => changeCapo(capo - 1)}
                   >
                     −
                   </button>
                   <span>{capo}</span>
-                  <button onClick={() => setCapo((c) => Math.min(11, c + 1))}>
-                    ＋
-                  </button>
+                  <button onClick={() => changeCapo(capo + 1)}>＋</button>
                 </div>
               </span>
             )}
@@ -623,15 +628,13 @@ export function SongView({
             >
               {displayReal ? t('✓ Accords sans capo') : t('Accords sans capo')}
             </button>
-            {(shift !== 0 || capo !== song.capo) && (
+            {inSetlistOverride && (
               <button
                 className="btn ghost small"
-                onClick={() => {
-                  setShift(0);
-                  setCapo(song.capo);
-                }}
+                title={t('Rejouer ce morceau dans la tonalité de la version')}
+                onClick={() => setItemKey('')}
               >
-                {t('Réinitialiser')}
+                {t('Tonalité d’origine')}
               </button>
             )}
             </div>
@@ -714,7 +717,6 @@ export function SongView({
               onClick={() => {
                 // Nom de la version (donnée persistée) : jamais traduit.
                 saveSong(duplicateVersion(song, 'Solo', SOLO_BAND_ID));
-                setShift(0);
               }}
             >
               {t('🎙 Créer la version Solo')}
@@ -950,7 +952,6 @@ export function SongView({
                     onClick: () => {
                       // Nom de la version (donnée persistée) : jamais traduit.
                       saveSong(duplicateVersion(song, 'Solo', SOLO_BAND_ID));
-                      setShift(0);
                     },
                   },
                 ]
@@ -1001,7 +1002,6 @@ export function SongView({
           confirmLabel={t('En faire la référence')}
           onConfirm={() => {
             saveSong(promoteVersionToOriginal(song, current.id));
-            setShift(0);
             toast.show(t('C’est maintenant la version de référence ⭐'));
           }}
           onClose={() => setPromoteOpen(false)}

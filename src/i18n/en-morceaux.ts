@@ -161,6 +161,10 @@ export const EN_MORCEAUX: Record<string, string> = {
     'Versions: reference, rename, better version, delete',
   'Tonalité et capo sont ici — tout se transpose.': 'Key and capo are here — everything transposes.',
   '🎵 Tonalité': '🎵 Key',
+  '🎵 Tonalité de ce concert': '🎵 Key for this gig',
+  'Tonalité d’origine': 'Back to the version’s key',
+  'Rejouer ce morceau dans la tonalité de la version':
+    'Play this song in the version’s own key again',
   transposer: 'transpose',
   "Afficher les accords tels qu'ils doivent être joués sans capo — pratique pour la basse":
     "Show the chords as they should be played without a capo — handy for bass",

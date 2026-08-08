@@ -74,6 +74,18 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - modifier une partition ne change jamais la version active par
     défaut d'un morceau ; la tonalité/capo de la version principale se
     propage aux versions qui suivaient les mêmes valeurs ;
+  - **transposer MODIFIE la version** (décision Vincent, b169) : les
+    accords écrits sont réécrits et la tonalité suit
+    (`transposeSong`) ; poser un capo modifie la version
+    (`setSongCapo`). Ce n'est plus un réglage d'écran mémorisé sur
+    l'appareil — c'est la seule façon pour que le mode scène, le direct
+    et le suivi de groupe voient la même chose que le musicien.
+    Transposer est sa propre annulation. **Exception** : dans une
+    setlist, les boutons règlent la tonalité de CE concert
+    (`keyOverride` de l'item), jamais la version — le repli le dit
+    (« Tonalité de ce concert »). La tonalité annoncée aux autres
+    musiciens vient du morceau (`playedKey`), jamais de la clé de
+    rafraîchissement de la diffusion ;
   - **invariant « originale maîtresse »** (assoupli b135) : la 1ʳᵉ version
     (`versions[0]`) est TOUJOURS une version personnelle (`bandId ''`) —
     elle reste dans la bibliothèque perso, pilote les autres, n'est jamais

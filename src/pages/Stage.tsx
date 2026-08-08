@@ -127,7 +127,11 @@ export function Stage({
           capo: item.song.capo,
         }
       : null,
-    item ? (item.keyOverride !== '' ? item.keyOverride : item.song.key) : '',
+    // Le capo fait partie de la clé de rafraîchissement (b169) : sans lui, en
+    // poser un ne republiait rien et le direct gardait l'ancienne valeur.
+    item
+      ? `${item.keyOverride !== '' ? item.keyOverride : item.song.key}:${item.song.capo}`
+      : '',
   );
 
   // Diffusion de la setlist au public (concert) : il peut la parcourir

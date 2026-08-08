@@ -70,7 +70,7 @@ interface OnAirValue {
   /** Session en cours : concert (public) ou répétition (musiciens seuls). */
   mode: LiveMode;
   /** La page courante déclare ce que voit le chanteur. */
-  setCurrent: (song: LiveSong | null, meta?: { key: string }) => void;
+  setCurrent: (song: LiveSong | null) => void;
   /** Une page de setlist déclare la setlist à diffuser au public. */
   setSetlist: (songs: LivePublicSong[] | null, name?: string) => void;
 }
@@ -328,13 +328,17 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const clearTimer = useRef<number | null>(null);
 
   const setCurrent = useCallback(
-    (song: LiveSong | null, meta?: { key: string }) => {
+    (song: LiveSong | null) => {
       currentRef.current = song;
       if (song) {
+        // La tonalité envoyée aux autres musiciens vient du MORCEAU, pas de la
+        // clé de rafraîchissement (b169). Celle-ci contient aussi le capo
+        // (« Am:0 ») : envoyée telle quelle, elle était illisible et le suivi
+        // de groupe ne transposait donc jamais (Follow.tsx).
         lastMetaRef.current = {
           title: song.title,
           artist: song.artist,
-          key: meta?.key ?? '',
+          key: song.playedKey ?? song.chordKey ?? '',
         };
         if (clearTimer.current !== null) {
           window.clearTimeout(clearTimer.current);
@@ -719,7 +723,7 @@ export function useOnAirSong(song: LiveSong | null, songKey = '') {
     ? `${song.title}|${song.artist}|${song.lyrics.length}|${songKey}`
     : '';
   useEffect(() => {
-    if (setCurrent) setCurrent(song, { key: songKey });
+    if (setCurrent) setCurrent(song);
     // En quittant une page de partition, plus aucune chanson n'est affichée
     // → l'écran d'accueil est diffusé (règle : c'est la chanson affichée qui
     // est vue par tous ; sinon l'accueil).

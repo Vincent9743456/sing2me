@@ -2,7 +2,13 @@
  * Aides sur le modèle : extraction d'accords, migration des anciennes
  * données (modèle à sections → structure en tête + paroles continues).
  */
-import { Spelling, transposeChord } from './chords';
+import {
+  Spelling,
+  spellingForKey,
+  transposeChord,
+  transposeContent,
+  transposeKeyName,
+} from './chords';
 import {
   decodeHtmlEntities,
   fixGlyphSpaces,
@@ -289,6 +295,46 @@ export function resolveVersion(song: Song, versionId: string): Song {
     structure: target.structure,
     lyrics: target.lyrics,
   };
+}
+
+/**
+ * Transpose VRAIMENT la version affichée (b169) : les accords écrits dans les
+ * paroles sont réécrits, et la tonalité suit.
+ *
+ * Auparavant, transposer n'était qu'un réglage d'affichage mémorisé sur
+ * l'appareil : le mode scène et le direct republiaient la tonalité stockée,
+ * et le changement disparaissait au pire moment. Une transposition est
+ * désormais une modification de la version, comme n'importe quelle autre —
+ * et elle est sa propre annulation (transposer en sens inverse revient
+ * exactement au point de départ).
+ *
+ * Le capo n'est pas touché ici : il ne change pas les accords écrits.
+ */
+export function transposeSong(song: Song, semitones: number): Song {
+  const shift = ((semitones % 12) + 12) % 12;
+  if (shift === 0) return song;
+  const newKey = song.key !== '' ? transposeKeyName(song.key, shift) : '';
+  // L'orthographe suit la tonalité d'arrivée : en Fa on écrit Sib, pas La#.
+  const spelling = spellingForKey(newKey !== '' ? newKey : song.key);
+  return syncActiveVersion({
+    ...song,
+    key: newKey,
+    lyrics: transposeContent(song.lyrics, shift, spelling),
+    // Le résumé de structure porte aussi des accords (« C D E G ») : il doit
+    // suivre, sinon la grille en tête contredirait les paroles.
+    structure: song.structure.map((r) => ({
+      ...r,
+      chords: transposeContent(r.chords, shift, spelling),
+    })),
+  });
+}
+
+/** Change le capo de la version affichée (b169) : c'est une propriété de la
+ *  version, pas un réglage d'écran — la scène et le direct doivent la voir. */
+export function setSongCapo(song: Song, capo: number): Song {
+  const clamped = Math.max(0, Math.min(11, Math.round(capo)));
+  if (clamped === song.capo) return song;
+  return syncActiveVersion({ ...song, capo: clamped });
 }
 
 /**
