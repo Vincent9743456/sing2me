@@ -193,38 +193,14 @@ export function TabBar({
   /** Pastille de notifications sur l'onglet Groupes. */
   bandsBadge?: number;
 }) {
-  const ref = useRef<HTMLElement | null>(null);
-  // Bug iPad/iOS (PWA plein écran) : WebKit fait parfois défiler le viewport
-  // de MISE EN PAGE (clavier ouvert puis fermé, rotation) sans le réaligner —
-  // une barre `position: fixed` reste alors plantée au milieu de l'écran
-  // (« les menus du bas remontent »). Correctif : quand le bas du viewport
-  // visuel passe SOUS le bas du viewport de mise en page, on recolle la
-  // barre au bas visible. Dans un navigateur sain, le décalage vaut 0 et on
-  // ne touche à rien ; clavier ouvert (décalage négatif), on laisse la barre
-  // à sa place naturelle.
-  useEffect(() => {
-    const vv = window.visualViewport;
-    const el = ref.current;
-    if (!vv || !el) return;
-    const place = () => {
-      const shift = Math.max(
-        0,
-        Math.round(vv.offsetTop + vv.height - window.innerHeight),
-      );
-      el.style.transform = shift > 0 ? `translateY(${shift}px)` : '';
-    };
-    place();
-    vv.addEventListener('resize', place);
-    vv.addEventListener('scroll', place);
-    window.addEventListener('scroll', place, { passive: true });
-    return () => {
-      vv.removeEventListener('resize', place);
-      vv.removeEventListener('scroll', place);
-      window.removeEventListener('scroll', place);
-    };
-  }, []);
+  // NE PAS déplacer cette barre en JavaScript (b184). Une tentative (b181)
+  // la recollait au bas du viewport VISUEL à chaque événement de défilement :
+  // pendant l'inertie iOS, ce recalage produisait exactement le symptôme
+  // qu'il visait — « le menu du bas remonte quand on scrolle ». Une barre
+  // `position: fixed`, sans transform, sans flou et sans script, est ce que
+  // le navigateur place le mieux.
   return (
-    <nav className="tabbar" ref={ref}>
+    <nav className="tabbar">
       <div className="brand">
         <Brand size={26} />
       </div>

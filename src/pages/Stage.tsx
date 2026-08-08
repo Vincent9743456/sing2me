@@ -14,6 +14,7 @@ import { LivePublicSong } from '../lib/live';
 import { SongBody } from '../components/SongBody';
 import { NoteModal } from '../components/NoteModal';
 import { DndHint } from '../components/ui';
+import { StageList } from '../components/StageList';
 import { Icon } from '../components/Icon';
 import { CoachMark } from '../components/CoachMark';
 import {
@@ -513,12 +514,7 @@ export function Stage({
 
       {/* Choix libre d'un morceau : l'ordre de la setlist reste inchangé */}
       {showList && (
-        <div
-          className="stagelist"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowList(false);
-          }}
-        >
+        <StageList onClose={() => setShowList(false)}>
           <div className="inner">
             <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
               {t(
@@ -559,7 +555,7 @@ export function Stage({
               {t('Fermer')}
             </button>
           </div>
-        </div>
+        </StageList>
       )}
     </div>
   );

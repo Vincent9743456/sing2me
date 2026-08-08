@@ -7,6 +7,7 @@
 import QRCode from 'qrcode';
 import React, { useEffect, useState } from 'react';
 
+import { StageList } from '../../components/StageList';
 import { t } from '../../i18n';
 
 export default function ShareLive({
@@ -63,12 +64,7 @@ export default function ShareLive({
   }
 
   return (
-    <div
-      className="stagelist"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <StageList onClose={onClose}>
       <div className="inner">
         <button className="btn block" onClick={onClose}>
           {t('← Revenir aux paroles')}
@@ -101,6 +97,6 @@ export default function ShareLive({
           {t('← Revenir aux paroles')}
         </button>
       </div>
-    </div>
+    </StageList>
   );
 }

@@ -6,6 +6,7 @@
  */
 import React, { Suspense, lazy } from 'react';
 
+import { StageList } from '../../components/StageList';
 import { TipBox } from '../../components/TipBox';
 import { ArtistProfile } from '../../types';
 
@@ -26,12 +27,7 @@ export default function ArtistSheet({
 }) {
   const links = (artist.links ?? []).filter((l) => l.url !== '');
   return (
-    <div
-      className="stagelist"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <StageList onClose={onClose}>
       <div className="inner">
         <button className="btn block" onClick={onClose}>
           ← Revenir aux paroles
@@ -64,6 +60,6 @@ export default function ArtistSheet({
           ← Revenir aux paroles
         </button>
       </div>
-    </div>
+    </StageList>
   );
 }

@@ -10,6 +10,7 @@ Statuts : ✅ conserver · 🔧 corriger · 🔀 fusionner · ➕ créer · ❌ 
 | TabBar | ui.tsx | 🔧 | Glyphes texte → icônes SVG ; états focus |
 | Field | ui.tsx | ✅ | Base saine — l'imposer partout |
 | Modal | ui.tsx | 🔧 | + Échap, focus initial, aria-modal |
+| StageList / useScrollLock | StageList.tsx | ✅ | Panneau plein écran : fond opaque + verrou de défilement de la page. **Seule façon d'ouvrir un plein écran** — ne jamais réécrire `.stagelist` à la main (b184). Module sans dépendances : sert aussi à l'entrée publique légère |
 | Empty | ui.tsx | 🔧 | + variante avec action principale (bouton) |
 | DndHint | ui.tsx | ✅ | |
 | SongBody / ChordLine / StructureBlock | SongBody.tsx | 🔧 | En-têtes métier par vue (phase 2) ; sinon conserver |

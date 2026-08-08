@@ -21,7 +21,7 @@ import {
   fetchBandMessages,
   postBandMessage,
 } from '../lib/bands';
-import { songKey } from '../lib/importer';
+import { findSameSong, songKey } from '../lib/importer';
 import { duplicateVersion, switchVersion, versionForBand } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -298,9 +298,7 @@ export function BandChat({ id }: { id: string }) {
                   {m.text}
                 </div>
                 {m.kind === 'chanson' && (
-                  <div className="help" style={{ marginTop: 4 }}>
-                    {t('Ajoutée au répertoire du groupe.')}
-                  </div>
+                  <ChezMoi text={m.text} bandId={id} />
                 )}
               </div>
             ))}
@@ -451,5 +449,50 @@ function SongPicker({
         {t('Fermer')}
       </button>
     </Modal>
+  );
+}
+
+/**
+ * « Et chez moi, elle est où ? » (b184).
+ *
+ * L'annonce disait seulement « Ajoutée au répertoire du groupe ». Vincent
+ * cherchait la partition de Marco dans ses Idées et ne la trouvait pas —
+ * pour une bonne raison : il avait DÉJÀ ce morceau, la partition de Marco
+ * était donc devenue une VERSION de groupe sur le sien. C'est le bon
+ * comportement, mais rien ne le disait. Ici, l'annonce se termine par où la
+ * partition a atterri, et par le geste pour y aller.
+ */
+function ChezMoi({ text, bandId }: { text: string; bandId: string }) {
+  const { songs } = useStore();
+  // L'annonce est écrite « Titre — Artiste » (voir announceBandSong).
+  const [titre, artiste] = text.split(' — ');
+  const mien = findSameSong(songs, (titre ?? '').trim(), '', (artiste ?? '').trim());
+  if (!mien) {
+    return (
+      <div className="help" style={{ marginTop: 4 }}>
+        {t('Ajoutée au répertoire du groupe — elle arrivera dans tes Idées.')}
+      </div>
+    );
+  }
+  const surMonMorceau = versionForBand(mien, bandId) !== null;
+  return (
+    <div style={{ marginTop: 4 }}>
+      <div className="help">
+        {mien.idea === true
+          ? t('Ajoutée au répertoire du groupe — elle t’attend dans tes Idées.')
+          : surMonMorceau
+            ? t(
+                'Ajoutée au répertoire du groupe — tu avais déjà ce morceau : c’est une version de plus dessus.',
+              )
+            : t('Ajoutée au répertoire du groupe — tu as déjà ce morceau.')}
+      </div>
+      <button
+        className="btn ghost small"
+        style={{ marginTop: 6 }}
+        onClick={() => navigate(`/song/${mien.id}`)}
+      >
+        🎵 {t('Voir dans ma bibliothèque')}
+      </button>
+    </div>
   );
 }
