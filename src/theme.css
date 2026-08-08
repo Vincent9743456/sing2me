@@ -1222,18 +1222,39 @@ textarea.mono {
 }
 
 /* ---------- Setlist ---------- */
+/* b150 : ligne minimale (voir, réordonner, retirer, réserver) — compacte. */
 .slitem {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius);
-  padding: 10px 14px;
+  padding: 4px 8px;
   margin-bottom: 8px;
   transition:
     border-color var(--transition),
     box-shadow var(--transition);
+}
+.slitem .grow {
+  flex: 1;
+  min-width: 0;
+}
+.slitem .title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Mention de réserve : discrète, sous le titre. */
+.slreserve {
+  color: var(--accent);
+  font-size: 0.72rem;
+  margin-top: 1px;
+}
+/* Cibles tactiles pleines (44px) sans gonfler la ligne. */
+.slitem .btn.icon {
+  margin: -4px -2px;
+  flex-shrink: 0;
 }
 /* La poignée porte le glisser TACTILE (b148) : cible 44px, telle une
    vraie poignée — touch-action: none empêche iOS de transformer le
@@ -2604,38 +2625,6 @@ h2.pagetitle {
 }
 .installhint-x {
   flex-shrink: 0;
-}
-
-/* ---------- Réglages repliés d'un morceau de setlist ---------- */
-.slmore {
-  margin-top: 6px;
-}
-.slmore > summary {
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 100%;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--surface-high);
-  color: var(--text-dim);
-  font-size: 0.72rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.slmore > summary::-webkit-details-marker {
-  display: none;
-}
-.slmore > summary::before {
-  content: '⋯ ';
-  color: var(--text-dim);
-}
-.slmore[open] > summary::before {
-  content: '▾ ';
 }
 
 /* ---------- Mes groupes : icônes cliquables (page Artiste) ---------- */

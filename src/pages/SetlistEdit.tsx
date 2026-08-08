@@ -12,7 +12,6 @@ import {
   TopBar,
 } from '../components/ui';
 import { announceBandSong } from '../lib/bands';
-import { semitonesBetween, spellingForKey, transposeContent, transposeKeyName } from '../lib/chords';
 import { songKey } from '../lib/importer';
 import {
   creatorMember,
@@ -352,32 +351,21 @@ export function SetlistEdit({ id }: { id: string | null }) {
 
   /**
    * Ouvre la partition d'un morceau dans la version jouée par CETTE
-   * setlist (consultation ou édition) — la version active du morceau
-   * bascule dessus pour que l'édition modifie la bonne interprétation.
+   * setlist — la version active du morceau bascule dessus pour que la
+   * lecture (et une éventuelle édition depuis la partition) porte sur la
+   * bonne interprétation. Modifier vit sur la partition, plus ici (b150).
    */
-  function openItemSong(
-    item: Setlist['items'][number],
-    edit: boolean,
-  ) {
+  function openItemSong(item: Setlist['items'][number]) {
     const song = songById.get(item.songId);
     if (!song) return;
-    let vid = (item.versionId ?? '') || song.activeVersionId;
-    let nextDraft = draft;
-    // Plus de « version setlist » (décision Vincent, b113) : modifier
-    // depuis la setlist modifie la version affichée du morceau. Les
-    // ajustements propres à un concert passent par la tonalité de l'item
-    // (keyOverride), pas par une version.
+    const vid = (item.versionId ?? '') || song.activeVersionId;
     if (vid !== song.activeVersionId) {
       saveSong(switchVersion(song, vid));
     }
-    saveSetlist(stamp(withValidatedMeta(nextDraft))); // ne pas perdre les réglages en cours
-    if (edit) {
-      navigate(`/song/${song.id}/edit`);
-    } else {
-      // Lecture DANS la setlist : précédent/suivant + retour direct
-      const idx = nextDraft.items.findIndex((it) => it.id === item.id);
-      navigate(`/setlist/${nextDraft.id}/song/${Math.max(0, idx)}`);
-    }
+    saveSetlist(stamp(withValidatedMeta(draft))); // ne pas perdre les réglages en cours
+    // Lecture DANS la setlist : précédent/suivant + retour direct
+    const idx = draft.items.findIndex((it) => it.id === item.id);
+    navigate(`/setlist/${draft.id}/song/${Math.max(0, idx)}`);
   }
 
   return (
@@ -453,12 +441,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
         <div ref={listRef}>
         {draft.items.map((item, idx) => {
           const song = songById.get(item.songId);
-          const keyOptions =
-            song && song.key !== ''
-              ? Array.from({ length: 12 }, (_v, i) =>
-                  transposeKeyName(song.key, i),
-                )
-              : [];
           return (
             <div
               className={`slitem ${dragIdx === idx ? 'dragover' : ''} ${
@@ -482,162 +464,65 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 <Icon name="grip" size={18} />
               </span>
               <span className="num">{idx + 1}.</span>
-              <div className="grow">
+              {/* Écran volontairement MINIMAL (b150, demande Vincent) :
+                  voir la setlist, changer l'ordre, ajouter/retirer, mettre
+                  en réserve — rien d'autre. Modifier la partition se fait
+                  depuis la partition (un tap sur le titre l'ouvre). */}
+              <div className="grow" style={{ minWidth: 0 }}>
                 <div
                   className="title"
                   style={{ cursor: song ? 'pointer' : 'default' }}
                   title="Voir la partition"
-                  onClick={() => openItemSong(item, false)}
+                  onClick={() => openItemSong(item)}
                 >
                   {song?.title ?? '(morceau supprimé)'}
                   {song && song.artist !== '' && (
                     <span className="stauthor"> — {song.artist}</span>
                   )}
                 </div>
-                <div
-                  style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}
-                >
-                  {/* Voir la partition = un clic sur le titre (ci-dessus) ;
-                      ici on ne garde que Modifier + Réserve pour désencombrer. */}
-                  <button
-                    className="btn ghost small"
-                    title="Modifier la partition (version de cette setlist)"
-                    aria-label="Modifier la partition"
-                    onClick={() => openItemSong(item, true)}
-                  >
-                    <Icon name="edit" size={14} />
-                  </button>
-                  <button
-                    className="btn ghost small"
-                    style={
-                      item.reserve
-                        ? { color: 'var(--accent)', fontWeight: 700 }
-                        : undefined
-                    }
-                    title={
-                      item.reserve
-                        ? 'En réserve — cliquer pour le remettre dans le set joué'
-                        : 'Mettre en réserve (joué seulement si besoin — hors durée prévue)'
-                    }
-                    onClick={() =>
-                      setDraft((d) => ({
-                        ...d,
-                        items: d.items.map((it) =>
-                          it.id === item.id
-                            ? { ...it, reserve: !it.reserve }
-                            : it,
-                        ),
-                      }))
-                    }
-                  >
-                    {item.reserve ? '☆ En réserve' : '☆ Réserve'}
-                  </button>
-                </div>
-                {/* Réglages propres à la setlist (tonalité, version, note) :
-                    repliés par défaut pour garder la ligne compacte, dispo
-                    d'un clic. Le résumé rappelle ce qui a été personnalisé. */}
-                <details className="slmore">
-                  <summary>
-                    {[
-                      item.keyOverride !== '' ? `→ ${item.keyOverride}` : '',
-                      (item.versionId ?? '') !== ''
-                        ? (song?.versions.find((v) => v.id === item.versionId)
-                            ?.name ?? '')
-                        : '',
-                      item.note.trim() !== '' ? '📝' : '',
-                    ]
-                      .filter((x) => x !== '')
-                      .join(' · ') || 'Tonalité, version, note…'}
-                  </summary>
-                  <div
-                    style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}
-                  >
-                    {keyOptions.length > 0 && (
-                      <select
-                        value={item.keyOverride}
-                        style={{ width: 'auto', padding: '4px 6px', fontSize: '0.8rem' }}
-                        onChange={(e) =>
-                          setDraft((d) => ({
-                            ...d,
-                            items: d.items.map((it) =>
-                              it.id === item.id
-                                ? { ...it, keyOverride: e.target.value }
-                                : it,
-                            ),
-                          }))
-                        }
-                      >
-                        <option value="">Tonalité : {song?.key}</option>
-                        {keyOptions
-                          .filter((k) => k !== song?.key)
-                          .map((k) => (
-                            <option key={k} value={k}>
-                              → {k}
-                            </option>
-                          ))}
-                      </select>
-                    )}
-                    {song && (
-                      <select
-                        value={item.versionId ?? ''}
-                        style={{ width: 'auto', padding: '4px 6px', fontSize: '0.8rem' }}
-                        title="Version jouée dans cette setlist"
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDraft((d) => ({
-                            ...d,
-                            items: d.items.map((it) =>
-                              it.id === item.id
-                                ? { ...it, versionId: value }
-                                : it,
-                            ),
-                          }));
-                        }}
-                      >
-                        <option value="">Version active</option>
-                        {song.versions.map((v) => (
-                          <option key={v.id} value={v.id}>
-                            {v.name}
-                            {v.bandId !== '' && bandName(v.bandId) !== ''
-                              ? ` · ${bandName(v.bandId)}`
-                              : ''}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    <input
-                      type="text"
-                      value={item.note}
-                      placeholder="Note (départ batterie, medley…)"
-                      style={{ flex: 1, minWidth: 140, padding: '4px 8px', fontSize: '0.8rem' }}
-                      onChange={(e) =>
-                        setDraft((d) => ({
-                          ...d,
-                          items: d.items.map((it) =>
-                            it.id === item.id
-                              ? { ...it, note: e.target.value }
-                              : it,
-                          ),
-                        }))
-                      }
-                    />
-                  </div>
-                </details>
+                {item.reserve && (
+                  <div className="slreserve">☆ En réserve — jouée si besoin</div>
+                )}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <button
-                  className="btn ghost small"
-                  style={{ color: 'var(--danger)' }}
-                  onClick={() =>
-                    setDraft((d) => ({
-                      ...d,
-                      items: d.items.filter((it) => it.id !== item.id),
-                    }))
-                  }
-                >
-                  <Icon name="x" size={16} />
-                </button>
-              </div>
+              <button
+                className="btn icon"
+                style={{ color: 'var(--danger)' }}
+                title="Retirer de la setlist"
+                aria-label="Retirer de la setlist"
+                onClick={() =>
+                  setDraft((d) => ({
+                    ...d,
+                    items: d.items.filter((it) => it.id !== item.id),
+                  }))
+                }
+              >
+                <Icon name="x" size={16} />
+              </button>
+              {/* Réserve : étoile discrète, tout à droite. */}
+              <button
+                className="btn icon"
+                style={{
+                  color: item.reserve ? 'var(--accent)' : 'var(--text-faint)',
+                }}
+                title={
+                  item.reserve
+                    ? 'En réserve — cliquer pour la remettre dans le set joué'
+                    : 'Mettre en réserve (jouée seulement si besoin — hors durée prévue)'
+                }
+                aria-label={
+                  item.reserve ? 'Retirer de la réserve' : 'Mettre en réserve'
+                }
+                onClick={() =>
+                  setDraft((d) => ({
+                    ...d,
+                    items: d.items.map((it) =>
+                      it.id === item.id ? { ...it, reserve: !it.reserve } : it,
+                    ),
+                  }))
+                }
+              >
+                <Icon name="star" size={17} />
+              </button>
             </div>
           );
         })}
