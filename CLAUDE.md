@@ -48,8 +48,11 @@
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
   SQL Editor (les fichiers sont idempotents) —
   https://supabase.com/dashboard/project/zssnwjtfzbymtsiccvao/sql/new.
-  **État : `live.sql` rejoué le 8 août 2026** (colonnes `owner_id` de
-  b192 en place). Variables d'environnement
+  **État : `live.sql` rejoué INTÉGRALEMENT le 8 août 2026** — toutes les
+  colonnes accumulées depuis b121 sont en place (`performer`,
+  `setlist_name`, `live_id`, `band_id`, `session_id`, `owner_id`). Ne
+  jamais redonner un bloc PARTIEL : une colonne oubliée ne casse rien
+  bruyamment, elle fait retomber la fonction sur un repli silencieux. Variables d'environnement
   (Vercel) : VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_URL,
   SUPABASE_SERVICE_KEY, LIVE_KEY, ANTHROPIC_API_KEY.
 
