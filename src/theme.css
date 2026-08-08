@@ -1222,6 +1222,42 @@ textarea.mono {
 }
 
 /* ---------- Setlist ---------- */
+/* ---------- Dictée d'une note : état d'enregistrement (b151) ---------- */
+/* L'enregistrement en cours doit être IMPOSSIBLE à rater : bandeau plein,
+   bordure danger, point rouge pulsé. */
+.recbanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: rgba(224, 85, 85, 0.12);
+  font-weight: 600;
+}
+.recbanner.starting {
+  border-color: var(--border);
+  background: var(--surface-high);
+  font-weight: 500;
+  color: var(--text-dim);
+}
+.recdot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+  animation: recpulse 1.1s ease-in-out infinite;
+}
+@keyframes recpulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recdot { animation: none; }
+}
+
 /* b150 : ligne minimale (voir, réordonner, retirer, réserver) — compacte. */
 .slitem {
   display: flex;

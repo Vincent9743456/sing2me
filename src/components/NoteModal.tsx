@@ -58,10 +58,23 @@ export function NoteModal({
   const [visibility, setVisibility] = useState<'groupe' | 'privee'>(
     existing?.visibility ?? 'groupe',
   );
-  const [recording, setRecording] = useState(false);
+  /**
+   * Dictée : machine à états explicite (b151, bug iPhone).
+   * - 'starting' : micro demandé, pas encore confirmé (autorisation…) ;
+   * - 'on'       : le micro écoute réellement (confirmé par le navigateur).
+   * RÈGLE ABSOLUE : arrêter ne dépend JAMAIS d'un événement navigateur —
+   * un tap sur Arrêter coupe l'état tout de suite (iOS n'émet parfois
+   * jamais `onend`, ce qui figeait l'écran sans issue).
+   */
+  const [recState, setRecState] = useState<'off' | 'starting' | 'on'>('off');
+  const recording = recState !== 'off';
   const [aiBusy, setAiBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dictation = useRef<Dictation | null>(null);
+  // N° de session : les événements d'une dictée abandonnée (onEnd tardif
+  // d'iOS…) ne doivent pas toucher l'état de la suivante.
+  const session = useRef(0);
+  const watchdog = useRef(0);
 
   const bandId = existing ? existing.bandId : initialBandId;
   const bandName =
@@ -69,22 +82,55 @@ export function NoteModal({
 
   useEffect(() => {
     return () => {
-      dictation.current?.stop();
+      session.current++;
+      window.clearTimeout(watchdog.current);
+      dictation.current?.abort();
     };
   }, []);
+
+  /** Coupe la dictée immédiatement, quel que soit l'humeur du navigateur. */
+  function stopRecording() {
+    session.current++;
+    window.clearTimeout(watchdog.current);
+    setRecState('off');
+    const d = dictation.current;
+    dictation.current = null;
+    d?.stop();
+    d?.abort();
+  }
 
   function toggleRecording() {
     setError(null);
     if (recording) {
-      dictation.current?.stop();
+      stopRecording();
       return;
     }
+    const sid = ++session.current;
+    const fresh = () => session.current === sid;
     const d = createDictation(
-      (t) => setText((prev) => (prev.trim() === '' ? t : prev + ' ' + t)),
-      () => setRecording(false),
+      (t) => {
+        if (fresh()) setText((prev) => (prev.trim() === '' ? t : prev + ' ' + t));
+      },
+      () => {
+        if (fresh()) {
+          window.clearTimeout(watchdog.current);
+          setRecState('off');
+          dictation.current = null;
+        }
+      },
       (msg) => {
-        setError(msg);
-        setRecording(false);
+        if (fresh()) {
+          window.clearTimeout(watchdog.current);
+          setError(msg);
+          setRecState('off');
+          dictation.current = null;
+        }
+      },
+      () => {
+        if (fresh()) {
+          window.clearTimeout(watchdog.current);
+          setRecState('on');
+        }
       },
     );
     if (!d) {
@@ -94,8 +140,21 @@ export function NoteModal({
       return;
     }
     dictation.current = d;
+    setRecState('starting');
+    // Garde-fou : si le micro n'a pas VRAIMENT démarré sous 6 s
+    // (autorisation restée sans réponse, PWA iOS capricieuse…), on coupe
+    // tout et on le dit — plus jamais d'écran figé sans explication.
+    window.clearTimeout(watchdog.current);
+    watchdog.current = window.setTimeout(() => {
+      if (fresh() && dictation.current === d) {
+        stopRecording();
+        setError(
+          "Le micro n'a pas démarré. Vérifie l'autorisation micro ; " +
+            "depuis l'app installée, essaie aussi dans Safari.",
+        );
+      }
+    }, 6000);
     d.start();
-    setRecording(true);
   }
 
   async function onAi() {
@@ -113,7 +172,7 @@ export function NoteModal({
 
   function onSubmit() {
     if (text.trim() === '') return;
-    dictation.current?.stop();
+    stopRecording();
     onSave(
       existing
         ? { ...existing, text: text.trim(), visibility }
@@ -149,7 +208,9 @@ export function NoteModal({
             className={`btn ${recording ? 'danger' : 'ghost'}`}
             onClick={toggleRecording}
           >
-            {recording ? '⏹ Arrêter la dictée' : '🎤 Dicter'}
+            {recState === 'off' && '🎤 Dicter'}
+            {recState === 'starting' && '⏹ Annuler (micro…)'}
+            {recState === 'on' && '⏹ Arrêter la dictée'}
           </button>
         )}
         <button
@@ -160,8 +221,17 @@ export function NoteModal({
           {aiBusy ? '✨ Synthèse…' : '✨ Synthétiser (IA)'}
         </button>
       </div>
-      {recording && (
-        <p className="help">🔴 Enregistrement en cours — parle, le texte s'ajoute au fur et à mesure.</p>
+      {/* L'état d'enregistrement doit être IMPOSSIBLE à rater (b151). */}
+      {recState === 'starting' && (
+        <div className="recbanner starting" role="status">
+          🎤 Démarrage du micro… (autorise l'accès si demandé)
+        </div>
+      )}
+      {recState === 'on' && (
+        <div className="recbanner" role="status">
+          <span className="recdot" aria-hidden="true" /> Enregistrement en
+          cours — parle, le texte s'ajoute au fur et à mesure.
+        </div>
       )}
       {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
       <div className="chips" style={{ marginBottom: 10 }}>
