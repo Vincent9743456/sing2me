@@ -41,7 +41,7 @@ export function Stage({
   setlistId: string | null;
   songId: string | null;
 }) {
-  const { songs, setlists, prefs, saveSong } = useStore();
+  const { songs, setlists, prefs, saveSong, replaceNote } = useStore();
   const [index, setIndex] = useState(0);
   const view = 'complete' as ViewMode; // partition entière pour tous
   const [fontSize, setFontSize] = useState(() => {
@@ -392,12 +392,17 @@ export function Stage({
           author={prefs.userName}
           initialBandId={noteBandId}
           onClose={() => setNoteOpen(false)}
-          onSave={(n) =>
+          onSave={(n, replaces) => {
+            // Note vivante (b154) : la fusion IA remplace l'ancienne note.
+            if (replaces) {
+              replaceNote(originalSong.id, replaces, n);
+              return;
+            }
             saveSong({
               ...originalSong,
               rehearsalNotes: [...originalSong.rehearsalNotes, n],
-            })
-          }
+            });
+          }}
         />
       )}
       {noteOpen && originalSong && (
@@ -406,12 +411,17 @@ export function Stage({
           author={prefs.userName}
           initialBandId={noteBandId}
           onClose={() => setNoteOpen(false)}
-          onSave={(n) =>
+          onSave={(n, replaces) => {
+            // Note vivante (b154) : la fusion IA remplace l'ancienne note.
+            if (replaces) {
+              replaceNote(originalSong.id, replaces, n);
+              return;
+            }
             saveSong({
               ...originalSong,
               rehearsalNotes: [...originalSong.rehearsalNotes, n],
-            })
-          }
+            });
+          }}
         />
       )}
       <div className="controls">

@@ -12,13 +12,17 @@ import { useStore } from '../store';
 import { makeId, Song, SongNote } from '../types';
 import { Field, Modal } from './ui';
 
-async function aiSummarize(text: string, song: string): Promise<string> {
+async function aiSummarize(
+  text: string,
+  song: string,
+  previous: string,
+): Promise<string> {
   let res: Response;
   try {
     res = await fetch('/api/ai?fn=note', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text, song, parts: [] }),
+      body: JSON.stringify({ text, song, parts: [], previous }),
     });
   } catch {
     throw new Error(
@@ -50,7 +54,9 @@ export function NoteModal({
   initialBandId?: string;
   /** Note à modifier (absent = nouvelle note) */
   existing?: SongNote;
-  onSave: (note: SongNote) => void;
+  /** `replaces` : id de la note vivante que celle-ci met à jour (b154) —
+   *  le parent doit alors la remplacer (retrait + ajout), pas l'empiler. */
+  onSave: (note: SongNote, replaces?: string) => void;
   onClose: () => void;
 }) {
   const { bands } = useStore();
@@ -94,6 +100,30 @@ export function NoteModal({
   const bandId = existing ? existing.bandId : initialBandId;
   const bandName =
     bandId !== '' ? (bands.find((b) => b.id === bandId)?.name ?? '') : '';
+
+  /**
+   * Note VIVANTE (demande Vincent, b154) : le nouveau commentaire ne
+   * s'empile pas — il MET À JOUR la dernière note du même contexte : la
+   * fusion IA remplace ce qui est contredit (« intro à la basse » →
+   * « intro aux percus ») et ajoute ce qui est nouveau. `previous` est
+   * cette note-là ; `mergedWith` vaut son id une fois la fusion faite,
+   * et l'enregistrement la remplace alors au lieu d'ajouter.
+   */
+  const previous = React.useMemo(() => {
+    if (existing) return null;
+    const cands = song.rehearsalNotes
+      .filter(
+        (n) =>
+          n.bandId === bandId &&
+          n.visibility === visibility &&
+          (visibility === 'groupe' || n.author === author),
+      )
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return cands.length > 0 ? cands[cands.length - 1] : null;
+  }, [song, bandId, visibility, existing, author]);
+  const mergedWith = useRef<string | null>(null);
+  const previousRef = useRef(previous);
+  previousRef.current = previous;
 
   useEffect(() => {
     return () => {
@@ -222,12 +252,16 @@ export function NoteModal({
   async function runAi() {
     const input = textRef.current;
     if (input.trim() === '' || aiBusy) return;
+    const prev = previousRef.current;
     setError(null);
     setAiBusy(true);
     try {
-      const summary = await aiSummarize(input, song.title);
+      const summary = await aiSummarize(input, song.title, prev?.text ?? '');
       if (summary.trim() !== '') {
         setText(summary);
+        // La note affichée contient désormais la fusion : à
+        // l'enregistrement, elle REMPLACE la note vivante.
+        mergedWith.current = prev?.id ?? null;
         dictated.current = false;
       }
     } catch (e) {
@@ -254,6 +288,7 @@ export function NoteModal({
             visibility,
             createdAt: new Date().toISOString(),
           },
+      existing ? undefined : (mergedWith.current ?? undefined),
     );
     onClose();
   }
@@ -263,7 +298,17 @@ export function NoteModal({
       title={existing ? 'Modifier la note' : 'Note de répétition'}
       onClose={onClose}
     >
-      <Field label="Note">
+      {/* Note vivante (b154) : la note actuelle est rappelée, le nouveau
+          commentaire la met à jour (fusion IA) au lieu de s'empiler. */}
+      {previous !== null && (
+        <div className="prevnote">
+          <div className="prevnote-label">
+            Note actuelle{previous.author !== '' ? ` (${previous.author})` : ''} :
+          </div>
+          <div className="prevnote-text">{previous.text}</div>
+        </div>
+      )}
+      <Field label={previous !== null ? 'Nouveau commentaire' : 'Note'}>
         {/* Pas d'autoFocus (b152) : le clavier s'ouvrait dès l'ouverture et
             recouvrait toute la modale sur iPhone — on choisit d'abord
             clavier OU dictée, la modale entière sous les yeux. */}
@@ -273,6 +318,12 @@ export function NoteModal({
           placeholder="Départ batterie seule, break avant le pont, fin abrégée…"
         />
       </Field>
+      {previous !== null && (
+        <p className="help" style={{ marginTop: -6 }}>
+          Ton commentaire met la note à jour : ce qui est contredit est
+          remplacé, le reste est conservé et complété.
+        </p>
+      )}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         {dictationSupported() && (
           <button
@@ -318,13 +369,19 @@ export function NoteModal({
       <div className="chips" style={{ marginBottom: 10 }}>
         <button
           className={`chip ${visibility === 'groupe' ? '' : 'off'}`}
-          onClick={() => setVisibility('groupe')}
+          onClick={() => {
+            setVisibility('groupe');
+            mergedWith.current = null; // autre contexte → autre note vivante
+          }}
         >
           👥 Visible du groupe
         </button>
         <button
           className={`chip ${visibility === 'privee' ? '' : 'off'}`}
-          onClick={() => setVisibility('privee')}
+          onClick={() => {
+            setVisibility('privee');
+            mergedWith.current = null; // autre contexte → autre note vivante
+          }}
         >
           🔒 Personnelle
         </button>

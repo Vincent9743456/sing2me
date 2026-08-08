@@ -30,20 +30,39 @@ export default async function handler(req, res) {
     const parts = Array.isArray(req.body?.parts)
       ? req.body.parts.filter((p) => typeof p === 'string').slice(0, 30)
       : [];
+    // Note VIVANTE (b154) : la note actuelle du morceau, à mettre à jour
+    // avec le nouveau commentaire (remplacer ce qui est contredit,
+    // conserver et compléter le reste).
+    const previous =
+      typeof req.body?.previous === 'string' ? req.body.previous.trim() : '';
 
     const prompt =
-      "Voici la transcription d'une note vocale prise pendant une répétition de groupe" +
-      (song ? ` pour le morceau « ${song} »` : '') +
-      '.\n' +
-      (parts.length > 0
-        ? `Les parties du morceau sont : ${parts.join(', ')}.\n`
-        : '') +
-      'Reformule-la en une note de répétition courte, claire et actionnable ' +
-      '(1 à 2 phrases maximum, style télégraphique accepté), en français. ' +
-      "Si la note vise clairement une partie du morceau listée ci-dessus, commence ta réponse par ce libellé suivi de « : » (ex. « Refrain : … »). " +
-      'Réponds UNIQUEMENT avec la note, sans commentaire.\n\n' +
-      '--- TRANSCRIPTION ---\n' +
-      text.slice(0, MAX_INPUT);
+      previous !== ''
+        ? "Voici la note de répétition ACTUELLE d'un morceau" +
+          (song ? ` (« ${song} »)` : '') +
+          ", puis la transcription d'un NOUVEAU commentaire pris en répétition.\n" +
+          'Mets la note à jour :\n' +
+          '- si le nouveau commentaire CONTREDIT un point existant (autre décision sur le même sujet), REMPLACE ce point par la nouvelle décision ;\n' +
+          '- sinon, AJOUTE le nouveau point ;\n' +
+          '- conserve tels quels les points non concernés.\n' +
+          'Réponds UNIQUEMENT avec la note à jour, en français, concise et actionnable : ' +
+          'une ligne par point, chaque ligne commençant par « – ». Sans commentaire.\n\n' +
+          '--- NOTE ACTUELLE ---\n' +
+          previous.slice(0, MAX_INPUT) +
+          '\n\n--- NOUVEAU COMMENTAIRE ---\n' +
+          text.slice(0, MAX_INPUT)
+        : "Voici la transcription d'une note vocale prise pendant une répétition de groupe" +
+          (song ? ` pour le morceau « ${song} »` : '') +
+          '.\n' +
+          (parts.length > 0
+            ? `Les parties du morceau sont : ${parts.join(', ')}.\n`
+            : '') +
+          'Reformule-la en une note de répétition courte, claire et actionnable ' +
+          '(1 à 2 phrases maximum, style télégraphique accepté), en français. ' +
+          "Si la note vise clairement une partie du morceau listée ci-dessus, commence ta réponse par ce libellé suivi de « : » (ex. « Refrain : … »). " +
+          'Réponds UNIQUEMENT avec la note, sans commentaire.\n\n' +
+          '--- TRANSCRIPTION ---\n' +
+          text.slice(0, MAX_INPUT);
 
     const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -54,7 +73,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
-        max_tokens: 300,
+        max_tokens: 500,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
