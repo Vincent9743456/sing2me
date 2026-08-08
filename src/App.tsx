@@ -115,7 +115,11 @@ function Screen() {
   if (route.name === 'stage') {
     return (
       <>
-        <Stage setlistId={route.setlistId} songId={route.songId} />
+        <Stage
+          setlistId={route.setlistId}
+          songId={route.songId}
+          startIndex={route.index}
+        />
         <OnAirButton />
       </>
     );

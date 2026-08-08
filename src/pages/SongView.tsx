@@ -350,7 +350,9 @@ export function SongView({
               onClick={() =>
                 navigate(
                   ctxSetlist
-                    ? `/stage/${ctxSetlist.id}`
+                    ? // On emporte la position : le mode scène s'ouvre sur
+                      // CE morceau, pas sur le premier du set (b164).
+                      `/stage/${ctxSetlist.id}/${fromSetlist?.index ?? 0}`
                     : `/stage/song/${song.id}`,
                 )
               }
