@@ -136,6 +136,39 @@ async function aiSpend() {
   }
 }
 
+/**
+ * Les tables de mesure existent-elles ? (b161) Sans `supabase/admin.sql`
+ * exécuté, tout échoue en silence : la dépense reste à zéro et les
+ * rechargements ne s'enregistrent pas. On le DIT plutôt que de laisser
+ * croire à une consommation nulle.
+ */
+async function measurement() {
+  const probe = async (table) => {
+    try {
+      const r = await fetch(
+        `${process.env.SUPABASE_URL}/rest/v1/${table}?select=id&limit=1`,
+        { headers: sbHeaders() },
+      );
+      if (r.ok) return { ok: true };
+      const detail = await r.text().catch(() => '');
+      return { ok: false, status: r.status, detail: detail.slice(0, 200) };
+    } catch {
+      return { ok: false, status: 0, detail: 'injoignable' };
+    }
+  };
+  const [usage, tops] = await Promise.all([
+    probe('ai_usage'),
+    probe('billing_topups'),
+  ]);
+  return {
+    ready: usage.ok && tops.ok,
+    aiUsage: usage,
+    topups: tops,
+    // Depuis quand mesure-t-on ? (le premier enregistrement)
+    since: null,
+  };
+}
+
 /** Rechargements saisis à la main, par fournisseur. */
 async function topups() {
   const out = {};
@@ -190,17 +223,27 @@ export default async function handler(req, res) {
         },
       );
       if (!r.ok) {
-        res.status(502).json({ error: "Le rechargement n'a pas pu être noté." });
+        const detail = await r.text().catch(() => '');
+        const missing = /does not exist|relation .* does not exist|PGRST205/i.test(
+          detail,
+        );
+        res.status(502).json({
+          error: missing
+            ? "La table des rechargements n'existe pas encore — exécute supabase/admin.sql dans le SQL Editor."
+            : "Le rechargement n'a pas pu être noté.",
+          detail: detail.slice(0, 200),
+        });
         return;
       }
       res.status(200).json({ ok: true });
       return;
     }
 
-    const [acc, spend, tops, bands, lives, songsShared] = await Promise.all([
+    const [acc, spend, tops, meas, bands, lives, songsShared] = await Promise.all([
       accounts(),
       aiSpend(),
       topups(),
+      measurement(),
       countRows('cloud_bands'),
       countRows('lives'),
       countRows('band_library'),
@@ -220,6 +263,9 @@ export default async function handler(req, res) {
       lives,
       songsShared,
       ai: { last30: spend.d30, allTime: spend.all },
+      // Diagnostic (b161) : l'app affiche un avertissement explicite si la
+      // mesure n'est pas opérationnelle, au lieu d'un zéro trompeur.
+      measurement: meas,
       billing: { remaining, lastTopups: tops.last },
       // Le modèle économique n'est pas arrêté : le chiffre d'affaires
       // reste explicitement absent plutôt qu'affiché à zéro.

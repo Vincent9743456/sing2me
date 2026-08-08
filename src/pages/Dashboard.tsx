@@ -36,13 +36,22 @@ interface Stats {
       byProvider: Record<string, number>;
       byFn: Record<string, number>;
     };
-    allTime: { total: number; byProvider: Record<string, number> };
+    allTime: {
+      total: number;
+      calls: number;
+      byProvider: Record<string, number>;
+    };
   };
   billing: {
     remaining: Record<string, { paid: number; used: number; left: number }>;
     lastTopups: { provider: string; amount_usd: number; at: string }[];
   };
   revenue: null | number;
+  measurement?: {
+    ready: boolean;
+    aiUsage?: { ok: boolean; status?: number; detail?: string };
+    topups?: { ok: boolean; status?: number; detail?: string };
+  };
 }
 
 const usd = (n: number) =>
@@ -123,7 +132,10 @@ export function Dashboard() {
       toast.show(t('Rechargement noté ✓'));
       void load();
     } else {
-      toast.show(t("Le rechargement n'a pas pu être noté."));
+      // On répète la raison donnée par le serveur (table absente…) plutôt
+      // qu'un échec muet.
+      const body = await r.json().catch(() => null);
+      setError(body?.error ?? t("Le rechargement n'a pas pu être noté."));
     }
   }
 
@@ -150,6 +162,29 @@ export function Dashboard() {
 
         {stats !== null && (
           <>
+            {/* Diagnostic (b161) : sans les tables, tout reste à zéro en
+                silence — on le dit, avec le geste qui répare. */}
+            {stats.measurement && !stats.measurement.ready && (
+              <div
+                className="card"
+                style={{ borderColor: 'var(--danger)', marginBottom: 12 }}
+              >
+                <strong>{t('La mesure des coûts n’est pas active.')}</strong>
+                <p className="help" style={{ marginBottom: 0 }}>
+                  {t(
+                    'Les tables de mesure sont absentes : exécute supabase/admin.sql dans le SQL Editor de Supabase. Tant qu’elles manquent, la dépense reste à zéro et les rechargements ne peuvent pas être notés.',
+                  )}
+                </p>
+              </div>
+            )}
+            {stats.measurement?.ready && stats.ai.allTime.calls === 0 && (
+              <p className="help">
+                {t(
+                  'La mesure vient de démarrer : seuls les appels IA passés à partir de maintenant sont comptés. Ce que tu as consommé avant n’apparaît que dans les consoles Anthropic et OpenAI.',
+                )}
+              </p>
+            )}
+
             <h2 className="pagetitle" style={{ marginTop: 0 }}>
               {t('Musiciens')}
             </h2>

@@ -121,4 +121,9 @@ export const EN_COMMUN: Record<string, string> = {
     "Accounts, usage, AI cost, remaining credit",
   'Réponse inattendue du serveur — chiffres indisponibles.':
     'Unexpected server response — figures unavailable.',
+  'La mesure des coûts n’est pas active.': 'Cost measurement is not active.',
+  'Les tables de mesure sont absentes : exécute supabase/admin.sql dans le SQL Editor de Supabase. Tant qu’elles manquent, la dépense reste à zéro et les rechargements ne peuvent pas être notés.':
+    'The measurement tables are missing: run supabase/admin.sql in the Supabase SQL Editor. Until they exist, spending stays at zero and top-ups cannot be recorded.',
+  'La mesure vient de démarrer : seuls les appels IA passés à partir de maintenant sont comptés. Ce que tu as consommé avant n’apparaît que dans les consoles Anthropic et OpenAI.':
+    'Measurement has just started: only AI calls made from now on are counted. What you used before only appears in the Anthropic and OpenAI consoles.',
 };
