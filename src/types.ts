@@ -149,6 +149,9 @@ export interface Prefs {
   userName: string;
   /** Clé secrète du mode ON AIR (identique à LIVE_KEY sur Vercel) */
   liveKey: string;
+  /** Langue de l'interface (b156) : '' ou absent = automatique
+   *  (langue du téléphone), sinon 'fr' | 'en'. */
+  lang?: '' | 'fr' | 'en';
 }
 
 /** Membre d'un groupe (v1 locale : simple annuaire + invitations). */

@@ -34,8 +34,22 @@ import { PublicArtist, publicNameFromPath } from './pages/PublicArtist';
 import { RESERVED_NAMES } from './lib/publicName';
 import { makeKeepSong } from './lib/keepSong';
 import { Welcome } from './pages/Welcome';
+import { resolveLang, setLang } from './i18n';
 import { useRoute } from './router';
 import { StoreProvider, useStore } from './store';
+
+/**
+ * Langue de l'interface (b156) : fixée AVANT le rendu des enfants, à
+ * partir du réglage (« automatique » = langue du téléphone). Le `key`
+ * force le remontage de l'arbre quand la langue change : tous les
+ * écrans se réaffichent aussitôt dans la nouvelle langue.
+ */
+function Localized({ children }: { children: React.ReactNode }) {
+  const { prefs } = useStore();
+  const lang = resolveLang(prefs.lang);
+  setLang(lang);
+  return <React.Fragment key={lang}>{children}</React.Fragment>;
+}
 
 /** Page live DANS l'app : on injecte « Garder ce morceau » (store présent).
  *  L'entrée publique légère rend <Live /> sans rien — aucun store chargé. */
@@ -188,15 +202,17 @@ export default function App() {
   return (
     <ErrorBoundary>
       <StoreProvider>
-        <AccountProvider>
-          <ToastProvider>
-            <NotificationsProvider>
-              <OnAirProvider>
-                <Screen />
-              </OnAirProvider>
-            </NotificationsProvider>
-          </ToastProvider>
-        </AccountProvider>
+        <Localized>
+          <AccountProvider>
+            <ToastProvider>
+              <NotificationsProvider>
+                <OnAirProvider>
+                  <Screen />
+                </OnAirProvider>
+              </NotificationsProvider>
+            </ToastProvider>
+          </AccountProvider>
+        </Localized>
       </StoreProvider>
     </ErrorBoundary>
   );

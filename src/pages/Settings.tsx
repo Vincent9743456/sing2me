@@ -15,6 +15,7 @@ import React, { useState } from 'react';
 import { ConfirmSheet, useToast } from '../components/Feedback';
 import { Icon } from '../components/Icon';
 import { AccordionNav, TopBar } from '../components/ui';
+import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import { leaveBand } from '../lib/bands';
 import { LiveStatus, pushLive, pushSetlist } from '../lib/live';
@@ -52,7 +53,8 @@ const RESET_CHOICES: {
 ];
 
 export function Settings() {
-  const { songs, setlists, concerts, bands, resetData, prefs } = useStore();
+  const { songs, setlists, concerts, bands, resetData, prefs, savePrefs } =
+    useStore();
   const toast = useToast();
   const [picked, setPicked] = useState<Set<keyof ResetParts>>(new Set());
   const [confirming, setConfirming] = useState(false);
@@ -75,33 +77,71 @@ export function Settings() {
   }
 
   const pickedLabels = RESET_CHOICES.filter((c) => picked.has(c.key)).map(
-    (c) => c.label,
+    (c) => t(c.label),
   );
+  const langPref = prefs.lang ?? '';
 
   return (
     <>
       <TopBar
         live={false}
-        title="Réglages"
+        title={t('Réglages')}
         onBack={() => navigate('/artist')}
       />
       <div className="page">
+        {/* Langue de l'interface (b156) : automatique = langue du
+            téléphone. Les contenus musicaux ne sont JAMAIS traduits. */}
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
-          Exporter
+          {t('Langue de l’application')}
         </h2>
+        <div className="chips">
+          <button
+            className={`chip ${langPref === '' ? '' : 'off'}`}
+            onClick={() => savePrefs({ ...prefs, lang: '' })}
+          >
+            {t('🌐 Automatique (langue du téléphone)')}
+          </button>
+          <button
+            className={`chip ${langPref === 'fr' ? '' : 'off'}`}
+            onClick={() => savePrefs({ ...prefs, lang: 'fr' })}
+          >
+            Français
+          </button>
+          <button
+            className={`chip ${langPref === 'en' ? '' : 'off'}`}
+            onClick={() => savePrefs({ ...prefs, lang: 'en' })}
+          >
+            English
+          </button>
+        </div>
+        <p className="help">
+          {t(
+            'Tes partitions, paroles, notes et messages ne sont jamais traduits — seule l’interface change de langue.',
+          )}
+        </p>
+
+        <div className="spacer" />
+        <h2 className="pagetitle">{t('Exporter')}</h2>
         <AccordionNav
-          title="📄 Exporter la bibliothèque en PDF"
-          sub={`${songs.filter((s) => s.idea !== true).length} morceau${
-            songs.filter((s) => s.idea !== true).length > 1 ? 'x' : ''
-          } — carnet imprimable, « Enregistrer en PDF »`}
+          title={t('📄 Exporter la bibliothèque en PDF')}
+          sub={
+            (songs.filter((s) => s.idea !== true).length > 1
+              ? t('{n} morceaux', {
+                  n: songs.filter((s) => s.idea !== true).length,
+                })
+              : t('{n} morceau', {
+                  n: songs.filter((s) => s.idea !== true).length,
+                })) + t(' — carnet imprimable, « Enregistrer en PDF »')
+          }
           onClick={() => navigate('/export-pdf')}
         />
 
         <div className="spacer" />
-        <h2 className="pagetitle">Réinitialiser</h2>
+        <h2 className="pagetitle">{t('Réinitialiser')}</h2>
         <p className="help">
-          Choisis ce que tu veux effacer sur ce compte. C'est définitif —
-          la suppression vaut aussi sur tes autres appareils.
+          {t(
+            'Choisis ce que tu veux effacer sur ce compte. C’est définitif — la suppression vaut aussi sur tes autres appareils.',
+          )}
         </p>
         {RESET_CHOICES.map((c) => (
           <label
@@ -117,13 +157,13 @@ export function Settings() {
             />
             <div className="grow">
               <div className="title">
-                {c.label}
+                {t(c.label)}
                 {c.key !== 'artist' && (
                   <span className="stauthor"> — {counts[c.key]}</span>
                 )}
               </div>
               <div className="sub" style={{ whiteSpace: 'normal' }}>
-                {c.detail}
+                {t(c.detail)}
               </div>
             </div>
           </label>
@@ -134,16 +174,18 @@ export function Settings() {
           disabled={picked.size === 0}
           onClick={() => setConfirming(true)}
         >
-          <Icon name="trash" size={15} /> Réinitialiser
+          <Icon name="trash" size={15} /> {t('Réinitialiser')}
           {picked.size > 0 ? ` (${pickedLabels.join(', ')})` : '…'}
         </button>
       </div>
 
       {confirming && (
         <ConfirmSheet
-          title={`Effacer ${pickedLabels.join(', ')} ?`}
-          message="C'est définitif, il n'y a pas de retour en arrière — et la suppression se propagera à tes autres appareils."
-          confirmLabel="Effacer définitivement"
+          title={t('Effacer {liste} ?', { liste: pickedLabels.join(', ') })}
+          message={t(
+            'C’est définitif, il n’y a pas de retour en arrière — et la suppression se propagera à tes autres appareils.',
+          )}
+          confirmLabel={t('Effacer définitivement')}
           danger
           onConfirm={() => {
             const parts: ResetParts = {};
@@ -184,7 +226,7 @@ export function Settings() {
               }
             }
             setPicked(new Set());
-            toast.show('Réinitialisation faite ✓');
+            toast.show(t('Réinitialisation faite ✓'));
           }}
           onClose={() => setConfirming(false)}
         />
