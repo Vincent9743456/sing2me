@@ -35,6 +35,14 @@
     depuis l'extérieur : GET /version.txt).
 - Un seul commit par livraison, message en français :
   « bN : résumé des changements ».
+- **Quota de déploiements Vercel (compte Hobby)** : chaque push de branche
+  consomme un déploiement de prévisualisation EN PLUS de celui de
+  production. Une soirée à sept lots l'a épuisé (« Deployment rate limited
+  — retry in 24 hours »), et la production est restée quatre versions en
+  arrière. Regrouper plusieurs retours en un seul lot plutôt que d'en
+  livrer un par remarque. Rien ne relance un déploiement refusé : il faut
+  un NOUVEAU commit sur `main` (un commit vide ne suffit pas — le merge en
+  rebase l'écarte).
 - Après push : vérifier https://sing2me-three.vercel.app/version.txt.
 - Supabase : projet `zssnwjtfzbymtsiccvao` ; après modification d'un
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
