@@ -10,6 +10,7 @@ import { useOnAirSong } from '../components/OnAir';
 import { DndHint, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { stripChords } from '../lib/chordpro';
+import { t } from '../i18n';
 import { resolveVersion } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -85,9 +86,9 @@ export function Remote({ setlistId }: { setlistId: string }) {
   if (!setlist) {
     return (
       <>
-        <TopBar title="Régie" onBack={() => navigate('/setlists')} />
+        <TopBar title={t('Régie')} onBack={() => navigate('/setlists')} />
         <div className="page">
-          <p className="help">Cette setlist n'existe plus.</p>
+          <p className="help">{t('Cette setlist n\'existe plus.')}</p>
         </div>
       </>
     );
@@ -96,13 +97,13 @@ export function Remote({ setlistId }: { setlistId: string }) {
   return (
     <>
       <TopBar
-        title={`🎛 ${setlist.name || 'Régie'}`}
+        title={`🎛 ${setlist.name || t('Régie')}`}
         onBack={() => navigate('/setlists')}
       />
       <div className="page remote">
         <DndHint />
         <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-          Tape le morceau qui démarre — le public et les musiciens suivent.
+          {t('Tape le morceau qui démarre — le public et les musiciens suivent.')}
         </p>
         {items.map((item, i) => {
           const isCurrent = index === i;
@@ -129,8 +130,8 @@ export function Remote({ setlistId }: { setlistId: string }) {
                     .join(' · ')}
                 </span>
               </span>
-              {isCurrent && <span className="rbadge">▶ EN COURS</span>}
-              {isNext && <span className="rnext">suivant</span>}
+              {isCurrent && <span className="rbadge">{t('▶ EN COURS')}</span>}
+              {isNext && <span className="rnext">{t('suivant')}</span>}
             </button>
           );
         })}
@@ -140,12 +141,16 @@ export function Remote({ setlistId }: { setlistId: string }) {
             style={{ marginTop: 14, padding: '16px' }}
             onClick={() => setIndex(index + 1)}
           >
-            <Icon name="skip" size={16} /> Morceau suivant : {items[index + 1].song.title}
+            <Icon name="skip" size={16} />{' '}
+            {t('Morceau suivant : {titre}', {
+              titre: items[index + 1].song.title,
+            })}
           </button>
         )}
         <p className="help" style={{ textAlign: 'center', marginTop: 14 }}>
-          Re-taper le morceau en cours le désélectionne. Le direct public se
-          pilote avec le bouton ON AIR en haut à droite.
+          {t(
+            'Re-taper le morceau en cours le désélectionne. Le direct public se pilote avec le bouton ON AIR en haut à droite.',
+          )}
         </p>
       </div>
     </>

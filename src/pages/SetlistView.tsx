@@ -9,6 +9,7 @@ import React, { useMemo, useState } from 'react';
 
 import { Icon } from '../components/Icon';
 import { Empty, TopBar } from '../components/ui';
+import { t } from '../i18n';
 import { resolveVersion } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -37,9 +38,9 @@ export function SetlistView({ id }: { id: string }) {
   if (!setlist) {
     return (
       <>
-        <TopBar title="Setlist" onBack={() => navigate('/setlists')} />
+        <TopBar title={t('Setlist')} onBack={() => navigate('/setlists')} />
         <div className="page">
-          <Empty>Cette setlist n'existe plus.</Empty>
+          <Empty>{t('Cette setlist n\'existe plus.')}</Empty>
         </div>
       </>
     );
@@ -67,7 +68,7 @@ export function SetlistView({ id }: { id: string }) {
         <div className="slv-item" key={item.id}>
           <span className="slv-num">{num !== null ? `${num}.` : '·'}</span>
           <div className="grow">
-            <div className="slv-title">(morceau supprimé)</div>
+            <div className="slv-title">{t('(morceau supprimé)')}</div>
           </div>
         </div>
       );
@@ -94,7 +95,7 @@ export function SetlistView({ id }: { id: string }) {
           <span className="slv-num">{num !== null ? `${num}.` : '·'}</span>
           <div style={{ minWidth: 0 }}>
             <div className="slv-title">
-              {song.title || '(sans titre)'}
+              {song.title || t('(sans titre)')}
               {song.artist !== '' && (
                 <span className="slv-artist"> — {song.artist}</span>
               )}
@@ -103,11 +104,11 @@ export function SetlistView({ id }: { id: string }) {
               {[
                 shownKey !== ''
                   ? item.keyOverride !== ''
-                    ? `Tonalité ${shownKey} (concert)`
-                    : `Tonalité ${shownKey}`
+                    ? t('Tonalité {ton} (concert)', { ton: shownKey })
+                    : t('Tonalité {ton}', { ton: shownKey })
                   : '',
                 formatDuration(songSeconds(raw)),
-                raw.durationSec <= 0 ? '(estimée)' : '',
+                raw.durationSec <= 0 ? t('(estimée)') : '',
                 song.tempo > 0 ? `${song.tempo} BPM` : '',
                 raw.hearts > 0 ? `❤ ${raw.hearts}` : '',
               ]
@@ -151,20 +152,20 @@ export function SetlistView({ id }: { id: string }) {
   return (
     <>
       <TopBar
-        title={setlist.name || 'Setlist'}
+        title={setlist.name || t('Setlist')}
         onBack={() => navigate(`/setlist/${setlist.id}`)}
       />
       <div className="page printarea">
         <div className="slv-head">
-          <h1 className="slv-name">{setlist.name || '(sans nom)'}</h1>
+          <h1 className="slv-name">{setlist.name || t('(sans nom)')}</h1>
           <div className="slv-sub">
             {band ? (
               <span style={{ color: bandColor }}>
-                ● {band.name || 'Groupe sans nom'}
+                ● {band.name || t('Groupe sans nom')}
               </span>
             ) : (
               <span className="help" style={{ margin: 0 }}>
-                <Icon name="mic" size={12} /> Solo
+                <Icon name="mic" size={12} /> {t('Solo')}
               </span>
             )}
             {setlist.partyType && setlist.partyType.trim() !== '' && (
@@ -176,20 +177,29 @@ export function SetlistView({ id }: { id: string }) {
           </div>
           <div className="slv-duration">
             <strong>
-              {played.length} morceau{played.length > 1 ? 'x' : ''} ·{' '}
+              {played.length > 1
+                ? t('{n} morceaux', { n: played.length })
+                : t('{n} morceau', { n: played.length })}{' '}
+              ·{' '}
               {hasEstimate ? '≈ ' : ''}
               {formatDuration(playedSec)}
             </strong>
             {reserve.length > 0 && (
               <span className="help" style={{ margin: 0 }}>
                 {' '}
-                + {reserve.length} en réserve (≈ {formatDuration(reserveSec)})
+                {t('+ {n} en réserve (≈ {duree})', {
+                  n: reserve.length,
+                  duree: formatDuration(reserveSec),
+                })}
               </span>
             )}
             {hasEstimate && (
               <span className="help" style={{ margin: 0 }}>
                 {' '}
-                · durée estimée à 5 min pour les morceaux sans durée renseignée
+                ·{' '}
+                {t(
+                  'durée estimée à 5 min pour les morceaux sans durée renseignée',
+                )}
               </span>
             )}
           </div>
@@ -199,30 +209,33 @@ export function SetlistView({ id }: { id: string }) {
           {setlist.items.length > 0 && (
             <button
               className="btn small"
-              title="Imprimer cette vue d'ensemble"
+              title={t('Imprimer cette vue d\'ensemble')}
               onClick={() => window.print()}
             >
-              <Icon name="clipboard" size={14} /> Imprimer
+              <Icon name="clipboard" size={14} /> {t('Imprimer')}
             </button>
           )}
           <button
             className="btn ghost small"
             style={showPerso ? { color: 'var(--accent)' } : undefined}
-            title="Afficher mes notes personnelles (privées) sous chaque morceau"
+            title={t(
+              'Afficher mes notes personnelles (privées) sous chaque morceau',
+            )}
             onClick={() => setShowPerso((v) => !v)}
           >
-            {showPerso ? '✓ ' : ''}Mes notes perso
+            {showPerso ? '✓ ' : ''}
+            {t('Mes notes perso')}
           </button>
         </div>
 
         {setlist.items.length === 0 ? (
           <Empty>
-            Setlist vide —{' '}
+            {t('Setlist vide —')}{' '}
             <button
               className="btn ghost small"
               onClick={() => navigate(`/setlist/${setlist.id}/edit`)}
             >
-              ajoute des morceaux
+              {t('ajoute des morceaux')}
             </button>
           </Empty>
         ) : (
@@ -233,7 +246,7 @@ export function SetlistView({ id }: { id: string }) {
             {reserve.length > 0 && (
               <>
                 <h2 className="slv-section">
-                  En réserve — à jouer selon l'ambiance
+                  {t('En réserve — à jouer selon l\'ambiance')}
                 </h2>
                 <div className="slv-list slv-reserve">
                   {reserve.map((item) => renderItem(item, null))}

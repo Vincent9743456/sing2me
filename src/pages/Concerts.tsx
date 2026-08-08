@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { ShareModal } from '../components/ShareModal';
 import { Icon } from '../components/Icon';
 import { Empty, Field, TopBar } from '../components/ui';
+import { t } from '../i18n';
 import {
   fetchLive,
   fetchLiveStats,
@@ -16,7 +17,7 @@ import { useStore } from '../store';
 import { Concert, emptyConcert, SharePayload } from '../types';
 
 function concertDateLabel(c: Concert): string {
-  if (c.date === '') return 'Date à définir';
+  if (c.date === '') return t('Date à définir');
   const d = new Date(`${c.date}T${c.time || '00:00'}`);
   return d.toLocaleDateString('fr-FR', {
     weekday: 'short',
@@ -47,12 +48,14 @@ export function Concerts() {
     try {
       const s = await fetchLive(joinCode);
       if (s.status === 'off') {
-        setJoinError('Aucun direct avec ce code — vérifie les 6 chiffres.');
+        setJoinError(
+          t('Aucun direct avec ce code — vérifie les 6 chiffres.'),
+        );
         return;
       }
       navigate(`/live/${joinCode}`);
     } catch {
-      setJoinError('Impossible de vérifier le code — réseau indisponible ?');
+      setJoinError(t('Impossible de vérifier le code — réseau indisponible ?'));
     } finally {
       setJoinBusy(false);
     }
@@ -71,7 +74,7 @@ export function Concerts() {
     <>
       {/* Même patron que Morceaux/Setlists : un vrai bouton de création en
           haut du contenu, pas de « + » discret dans l'en-tête. */}
-      <TopBar title="Concerts" />
+      <TopBar title={t('Concerts')} />
       <div className="page">
         <LiveBanner />
         <div
@@ -79,27 +82,30 @@ export function Concerts() {
           style={{ gap: 8, flexWrap: 'wrap', marginBottom: 12 }}
         >
           <button className="btn" onClick={() => navigate('/concert/new')}>
-            <Icon name="plus" size={16} /> Planifier un concert
+            <Icon name="plus" size={16} /> {t('Planifier un concert')}
           </button>
           <button
             className="btn ghost"
-            title="Rejoins un bœuf ou un concert en cours avec son code à 6 chiffres"
+            title={t(
+              'Rejoins un bœuf ou un concert en cours avec son code à 6 chiffres',
+            )}
             onClick={() => setJoinOpen((v) => !v)}
           >
-            🎸 Rejoindre un direct
+            {t('🎸 Rejoindre un direct')}
           </button>
         </div>
         {joinOpen && (
           <div className="card" style={{ marginBottom: 12 }}>
             <p className="help" style={{ marginTop: 0 }}>
-              Saisis le code à 6 chiffres donné par la personne qui a lancé
-              le direct (bœuf ou concert).
+              {t(
+                'Saisis le code à 6 chiffres donné par la personne qui a lancé le direct (bœuf ou concert).',
+              )}
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="text"
                 value={joinCode}
-                placeholder="Code à 6 chiffres"
+                placeholder={t('Code à 6 chiffres')}
                 inputMode="numeric"
                 maxLength={6}
                 style={{ letterSpacing: 3 }}
@@ -114,7 +120,7 @@ export function Concerts() {
                 disabled={joinCode.length !== 6 || joinBusy}
                 onClick={() => void joinLive()}
               >
-                {joinBusy ? '…' : 'Rejoindre'}
+                {joinBusy ? '…' : t('Rejoindre')}
               </button>
             </div>
             {joinError && (
@@ -126,19 +132,22 @@ export function Concerts() {
         )}
         {concerts.length === 0 && (
           <Empty>
-            Aucun concert planifié.
+            {t('Aucun concert planifié.')}
             <br />
-            Date, lieu, setlist : tout au même endroit pour préparer ta
-            prochaine date.
+            {t(
+              'Date, lieu, setlist : tout au même endroit pour préparer ta prochaine date.',
+            )}
           </Empty>
         )}
-        {upcoming.length > 0 && <h2 className="pagetitle">À venir</h2>}
+        {upcoming.length > 0 && (
+          <h2 className="pagetitle">{t('À venir')}</h2>
+        )}
         <div className="list">
           {upcoming.map((c) => (
             <ConcertRow key={c.id} concert={c} />
           ))}
         </div>
-        {past.length > 0 && <h2 className="pagetitle">Passés</h2>}
+        {past.length > 0 && <h2 className="pagetitle">{t('Passés')}</h2>}
         <div className="list">
           {past.map((c) => (
             <ConcertRow key={c.id} concert={c} />
@@ -153,8 +162,8 @@ function ConcertRow({ concert }: { concert: Concert }) {
   const { bands, artist, prefs } = useStore();
   const who =
     (concert.bandId ?? '') !== ''
-      ? (bands.find((b) => b.id === concert.bandId)?.name ?? 'Groupe')
-      : `Solo${
+      ? (bands.find((b) => b.id === concert.bandId)?.name ?? t('Groupe'))
+      : `${t('Solo')}${
           prefs.userName || artist.name
             ? ` · ${prefs.userName || artist.name}`
             : ''
@@ -165,13 +174,13 @@ function ConcertRow({ concert }: { concert: Concert }) {
       onClick={() => navigate(`/concert/${concert.id}`)}
     >
       <div className="grow">
-        <div className="title">{concert.title || '(sans titre)'}</div>
+        <div className="title">{concert.title || t('(sans titre)')}</div>
         <div className="sub">
           {[
             concertDateLabel(concert),
             who,
             concert.venue,
-            concert.visibility === 'prive' ? '🔒 privé' : '',
+            concert.visibility === 'prive' ? t('🔒 privé') : '',
           ]
             .filter((x) => x !== '')
             .join(' · ')}
@@ -180,7 +189,9 @@ function ConcertRow({ concert }: { concert: Concert }) {
       {concert.venueUrl !== '' && (
         <button
           className="btn ghost small"
-          title={`Page du lieu : ${concert.venue || concert.venueUrl}`}
+          title={t('Page du lieu : {lieu}', {
+            lieu: concert.venue || concert.venueUrl,
+          })}
           onClick={(e) => {
             e.stopPropagation();
             window.open(concert.venueUrl, '_blank', 'noopener');
@@ -192,7 +203,7 @@ function ConcertRow({ concert }: { concert: Concert }) {
       {concert.eventUrl !== '' && (
         <button
           className="btn ghost small"
-          title="Événement (Facebook, billetterie…)"
+          title={t('Événement (Facebook, billetterie…)')}
           onClick={(e) => {
             e.stopPropagation();
             window.open(concert.eventUrl, '_blank', 'noopener');
@@ -287,7 +298,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
 
   function onSave() {
     if (draft.title.trim() === '') {
-      alert('Donne un titre à ton concert.');
+      alert(t('Donne un titre à ton concert.'));
       return;
     }
     saveConcert(draft);
@@ -298,42 +309,43 @@ export function ConcertEdit({ id }: { id: string | null }) {
     <>
       <TopBar
         live={false}
-        title={isNew ? 'Nouveau concert' : draft.title || 'Concert'}
+        title={isNew ? t('Nouveau concert') : draft.title || t('Concert')}
         onBack={() => history.back()}
       />
       <div className="page">
-        <Field label="Titre">
+        <Field label={t('Titre')}>
           <input
             type="text"
             value={draft.title}
-            placeholder="Fête de la musique — Port-Louis"
+            placeholder={t('Fête de la musique — Port-Louis')}
             onChange={(e) => update({ title: e.target.value })}
           />
         </Field>
-        <Field label="Qui joue ?">
+        <Field label={t('Qui joue ?')}>
           <select
             value={draft.bandId ?? ''}
             onChange={(e) => update({ bandId: e.target.value })}
           >
             <option value="">
-              Solo{artist.name !== '' ? ` — ${artist.name}` : ''}
+              {t('Solo')}
+              {artist.name !== '' ? ` — ${artist.name}` : ''}
             </option>
             {bands.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name || 'Groupe sans nom'}
+                {b.name || t('Groupe sans nom')}
               </option>
             ))}
           </select>
         </Field>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Field label="Date">
+          <Field label={t('Date')}>
             <input
               type="date"
               value={draft.date}
               onChange={(e) => update({ date: e.target.value })}
             />
           </Field>
-          <Field label="Heure">
+          <Field label={t('Heure')}>
             <input
               type="time"
               value={draft.time}
@@ -341,15 +353,15 @@ export function ConcertEdit({ id }: { id: string | null }) {
             />
           </Field>
         </div>
-        <Field label="Lieu">
+        <Field label={t('Lieu')}>
           <input
             type="text"
             value={draft.venue}
-            placeholder="Le Kestrel Bar, Tamarin…"
+            placeholder={t('Le Kestrel Bar, Tamarin…')}
             onChange={(e) => update({ venue: e.target.value })}
           />
         </Field>
-        <Field label="Page du lieu (site, Google Maps, Facebook…)">
+        <Field label={t('Page du lieu (site, Google Maps, Facebook…)')}>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               type="url"
@@ -360,7 +372,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
             <button
               className="btn ghost"
               style={{ flexShrink: 0 }}
-              title="Chercher le lieu sur Google, puis colle le lien ici"
+              title={t('Chercher le lieu sur Google, puis colle le lien ici')}
               disabled={draft.venue.trim() === '' && draft.title.trim() === ''}
               onClick={() =>
                 window.open(
@@ -377,7 +389,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
               <button
                 className="btn ghost"
                 style={{ flexShrink: 0 }}
-                title="Ouvrir la page du lieu"
+                title={t('Ouvrir la page du lieu')}
                 onClick={() => window.open(draft.venueUrl, '_blank', 'noopener')}
               >
                 ↗
@@ -385,7 +397,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
             )}
           </div>
         </Field>
-        <Field label="Événement (Facebook, billetterie…)">
+        <Field label={t('Événement (Facebook, billetterie…)')}>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               type="url"
@@ -397,7 +409,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
               <button
                 className="btn ghost"
                 style={{ flexShrink: 0 }}
-                title="Ouvrir l'événement"
+                title={t("Ouvrir l'événement")}
                 onClick={() => window.open(draft.eventUrl, '_blank', 'noopener')}
               >
                 ↗
@@ -405,13 +417,13 @@ export function ConcertEdit({ id }: { id: string | null }) {
             )}
           </div>
         </Field>
-        <Field label="Description">
+        <Field label={t('Description')}>
           <textarea
             value={draft.description}
             onChange={(e) => update({ description: e.target.value })}
           />
         </Field>
-        <Field label="Setlist">
+        <Field label={t('Setlist')}>
           <select
             value={draft.setlistId}
             onChange={(e) => {
@@ -425,12 +437,12 @@ export function ConcertEdit({ id }: { id: string | null }) {
               );
             }}
           >
-            <option value="">— Aucune —</option>
+            <option value="">{t('— Aucune —')}</option>
             {setlists.map((s) => {
               const bn =
                 (s.bandId ?? '') !== ''
                   ? (bands.find((b) => b.id === s.bandId)?.name ?? '')
-                  : 'Solo';
+                  : t('Solo');
               return (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -440,59 +452,62 @@ export function ConcertEdit({ id }: { id: string | null }) {
             })}
           </select>
         </Field>
-        <Field label="Visibilité">
+        <Field label={t('Visibilité')}>
           <select
             value={draft.visibility}
             onChange={(e) =>
               update({ visibility: e.target.value as Concert['visibility'] })
             }
           >
-            <option value="public">Public (apparaît sur la page artiste)</option>
-            <option value="prive">Privé</option>
+            <option value="public">
+              {t('Public (apparaît sur la page artiste)')}
+            </option>
+            <option value="prive">{t('Privé')}</option>
           </select>
         </Field>
 
         <div className="rowactions">
           <button className="btn" onClick={onSave}>
-            Enregistrer
+            {t('Enregistrer')}
           </button>
           {draft.setlistId !== '' && (
             <button
               className="btn ghost"
               onClick={() => navigate(`/stage/${draft.setlistId}`)}
             >
-              ▶ Mode scène
+              ▶ {t('Mode scène')}
             </button>
           )}
           <button className="btn ghost" onClick={() => setShare(true)}>
-            QR public
+            {t('QR public')}
           </button>
           {!isNew && (
             <button
               className="btn danger"
               onClick={() => {
-                if (confirm(`Supprimer « ${draft.title} » ?`)) {
+                if (confirm(t('Supprimer « {titre} » ?', { titre: draft.title }))) {
                   deleteConcert(draft.id);
                   navigate('/concerts');
                 }
               }}
             >
-              Supprimer
+              {t('Supprimer')}
             </button>
           )}
         </div>
         <p className="help">
-          Le QR public affiche au spectateur : la setlist et les paroles (sans
-          accords), le profil artiste avec les liens de streaming, et les
-          prochaines dates publiques.
+          {t(
+            'Le QR public affiche au spectateur : la setlist et les paroles (sans accords), le profil artiste avec les liens de streaming, et les prochaines dates publiques.',
+          )}
         </p>
 
         {!isNew && (
           <>
-            <h2 className="pagetitle">Interactions du public</h2>
+            <h2 className="pagetitle">{t('Interactions du public')}</h2>
             <p className="help">
-              Les ❤ et messages reçus pendant ce concert (le direct doit avoir
-              été lancé le jour du concert pour qu'ils lui soient rattachés).
+              {t(
+                "Les ❤ et messages reçus pendant ce concert (le direct doit avoir été lancé le jour du concert pour qu'ils lui soient rattachés).",
+              )}
             </p>
             <button
               className="btn ghost small"
@@ -509,12 +524,12 @@ export function ConcertEdit({ id }: { id: string | null }) {
                   });
                 } catch (e) {
                   setInterError(
-                    e instanceof Error ? e.message : 'Chargement impossible.',
+                    e instanceof Error ? e.message : t('Chargement impossible.'),
                   );
                 }
               }}
             >
-              Voir les interactions
+              {t('Voir les interactions')}
             </button>
             {interError && (
               <p style={{ color: 'var(--danger)' }}>{interError}</p>
@@ -523,16 +538,17 @@ export function ConcertEdit({ id }: { id: string | null }) {
               <div className="card" style={{ marginTop: 10 }}>
                 {inter.stats.length === 0 && inter.messages.length === 0 && (
                   <p className="help">
-                    Rien pour ce concert (pas encore joué, ou direct lancé sans
-                    concert planifié ce jour-là).
+                    {t(
+                      'Rien pour ce concert (pas encore joué, ou direct lancé sans concert planifié ce jour-là).',
+                    )}
                   </p>
                 )}
                 {inter.stats.length > 0 && (
                   <>
                     <div className="help" style={{ marginBottom: 6 }}>
-                      ❤ PAR CHANSON —{' '}
-                      {inter.stats.reduce((sum, s) => sum + s.hearts, 0)} au
-                      total
+                      {t('❤ PAR CHANSON — {n} au total', {
+                        n: inter.stats.reduce((sum, s) => sum + s.hearts, 0),
+                      })}
                     </div>
                     {inter.stats.map((st, i) => (
                       <div className="strow" key={i}>
@@ -547,16 +563,21 @@ export function ConcertEdit({ id }: { id: string | null }) {
                 {inter.messages.length > 0 && (
                   <>
                     <div className="help" style={{ margin: '12px 0 6px' }}>
-                      💬 MESSAGES ({inter.messages.length})
+                      {t('💬 MESSAGES ({n})', { n: inter.messages.length })}
                     </div>
                     {inter.messages.map((m, i) => (
                       <div key={i} style={{ marginBottom: 8 }}>
                         « {m.body} »
                         <span className="stauthor">
                           {' '}
-                          — {m.author !== '' ? m.author : 'anonyme'}
+                          — {m.author !== '' ? m.author : t('anonyme')}
                           {m.song_title !== '' && (
-                            <> · pendant « {m.song_title} »</>
+                            <>
+                              {' '}
+                              {t('· pendant « {titre} »', {
+                                titre: m.song_title,
+                              })}
+                            </>
                           )}
                         </span>
                       </div>
@@ -571,7 +592,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
 
       {share && payload && (
         <ShareModal
-          title="Page publique du concert"
+          title={t('Page publique du concert')}
           payload={payload}
           onClose={() => setShare(false)}
         />

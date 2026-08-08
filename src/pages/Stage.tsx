@@ -22,6 +22,7 @@ import {
   transposeKeyName,
 } from '../lib/chords';
 import { stripChords } from '../lib/chordpro';
+import { t } from '../i18n';
 import { notesForBand, resolveVersion } from '../lib/model';
 import { useStore } from '../store';
 import { EXAMPLE_TAG } from '../seed';
@@ -265,17 +266,19 @@ export function Stage({
         <div style={{ padding: '8px 12px 0' }}>
           <CoachMark
             id="stage-gestures"
-            text="Balaie pour changer de morceau · ▲ défilement automatique · l'écran ne se met pas en veille."
+            text={t(
+              "Balaie pour changer de morceau · ▲ défilement automatique · l'écran ne se met pas en veille.",
+            )}
           />
         </div>
         <div className="body">
           <p style={{ textAlign: 'center', color: 'var(--text-dim)' }}>
-            Setlist vide ou introuvable.
+            {t('Setlist vide ou introuvable.')}
           </p>
         </div>
         <div className="controls">
           <button className="btn ghost" onClick={() => history.back()}>
-            ✕ Quitter
+            {t('✕ Quitter')}
           </button>
         </div>
       </div>
@@ -328,8 +331,13 @@ export function Stage({
       <div className="body" ref={bodyRef}>
         <DndHint />
         {setlistBroadcast && (
-          <div className="stage-broadcast" title="Le public peut ouvrir la setlist et lire les paroles depuis son téléphone">
-            📋 Setlist visible du public
+          <div
+            className="stage-broadcast"
+            title={t(
+              'Le public peut ouvrir la setlist et lire les paroles depuis son téléphone',
+            )}
+          >
+            {t('📋 Setlist visible du public')}
           </div>
         )}
         <h2 className="songtitle" style={{ fontSize: `${fontSize * 1.4}rem` }}>
@@ -340,9 +348,11 @@ export function Stage({
             song.artist,
             shownKey,
             song.tempo > 0 ? `${song.tempo} BPM` : '',
-            !displayReal && song.capo > 0 ? `Capo ${song.capo}` : '',
+            !displayReal && song.capo > 0
+              ? t('Capo {n}', { n: song.capo })
+              : '',
             !displayReal && song.capo > 0 && realKey !== ''
-              ? `sonne en ${realKey}`
+              ? t('sonne en {ton}', { ton: realKey })
               : '',
           ]
             .filter((x) => x !== '')
@@ -357,7 +367,7 @@ export function Stage({
           (song.mySetup?.instrument || song.mySetup?.notes) && (
             <div className="notesbox">
               <div className="label">
-                Mes réglages
+                {t('Mes réglages')}
                 {song.mySetup.instrument !== ''
                   ? ` — ${song.mySetup.instrument}`
                   : ''}
@@ -367,7 +377,7 @@ export function Stage({
           )}
         {view === 'complete' && song.rehearsalNotes.length > 0 && (
             <div className="notesbox">
-              <div className="label">Répétition</div>
+              <div className="label">{t('Répétition')}</div>
               {song.rehearsalNotes
                 .map((n) => (
                   <div key={n.id}>
@@ -425,15 +435,19 @@ export function Stage({
         />
       )}
       <div className="controls">
-        <button className="btn ghost" aria-label="Quitter le mode scène" onClick={() => history.back()}>
+        <button
+          className="btn ghost"
+          aria-label={t('Quitter le mode scène')}
+          onClick={() => history.back()}
+        >
           <Icon name="x" size={18} />
         </button>
         {items.length > 1 && (
           <>
             <button
               className="btn ghost"
-              title="Morceau précédent"
-              aria-label="Morceau précédent"
+              title={t('Morceau précédent')}
+              aria-label={t('Morceau précédent')}
               disabled={clamped <= 0}
               onClick={() => setIndex((i) => Math.max(0, i - 1))}
             >
@@ -441,15 +455,15 @@ export function Stage({
             </button>
             <button
               className="btn ghost"
-              title="Voir la setlist / choisir un morceau"
+              title={t('Voir la setlist / choisir un morceau')}
               onClick={() => setShowList(true)}
             >
               <Icon name="list" size={17} /> {clamped + 1}/{items.length}
             </button>
             <button
               className="btn ghost"
-              title="Morceau suivant"
-              aria-label="Morceau suivant"
+              title={t('Morceau suivant')}
+              aria-label={t('Morceau suivant')}
               disabled={clamped >= items.length - 1}
               onClick={() =>
                 setIndex((i) => Math.min(items.length - 1, i + 1))
@@ -461,7 +475,7 @@ export function Stage({
         )}
         <button
           className={`btn ${scroll ? '' : 'ghost'}`}
-          title="Défilement automatique"
+          title={t('Défilement automatique')}
           onClick={() => setScroll((s) => !s)}
         >
           <Icon name="scroll" size={17} />
@@ -484,8 +498,8 @@ export function Stage({
         )}
         <button
           className="btn ghost"
-          title="Note de répétition (dictée possible)"
-          aria-label="Ajouter une note de répétition"
+          title={t('Note de répétition (dictée possible)')}
+          aria-label={t('Ajouter une note de répétition')}
           onClick={() => setNoteOpen(true)}
         >
           <Icon name="message" size={17} />
@@ -514,8 +528,9 @@ export function Stage({
         >
           <div className="inner">
             <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-              Tape un morceau pour l'afficher — l'ordre de la setlist ne
-              change pas.
+              {t(
+                "Tape un morceau pour l'afficher — l'ordre de la setlist ne change pas.",
+              )}
             </p>
             {items.map((it, i) => (
               <button
@@ -539,7 +554,9 @@ export function Stage({
                       .join(' · ')}
                   </span>
                 </span>
-                {i === clamped && <span className="rbadge">EN COURS</span>}
+                {i === clamped && (
+                  <span className="rbadge">{t('EN COURS')}</span>
+                )}
               </button>
             ))}
             <button
