@@ -11,6 +11,21 @@
  * revient, l'enregistrement est jeté.
  */
 
+/**
+ * Durée MAXIMALE d'une note dictée (b159, demande Vincent) : le temps
+ * d'une prise de note, pas d'une répétition entière. Protège contre le
+ * micro laissé ouvert par mégarde — facture de transcription, taille
+ * d'envoi, et batterie. Au-delà, l'enregistrement se termine tout seul
+ * et ce qui a été dit est transcrit (rien n'est perdu).
+ */
+export const MAX_NOTE_SECONDS = 90;
+
+/**
+ * Débit audio volontairement bas : la parole n'a pas besoin de mieux, et
+ * ça divise par trois ou quatre le poids de l'envoi depuis le téléphone.
+ */
+const SPEECH_BITRATE = 32000;
+
 /** Formats acceptés, du meilleur au plus compatible (Safari = mp4). */
 const MIME_CANDIDATES = [
   'audio/webm;codecs=opus',
@@ -51,6 +66,8 @@ export interface Recorder {
   stop: () => Promise<Recording | null>;
   /** Coupe le micro et jette tout (fermeture, annulation). */
   cancel: () => void;
+  /** Secondes écoulées depuis le début (pour le compteur à l'écran). */
+  elapsed: () => number;
 }
 
 /**
@@ -63,16 +80,23 @@ export interface Recorder {
  */
 export async function startRecording(
   onAutoStop?: () => void,
-  maxSeconds = 180,
+  maxSeconds = MAX_NOTE_SECONDS,
 ): Promise<Recorder> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   const mime = pickMime();
   let rec: MediaRecorder;
   try {
-    rec = new MediaRecorder(stream, mime !== '' ? { mimeType: mime } : undefined);
+    rec = new MediaRecorder(stream, {
+      ...(mime !== '' ? { mimeType: mime } : {}),
+      audioBitsPerSecond: SPEECH_BITRATE,
+    });
   } catch {
-    // Format refusé : on retente en laissant le navigateur décider.
-    rec = new MediaRecorder(stream);
+    // Options refusées : on retente en laissant le navigateur décider.
+    try {
+      rec = new MediaRecorder(stream, mime !== '' ? { mimeType: mime } : undefined);
+    } catch {
+      rec = new MediaRecorder(stream);
+    }
   }
   const chunks: Blob[] = [];
   rec.ondataavailable = (e) => {
@@ -131,6 +155,7 @@ export async function startRecording(
       }
       closeMic();
     },
+    elapsed: () => Math.round((Date.now() - startedAt) / 1000),
   };
 }
 
