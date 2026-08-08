@@ -473,4 +473,6 @@ export const EN_MORCEAUX: Record<string, string> = {
     'Microphone unavailable — allow microphone access for this site, then try again.',
   "Rien n'a été compris dans cet enregistrement.":
     'Nothing could be understood in that recording.',
+  'Limite de {n} secondes atteinte : on transcrit ce que tu as dit. Dicte une seconde note si besoin.':
+    'Reached the {n}-second limit: transcribing what you said. Dictate a second note if you need to.',
 };

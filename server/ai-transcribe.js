@@ -18,9 +18,14 @@
  * jeté. Seul le texte revient au téléphone.
  */
 
-// ~4 Mo d'audio encodé en base64 (≈ 3 min d'Opus) — au-delà, on refuse
-// proprement plutôt que de faire tomber la fonction.
-const MAX_BASE64 = 5_600_000;
+/**
+ * Garde-fou de taille (b159, demande Vincent : « pas des heures »).
+ * Le téléphone borne déjà la prise à 90 s enregistrées à bas débit
+ * (~400 Ko). On accepte largement au-dessus pour ne pas rejeter un
+ * format bavard (mp4 d'iPhone), mais on refuse tout ce qui ressemble à
+ * un micro laissé ouvert : facture de transcription et temps d'attente.
+ */
+const MAX_BASE64 = 2_800_000; // ≈ 2 Mo d'audio réel
 
 const EXT = {
   'audio/webm': 'webm',
@@ -60,7 +65,8 @@ export default async function handler(req, res) {
     }
     if (audio.length > MAX_BASE64) {
       res.status(413).json({
-        error: 'Enregistrement trop long — coupe-le en plusieurs notes.',
+        error:
+          'Enregistrement trop long — une note dictée fait moins de 90 secondes. Coupe-la en plusieurs notes.',
       });
       return;
     }

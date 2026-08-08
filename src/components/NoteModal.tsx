@@ -10,6 +10,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createDictation, Dictation, dictationSupported } from '../lib/speech';
 import {
   blobToBase64,
+  MAX_NOTE_SECONDS,
   Recorder,
   recordingSupported,
   startRecording,
@@ -171,6 +172,9 @@ export function NoteModal({
   const recording = recState === 'starting' || recState === 'on';
   /** Enregistreur du chemin serveur (b157). */
   const recorder = useRef<Recorder | null>(null);
+  /** Secondes écoulées, affichées pendant l'enregistrement (b159). */
+  const [recSeconds, setRecSeconds] = useState(0);
+  const ticker = useRef(0);
   const [aiBusy, setAiBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -244,6 +248,7 @@ export function NoteModal({
       textGate.current++;
       window.clearTimeout(watchdog.current);
       window.clearTimeout(autoAi.current);
+      window.clearInterval(ticker.current);
       dictation.current?.abort();
       recorder.current?.cancel();
     };
@@ -303,9 +308,21 @@ export function NoteModal({
     setRecState('starting');
     try {
       recorder.current = await startRecording(() => {
-        // Durée maximale atteinte : on transcrit ce qui a été dit.
+        // Durée maximale atteinte (b159) : on transcrit ce qui a été dit
+        // — rien n'est perdu — et on dit pourquoi ça s'est arrêté.
+        setInfo(
+          t(
+            'Limite de {n} secondes atteinte : on transcrit ce que tu as dit. Dicte une seconde note si besoin.',
+            { n: MAX_NOTE_SECONDS },
+          ),
+        );
         void finishServerDictation();
       });
+      setRecSeconds(0);
+      window.clearInterval(ticker.current);
+      ticker.current = window.setInterval(() => {
+        setRecSeconds(recorder.current?.elapsed() ?? 0);
+      }, 1000);
       setRecState('on');
     } catch {
       setRecState('off');
@@ -323,8 +340,8 @@ export function NoteModal({
     const rec = recorder.current;
     if (!rec) return;
     recorder.current = null;
+    window.clearInterval(ticker.current);
     setRecState('transcribing');
-    setInfo(null);
     let recording: Awaited<ReturnType<Recorder['stop']>> = null;
     try {
       recording = await rec.stop();
@@ -360,6 +377,7 @@ export function NoteModal({
 
   /** Coupe l'enregistrement serveur SANS transcrire (annulation). */
   function cancelServerDictation() {
+    window.clearInterval(ticker.current);
     recorder.current?.cancel();
     recorder.current = null;
     setRecState('off');
@@ -603,10 +621,24 @@ export function NoteModal({
       {recState === 'on' && (
         <div className="recbanner" role="status">
           <span className="recdot" aria-hidden="true" />
-          <span>
+          <span className="grow">
             {t("Enregistrement — parle, puis ⏹. La note sera résumée par l'IA.")}
             {interim !== '' && <em className="recinterim"> « {interim} »</em>}
           </span>
+          {/* Compteur (b159) : on voit toujours depuis combien de temps on
+              enregistre, et les 15 dernières secondes préviennent. */}
+          {recorder.current !== null && (
+            <span
+              className={`rectimer ${
+                recSeconds >= MAX_NOTE_SECONDS - 15 ? 'soon' : ''
+              }`}
+            >
+              {Math.floor(recSeconds / 60)}:
+              {String(recSeconds % 60).padStart(2, '0')} /{' '}
+              {Math.floor(MAX_NOTE_SECONDS / 60)}:
+              {String(MAX_NOTE_SECONDS % 60).padStart(2, '0')}
+            </span>
+          )}
         </div>
       )}
       {/* Transcription en cours côté serveur (b157). */}

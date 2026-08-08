@@ -1257,6 +1257,17 @@ textarea.mono {
   font-size: 0.72rem;
   margin-bottom: 2px;
 }
+/* Compteur de durée d'enregistrement (b159) : la limite se voit venir. */
+.rectimer {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.rectimer.soon {
+  color: var(--danger);
+}
 /* Transcription provisoire, affichée en direct pendant la dictée. */
 .recinterim {
   font-weight: 400;
