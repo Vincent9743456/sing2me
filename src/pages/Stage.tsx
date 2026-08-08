@@ -548,7 +548,7 @@ export function Stage({
               className="btn ghost block"
               onClick={() => setShowList(false)}
             >
-              Fermer
+              {t('Fermer')}
             </button>
           </div>
         </div>
