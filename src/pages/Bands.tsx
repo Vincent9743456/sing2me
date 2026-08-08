@@ -98,6 +98,8 @@ export function Bands() {
         saveBand({
           ...emptyBand(),
           name: inv.band_name || 'Groupe',
+          // Qui m'a invité = le créateur du groupe (b147).
+          ownerName: inv.from_name || '',
           cloudId: inv.band_id,
           owned: false, // j'ai REJOINT ce groupe : je n'en suis pas le créateur
           members: [creatorMember(artist, prefs.userName)],
@@ -268,6 +270,11 @@ export function Bands() {
                       const n = people.length;
                       return (
                         <div className="sub">
+                          {/* Créateur rappelé quand ce n'est pas moi (b147). */}
+                          {band.owned === false &&
+                          (band.ownerName ?? '') !== ''
+                            ? `créé par ${band.ownerName} · `
+                            : ''}
                           {n} musicien{n > 1 ? 's' : ''}
                           {n > 0
                             ? ` · ${people.map((m) => m.name).join(', ')}`

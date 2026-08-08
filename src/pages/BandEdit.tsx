@@ -557,7 +557,10 @@ export function BandEdit({ id }: { id: string }) {
                   ))}
                 </span>
                 <span>
-                  {memberCount} musicien{memberCount > 1 ? 's' : ''}
+                  {band.owned === false && (band.ownerName ?? '') !== ''
+                  ? `créé par ${band.ownerName} · `
+                  : ''}
+                {memberCount} musicien{memberCount > 1 ? 's' : ''}
                   {pendingMembers.length > 0
                     ? ` · ${pendingMembers.length} en attente`
                     : ''}

@@ -129,7 +129,6 @@ export function SetlistView({ id }: { id: string }) {
             ))}
             {groupNotes.map((n) => (
               <div className="slv-gen" key={n.id}>
-                {n.target !== '' ? `${n.target} — ` : ''}
                 {n.text}
               </div>
             ))}

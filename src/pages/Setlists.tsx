@@ -144,6 +144,11 @@ export function Setlists() {
             }}
           >
             {[
+              // Auteur rappelé quand ce n'est pas moi (b147) : on sait à
+              // qui appartient une setlist partagée.
+              !canDelete(sl) && (sl.createdByName ?? '') !== ''
+                ? `de ${sl.createdByName}`
+                : '',
               `${info.count} morceau${info.count > 1 ? 'x' : ''}`,
               info.sec > 0 ? `${info.estimated ? '≈ ' : ''}${formatDuration(info.sec)}` : '',
               info.reserve > 0 ? `${info.reserve} en réserve` : '',

@@ -480,11 +480,10 @@ export function SharePage({
               .join(' · ')}
           </p>
           {payload.view === 'complete' &&
-            payload.song.rehearsalNotes.some((n) => n.target === '') && (
+            payload.song.rehearsalNotes.length > 0 && (
               <div className="notesbox">
                 <div className="label">Notes de répétition</div>
                 {payload.song.rehearsalNotes
-                  .filter((n) => n.target === '')
                   .map((n) => (
                     <div key={n.id}>
                       💬 {n.text}
@@ -556,12 +555,11 @@ export function SharePage({
               </summary>
               <div className="spacer" />
               {payload.view === 'complete' &&
-                song.rehearsalNotes.some((n) => n.target === '') && (
+                song.rehearsalNotes.length > 0 && (
                   <div className="notesbox">
                     <div className="label">Notes de répétition</div>
                     {song.rehearsalNotes
-                      .filter((n) => n.target === '')
-                      .map((n) => (
+                          .map((n) => (
                         <div key={n.id}>
                           💬 {n.text}
                           {n.author !== '' && (

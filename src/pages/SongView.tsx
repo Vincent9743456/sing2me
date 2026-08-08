@@ -731,7 +731,6 @@ export function SongView({
                   onClick={() => setNoteModal(n)}
                 >
                   <Icon name={n.visibility === 'privee' ? 'lock' : 'message'} size={13} />{' '}
-                  {n.target !== '' ? `${n.target} : ` : ''}
                   {n.text}
                   {n.author !== '' && (
                     <em className="stauthor"> — {n.author}</em>

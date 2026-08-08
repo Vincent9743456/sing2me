@@ -132,14 +132,15 @@ export interface Song {
  * - structure: batteur — structure et commentaires
  * - paroles  : public — paroles seules
  */
-export type ViewMode = 'complete' | 'accords' | 'structure' | 'paroles';
+/**
+ * Vues d'un morceau (b147) : la partition complète, ou les paroles
+ * seules (public / QR). Les vues « accords » et « structure » — un
+ * découpage en sections avec accords par partie — ont été retirées avec
+ * le reste des sections (décision produit : « Structure » est un texte
+ * libre).
+ */
+export type ViewMode = 'complete' | 'paroles';
 
-export const VIEW_LABELS: { mode: ViewMode; label: string; hint: string }[] = [
-  { mode: 'complete', label: 'Complète', hint: 'Chant / guitare' },
-  { mode: 'accords', label: 'Accords', hint: 'Basse' },
-  { mode: 'structure', label: 'Structure', hint: 'Batterie' },
-  { mode: 'paroles', label: 'Paroles', hint: 'Public' },
-];
 
 export interface Prefs {
   /** Vue par défaut du musicien (profil) */
@@ -177,6 +178,12 @@ export interface Band {
   cloudId?: string;
   /** true = j'ai créé ce groupe (propriétaire cloud) ; sinon je l'ai rejoint. */
   owned?: boolean;
+  /**
+   * Nom du créateur du groupe (b147), pour les membres qui l'ont
+   * rejoint : « créé par Vincent ». Renseigné à l'acceptation de
+   * l'invitation. Vide chez le créateur lui-même.
+   */
+  ownerName?: string;
 }
 
 /** Position d'un musicien ou d'un matériel sur le plan de scène (0…1). */
