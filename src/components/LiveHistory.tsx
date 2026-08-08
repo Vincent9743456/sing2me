@@ -192,14 +192,11 @@ export function LiveHistory() {
         <p className="help">
           {t('Aucun live pour l’instant — lance-en un depuis le bouton GO LIVE.')}
         </p>
-        {/* Un écran vide ne dit pas POURQUOI il est vide : ici, on peut le
-            demander (b178). Les directs sont journalisés dans une table
-            distincte, et son absence passait jusqu'ici inaperçue. */}
         <Diagnostic
-        liveKey={prefs.liveKey}
-        recus={messages.length}
-        rattaches={lives.reduce((n, l) => n + l.messages.length, 0)}
-      />
+          liveKey={prefs.liveKey}
+          recus={messages.length}
+          rattaches={0}
+        />
       </>
     );
   }
@@ -344,11 +341,6 @@ export function LiveHistory() {
         </StageList>
       )}
 
-      {/* Le diagnostic n'était offert que sur un historique VIDE (b178).
-          Or la question « pourquoi ce chiffre est à zéro ? » se pose surtout
-          quand il y a des lives et qu'il manque quelque chose : un mot du
-          public, un spectateur. Replié, il ne coûte rien à qui ne le cherche
-          pas (b186). */}
       <Diagnostic
         liveKey={prefs.liveKey}
         recus={messages.length}
@@ -393,6 +385,26 @@ export function LiveHistory() {
  * caractères : ça ne s'adresse pas à l'usage courant, mais ça évite un
  * aller-retour d'une journée quand un écran reste à zéro sans raison.
  */
+/**
+ * Diagnostic ON AIR — RÉSERVÉ AU DÉPANNAGE (b198).
+ *
+ * Il a servi : c'est lui qui a fini par dire « column live_messages.author
+ * does not exist », après trois corrections à l'aveugle. Mais des noms de
+ * tables et des messages d'erreur SQL n'ont rien à faire sous les yeux d'un
+ * musicien (demande de Vincent) — il ne s'affiche donc plus qu'en ouvrant
+ * l'app avec `?diag=1`, et reste invisible le reste du temps.
+ */
+function diagDemande(): boolean {
+  try {
+    return (
+      new URLSearchParams(location.search).get('diag') === '1' ||
+      location.hash.includes('diag=1')
+    );
+  } catch {
+    return false;
+  }
+}
+
 function Diagnostic({
   liveKey,
   recus,
@@ -407,6 +419,7 @@ function Diagnostic({
   const [data, setData] = useState<Awaited<ReturnType<typeof fetchDiag>>>(null);
   const [asked, setAsked] = useState(false);
   const tri = triMots();
+  if (!diagDemande()) return null;
   return (
     <details
       className="stfold"
