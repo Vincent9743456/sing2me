@@ -50,6 +50,37 @@ export function rememberPublicName(name: string): void {
   }
 }
 
+/**
+ * Page publique d'un musicien retrouvée par son NOM D'ARTISTE (b173).
+ *
+ * Une fiche de membre de groupe ne porte aucun identifiant de compte : le
+ * seul lien possible avec sa page publique est son nom. On refuse donc de
+ * répondre s'il y a plus d'un porteur du nom — mieux vaut ne rien proposer
+ * que d'envoyer le groupe sur la page de quelqu'un d'autre.
+ *
+ * Lecture anonyme d'une page déjà publique : rien de nouveau n'est exposé.
+ */
+export async function findPublicPageByArtist(
+  artistName: string,
+): Promise<PublicPage | null> {
+  const name = artistName.trim();
+  if (!publicPagesAvailable() || name === '') return null;
+  try {
+    const res = await fetch(
+      `${sbUrl()}/rest/v1/public_pages?profile->>name=eq.${encodeURIComponent(
+        name,
+      )}&select=name,profile&limit=2`,
+      { headers: { apikey: anon(), authorization: `Bearer ${anon()}` } },
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length !== 1) return null; // 0 ou ambigu
+    return { name: rows[0].name, profile: (rows[0].profile ?? {}) as ArtistProfile };
+  } catch {
+    return null;
+  }
+}
+
 /** Fiche publique d'un artiste par son nom dictable (lecture anonyme). */
 export async function fetchPublicPage(name: string): Promise<PublicPage | null> {
   if (!publicPagesAvailable() || name === '') return null;

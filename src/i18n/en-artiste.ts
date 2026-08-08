@@ -89,6 +89,10 @@ export const EN_ARTISTE: Record<string, string> = {
   'Exporter en PDF': 'Export as PDF',
   'Fermer': 'Close',
   'Fiche musicien': 'Musician profile',
+  'Recherche de sa page publique…': 'Looking for their public page…',
+  'Ce musicien n’a pas encore de page publique Sing2Me — ou son nom d’artiste est porté par plusieurs comptes.':
+    'This musician doesn’t have a Sing2Me public page yet — or their artist name is used by several accounts.',
+  'Voir sa page publique': 'See their public page',
   'Fête de la musique — Port-Louis': 'Music festival — Port-Louis',
   'Gratuit. Ta bibliothèque reste sur ton appareil et te suit partout une fois connecté.': 'Free. Your library stays on your device and follows you everywhere once you\'re signed in.',
   'Groupe': 'Band',
