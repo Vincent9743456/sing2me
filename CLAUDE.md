@@ -46,7 +46,10 @@
 - Après push : vérifier https://sing2me-three.vercel.app/version.txt.
 - Supabase : projet `zssnwjtfzbymtsiccvao` ; après modification d'un
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
-  SQL Editor (les fichiers sont idempotents). Variables d'environnement
+  SQL Editor (les fichiers sont idempotents) —
+  https://supabase.com/dashboard/project/zssnwjtfzbymtsiccvao/sql/new.
+  **État : `live.sql` rejoué le 8 août 2026** (colonnes `owner_id` de
+  b192 en place). Variables d'environnement
   (Vercel) : VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_URL,
   SUPABASE_SERVICE_KEY, LIVE_KEY, ANTHROPIC_API_KEY.
 
