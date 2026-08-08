@@ -2086,6 +2086,63 @@ textarea.mono {
   margin-top: 22px;
 }
 
+/* ---------- Barre d'interaction du public (b172) ----------
+   Les gestes vers l'artiste (❤, pourboire, mot) étaient sous les paroles :
+   il fallait défiler tout le morceau pour les atteindre. Ils vivent
+   désormais dans une barre fixe, volontairement basse et discrète — les
+   paroles gardent la place et le contraste (règle 6 du design system). */
+.pubbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: center;
+  align-items: stretch;
+  padding: var(--sp-2) var(--sp-3)
+    calc(var(--sp-2) + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border);
+}
+.pubbar button {
+  flex: 1 1 0;
+  max-width: 190px;
+  min-height: 52px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+}
+.pubbar button:active {
+  transform: scale(0.96);
+}
+.pubbar .ico {
+  font-size: 1.3rem;
+  line-height: 1.1;
+}
+/* Le ❤ reste le geste principal : c'est le seul en couleur. */
+.pubbar .heart {
+  border-color: var(--live);
+  background: color-mix(in srgb, var(--live) 18%, var(--surface));
+  color: var(--heart);
+}
+/* Les paroles ne doivent jamais finir SOUS la barre. */
+.public.withbar {
+  padding-bottom: 104px;
+}
+
 /* ---------- Divers ---------- */
 .help {
   color: var(--text-dim);

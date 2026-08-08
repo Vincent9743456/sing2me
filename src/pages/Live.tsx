@@ -153,6 +153,10 @@ export function Live({
   const [artistOpen, setArtistOpen] = useState(false);
   // Panneau « Faire venir du monde » : QR + partage du lien du direct.
   const [shareOpen, setShareOpen] = useState(false);
+  // Panneaux ouverts depuis la barre d'interaction (b172) : le pourboire et
+  // le mot au groupe ne sont plus enfouis sous les paroles.
+  const [tipOpen, setTipOpen] = useState(false);
+  const [wordOpen, setWordOpen] = useState(false);
   const lastTitle = useRef('');
   // Nombre de morceaux de la dernière setlist préchargée (re-précharge si change).
   const lastSetlistCount = useRef(-1);
@@ -306,6 +310,14 @@ export function Live({
   // bœuf fait venir d'autres musiciens.
   const sessionActive = state.status === 'on' || state.status === 'pause';
   const canShare = sessionActive && (publicSession || role === 'musicien');
+  // Barre d'interaction : uniquement quand des paroles occupent l'écran —
+  // ailleurs (pause, hors direct), tout est déjà visible sans défiler.
+  const canTip = ps.tips && (state.artist?.tipUrl ?? '').trim() !== '';
+  const showBar =
+    role === 'public' &&
+    liveNow &&
+    state.song !== null &&
+    (ps.hearts || canTip || ps.messages);
   // Adresse à partager : celle où l'on se trouve déjà (b170). Quand la page
   // est ouverte sur /sonnom, c'est l'adresse STABLE de l'artiste — elle
   // survit à l'arrêt et au redémarrage du concert, contrairement à un code
@@ -330,7 +342,7 @@ export function Live({
   }
 
   return (
-    <div className="public">
+    <div className={`public${showBar ? ' withbar' : ''}`}>
       {/* Mode dégradé : suivi interrompu, le set reste consultable à la main. */}
       {offline && (
         <div className="offlinebanner" role="status">
@@ -473,34 +485,9 @@ export function Live({
               {t('🎶 Concert en cours — profitez du moment !')}
             </p>
           )}
-          {ps.tips && <TipBox artist={state.artist} />}
-          {ps.messages && (
-            <Suspense fallback={null}>
-              <MessageBox
-                songTitle={state.song.title}
-                liveId={state.id}
-                artist={state.artist?.name ?? ''}
-              />
-            </Suspense>
-          )}
-          {ps.hearts && (
-            <button
-              className="heartfab"
-              onClick={onHeart}
-              aria-label={t('Envoyer un cœur')}
-            >
-              ❤
-              {floats.map((f) => (
-                <span
-                  key={f.id}
-                  className="heartfloat"
-                  style={{ marginLeft: f.x }}
-                >
-                  ❤
-                </span>
-              ))}
-            </button>
-          )}
+          {/* Le pourboire et le mot au groupe ne sont plus posés SOUS les
+              paroles (b172) : ils s'ouvrent depuis la barre du bas, qui les
+              rend accessibles sans jamais faire défiler un morceau. */}
         </>
       ) : pauseNow || waitingNow ? (
         <>
@@ -554,6 +541,93 @@ export function Live({
               </p>
             )}
         </>
+      )}
+      {/* ————— Barre d'interaction avec l'artiste (b172) —————
+          Toujours atteignable pendant un morceau, sans défiler. Basse et
+          sobre : les paroles gardent la place et le contraste. Chaque bouton
+          n'apparaît que si l'artiste l'a autorisé (réglages « Écran public »). */}
+      {showBar && (
+        <div className="pubbar" role="group" aria-label={t('Réagir')}>
+          {ps.hearts && (
+            <button
+              className="heart"
+              onClick={onHeart}
+              aria-label={t('Envoyer un cœur')}
+            >
+              <span className="ico" aria-hidden="true">
+                ❤
+              </span>
+              {/* Pas de compteur ici : le total du concert s'affiche en haut,
+                  et il n'inclut mes cœurs qu'au tour de suivi suivant. Un
+                  chiffre qui ne bouge pas au tap serait un faux retour — le
+                  cœur qui s'envole, lui, est immédiat. */}
+              <span>{t('Un cœur')}</span>
+              {floats.map((f) => (
+                <span
+                  key={f.id}
+                  className="heartfloat"
+                  style={{ marginLeft: f.x }}
+                >
+                  ❤
+                </span>
+              ))}
+            </button>
+          )}
+          {canTip && (
+            <button onClick={() => setTipOpen(true)}>
+              <span className="ico" aria-hidden="true">
+                💛
+              </span>
+              <span>{t('Soutenir')}</span>
+            </button>
+          )}
+          {ps.messages && (
+            <button onClick={() => setWordOpen(true)}>
+              <span className="ico" aria-hidden="true">
+                💬
+              </span>
+              <span>{t('Un mot')}</span>
+            </button>
+          )}
+        </div>
+      )}
+      {tipOpen && (
+        <div
+          className="stagelist"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setTipOpen(false);
+          }}
+        >
+          <div className="inner">
+            <button className="btn block" onClick={() => setTipOpen(false)}>
+              {t('← Revenir aux paroles')}
+            </button>
+            <div className="spacer" />
+            <TipBox artist={state.artist} />
+          </div>
+        </div>
+      )}
+      {wordOpen && (
+        <div
+          className="stagelist"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setWordOpen(false);
+          }}
+        >
+          <div className="inner">
+            <button className="btn block" onClick={() => setWordOpen(false)}>
+              {t('← Revenir aux paroles')}
+            </button>
+            <div className="spacer" />
+            <Suspense fallback={null}>
+              <MessageBox
+                songTitle={state.song?.title ?? ''}
+                liveId={state.id}
+                artist={state.artist?.name ?? ''}
+              />
+            </Suspense>
+          </div>
+        </div>
       )}
       {browseOpen &&
         (browseSetlist === null ? (
