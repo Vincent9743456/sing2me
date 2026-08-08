@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { useAccount } from '../components/Account';
-import { ConfirmSheet, MenuSheet } from '../components/Feedback';
+import { ConfirmSheet, MenuSheet, useToast } from '../components/Feedback';
 import { GearEditor } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { LinkPreviews } from '../components/LinkPreviews';
@@ -120,6 +120,7 @@ export function BandEdit({ id }: { id: string }) {
   } = useStore();
   const band = bands.find((b) => b.id === id);
   const account = useAccount();
+  const toast = useToast();
   const [invite, setInvite] = useState(false);
   const [share, setShare] = useState(false);
   const [cloudRef, setCloudRef] = useState<{
@@ -1409,20 +1410,25 @@ export function BandEdit({ id }: { id: string }) {
               ) && (
                 <LinkPreviews links={memberPage.profile.links ?? []} showChips />
               )}
-              {/* Ouverture dans un ONGLET À PART (b175) : dans l'app
-                  installée, un lien ordinaire remplaçait l'écran et il n'y
-                  avait plus aucun moyen de revenir au groupe. */}
+              {/* On ne QUITTE plus l'app pour voir cette fiche (b187).
+                  Un lien ordinaire remplaçait l'écran (b175) ; l'ouvrir dans
+                  un onglet à part ne marche pas davantage dans l'app
+                  installée sur iPhone, où le nouvel onglet s'affiche sans
+                  barre de navigation : on restait bloqué sur la page de
+                  Marco, sans retour possible. La fiche est déjà ici — photo,
+                  bio, liens. Il ne manquait qu'un moyen de PARTAGER son
+                  adresse, ce que fait ce bouton. */}
               <button
                 className="btn block"
-                onClick={() =>
-                  window.open(
-                    `${location.origin}/${memberPage.name}`,
-                    '_blank',
-                    'noopener,noreferrer',
-                  )
-                }
+                onClick={() => {
+                  const url = `${location.origin}/${memberPage.name}`;
+                  void navigator.clipboard
+                    ?.writeText(url)
+                    .then(() => toast.show(t('Lien de sa page copié.')))
+                    .catch(() => toast.show(url));
+                }}
               >
-                {t('Voir sa page publique')}
+                🔗 {t('Copier le lien de sa page')}
               </button>
             </>
           )}
