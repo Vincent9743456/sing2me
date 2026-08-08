@@ -456,4 +456,21 @@ export const EN_MORCEAUX: Record<string, string> = {
   ', datée automatiquement.': ', dated automatically.',
   'Enregistrer les modifications': 'Save changes',
   'Enregistrer la note': 'Save the note',
+  // Dictée par le serveur (b157)
+  'Transcription indisponible — il faut être connecté au réseau.':
+    'Transcription unavailable — you need to be online.',
+  'Transcription indisponible — nécessite la version en ligne (Vercel).':
+    'Transcription unavailable — requires the online version (Vercel).',
+  'La transcription a échoué.': 'Transcription failed.',
+  'Le micro du navigateur ne répond pas — on passe par la dictée enregistrée. Parle, puis appuie sur ⏹.':
+    "The browser's microphone isn't responding — switching to recorded dictation. Speak, then press ⏹.",
+  '✍️ Transcription…': '✍️ Transcribing…',
+  '✍️ Transcription de ce que tu viens de dire…':
+    '✍️ Transcribing what you just said…',
+  'Ce navigateur ne sait pas enregistrer le micro — essaie Chrome ou Safari.':
+    "This browser can't record the microphone — try Chrome or Safari.",
+  "Micro indisponible — autorise l'accès au microphone pour ce site, puis réessaie.":
+    'Microphone unavailable — allow microphone access for this site, then try again.',
+  "Rien n'a été compris dans cet enregistrement.":
+    'Nothing could be understood in that recording.',
 };

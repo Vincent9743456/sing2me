@@ -16,6 +16,7 @@
     { "source": "/api/ai-clean", "destination": "/api/ai?fn=clean" },
     { "source": "/api/ai-note", "destination": "/api/ai?fn=note" },
     { "source": "/api/setlist-ai", "destination": "/api/ai?fn=setlist" },
+    { "source": "/api/ai-transcribe", "destination": "/api/ai?fn=transcribe" },
     { "source": "/api/fetch-tab", "destination": "/api/tabs?fn=fetch" },
     { "source": "/api/search-tabs", "destination": "/api/tabs?fn=search" },
     { "source": "/api/social-import", "destination": "/api/tabs?fn=social" },
