@@ -102,29 +102,83 @@ export function LiveHistory() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefs.liveKey, namesKey]);
 
+  /**
+   * Un live est reconstitué à partir des MORCEAUX ARCHIVÉS (b179), pas de la
+   * table des séances.
+   *
+   * Pourquoi ce changement : la séance n'est créée qu'en « best-effort » au
+   * lancement — si son écriture échoue, rien n'est journalisé et le direct
+   * démarre quand même. L'historique dépendait donc du maillon le plus
+   * fragile de la chaîne. Les morceaux joués, eux, sont archivés à chaque
+   * changement de partition et sont bel et bien là.
+   *
+   * Deux morceaux séparés de plus de TROU_MS appartiennent à deux concerts
+   * différents : personne ne joue une chanson, s'arrête trois heures, puis
+   * reprend le même set. La séance, quand elle existe, sert alors seulement
+   * à ajouter le nombre de spectateurs.
+   */
   const lives = useMemo<PastLive[]>(() => {
+    const TROU_MS = 3 * 60 * 60 * 1000;
+    // Les mots peuvent arriver juste avant le 1er morceau ou après le
+    // dernier : on élargit un peu le créneau de chaque côté.
+    const MARGE_MS = 30 * 60 * 1000;
     const mine = new Set(names.map((n) => n.trim().toLowerCase()));
     const aMoi = (v: string | null | undefined) => {
       const w = String(v ?? '').trim().toLowerCase();
       return w === '' || mine.size === 0 || mine.has(w);
     };
-    return (sessions ?? [])
-      .filter((s) => aMoi(s.artist_name))
-      .map((s) => {
-        const debut = new Date(s.started_at).getTime();
-        // Direct encore en cours : le créneau court jusqu'à maintenant.
-        const fin = s.ended_at ? new Date(s.ended_at).getTime() : Date.now();
-        const dans = (iso: string) => {
-          const at = new Date(iso).getTime();
-          return Number.isFinite(at) && at >= debut && at <= fin;
-        };
-        const songs = stats.filter((x) => dans(x.played_at));
-        const msgs = messages.filter((m) => dans(m.created_at));
+
+    const joues = [...stats]
+      .filter((x) => Number.isFinite(new Date(x.played_at).getTime()))
+      .sort((a, b) => a.played_at.localeCompare(b.played_at));
+
+    // Découpage en concerts par écart de temps.
+    const groupes: LiveStat[][] = [];
+    for (const s of joues) {
+      const dernier = groupes[groupes.length - 1];
+      const precedent = dernier?.[dernier.length - 1];
+      const ecart = precedent
+        ? new Date(s.played_at).getTime() -
+          new Date(precedent.played_at).getTime()
+        : Infinity;
+      if (!dernier || ecart > TROU_MS) groupes.push([s]);
+      else dernier.push(s);
+    }
+
+    const mesSeances = (sessions ?? []).filter((s) => aMoi(s.artist_name));
+
+    return groupes
+      .map((songs) => {
+        const debut = new Date(songs[0].played_at).getTime();
+        const fin = new Date(songs[songs.length - 1].played_at).getTime();
+        // Séance correspondante (si elle a bien été enregistrée) : elle seule
+        // connaît le nombre de spectateurs uniques.
+        const seance = mesSeances.find((se) => {
+          const d = new Date(se.started_at).getTime();
+          // Séance encore ouverte : elle couvre TOUT ce qui suit son début.
+          // La borner à « maintenant » la faisait rater les morceaux joués
+          // à la seconde près, et dépendre de l'horloge du téléphone.
+          const f = se.ended_at ? new Date(se.ended_at).getTime() : Infinity;
+          return d <= fin + MARGE_MS && f >= debut - MARGE_MS;
+        });
+        const msgs = messages.filter((m) => {
+          const at = new Date(m.created_at).getTime();
+          return (
+            Number.isFinite(at) &&
+            at >= debut - MARGE_MS &&
+            at <= fin + MARGE_MS
+          );
+        });
         return {
-          id: s.id,
-          startedAt: s.started_at,
-          endedAt: s.ended_at,
-          uniques: s.uniques,
+          // Identifiant stable (sert au nom donné après coup) : la séance si
+          // on l'a, sinon l'heure du premier morceau.
+          id: seance?.id ?? `t:${songs[0].played_at}`,
+          startedAt: seance?.started_at ?? songs[0].played_at,
+          // « en cours » ne se devine pas : seule une séance ouverte le dit.
+          endedAt: seance
+            ? seance.ended_at
+            : songs[songs.length - 1].played_at,
+          uniques: seance?.uniques ?? 0,
           songs,
           messages: msgs,
           hearts: songs.reduce((n, x) => n + x.hearts, 0),
