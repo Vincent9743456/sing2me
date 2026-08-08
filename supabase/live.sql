@@ -249,3 +249,32 @@ alter table live_sessions add column if not exists owner_id uuid;
 alter table live_messages add column if not exists author text not null default '';
 alter table live_messages add column if not exists body text not null default '';
 alter table live_messages add column if not exists created_at timestamptz not null default now();
+
+-- ------------------------------------------------------------
+-- b196 : la table portait les noms d'une version ANTÉRIEURE du projet —
+-- `content` pour le texte, `sender_name` pour l'auteur. `create table if
+-- not exists` ne l'a jamais alignée ; les colonnes `body` et `author`
+-- ajoutées après coup sont arrivées VIDES à côté, et les mots du public
+-- remontaient sans une lettre. On RECOPIE, on n'efface rien : `content` et
+-- `sender_name` restent en place.
+-- ------------------------------------------------------------
+update live_messages set body = content
+ where coalesce(body, '') = '' and coalesce(content, '') <> '';
+update live_messages set author = sender_name
+ where coalesce(author, '') = '' and coalesce(sender_name, '') <> '';
+
+-- `created_at` était un `timestamp WITHOUT time zone` : les mots
+-- s'affichaient avec l'écart du fuseau (4 h à La Réunion), et tombaient donc
+-- à côté de la fenêtre de leur propre live. Les valeurs stockées sont en
+-- UTC : la conversion ne les déplace pas, elle leur rend leur fuseau.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_name = 'live_messages' and column_name = 'created_at'
+      and data_type = 'timestamp without time zone'
+  ) then
+    alter table live_messages
+      alter column created_at type timestamptz using created_at at time zone 'UTC';
+  end if;
+end $$;
