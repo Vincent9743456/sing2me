@@ -28,52 +28,82 @@ export default async function handler(req, res) {
       return;
     }
     const base = process.env.SUPABASE_URL.replace(/\/$/, '');
-    // Statistiques de CET artiste (b138). La clé ON AIR est commune à
-    // l'installation : sans filtre, chacun voyait la pile de tout le monde
-    // — et ses propres morceaux pouvaient sortir des dernières lignes.
-    // `performer.eq.` garde l'historique d'avant la colonne.
-    // `performer` accepte PLUSIEURS noms séparés par des virgules (b139) :
-    // l'artiste ET ses groupes, pour que chaque membre garde l'historique
-    // des ❤ du groupe. Un seul appel — interroger nom par nom compterait
-    // plusieurs fois l'historique non taggué.
-    const who = String(req.query?.performer ?? '').slice(0, 600);
-    const names = who
+
+    /*
+     * À QUI APPARTIENT UN LIVE (b188) — la question posée par Vincent, et
+     * elle a une réponse simple : un live est SOLO (celui qui l'a lancé) ou
+     * DE GROUPE (tous ses membres). La table `lives` porte déjà `band_id` et
+     * `started_by` ; il suffisait de s'en servir.
+     *
+     * Jusqu'ici on triait les morceaux archivés sur le NOM affiché
+     * (`performer`), en acceptant le nom vide « pour ne rien perdre ». Deux
+     * musiciens de la même installation se mélangeaient donc dès qu'un
+     * profil n'était pas rempli. Désormais :
+     *   1. on établit la liste des lives QUI SONT LES MIENS ;
+     *   2. on ne renvoie que les morceaux et les mots de CES lives.
+     * Le nom ne sert plus que pour les archives d'avant les séances.
+     */
+    const names = String(req.query?.performer ?? '')
+      .slice(0, 600)
       .split(',')
       .map((n) => n.trim())
       .filter((n) => n !== '')
       .slice(0, 20);
-    const filter =
-      names.length > 0
-        ? `&or=(${names
-            .map((n) => `performer.eq.${encodeURIComponent(n)}`)
-            .join(',')},performer.eq.)`
-        : '';
-    // `performer` dit QUI jouait (soi, ou l'un de ses groupes) et
-    // `setlist_name` quelle setlist tournait (b180) : c'est ce qui permet
-    // à l'historique d'annoncer « Solo » ou « avec Zakoustiks ».
-    // `session_id` (b186) : c'est LUI qui dit à quel live appartient un
-    // morceau archivé. Sans lui, l'historique rattachait au temps écoulé —
-    // et le morceau d'un autre musicien, joué à la même heure, tombait dans
-    // le live de quelqu'un d'autre.
+    // cloudId des groupes dont je suis membre (le client les connaît).
+    const mesGroupes = new Set(
+      String(req.query?.bands ?? '')
+        .slice(0, 900)
+        .split(',')
+        .map((c) => c.trim())
+        .filter((c) => c !== '')
+        .slice(0, 30),
+    );
+    const norm = (v) => String(v ?? '').trim().toLowerCase();
+    const mesNoms = new Set(names.map(norm));
+
+    // Les LIVES eux-mêmes (b182) : une ligne par appui sur GO LIVE, avec son
+    // début, sa fin (updated_at à la clôture), qui jouait et quelle setlist.
+    let lives = [];
+    try {
+      const l = await fetch(
+        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,setlist_name,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
+        { headers: sbHeaders() },
+      );
+      if (l.ok) lives = await l.json();
+    } catch {
+      /* historique best-effort */
+    }
+    if (!Array.isArray(lives)) lives = [];
+    /** Ce live est-il le mien ? Même règle que dans l'app (pastlives.ts). */
+    const monLive = (r) => {
+      const bid = String(r?.band_id ?? '').trim();
+      if (bid !== '') return mesGroupes.has(bid); // live de groupe → ses membres
+      const par = norm(r?.started_by);
+      if (par !== '') return mesNoms.has(par); // solo → celui qui l'a lancé
+      const nom = norm(r?.artist?.name);
+      return nom !== '' && mesNoms.has(nom); // vieux live sans lanceur
+    };
+    const miens = mesNoms.size === 0 ? lives : lives.filter(monLive);
+    const mesSessions = new Set(
+      miens.map((r) => String(r.session_id ?? '').trim()).filter((x) => x !== ''),
+    );
+    const mesLives = new Set(miens.map((r) => String(r.id ?? '')));
+
+    // `performer` dit QUI jouait, `setlist_name` quelle setlist tournait
+    // (b180), `session_id` à quel live le morceau appartient (b186).
     const select =
       'song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,setlist_name,session_id';
     let r = await fetch(
-      `${base}/rest/v1/live_stats?select=${select}${filter}&order=played_at.desc&limit=500`,
+      `${base}/rest/v1/live_stats?select=${select}&order=played_at.desc&limit=800`,
       { headers: sbHeaders() },
     );
     // Colonnes pas encore créées (SQL non rejoué) : on retombe sur des
     // lectures de plus en plus pauvres plutôt que de ne rien renvoyer.
     const replis = [
-      `select=song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,session_id&order=played_at.desc&limit=500`,
-      `select=song_title,song_artist,hearts,concert_id,concert_title,played_at,performer&order=played_at.desc&limit=500`,
-      `select=song_title,song_artist,hearts,played_at&order=played_at.desc&limit=500`,
+      `select=song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,session_id&order=played_at.desc&limit=800`,
+      `select=song_title,song_artist,hearts,concert_id,concert_title,played_at,performer&order=played_at.desc&limit=800`,
+      `select=song_title,song_artist,hearts,played_at&order=played_at.desc&limit=800`,
     ];
-    if (!r.ok && filter !== '') {
-      r = await fetch(
-        `${base}/rest/v1/live_stats?select=${select}&order=played_at.desc&limit=500`,
-        { headers: sbHeaders() },
-      );
-    }
     for (const q of replis) {
       if (r.ok) break;
       r = await fetch(`${base}/rest/v1/live_stats?${q}`, {
@@ -84,36 +114,52 @@ export default async function handler(req, res) {
       res.status(502).json({ error: `Supabase a répondu ${r.status}` });
       return;
     }
-    const stats = await r.json();
+    const toutes = await r.json();
+    // Un morceau MARQUÉ appartient à sa séance, un point. Un morceau sans
+    // séance (archives d'avant) retombe sur le nom, nom vide compris — c'est
+    // le seul repère qu'il ait jamais eu.
+    const stats = (Array.isArray(toutes) ? toutes : []).filter((x) => {
+      const sid = String(x.session_id ?? '').trim();
+      if (sid !== '') {
+        if (mesSessions.has(sid)) return true;
+        // Séance sans live enregistré : on retombe sur le nom, sinon les
+        // morceaux d'un vieux direct disparaîtraient de l'historique.
+        if (mesNoms.size === 0) return true;
+        const p0 = norm(x.performer);
+        return p0 !== '' && mesNoms.has(p0);
+      }
+      if (mesNoms.size === 0) return true;
+      const p = norm(x.performer);
+      return p === '' || mesNoms.has(p);
+    });
+
     // Sessions ON AIR (chantier 2 — audience) : uniques + dates. Best-effort :
     // si la table n'existe pas encore (SQL pas exécuté), on renvoie [].
     let sessions = [];
     try {
       const s = await fetch(
-        `${base}/rest/v1/live_sessions?select=id,artist_name,started_at,ended_at,uniques&order=started_at.desc&limit=100`,
+        `${base}/rest/v1/live_sessions?select=id,artist_name,started_at,ended_at,uniques&order=started_at.desc&limit=200`,
         { headers: sbHeaders() },
       );
       if (s.ok) sessions = await s.json();
     } catch {
       /* audience best-effort */
     }
-    // Les LIVES eux-mêmes (b182) : une ligne par appui sur GO LIVE, avec son
-    // début, sa fin (updated_at à la clôture), qui jouait et quelle setlist.
-    // C'est la seule borne exacte d'un concert — le reste se déduisait.
-    let lives = [];
-    try {
-      const l = await fetch(
-        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,setlist_name,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=100`,
-        { headers: sbHeaders() },
-      );
-      if (l.ok) lives = await l.json();
-    } catch {
-      /* historique best-effort */
-    }
+    if (!Array.isArray(sessions)) sessions = [];
+
     res.status(200).json({
       stats,
-      sessions: Array.isArray(sessions) ? sessions : [],
-      lives: Array.isArray(lives) ? lives : [],
+      // Une séance m'appartient si elle porte l'un de MES lives, ou si elle
+      // est à mon nom (archives d'avant les lives enregistrés).
+      sessions: sessions.filter(
+        (se) =>
+          mesSessions.has(String(se.id ?? '')) ||
+          (mesNoms.size > 0 && mesNoms.has(norm(se.artist_name))),
+      ),
+      lives: miens,
+      // De quoi trier les MOTS du public côté app : eux aussi appartiennent
+      // à un live, jamais à une heure.
+      liveIds: [...mesLives],
     });
   } catch {
     res.status(500).json({ error: 'Erreur inattendue côté serveur' });

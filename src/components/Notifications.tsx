@@ -213,6 +213,10 @@ export function NotificationsProvider({
   bandsRef.current = bands;
   const saveBandRef = useRef(saveBand);
   saveBandRef.current = saveBand;
+  // Réf plutôt que dépendance : `poll` ne doit pas se recréer (et relancer
+  // son minuteur) chaque fois que le compte se rafraîchit.
+  const syncNowRef = useRef<(() => void) | undefined>(undefined);
+  syncNowRef.current = account?.syncNow;
   const deleteBandRef = useRef(deleteBand);
   deleteBandRef.current = deleteBand;
   const toastRef = useRef(toast);
@@ -222,6 +226,7 @@ export function NotificationsProvider({
   const poll = useCallback(async () => {
     if (account?.email == null || busy.current) return;
     busy.current = true;
+    let aSynchroniser = false;
     try {
       const s = await getValidSession();
       if (!s) return;
@@ -311,10 +316,15 @@ export function NotificationsProvider({
             msgInit.add(cid);
           } else {
             const since = msgSeen[cid] ?? '';
-            const count = msgs.filter(
+            const nouveaux = msgs.filter(
               (m) => m.user_id !== s.userId && m.created_at > since,
-            ).length;
-            if (count > 0) unread[cid] = count;
+            );
+            if (nouveaux.length > 0) unread[cid] = nouveaux.length;
+            // Un morceau vient d'être annoncé : on tire le répertoire TOUT
+            // DE SUITE (b188). Le cycle régulier met jusqu'à 90 s — on
+            // voyait donc la notification arriver avant le morceau
+            // lui-même, ce qui donnait l'impression qu'il manquait.
+            if (nouveaux.some((m) => m.kind === 'chanson')) aSynchroniser = true;
           }
         } catch {
           // fil injoignable : on réessaiera
@@ -334,6 +344,7 @@ export function NotificationsProvider({
           return merged;
         });
       }
+      if (aSynchroniser) syncNowRef.current?.();
     } finally {
       busy.current = false;
     }

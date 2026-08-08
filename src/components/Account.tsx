@@ -104,6 +104,13 @@ interface AccountValue {
   sendMagicLink: (email: string) => Promise<void>;
   loginWith: (p: OAuthProvider) => void;
   logout: () => void;
+  /**
+   * Tire MAINTENANT le répertoire des groupes (b188). Le cycle régulier
+   * tourne toutes les 90 s ; quand un membre annonce un morceau, on n'a pas
+   * à attendre : on voyait la notification arriver alors que le morceau
+   * n'était pas encore là — « je vois la notif mais pas le morceau ».
+   */
+  syncNow: () => void;
 }
 
 const AccountContext = createContext<AccountValue | null>(null);
@@ -499,6 +506,13 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.userId]);
 
+  const syncNow = useCallback(() => {
+    void (async () => {
+      const valid = await getValidSession();
+      if (valid) void syncBands(valid);
+    })();
+  }, [syncBands]);
+
   const value: AccountValue = {
     available: authAvailable(),
     email: session?.email ?? null,
@@ -512,6 +526,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setLastSync(null);
     },
+    syncNow,
   };
 
   return (

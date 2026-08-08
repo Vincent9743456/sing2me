@@ -359,10 +359,19 @@ export interface PastLiveRow {
 }
 
 /** Directs enregistrés (réservé à l'artiste). Best-effort → []. */
-export async function fetchPastLives(key: string): Promise<PastLiveRow[]> {
+export async function fetchPastLives(
+  key: string,
+  performer: string[] = [],
+  bandCloudIds: string[] = [],
+): Promise<PastLiveRow[]> {
   if (key.trim() === '') return [];
+  const names = performer.map((n) => n.trim()).filter((n) => n !== '');
+  const cids = bandCloudIds.map((c) => c.trim()).filter((c) => c !== '');
+  const q =
+    (names.length > 0 ? `&performer=${encodeURIComponent(names.join(','))}` : '') +
+    (cids.length > 0 ? `&bands=${encodeURIComponent(cids.join(','))}` : '');
   try {
-    const res = await fetch('/api/live-x?fn=live-stats', {
+    const res = await fetch(`/api/live-x?fn=live-stats${q}`, {
       headers: { 'x-live-key': key },
     });
     const type = res.headers.get('content-type') ?? '';
@@ -516,15 +525,23 @@ export async function fetchLiveStats(
    * appel par nom compterait plusieurs fois l'historique antérieur.
    */
   performer: string | string[] = '',
+  /**
+   * cloudId de MES groupes (b188). C'est ce qui permet au serveur de savoir
+   * quels lives sont les miens : un live de groupe appartient à TOUS ses
+   * membres, un live solo à celui qui l'a lancé. Sans ça, le tri se faisait
+   * sur le nom affiché — et deux musiciens de la même installation se
+   * mélangeaient dès qu'un profil n'était pas rempli.
+   */
+  bandCloudIds: string[] = [],
 ): Promise<LiveStat[]> {
   let res: Response;
   const names = (Array.isArray(performer) ? performer : [performer])
     .map((n) => n.trim())
     .filter((n) => n !== '');
+  const cids = bandCloudIds.map((c) => c.trim()).filter((c) => c !== '');
   const q =
-    names.length > 0
-      ? `&performer=${encodeURIComponent(names.join(','))}`
-      : '';
+    (names.length > 0 ? `&performer=${encodeURIComponent(names.join(','))}` : '') +
+    (cids.length > 0 ? `&bands=${encodeURIComponent(cids.join(','))}` : '');
   try {
     res = await fetch(`/api/live-x?fn=live-stats${q}`, {
       headers: { 'x-live-key': key },

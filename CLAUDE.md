@@ -179,6 +179,22 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     entrer chez soi le morceau d'un autre musicien. Le rattachement au temps
     n'existe QUE pour les lignes sans identifiant (archives anciennes), avec
     une tolérance de 2 minutes ;
+  - **à qui appartient un live — la règle, et rien d'autre** (b188,
+    question de Vincent) : un live est SOLO (il appartient à celui qui l'a
+    lancé) ou DE GROUPE (il appartient à TOUS les membres du groupe). Rien
+    d'autre n'entre en ligne de compte — ni le nom affiché, ni l'heure. La
+    table `lives` porte déjà `band_id` et `started_by` ; c'est le SERVEUR
+    qui établit la liste de mes lives (le client lui envoie ses noms et les
+    cloudId de ses groupes), puis ne renvoie que les morceaux et les
+    séances de CES lives. Les heuristiques par nom ou par créneau horaire
+    (b138 → b186) ne survivent que pour les archives sans séance.
+  - **la clé ON AIR unique est une dette connue** : `LIVE_KEY` est commune
+    à toute l'installation, donc le serveur ne sait pas QUI demande — d'où
+    tous les tris par nom. Elle tiendra tant que les comptes se comptent en
+    dizaines ; à l'échelle, elle doit céder la place à l'identité du compte
+    (jeton Supabase déjà présent). À faire AVANT d'ouvrir l'app largement ;
+    le rattachement des lives (ci-dessus) rend l'attente sans danger pour
+    les statistiques, pas pour la confidentialité.
   - **à qui appartient un live** (b183) : je l'ai lancé → il est à moi ; il
     est tagué d'un groupe → il appartient aux MEMBRES de ce groupe (un
     concert de groupe est un acte collectif) ; lancé en solo par quelqu'un
