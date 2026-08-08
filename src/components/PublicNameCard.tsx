@@ -63,14 +63,15 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
       return;
     }
     setChecking(true);
-    const t = window.setTimeout(() => {
+    // `timer` : évite de masquer la fonction de traduction `t`.
+    const timer = window.setTimeout(() => {
       void (async () => {
         const res = await isPublicNameFree(normalized, userId);
         setFree(res);
         setChecking(false);
       })();
     }, 400);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
   }, [normalized, formatError, isCurrent, userId]);
 
   if (!publicPagesAvailable()) return null;

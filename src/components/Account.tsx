@@ -399,7 +399,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   const dirPhoto = store.artist.photo || '';
   useEffect(() => {
     if (!session) return;
-    const t = window.setTimeout(() => {
+    // `timer` : évite de masquer la fonction de traduction `t`.
+    const timer = window.setTimeout(() => {
       void (async () => {
         try {
           const valid = await getValidSession();
@@ -411,14 +412,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         }
       })();
     }, 1500);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.userId, dirName, dirPhoto]);
 
   // À chaque modification : pousser (debounce 3 s), best-effort.
   useEffect(() => {
     if (!session || !readyRef.current) return;
-    const t = window.setTimeout(() => {
+    // `timer` : évite de masquer la fonction de traduction `t`.
+    const timer = window.setTimeout(() => {
       void (async () => {
         try {
           const valid = await getValidSession();
@@ -432,7 +434,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         }
       })();
     }, 3000);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateJson, session?.userId]);
 

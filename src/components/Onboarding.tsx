@@ -7,6 +7,7 @@
  */
 import React, { useEffect, useState } from 'react';
 
+import { t } from '../i18n';
 import { navigate } from '../router';
 import { EXAMPLE_TAG } from '../seed';
 import { useStore } from '../store';
@@ -120,13 +121,13 @@ export function Onboarding() {
     {
       key: 'import',
       done: realSongs.length > 0,
-      label: 'Importe ton premier morceau',
+      label: t('Importe ton premier morceau'),
       onClick: () => navigate('/import'),
     },
     {
       key: 'stage',
       done: stagePlayed,
-      label: 'Joue-le en mode scène',
+      label: t('Joue-le en mode scène'),
       onClick: () => {
         const s = realSongs[0] ?? example;
         if (s) navigate(`/stage/song/${s.id}`);
@@ -135,13 +136,13 @@ export function Onboarding() {
     {
       key: 'setlist',
       done: realSetlists.length > 0,
-      label: 'Crée ta première setlist',
+      label: t('Crée ta première setlist'),
       onClick: () => navigate('/setlist/new'),
     },
     {
       key: 'invite',
       done: bands.some((b) => b.members.length >= 2),
-      label: 'Invite ton groupe',
+      label: t('Invite ton groupe'),
       onClick: () => navigate('/bands'),
     },
   ];
@@ -150,7 +151,9 @@ export function Onboarding() {
     {
       key: 'discover',
       done: flag('sing2me/onb/inv/discover'),
-      label: `Découvre le répertoire de ${justJoined?.name ?? 'ton groupe'}`,
+      label: t('Découvre le répertoire de {name}', {
+        name: justJoined?.name ?? t('ton groupe'),
+      }),
       onClick: () => {
         setFlag('sing2me/onb/inv/discover');
         try {

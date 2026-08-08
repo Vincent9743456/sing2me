@@ -300,8 +300,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
    */
   useEffect(() => {
     if (prefs.liveKey.trim() === '') return;
-    const t = window.setTimeout(() => void syncHeartsRef.current(), 1500);
-    return () => window.clearTimeout(t);
+    // `timer` : évite de masquer la fonction de traduction `t`.
+    const timer = window.setTimeout(() => void syncHeartsRef.current(), 1500);
+    return () => window.clearTimeout(timer);
   }, [prefs.liveKey]);
 
   useEffect(() => {
