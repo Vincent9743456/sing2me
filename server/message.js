@@ -264,7 +264,24 @@ export default async function handler(req, res) {
         return;
       }
       const rows = await r.json();
-      const all = Array.isArray(rows) ? rows : [];
+      /*
+       * NOMS D'ORIGINE (b196). Cette table a existé avant le fichier SQL du
+       * projet, sous d'autres noms : `content` pour le texte, `sender_name`
+       * pour l'auteur. `create table if not exists` ne l'a jamais alignée, et
+       * les colonnes ajoutées après coup sont arrivées VIDES à côté — d'où
+       * des mots qui remontaient sans une lettre. On lit donc l'ancien nom
+       * quand le nouveau est vide, sans rien réécrire.
+       */
+      const all = (Array.isArray(rows) ? rows : []).map((m) => {
+        const body = String(m.body ?? '');
+        const author = String(m.author ?? '');
+        if (body !== '' && author !== '') return m;
+        return {
+          ...m,
+          body: body !== '' ? body : String(m.content ?? ''),
+          author: author !== '' ? author : String(m.sender_name ?? ''),
+        };
+      });
 
       /*
        * À QUI APPARTIENT UN MOT (b191) — même règle que pour les morceaux
