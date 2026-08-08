@@ -74,6 +74,12 @@ export interface LiveStat {
   performer?: string;
   /** Setlist tournée pendant ce live, si le SQL est à jour (b180). */
   setlist_name?: string;
+  /**
+   * Séance ON AIR d'où vient ce morceau (b186) : c'est le rattachement
+   * EXACT à son live. Sans lui on recoupait à l'heure — et le morceau d'un
+   * autre musicien, joué au même moment, atterrissait dans le mauvais live.
+   */
+  session_id?: string | null;
 }
 
 export interface LiveConcertRef {
@@ -91,6 +97,8 @@ export interface LiveMessage {
   performer: string;
   /** Groupe qui jouait ('' en solo ou hors direct) — b168. */
   band_id?: string;
+  /** Direct pendant lequel ce mot a été laissé (b186) : rattachement exact. */
+  live_id?: string | null;
   concert_id: string;
   concert_title: string;
   created_at: string;

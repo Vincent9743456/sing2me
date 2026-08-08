@@ -105,6 +105,9 @@ export const EN_ARTISTE: Record<string, string> = {
   'lives joués': 'lives played',
   'Pourquoi c’est vide ?': 'Why is this empty?',
   'Vérification…': 'Checking…',
+  'mots reçus par l’app': 'messages received by the app',
+  '{n} reçus · {m} rattachés à un live':
+    '{n} received · {m} matched to a live',
   'Le direct n’est pas configuré.': 'Live mode isn’t configured.',
   'inaccessible : {d}': 'unreachable: {d}',
   vide: 'empty',

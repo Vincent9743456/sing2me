@@ -54,8 +54,13 @@ export interface PastLivesInput {
   now?: number;
 }
 
-/** Un morceau joué juste avant/après la borne appartient quand même au live. */
-const MARGE_MS = 30 * 60 * 1000;
+/**
+ * Tolérance d'horloge pour les lignes SANS identifiant de séance (données
+ * d'avant b186). Volontairement courte : à 30 minutes, un live de deux
+ * minutes absorbait les morceaux qu'un autre musicien jouait une demi-heure
+ * plus tôt — Vincent a vu dans son historique une chanson qu'il n'a pas.
+ */
+const MARGE_MS = 2 * 60 * 1000;
 /** Repli historique : écart au-delà duquel deux morceaux font deux concerts. */
 const TROU_MS = 3 * 60 * 60 * 1000;
 
@@ -122,12 +127,30 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
       setlist: string;
       ouvert: boolean;
       uniques: number;
+      /** Séance ON AIR de ce live : rattachement EXACT des morceaux. */
+      sessionId?: string | null;
+      /** Identifiant du live : rattachement EXACT des mots du public. */
+      liveId?: string;
     },
   ): PastLive => {
+    const sid = String(opts.sessionId ?? '').trim();
+    const lid = String(opts.liveId ?? '').trim();
     const songs: LiveStat[] = [];
     stats.forEach((x, i) => {
+      if (!restants.has(i)) return;
+      const marque = String(x.session_id ?? '').trim();
+      // Morceau MARQUÉ : il n'appartient qu'à SA séance. Jamais de repêchage
+      // à l'heure — c'est ainsi que le morceau d'un autre musicien, joué au
+      // même moment, atterrissait dans le live de quelqu'un d'autre (b186).
+      if (marque !== '') {
+        if (marque === sid) {
+          songs.push(x);
+          restants.delete(i);
+        }
+        return;
+      }
       const t = at(x.played_at);
-      if (!restants.has(i) || Number.isNaN(t)) return;
+      if (Number.isNaN(t)) return;
       if (t >= debut - MARGE_MS && t <= fin + MARGE_MS) {
         songs.push(x);
         restants.delete(i);
@@ -135,6 +158,12 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
     });
     songs.sort((a, b) => a.played_at.localeCompare(b.played_at));
     const msgs = messages.filter((m) => {
+      const marque = String(m.live_id ?? '').trim();
+      // Mot marqué ET live identifié : correspondance exacte, un point.
+      // Si le live n'a pas d'identifiant (reconstitution d'une archive), on
+      // retombe sur l'heure — mieux vaut un mot rattaché approximativement
+      // qu'un mot invisible.
+      if (marque !== '' && lid !== '') return marque === lid;
       const t = at(m.created_at);
       return !Number.isNaN(t) && t >= debut - MARGE_MS && t <= fin + MARGE_MS;
     });
@@ -173,22 +202,66 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
         setlist: r.setlist_name ?? '',
         ouvert,
         uniques: seance?.uniques ?? 0,
+        sessionId: r.session_id,
+        liveId: r.id,
       }),
     );
   }
-  // 2) Morceaux orphelins (lives d'avant b182) : reconstitution au temps.
-  //    Un morceau joué par quelqu'un d'autre n'entre PAS dans mon historique,
-  //    même si le serveur me l'a laissé passer (b183). Le nom vide reste
-  //    admis : c'est l'archive d'avant la colonne `performer`.
+  // Un morceau joué par quelqu'un d'autre n'entre PAS dans mon historique,
+  // même si le serveur me l'a laissé passer (b183). Le nom vide reste admis :
+  // c'est l'archive d'avant la colonne `performer`.
+  const aMoiLeMorceau = (x: LiveStat) => {
+    const p = String(x.performer ?? '')
+      .trim()
+      .toLowerCase();
+    return p === '' || mine.size === 0 || mine.has(p);
+  };
+  const reste = [...restants]
+    .map((i) => stats[i])
+    .filter((x) => !Number.isNaN(at(x.played_at)))
+    .filter(aMoiLeMorceau);
+
+  // 2) Morceaux d'une SÉANCE dont le live n'a pas été conservé (directs
+  //    d'avant b182 : la ligne existait mais ses bornes ont été effacées à
+  //    l'arrêt). La séance vaut alors borne — un GO LIVE, un live. C'est
+  //    encore exact, contrairement au découpage au temps écoulé.
+  const parSeance = new Map<string, LiveStat[]>();
+  for (const x of reste) {
+    const sid = String(x.session_id ?? '').trim();
+    if (sid === '') continue;
+    const l = parSeance.get(sid);
+    if (l) l.push(x);
+    else parSeance.set(sid, [x]);
+  }
+  for (const [sid, liste] of parSeance) {
+    liste.sort((a, b) => a.played_at.localeCompare(b.played_at));
+    const seance = mesSeances.find((se) => se.id === sid);
+    const debut = seance ? at(seance.started_at) : at(liste[0].played_at);
+    const fin = seance?.ended_at
+      ? at(seance.ended_at)
+      : at(liste[liste.length - 1].played_at);
+    out.push(
+      construit(`s:${sid}`, Number.isNaN(debut) ? at(liste[0].played_at) : debut,
+        Number.isNaN(fin) ? at(liste[liste.length - 1].played_at) : fin, {
+        band: groupe(
+          (liste.find((x) => (x.performer ?? '') !== '')?.performer ?? '').trim(),
+        ),
+        startedBy: '',
+        setlist:
+          liste.find((x) => (x.setlist_name ?? '') !== '')?.setlist_name ?? '',
+        ouvert: false,
+        uniques: seance?.uniques ?? 0,
+        sessionId: sid,
+      }),
+    );
+  }
+
+  // 3) Morceaux sans aucun repère (archives les plus anciennes) : là
+  //    seulement, reconstitution au temps écoulé.
   const orphelins = [...restants]
     .map((i) => stats[i])
     .filter((x) => !Number.isNaN(at(x.played_at)))
-    .filter((x) => {
-      const p = String(x.performer ?? '')
-        .trim()
-        .toLowerCase();
-      return p === '' || mine.size === 0 || mine.has(p);
-    })
+    .filter(aMoiLeMorceau)
     .sort((a, b) => a.played_at.localeCompare(b.played_at));
   let paquet: LiveStat[] = [];
   const vider = () => {

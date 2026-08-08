@@ -164,7 +164,13 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     écoulé : c'est réservé aux morceaux d'avant b182, dont les bornes ont
     été effacées. La définition vit à UN seul endroit,
     `src/lib/pastlives.ts` (historique de l'onglet Live et compteur de la
-    fiche Artiste : même fonction, même chiffre) ;
+    fiche Artiste : même fonction, même chiffre). **Un morceau appartient à
+    SA séance** (`live_stats.session_id`) et un mot du public à SON direct
+    (`live_messages.live_id`), jamais à l'heure qu'il est (b186) : la clé ON
+    AIR étant commune à l'installation, un recoupement horaire faisait
+    entrer chez soi le morceau d'un autre musicien. Le rattachement au temps
+    n'existe QUE pour les lignes sans identifiant (archives anciennes), avec
+    une tolérance de 2 minutes ;
   - **à qui appartient un live** (b183) : je l'ai lancé → il est à moi ; il
     est tagué d'un groupe → il appartient aux MEMBRES de ce groupe (un
     concert de groupe est un acte collectif) ; lancé en solo par quelqu'un

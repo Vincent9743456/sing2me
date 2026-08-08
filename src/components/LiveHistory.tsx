@@ -181,7 +181,11 @@ export function LiveHistory() {
         {/* Un écran vide ne dit pas POURQUOI il est vide : ici, on peut le
             demander (b178). Les directs sont journalisés dans une table
             distincte, et son absence passait jusqu'ici inaperçue. */}
-        <Diagnostic liveKey={prefs.liveKey} />
+        <Diagnostic
+        liveKey={prefs.liveKey}
+        recus={messages.length}
+        rattaches={lives.reduce((n, l) => n + l.messages.length, 0)}
+      />
       </>
     );
   }
@@ -326,6 +330,17 @@ export function LiveHistory() {
         </StageList>
       )}
 
+      {/* Le diagnostic n'était offert que sur un historique VIDE (b178).
+          Or la question « pourquoi ce chiffre est à zéro ? » se pose surtout
+          quand il y a des lives et qu'il manque quelque chose : un mot du
+          public, un spectateur. Replié, il ne coûte rien à qui ne le cherche
+          pas (b186). */}
+      <Diagnostic
+        liveKey={prefs.liveKey}
+        recus={messages.length}
+        rattaches={lives.reduce((n, l) => n + l.messages.length, 0)}
+      />
+
       {deleting && (
         <ConfirmSheet
           title={t('Supprimer ce live ?')}
@@ -364,7 +379,17 @@ export function LiveHistory() {
  * caractères : ça ne s'adresse pas à l'usage courant, mais ça évite un
  * aller-retour d'une journée quand un écran reste à zéro sans raison.
  */
-function Diagnostic({ liveKey }: { liveKey: string }) {
+function Diagnostic({
+  liveKey,
+  recus,
+  rattaches,
+}: {
+  liveKey: string;
+  /** Mots du public que l'app a bien reçus du serveur. */
+  recus: number;
+  /** Ceux qui ont trouvé leur live. */
+  rattaches: number;
+}) {
   const [data, setData] = useState<Awaited<ReturnType<typeof fetchDiag>>>(null);
   const [asked, setAsked] = useState(false);
   return (
@@ -384,6 +409,19 @@ function Diagnostic({ liveKey }: { liveKey: string }) {
         <p className="help">{data.note ?? t('Le direct n’est pas configuré.')}</p>
       ) : (
         <div className="card">
+          {/* La table peut être pleine et l'écran vide : ces deux chiffres
+              disent lequel des deux maillons casse (b186). */}
+          <div className="strow">
+            <span style={{ flex: 1, fontSize: '0.8rem' }}>
+              {t('mots reçus par l’app')}
+            </span>
+            <span className="stauthor" style={{ fontSize: '0.78rem' }}>
+              {t('{n} reçus · {m} rattachés à un live', {
+                n: recus,
+                m: rattaches,
+              })}
+            </span>
+          </div>
           {data.tables.map((tb) => (
             <div className="strow" key={tb.table}>
               <span style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}>
