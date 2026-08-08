@@ -12,10 +12,22 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { detectLang, registerTranslations, setLang } from './i18n';
+import { EN_PUBLIC } from './i18n/en-public';
 import { Live } from './pages/Live';
 import { PublicArtist } from './pages/PublicArtist';
 import { RESERVED_NAMES } from './lib/publicName';
 import './theme.css';
+
+/**
+ * Langue du SPECTATEUR (décision Vincent) : la page publique suit la
+ * langue de SON téléphone, jamais celle de l'artiste — un public
+ * anglophone qui scanne le QR d'un artiste français lit l'anglais. Seul
+ * le dictionnaire public est chargé ici (budget de poids de l'entrée
+ * légère) : l'app musicien, elle, charge tous les domaines.
+ */
+registerTranslations(EN_PUBLIC);
+setLang(detectLang());
 
 function pageFromPath(): React.ReactElement | null {
   const seg = location.pathname

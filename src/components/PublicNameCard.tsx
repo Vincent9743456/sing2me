@@ -18,6 +18,7 @@ import {
 } from '../lib/publicPages';
 import { normalizePublicName, publicNameError } from '../lib/publicName';
 import { ArtistProfile } from '../types';
+import { t } from '../i18n';
 
 export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
   const [claimed, setClaimed] = useState<string | null>(null);
@@ -93,7 +94,9 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
     try {
       const s = await getValidSession();
       if (!s) {
-        setError('Connecte-toi d’abord (onglet Artiste) pour réserver ton nom.');
+        setError(
+          t('Connecte-toi d’abord (onglet Artiste) pour réserver ton nom.'),
+        );
         return;
       }
       await claimPublicPage(s, name, artist);
@@ -101,7 +104,7 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
       rememberPublicName(name);
       setSaved(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'La réservation a échoué.');
+      setError(e instanceof Error ? e.message : t('La réservation a échoué.'));
     } finally {
       setBusy(false);
     }
@@ -116,12 +119,11 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
   return (
     <div className="card">
       <div className="label" style={{ marginBottom: 6 }}>
-        🔗 Ton adresse publique
+        {t('🔗 Ton adresse publique')}
       </div>
       {claimed !== null ? (
         <p className="help" style={{ marginTop: 0 }}>
-          Ton adresse actuelle — celle que ton QR ouvre, et que tu peux
-          annoncer au micro :{' '}
+          {t('Ton adresse actuelle — celle que ton QR ouvre, et que tu peux annoncer au micro :')}{' '}
           <strong style={{ color: 'var(--accent)' }}>
             {host}
             {claimed}
@@ -129,8 +131,10 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
         </p>
       ) : (
         <p className="help" style={{ marginTop: 0 }}>
-          Une adresse simple à dire au public (« tape {host}tonnom ») —
-          minuscules, sans espaces ni accents.
+          {t(
+            'Une adresse simple à dire au public (« tape {host}tonnom ») — minuscules, sans espaces ni accents.',
+            { host },
+          )}
         </p>
       )}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -140,7 +144,7 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
         <input
           type="text"
           value={input}
-          placeholder="tonnom"
+          placeholder={t('tonnom')}
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
@@ -161,10 +165,14 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
           {checking
             ? '…'
             : free === true
-              ? `✓ ${host}${normalized} est libre`
+              ? t('✓ {addr} est libre', { addr: `${host}${normalized}` })
               : free === false
-                ? `Déjà pris — essaie ${normalized}2 ou autre chose.`
-                : `Ta future adresse : ${host}${normalized}`}
+                ? t('Déjà pris — essaie {name}2 ou autre chose.', {
+                    name: normalized,
+                  })
+                : t('Ta future adresse : {addr}', {
+                    addr: `${host}${normalized}`,
+                  })}
         </p>
       )}
       <div className="spacer" />
@@ -176,24 +184,26 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
         {busy
           ? '…'
           : claimed === null
-            ? 'Réserver cette adresse'
+            ? t('Réserver cette adresse')
             : isCurrent
-              ? 'Republier ma fiche'
-              : 'Changer mon adresse'}
+              ? t('Republier ma fiche')
+              : t('Changer mon adresse')}
       </button>
       {error && <p style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p>}
       {saved && (
         <p style={{ color: 'var(--accent)', marginTop: 8, fontWeight: 650 }}>
-          ✓ En ligne : {host}
-          {claimed}
+          {t('✓ En ligne : {addr}', { addr: `${host}${claimed}` })}
         </p>
       )}
 
       {confirmMove && (
         <ConfirmSheet
-          title={`Passer à ${host}${normalized} ?`}
-          message={`Ton ancienne adresse (${host}${claimed}) ne mènera plus à ta page : les QR déjà imprimés et les liens partagés cesseront de fonctionner. Il faudra réimprimer ton QR.`}
-          confirmLabel="Changer mon adresse"
+          title={t('Passer à {addr} ?', { addr: `${host}${normalized}` })}
+          message={t(
+            'Ton ancienne adresse ({addr}) ne mènera plus à ta page : les QR déjà imprimés et les liens partagés cesseront de fonctionner. Il faudra réimprimer ton QR.',
+            { addr: `${host}${claimed}` },
+          )}
+          confirmLabel={t('Changer mon adresse')}
           onConfirm={() => void publish()}
           onClose={() => setConfirmMove(false)}
         />

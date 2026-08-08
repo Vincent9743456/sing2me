@@ -15,13 +15,23 @@
  * notes de répétition, commentaires, messages — ne passe JAMAIS par la
  * traduction.
  */
-import { EN } from './i18n.en';
-
 export type AppLang = 'fr' | 'en';
 /** Préférence stockée : '' = automatique (langue du téléphone). */
 export type LangPref = '' | AppLang;
 
 let current: AppLang = 'fr';
+/**
+ * Table de traduction ENFICHABLE : chaque entrée d'application déclare
+ * les dictionnaires dont elle a besoin. L'app musicien charge tous les
+ * domaines ; la page publique (spectateur, budget de poids serré) ne
+ * charge que le sien — sans quoi elle embarquerait des centaines de
+ * traductions qu'elle n'affiche jamais.
+ */
+let table: Record<string, string> = {};
+
+export function registerTranslations(dict: Record<string, string>) {
+  table = { ...table, ...dict };
+}
 
 /** Langue du terminal de l'utilisateur (repli : anglais hors francophonie). */
 export function detectLang(): AppLang {
@@ -59,7 +69,7 @@ export function t(
   fr: string,
   vars?: Record<string, string | number>,
 ): string {
-  let out = current === 'en' ? (EN[fr] ?? fr) : fr;
+  let out = current === 'en' ? (table[fr] ?? fr) : fr;
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
       out = out.split(`{${k}}`).join(String(v));

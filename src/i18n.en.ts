@@ -8,6 +8,7 @@ import { EN_COMMUN } from './i18n/en-commun';
 import { EN_COMPOSANTS } from './i18n/en-composants';
 import { EN_COMPTE } from './i18n/en-compte';
 import { EN_MORCEAUX } from './i18n/en-morceaux';
+import { EN_PUBLIC } from './i18n/en-public';
 import { EN_SETLISTS } from './i18n/en-setlists';
 
 export const EN: Record<string, string> = {
@@ -17,4 +18,7 @@ export const EN: Record<string, string> = {
   ...EN_ARTISTE,
   ...EN_COMPTE,
   ...EN_COMPOSANTS,
+  // Pages publiques : l'app musicien les affiche aussi (routes /s/…,
+  // /live, /nom) — l'entrée légère, elle, ne charge QUE ce domaine.
+  ...EN_PUBLIC,
 };

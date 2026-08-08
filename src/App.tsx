@@ -34,7 +34,8 @@ import { PublicArtist, publicNameFromPath } from './pages/PublicArtist';
 import { RESERVED_NAMES } from './lib/publicName';
 import { makeKeepSong } from './lib/keepSong';
 import { Welcome } from './pages/Welcome';
-import { resolveLang, setLang } from './i18n';
+import { EN } from './i18n.en';
+import { registerTranslations, resolveLang, setLang } from './i18n';
 import { useRoute } from './router';
 import { StoreProvider, useStore } from './store';
 
@@ -44,6 +45,8 @@ import { StoreProvider, useStore } from './store';
  * force le remontage de l'arbre quand la langue change : tous les
  * écrans se réaffichent aussitôt dans la nouvelle langue.
  */
+registerTranslations(EN);
+
 function Localized({ children }: { children: React.ReactNode }) {
   const { prefs } = useStore();
   const lang = resolveLang(prefs.lang);
