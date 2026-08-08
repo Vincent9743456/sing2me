@@ -190,3 +190,13 @@ create index if not exists live_stats_performer on live_stats (performer);
 -- ------------------------------------------------------------
 alter table lives add column if not exists setlist_name text not null default '';
 alter table live_messages add column if not exists setlist_name text not null default '';
+
+-- ------------------------------------------------------------
+-- b168 : un mot du public appartient à l'artiste OU au groupe qui joue.
+-- `performer` portait déjà l'artiste ; `band_id` permet à chaque membre du
+-- groupe de retrouver les mots reçus pendant un concert du groupe. Les deux
+-- restent facultatifs : un mot laissé hors direct s'attache au compte de
+-- l'artiste dont le spectateur regardait la page.
+-- ------------------------------------------------------------
+alter table live_messages add column if not exists band_id text not null default '';
+create index if not exists live_messages_performer on live_messages (performer);

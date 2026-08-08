@@ -516,7 +516,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
                 try {
                   const [stats, messages] = await Promise.all([
                     fetchLiveStats(prefs.liveKey, artist.name),
-                    fetchMessages(prefs.liveKey),
+                    fetchMessages(prefs.liveKey, artist.name),
                   ]);
                   setInter({
                     stats: stats.filter((s) => s.concert_id === draft.id),

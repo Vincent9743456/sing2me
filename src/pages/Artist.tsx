@@ -940,7 +940,7 @@ export function Artist() {
             setStatsError(null);
             try {
               setStats(await fetchLiveStats(prefs.liveKey, whoProfile.name));
-              setMessages(await fetchMessages(prefs.liveKey));
+              setMessages(await fetchMessages(prefs.liveKey, whoProfile.name));
               setSessions(await fetchAudienceSessions(prefs.liveKey));
               setFollowers(
                 await fetchFollowerStats(prefs.liveKey, artist.name),

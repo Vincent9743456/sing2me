@@ -462,7 +462,11 @@ export function Live({
           {ps.tips && <TipBox artist={state.artist} />}
           {ps.messages && (
             <Suspense fallback={null}>
-              <MessageBox songTitle={state.song.title} liveId={state.id} />
+              <MessageBox
+                songTitle={state.song.title}
+                liveId={state.id}
+                artist={state.artist?.name ?? ''}
+              />
             </Suspense>
           )}
           {ps.hearts && (
@@ -494,7 +498,7 @@ export function Live({
           {ps.tips && <TipBox artist={state.artist} />}
           {ps.messages && (
             <Suspense fallback={null}>
-              <MessageBox liveId={state.id} />
+              <MessageBox liveId={state.id} artist={state.artist?.name ?? ''} />
             </Suspense>
           )}
         </>
@@ -518,7 +522,7 @@ export function Live({
           {ps.tips && <TipBox artist={state.artist} />}
           {ps.messages && (
             <Suspense fallback={null}>
-              <MessageBox liveId={state.id} />
+              <MessageBox liveId={state.id} artist={state.artist?.name ?? ''} />
             </Suspense>
           )}
           {(!state.artist || state.artist.name === '') &&
