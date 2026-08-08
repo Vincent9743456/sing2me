@@ -10,9 +10,12 @@ import { sendMessage } from '../../lib/live';
 export default function MessageBox({
   songTitle = '',
   liveId = '',
+  artist = '',
 }: {
   songTitle?: string;
   liveId?: string;
+  /** Artiste dont on regarde la page : propriétaire du mot hors direct. */
+  artist?: string;
 }) {
   const [name, setName] = useState(
     () => localStorage.getItem('sing2me/fanName') ?? '',
@@ -21,11 +24,25 @@ export default function MessageBox({
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Raison technique d'un refus : JAMAIS montrée à un spectateur. Elle
+  // n'apparaît que si la page est ouverte avec ?diag=1 — c'est le seul moyen
+  // de diagnostiquer un livre d'or muet sans console sur un téléphone.
+  const [detail, setDetail] = useState('');
+  const diag = (() => {
+    try {
+      return new URLSearchParams(location.search).get('diag') === '1';
+    } catch {
+      return false;
+    }
+  })();
   // Livre d'or indisponible sur cette installation : on masque la boîte au
   // lieu d'exposer une erreur technique au public (b137). Mémorisé pour ne
   // pas la reproposer à chaque morceau du concert.
+  // Clé changée en b168 : un spectateur qui avait rencontré le livre d'or
+  // en panne l'avait masqué DÉFINITIVEMENT sur son téléphone. La nouvelle clé
+  // rend la boîte à tout le monde une fois la panne corrigée.
   const [available, setAvailable] = useState(
-    () => localStorage.getItem('sing2me/guestbookOff') === null,
+    () => localStorage.getItem('sing2me/guestbookOff2') === null,
   );
 
   async function onSend() {
@@ -33,10 +50,16 @@ export default function MessageBox({
     setBusy(true);
     setError(null);
     try {
-      const res = await sendMessage(name.trim(), text.trim(), liveId, songTitle);
+      const res = await sendMessage(
+        name.trim(),
+        text.trim(),
+        liveId,
+        songTitle,
+        artist,
+      );
       if (res === 'unavailable') {
         try {
-          localStorage.setItem('sing2me/guestbookOff', '1');
+          localStorage.setItem('sing2me/guestbookOff2', '1');
         } catch {
           /* stockage indisponible : on masque au moins pour cette page */
         }
@@ -51,6 +74,9 @@ export default function MessageBox({
         e instanceof Error
           ? e.message
           : t("L'envoi a échoué — réessaie dans un instant."),
+      );
+      setDetail(
+        (e as Error & { detail?: string })?.detail ?? '',
       );
     } finally {
       setBusy(false);
@@ -99,6 +125,19 @@ export default function MessageBox({
           </button>
           {error && (
             <p style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p>
+          )}
+          {diag && detail !== '' && (
+            <p
+              style={{
+                marginTop: 6,
+                fontFamily: 'monospace',
+                fontSize: '0.72rem',
+                color: 'var(--text-faint)',
+                wordBreak: 'break-word',
+              }}
+            >
+              {detail}
+            </p>
           )}
         </>
       )}

@@ -85,6 +85,8 @@ export interface LiveMessage {
   body: string;
   song_title: string;
   performer: string;
+  /** Groupe qui jouait ('' en solo ou hors direct) — b168. */
+  band_id?: string;
   concert_id: string;
   concert_title: string;
   created_at: string;
@@ -287,28 +289,55 @@ export async function sendMessage(
   text: string,
   liveId = '',
   songTitle = '',
+  /** Artiste dont le spectateur regarde la page : c'est LUI le propriétaire
+   *  du mot quand aucun direct ne tourne (b168). */
+  artist = '',
 ): Promise<'sent' | 'unavailable'> {
   let res: Response;
   try {
     res = await fetch('/api/live-x?fn=message', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name, text, liveId, songTitle }),
+      body: JSON.stringify({ name, text, liveId, songTitle, artist }),
     });
   } catch {
     throw new Error(OFFLINE_MSG);
   }
   const body = await readJson(res);
   if (body.code === 'unavailable') return 'unavailable';
-  if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
+  if (!res.ok || body.error) {
+    const err = new Error(body.error ?? `Erreur ${res.status}`);
+    // Raison technique réelle, jamais affichée d'office : elle n'apparaît que
+    // sur une page ouverte avec ?diag=1 (voir MessageBox).
+    (err as Error & { detail?: string }).detail =
+      typeof body.detail === 'string' ? body.detail : '';
+    throw err;
+  }
   return 'sent';
 }
 
-/** Messages du public (réservé à l'artiste, clé On Air requise). */
-export async function fetchMessages(key: string): Promise<LiveMessage[]> {
+/**
+ * Messages du public (réservé à l'artiste, clé On Air requise).
+ *
+ * `names` = l'artiste ET ses groupes (b168) : la clé ON AIR est commune à
+ * l'installation, sans ce filtre chacun lisait les mots de tout le monde.
+ * Liste vide = tout (compatibilité, et écrans qui filtrent eux-mêmes).
+ */
+export async function fetchMessages(
+  key: string,
+  names: string | string[] = [],
+): Promise<LiveMessage[]> {
+  const who = (Array.isArray(names) ? names : [names])
+    .map((n) => n.trim())
+    .filter((n) => n !== '');
   let res: Response;
   try {
-    res = await fetch('/api/live-x?fn=message', { headers: { 'x-live-key': key } });
+    res = await fetch(
+      who.length > 0
+        ? `/api/live-x?fn=message&performer=${encodeURIComponent(who.join(','))}`
+        : '/api/live-x?fn=message',
+      { headers: { 'x-live-key': key } },
+    );
   } catch {
     throw new Error(OFFLINE_MSG);
   }

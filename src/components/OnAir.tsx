@@ -229,7 +229,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
       const totals = heartTotals(
         await fetchLiveStats(prefs.liveKey, [...new Set(names)]),
       );
-      const allMessages = await fetchMessages(prefs.liveKey);
+      const allMessages = await fetchMessages(prefs.liveKey, [
+        ...new Set(names),
+      ]);
       const bySong = messagesBySong(allMessages);
       // Les mots du public appartiennent au CONCERT : ils se rangent dans
       // la setlist jouée (b139), en plus de la trace laissée sur le
