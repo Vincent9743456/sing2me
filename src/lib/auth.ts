@@ -120,6 +120,7 @@ export function handleRedirectHash(): AuthSession | null {
       email: claims.email ?? '',
     };
     saveSession(session);
+    rememberLoginEmail(session.email);
     location.hash = '#/artist';
     return session;
   } catch {
@@ -245,9 +246,39 @@ export async function enabledProviders(): Promise<OAuthProvider[]> {
  * Supabase s'en charge : côté app, la mécanique est la même.
  */
 export function signInWithProvider(provider: OAuthProvider): void {
+  // `login_hint` (b167) : on souffle au fournisseur l'adresse de la dernière
+  // connexion. Une app installée a son propre stockage de cookies, séparé du
+  // navigateur : Google n'y voit aucune session et redemande l'adresse à
+  // chaque fois. L'indice la pré-remplit — il ne connecte personne tout seul,
+  // le fournisseur redemande toujours son accord. Ignoré s'il ne le gère pas.
+  const hint = lastLoginEmail();
   location.href =
     `${supabaseUrl()}/auth/v1/authorize?provider=${provider}` +
-    `&redirect_to=${encodeURIComponent(appUrl())}`;
+    `&redirect_to=${encodeURIComponent(appUrl())}` +
+    (hint ? `&login_hint=${encodeURIComponent(hint)}` : '');
+}
+
+/** Même clé que le champ du lien magique : une adresse mémorisée, une seule
+ *  maison — se connecter par Google pré-remplit aussi le champ e-mail. */
+const LAST_EMAIL_KEY = 'sing2me/lastEmail';
+
+/** Adresse de la dernière connexion réussie ('' si on n'en a aucune). */
+function lastLoginEmail(): string {
+  try {
+    return localStorage.getItem(LAST_EMAIL_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/** Mémorise l'adresse pour la prochaine connexion (jamais le mot de passe :
+ *  nous n'en voyons aucun, tout se passe chez le fournisseur). */
+function rememberLoginEmail(email: string): void {
+  try {
+    if (email) localStorage.setItem(LAST_EMAIL_KEY, email);
+  } catch {
+    /* stockage indisponible */
+  }
 }
 
 /**
