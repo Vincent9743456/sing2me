@@ -47,8 +47,45 @@ export function detectLang(): AppLang {
   }
 }
 
+/**
+ * Choix MANUEL de langue, gardé hors du modèle synchronisé (b158).
+ * Ceinture de sécurité : la synchro cloud a déjà effacé une fois le
+ * champ `prefs.lang` et l'app repassait en automatique — donc en
+ * français — quelques secondes après le choix. Cette copie-ci ne voyage
+ * jamais : le choix de l'utilisateur ne peut plus être écrasé.
+ */
+const LANG_KEY = 'sing2me/lang';
+
+export function storedLang(): LangPref {
+  try {
+    const v = localStorage.getItem(LANG_KEY);
+    return v === 'fr' || v === 'en' ? v : '';
+  } catch {
+    return '';
+  }
+}
+
+/** '' = automatique : on oublie le choix manuel. */
+export function rememberLang(pref: LangPref) {
+  try {
+    if (pref === 'fr' || pref === 'en') localStorage.setItem(LANG_KEY, pref);
+    else localStorage.removeItem(LANG_KEY);
+  } catch {
+    // stockage indisponible : le réglage vaudra pour cette session
+  }
+}
+
+/**
+ * Langue effective, dans l'ordre voulu par Vincent :
+ * 1. le choix manuel de l'utilisateur, s'il en a fait un (il prime et
+ *    n'est jamais repris par la détection) ;
+ * 2. sinon, la langue de son téléphone.
+ */
 export function resolveLang(pref: LangPref | undefined): AppLang {
-  return pref === 'fr' || pref === 'en' ? pref : detectLang();
+  if (pref === 'fr' || pref === 'en') return pref;
+  const kept = storedLang();
+  if (kept === 'fr' || kept === 'en') return kept;
+  return detectLang();
 }
 
 /** Fixée par la racine de l'app à CHAQUE rendu (avant les enfants). */

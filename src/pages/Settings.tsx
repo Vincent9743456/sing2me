@@ -15,7 +15,7 @@ import React, { useState } from 'react';
 import { ConfirmSheet, useToast } from '../components/Feedback';
 import { Icon } from '../components/Icon';
 import { AccordionNav, TopBar } from '../components/ui';
-import { t } from '../i18n';
+import { rememberLang, storedLang, t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import { leaveBand } from '../lib/bands';
 import { LiveStatus, pushLive, pushSetlist } from '../lib/live';
@@ -79,7 +79,9 @@ export function Settings() {
   const pickedLabels = RESET_CHOICES.filter((c) => picked.has(c.key)).map(
     (c) => t(c.label),
   );
-  const langPref = prefs.lang ?? '';
+  // Le choix affiché doit refléter la langue RÉELLEMENT appliquée : si la
+  // synchro a effacé le champ, on retombe sur le choix mémorisé à part.
+  const langPref = (prefs.lang ?? '') !== '' ? (prefs.lang ?? '') : storedLang();
 
   return (
     <>
@@ -97,19 +99,28 @@ export function Settings() {
         <div className="chips">
           <button
             className={`chip ${langPref === '' ? '' : 'off'}`}
-            onClick={() => savePrefs({ ...prefs, lang: '' })}
+            onClick={() => {
+              rememberLang('');
+              savePrefs({ ...prefs, lang: '' });
+            }}
           >
             {t('🌐 Automatique (langue du téléphone)')}
           </button>
           <button
             className={`chip ${langPref === 'fr' ? '' : 'off'}`}
-            onClick={() => savePrefs({ ...prefs, lang: 'fr' })}
+            onClick={() => {
+              rememberLang('fr');
+              savePrefs({ ...prefs, lang: 'fr' });
+            }}
           >
             Français
           </button>
           <button
             className={`chip ${langPref === 'en' ? '' : 'off'}`}
-            onClick={() => savePrefs({ ...prefs, lang: 'en' })}
+            onClick={() => {
+              rememberLang('en');
+              savePrefs({ ...prefs, lang: 'en' });
+            }}
           >
             English
           </button>
