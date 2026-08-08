@@ -2,7 +2,7 @@
  * Mot du public aux musiciens (engagement). Chargé en différé — jamais
  * avant l'affichage des paroles.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { t } from '../../i18n';
 import { sendMessage } from '../../lib/live';
@@ -35,15 +35,31 @@ export default function MessageBox({
       return false;
     }
   })();
-  // Livre d'or indisponible sur cette installation : on masque la boîte au
-  // lieu d'exposer une erreur technique au public (b137). Mémorisé pour ne
-  // pas la reproposer à chaque morceau du concert.
-  // Clé changée en b168 : un spectateur qui avait rencontré le livre d'or
-  // en panne l'avait masqué DÉFINITIVEMENT sur son téléphone. La nouvelle clé
-  // rend la boîte à tout le monde une fois la panne corrigée.
-  const [available, setAvailable] = useState(
-    () => localStorage.getItem('sing2me/guestbookOff2') === null,
-  );
+  /**
+   * Livre d'or en panne : on le DIT (b190).
+   *
+   * Jusqu'ici la boîte disparaissait sans un mot — l'intention était de ne
+   * pas montrer d'erreur technique au public (b137), le résultat était pire :
+   * le spectateur tapait son message, appuyait sur Envoyer, et le formulaire
+   * s'évanouissait. Rien n'arrivait chez l'artiste et personne ne pouvait le
+   * savoir. C'est le scénario le plus probable du mot que Vincent n'a jamais
+   * reçu.
+   *
+   * Le masquage était en plus MÉMORISÉ sur l'appareil : une panne d'une
+   * minute condamnait le livre d'or pour toujours sur ce téléphone. On ne
+   * mémorise plus rien — la panne d'un soir ne vaut pas condamnation.
+   */
+  const [unavailable, setUnavailable] = useState(false);
+  useEffect(() => {
+    // Efface le masquage posé par les versions précédentes : un téléphone qui
+    // a croisé la panne une fois n'affichait plus JAMAIS le livre d'or.
+    try {
+      localStorage.removeItem('sing2me/guestbookOff2');
+      localStorage.removeItem('sing2me/guestbookOff');
+    } catch {
+      /* stockage indisponible : rien à nettoyer */
+    }
+  }, []);
 
   async function onSend() {
     if (text.trim() === '' || busy) return;
@@ -58,12 +74,7 @@ export default function MessageBox({
         artist,
       );
       if (res === 'unavailable') {
-        try {
-          localStorage.setItem('sing2me/guestbookOff2', '1');
-        } catch {
-          /* stockage indisponible : on masque au moins pour cette page */
-        }
-        setAvailable(false);
+        setUnavailable(true);
         return;
       }
       localStorage.setItem('sing2me/fanName', name.trim());
@@ -83,8 +94,6 @@ export default function MessageBox({
     }
   }
 
-  if (!available) return null;
-
   return (
     <div className="tipbox">
       <div className="tiptitle">
@@ -92,7 +101,13 @@ export default function MessageBox({
           ? t('💬 Un mot sur « {title} » ?', { title: songTitle })
           : t('💬 Un mot pour les musiciens ?')}
       </div>
-      {sent ? (
+      {unavailable ? (
+        <p className="help" style={{ margin: '6px 0' }}>
+          {t(
+            'Le livre d’or ne répond pas ce soir — ton mot n’a pas pu partir. Réessaie dans un instant.',
+          )}
+        </p>
+      ) : sent ? (
         <>
           <p style={{ margin: '6px 0', fontWeight: 650 }}>
             {t('✅ Message transmis aux musiciens — merci ! 🎸')}
