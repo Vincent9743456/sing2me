@@ -15,6 +15,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import { ConfirmSheet, PromptSheet, useToast } from './Feedback';
 import { Icon } from './Icon';
+import { StageList } from './StageList';
 import { t } from '../i18n';
 import {
   fetchAudienceSessions,
@@ -226,12 +227,7 @@ export function LiveHistory() {
       </div>
 
       {ouvert && (
-        <div
-          className="stagelist"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(null);
-          }}
-        >
+        <StageList onClose={() => setOpen(null)}>
           <div className="inner">
             <button className="btn block" onClick={() => setOpen(null)}>
               {t('← Fermer')}
@@ -327,7 +323,7 @@ export function LiveHistory() {
               </p>
             )}
           </div>
-        </div>
+        </StageList>
       )}
 
       {deleting && (

@@ -12,6 +12,7 @@
  */
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
+import { StageList } from '../components/StageList';
 import { LogoMark } from '../components/Logo';
 import { TipBox } from '../components/TipBox';
 import { t } from '../i18n';
@@ -593,12 +594,7 @@ export function Live({
         </div>
       )}
       {tipOpen && (
-        <div
-          className="stagelist"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setTipOpen(false);
-          }}
-        >
+        <StageList onClose={() => setTipOpen(false)}>
           <div className="inner">
             <button className="btn block" onClick={() => setTipOpen(false)}>
               {t('← Revenir aux paroles')}
@@ -606,15 +602,10 @@ export function Live({
             <div className="spacer" />
             <TipBox artist={state.artist} />
           </div>
-        </div>
+        </StageList>
       )}
       {wordOpen && (
-        <div
-          className="stagelist"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setWordOpen(false);
-          }}
-        >
+        <StageList onClose={() => setWordOpen(false)}>
           <div className="inner">
             <button className="btn block" onClick={() => setWordOpen(false)}>
               {t('← Revenir aux paroles')}
@@ -628,17 +619,17 @@ export function Live({
               />
             </Suspense>
           </div>
-        </div>
+        </StageList>
       )}
       {browseOpen &&
         (browseSetlist === null ? (
-          <div className="stagelist" onClick={() => setBrowseOpen(false)}>
+          <StageList onClose={() => setBrowseOpen(false)} closeOnAnyClick>
             <div className="inner">
               <p className="help" style={{ textAlign: 'center' }}>
                 {t('Chargement de la setlist…')}
               </p>
             </div>
-          </div>
+          </StageList>
         ) : (
           <Suspense fallback={null}>
             <SetlistBrowser

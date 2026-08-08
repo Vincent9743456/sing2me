@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { streamLinks } from './streamLinks';
+import { StageList } from '../../components/StageList';
 import { t } from '../../i18n';
 import { LivePublicSong } from '../../lib/live';
 import { decodeHtmlEntities } from '../../lib/textRepair';
@@ -26,12 +27,7 @@ export default function SetlistBrowser({
   onClose: () => void;
 }) {
   return (
-    <div
-      className="stagelist"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <StageList onClose={onClose}>
       <div className="inner">
         {idx !== null && setlist[idx] ? (
           <>
@@ -123,6 +119,6 @@ export default function SetlistBrowser({
           </>
         )}
       </div>
-    </div>
+    </StageList>
   );
 }

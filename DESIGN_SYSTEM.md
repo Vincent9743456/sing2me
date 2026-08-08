@@ -139,6 +139,10 @@ color: var(--text-dim); text-transform: uppercase;`
   structurent par `pagetitle` + espacement, pas par des cartes.
 - Modales : bottom-sheet mobile / centrée desktop (existant). Ajouter
   Échap + focus initial. Maximum une modale à la fois.
+- **Un panneau plein écran passe par `StageList`** (jamais `.stagelist`
+  écrit à la main) : fond opaque et verrou de défilement de la page. Sans
+  le verrou, iOS donne le geste à la page du dessous — le panneau semble
+  figé (b184).
 - **Jamais de `backdrop-filter` sur un élément `position: fixed`** posé
   au-dessus d'une page qui défile (barre d'onglets, barre du public,
   contrôles du mode scène, boutons flottants). iOS repeint ces éléments
@@ -146,6 +150,9 @@ color: var(--text-dim); text-transform: uppercase;`
   milieu de l'écran (signalé deux fois par Vincent, b181 puis b183).
   Fond OPAQUE issu des tokens (`--surface`, `--bg`). Le flou reste
   permis sur les éléments `sticky` et les fonds de modale.
+- **Ne jamais repositionner une barre fixe en JavaScript** (b184) : un
+  recalage à chaque `scroll` produit exactement le symptôme qu'il vise
+  (« le menu du bas remonte quand on scrolle »).
 
 ### Feedback
 - `Toast` (à créer, lot 3) : 1 message, auto-dismiss 3 s,

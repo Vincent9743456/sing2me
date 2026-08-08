@@ -892,8 +892,8 @@ textarea.mono {
 .pickerfull-foot {
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border-soft);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(14px);
+  /* Opaque (b184) : le contenu du sélecteur défile SOUS ce pied. */
+  background: var(--surface);
 }
 
 .empty {
@@ -1918,8 +1918,10 @@ textarea.mono {
   bottom: calc(64px + env(safe-area-inset-bottom));
   z-index: 5;
   padding: 8px 0;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(10px);
+  /* Opaque (b184) : posée sur l'aperçu qui défile, la barre laissait lire le
+     texte AU TRAVERS du bouton — Marco a signalé « le bouton se superpose au
+     texte ». Voir aussi la règle « pas de flou sur un élément fixe ». */
+  background: var(--bg);
 }
 
 /* Badge du bouton « Filtrer » (bibliothèque) : nombre de filtres actifs. */
@@ -2285,6 +2287,13 @@ h2.pagetitle {
   .onair {
     top: 14px;
     right: 18px;
+  }
+  /* La navigation est à GAUCHE ici : les barres du bas n'ont plus rien à
+     enjamber. Les 64px réservés les faisaient flotter au milieu du texte
+     (bug signalé par Marco sur iPad, b184). */
+  .stickyaction,
+  .savebar {
+    bottom: 0;
   }
 }
 
@@ -3077,9 +3086,14 @@ h2.pagetitle {
 .stagelist {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.94);
+  /* Fond OPAQUE (b184) : à 0.94 on lisait la page du dessous au travers, et
+     ses titres se superposaient au panneau. */
+  background: var(--bg);
   z-index: 130;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Le geste appartient au panneau, jamais à la page derrière (iOS). */
+  overscroll-behavior: contain;
   /* App installée : le haut passait SOUS l'heure et le réseau, cachant le
      bouton « Fermer » (b181). */
   padding: calc(24px + env(safe-area-inset-top)) 16px
