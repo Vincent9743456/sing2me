@@ -327,4 +327,9 @@ export const EN_ARTISTE: Record<string, string> = {
   'proposer une date, un lieu': 'suggest a date, a place',
   '🎤 Concert': '🎤 Gig',
   'plan, date, matériel': 'plan, date, gear',
+  // Connexions sociales et consentement (b165)
+  'Ou connecte-toi en un geste :': 'Or sign in with one tap:',
+  'Continuer avec Apple': 'Continue with Apple',
+  'Je veux recevoir les nouveautés de Sing2Me (facultatif).':
+    'I want to receive Sing2Me news (optional).',
 };

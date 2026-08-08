@@ -165,6 +165,17 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   par API. Le restant = rechargements saisis (`billing_topups`) moins la
   dépense mesurée. Tarifs dans `server/meter.js`, à ajuster là et nulle
   part ailleurs. Après modification : ré-exécuter `supabase/admin.sql`.
+- **Connexions sociales (b165)** : Google, Apple et Facebook, activées
+  par `VITE_OAUTH_ENABLED=1` UNE FOIS les fournisseurs configurés dans
+  Supabase (Authentication → Providers). Deux pièges Apple : le nom
+  n'est transmis qu'à la PREMIÈRE autorisation (capté par
+  `takeProviderName`, posé seulement si le profil est vide) et « Masquer
+  mon e-mail » donne une adresse relais `@privaterelay.appleid.com`
+  (elle fonctionne pour écrire, mais ce n'est pas la vraie). Le
+  consentement aux communications NON transactionnelles est une case
+  jamais pré-cochée, stockée sur le compte
+  (`user_metadata.marketing_consent`) — les messages de service n'en
+  dépendent pas.
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
   par les composants Feedback (règle 10 — dette existante) ; OAuth
   Google/Facebook à configurer ; OCR des PDF scannés ; app native

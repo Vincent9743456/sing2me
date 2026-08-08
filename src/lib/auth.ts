@@ -109,6 +109,8 @@ export function handleRedirectHash(): AuthSession | null {
       return null;
     }
     const claims = decodeJwt(access);
+    // Nom du fournisseur : à saisir MAINTENANT (Apple ne le redonne jamais).
+    lastProviderName = nameFromClaims(claims as Record<string, unknown>);
     const expiresIn = parseInt(params.get('expires_in') ?? '3600', 10) || 3600;
     const session: AuthSession = {
       accessToken: access,
@@ -205,11 +207,44 @@ export async function verifyEmailCode(
   });
 }
 
-/** Redirige vers Google / Facebook (provider activé dans Supabase). */
-export function signInWithProvider(provider: 'google' | 'facebook'): void {
+export type OAuthProvider = 'google' | 'facebook' | 'apple';
+
+/**
+ * Redirige vers Google / Facebook / Apple (fournisseur activé dans
+ * Supabase). Apple impose `response_mode=form_post` côté Apple, mais
+ * Supabase s'en charge : côté app, la mécanique est la même.
+ */
+export function signInWithProvider(provider: OAuthProvider): void {
   location.href =
     `${supabaseUrl()}/auth/v1/authorize?provider=${provider}` +
     `&redirect_to=${encodeURIComponent(appUrl())}`;
+}
+
+/**
+ * Nom transmis par le fournisseur au RETOUR d'une connexion sociale
+ * (b165). Piège Apple : le nom n'est envoyé QU'À LA TOUTE PREMIÈRE
+ * autorisation — si on ne le capte pas là, il est perdu définitivement.
+ * Vide quand le fournisseur n'en donne pas.
+ */
+let lastProviderName = '';
+
+export function takeProviderName(): string {
+  const n = lastProviderName;
+  lastProviderName = '';
+  return n;
+}
+
+/** Extrait un nom lisible des informations du jeton. */
+function nameFromClaims(claims: Record<string, unknown>): string {
+  const meta = (claims.user_metadata ?? {}) as Record<string, unknown>;
+  const candidates = [meta.full_name, meta.name, claims.name];
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim() !== '') return c.trim();
+  }
+  // Apple renvoie parfois le nom en morceaux.
+  const given = typeof meta.given_name === 'string' ? meta.given_name : '';
+  const family = typeof meta.family_name === 'string' ? meta.family_name : '';
+  return `${given} ${family}`.trim();
 }
 
 /**
@@ -269,6 +304,38 @@ export async function getValidSession(): Promise<AuthSession | null> {
   }
   // null = réseau : la session reste stockée, nouvel essai plus tard
   return next;
+}
+
+/**
+ * Consentement aux communications non transactionnelles (b165).
+ * Stocké sur le COMPTE (métadonnées Supabase) et non en local : il doit
+ * suivre l'utilisateur d'un appareil à l'autre, et faire foi. Les
+ * messages de service (invitation d'un groupe, alerte) n'en dépendent
+ * pas — seules les annonces et nouveautés.
+ */
+export async function setMarketingConsent(
+  s: AuthSession,
+  consent: boolean,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${supabaseUrl()}/auth/v1/user`, {
+      method: 'PUT',
+      headers: {
+        apikey: anonKey(),
+        authorization: `Bearer ${s.accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: {
+          marketing_consent: consent,
+          marketing_consent_at: new Date().toISOString(),
+        },
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 export function signOut(): void {
