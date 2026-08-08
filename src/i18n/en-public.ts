@@ -13,6 +13,8 @@ export const EN_PUBLIC: Record<string, string> = {
   'Aucun concert en cours.': 'No concert right now.',
   'Branchements': 'Wiring',
   'Bravo pour ce concert !…': 'Great show tonight!…',
+  'Le livre d’or ne répond pas ce soir — ton mot n’a pas pu partir. Réessaie dans un instant.':
+    'The guestbook isn’t responding tonight — your message couldn’t be sent. Try again in a moment.',
   'Capo {n}': 'Capo {n}',
   'Ce lien de partage est invalide ou incomplet.': 'This share link is invalid or incomplete.',
   'Cette carte répond à une invitation de groupe : ouvre ce lien sur l\'appareil où le groupe est géré pour mettre à jour ses musiciens.': 'This card is a reply to a band invite: open this link on the device where the band is managed to update its musicians.',

@@ -47,6 +47,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'Autres musiciens (saisis à la main) :': 'Other musicians (entered manually):',
   'Biographie': 'Bio',
   'Bravo pour ce concert !…': 'Great gig tonight!…',
+  'Le livre d’or ne répond pas ce soir — ton mot n’a pas pu partir. Réessaie dans un instant.':
+    'The guestbook isn’t responding tonight — your message couldn’t be sent. Try again in a moment.',
   'C\'est aussi l\'identité proposée au lancement d\'un direct (panneau ON AIR). Choisis ensuite ce que voient les personnes qui scannent ton QR — pendant les morceaux et entre eux. Tout est actif par défaut.': 'This is also the identity suggested when you start a live session (ON AIR panel). Then choose what people scanning your QR see — during songs and between them. Everything is on by default.',
   'Capo {capo}': 'Capo {capo}',
   'Ce groupe n\'existe plus.': 'This band no longer exists.',

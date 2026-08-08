@@ -159,6 +159,13 @@ color: var(--text-dim); text-transform: uppercase;`
   `aria-live="polite"`, en bas au-dessus de la tabbar.
 - `ConfirmSheet` / `PromptSheet` (à créer, lot 3) : remplacent 100 % des
   `alert/confirm/prompt`. Confirm destructif = bouton `.danger` à droite.
+- **Un formulaire ne disparaît JAMAIS en silence** (b190). Le livre d'or
+  du public se masquait tout seul quand le serveur refusait l'écriture,
+  pour « ne pas montrer d'erreur technique » : le spectateur tapait son
+  mot, appuyait sur Envoyer, et le formulaire s'évanouissait — rien
+  n'arrivait chez l'artiste et personne ne pouvait le savoir. Une panne
+  se DIT, en une phrase humaine, et ne se mémorise pas sur l'appareil :
+  une panne d'une minute ne vaut pas condamnation définitive.
 
 ### Notes & annotations
 - 🔒 personnelle / 💬 groupe (icônes SVG à terme), contexte de groupe en
