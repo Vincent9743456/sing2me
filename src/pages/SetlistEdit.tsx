@@ -71,8 +71,80 @@ export function SetlistEdit({ id }: { id: string | null }) {
     return base;
   });
   const [picker, setPicker] = useState(false);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [overIndex, setOverIndex] = useState<number | null>(null);
+  /**
+   * Glisser-déposer TACTILE des morceaux (b148) — Pointer Events, l'API
+   * qui marche au doigt (iPhone/Android) comme à la souris. Le drag HTML5
+   * (`draggable`) n'existe pas au toucher sur iOS : la poignée était
+   * inerte sur téléphone. Principe : la poignée capture le pointeur, et
+   * la liste se réordonne EN DIRECT dès que le doigt franchit le milieu
+   * d'un voisin — on voit le morceau se placer pendant le geste.
+   */
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const dragRef = useRef<{ idx: number } | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const dragY = useRef(0);
+  const rafRef = useRef<number | null>(null);
+
+  /** Défilement automatique près des bords pendant le glisser. */
+  function autoScrollLoop() {
+    const step = () => {
+      if (!dragRef.current) {
+        rafRef.current = null;
+        return;
+      }
+      const y = dragY.current;
+      const margin = 110;
+      if (y < margin) window.scrollBy(0, -Math.ceil((margin - y) / 6));
+      else if (y > window.innerHeight - margin) {
+        window.scrollBy(0, Math.ceil((y - (window.innerHeight - margin)) / 6));
+      }
+      rafRef.current = requestAnimationFrame(step);
+    };
+    if (rafRef.current === null) rafRef.current = requestAnimationFrame(step);
+  }
+
+  function onHandleDown(e: React.PointerEvent, idx: number) {
+    // La capture peut être refusée (pointeur déjà relâché, environnement
+    // de test) : le glisser marche quand même tant que le doigt reste sur
+    // la liste — on ne laisse jamais une exception casser le geste.
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* capture indisponible */
+    }
+    dragRef.current = { idx };
+    dragY.current = e.clientY;
+    setDragIdx(idx);
+    autoScrollLoop();
+  }
+
+  function onHandleMove(e: React.PointerEvent) {
+    const st = dragRef.current;
+    if (!st || !listRef.current) return;
+    dragY.current = e.clientY;
+    const items = Array.from(
+      listRef.current.querySelectorAll<HTMLElement>('.slitem'),
+    );
+    let target = st.idx;
+    for (let i = 0; i < items.length; i++) {
+      const r = items[i].getBoundingClientRect();
+      if (i < st.idx && e.clientY < r.top + r.height / 2) {
+        target = i;
+        break;
+      }
+      if (i > st.idx && e.clientY > r.top + r.height / 2) target = i;
+    }
+    if (target !== st.idx) {
+      moveItem(st.idx, target);
+      st.idx = target;
+      setDragIdx(target);
+    }
+  }
+
+  function onHandleUp() {
+    dragRef.current = null;
+    setDragIdx(null);
+  }
   // Menu « … » de l'en-tête + confirmation de suppression (jamais de
   // confirm() natif — règle 10).
   const [headMenu, setHeadMenu] = useState(false);
@@ -303,6 +375,8 @@ export function SetlistEdit({ id }: { id: string | null }) {
           </p>
         )}
 
+        {/* Conteneur mesuré par le glisser tactile (b148). */}
+        <div ref={listRef}>
         {draft.items.map((item, idx) => {
           const song = songById.get(item.songId);
           const keyOptions =
@@ -313,36 +387,23 @@ export function SetlistEdit({ id }: { id: string | null }) {
               : [];
           return (
             <div
-              className={`slitem ${overIndex === idx ? 'dragover' : ''} ${
+              className={`slitem ${dragIdx === idx ? 'dragover' : ''} ${
                 item.reserve ? 'reserve' : ''
               }`}
               key={item.id}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setOverIndex(idx);
-              }}
-              onDragLeave={() => setOverIndex(null)}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (dragIndex !== null) moveItem(dragIndex, idx);
-                setDragIndex(null);
-                setOverIndex(null);
-              }}
-              onDragEnd={() => {
-                setDragIndex(null);
-                setOverIndex(null);
-              }}
             >
-              {/* Seule la POIGNÉE est glissable (b147). Quand `draggable`
-                  couvrait toute la ligne, iOS avalait le tap des boutons
-                  enfants : les flèches ↑ ↓ ne répondaient plus sur
-                  téléphone — or sur tactile, elles sont le SEUL moyen de
-                  réordonner (le glisser-déposer HTML5 n'y existe pas). */}
+              {/* La poignée porte le glisser tactile (b148) : capture du
+                  pointeur + réordonnancement en direct. `touch-action:
+                  none` (CSS) empêche iOS de transformer le geste en
+                  défilement de page. */}
               <span
                 className="drag"
                 title="Glisser pour réordonner"
-                draggable
-                onDragStart={() => setDragIndex(idx)}
+                aria-label="Glisser pour réordonner"
+                onPointerDown={(e) => onHandleDown(e, idx)}
+                onPointerMove={onHandleMove}
+                onPointerUp={onHandleUp}
+                onPointerCancel={onHandleUp}
               >
                 <Icon name="grip" size={18} />
               </span>
@@ -491,24 +552,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <button
-                  className="btn icon slmove"
-                  title="Monter"
-                  aria-label="Monter ce morceau"
-                  disabled={idx === 0}
-                  onClick={() => moveItem(idx, idx - 1)}
-                >
-                  <Icon name="chevron-up" size={18} />
-                </button>
-                <button
-                  className="btn icon slmove"
-                  title="Descendre"
-                  aria-label="Descendre ce morceau"
-                  disabled={idx === draft.items.length - 1}
-                  onClick={() => moveItem(idx, idx + 1)}
-                >
-                  <Icon name="chevron-down" size={18} />
-                </button>
-                <button
                   className="btn ghost small"
                   style={{ color: 'var(--danger)' }}
                   onClick={() =>
@@ -524,6 +567,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
             </div>
           );
         })}
+        </div>
 
         <div className="spacer" />
         <Accordion

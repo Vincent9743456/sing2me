@@ -1235,24 +1235,28 @@ textarea.mono {
     border-color var(--transition),
     box-shadow var(--transition);
 }
-/* Flèches de déplacement : cible tactile confortable, pas de geste
-   parasite sur mobile (b147). */
-.slmove {
-  min-width: 44px;
-  min-height: 40px;
-  color: var(--text-dim);
-  touch-action: manipulation;
-}
-.slmove:disabled {
-  opacity: 0.3;
-}
-/* La poignée est la seule zone glissable : on l'annonce au doigt. */
+/* La poignée porte le glisser TACTILE (b148) : cible 44px, telle une
+   vraie poignée — touch-action: none empêche iOS de transformer le
+   geste en défilement. */
 .slitem .drag {
   cursor: grab;
   touch-action: none;
   color: var(--text-dim);
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -8px -6px -8px -10px;
+  user-select: none;
+  -webkit-user-select: none;
 }
+.slitem.dragover .drag {
+  cursor: grabbing;
+  color: var(--accent);
+}
+/* Les flèches ↑ ↓ ont disparu avec le glisser tactile (b148). */
 
 .slitem.dragover {
   border-color: var(--accent);
