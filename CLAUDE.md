@@ -48,6 +48,13 @@
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
   SQL Editor (les fichiers sont idempotents) —
   https://supabase.com/dashboard/project/zssnwjtfzbymtsiccvao/sql/new.
+  **Le contenu n'est pas une colonne parmi d'autres** (b197) : filtrer un
+  payload sur les colonnes existantes est juste, MAIS jamais au point
+  d'écrire une ligne amputée de ce qu'elle transporte. Le livre d'or a
+  ainsi enregistré quatre mots du public SANS leur texte — le spectateur
+  lisait « Message transmis », l'artiste recevait une coquille. Écrire
+  dans la colonne qui existe vraiment (`body`, ou `content` sur les bases
+  anciennes) et REFUSER s'il n'y en a aucune.
   **`create table if not exists` NE CORRIGE PAS une table existante**
   (b195) : `live_messages` avait été créée avant ce fichier, sans colonne
   `author` — toutes les lectures la demandaient et échouaient en 400,

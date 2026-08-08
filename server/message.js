@@ -136,15 +136,54 @@ export default async function handler(req, res) {
             ? liveId
             : null,
       };
-      // On n'écrit que des colonnes qui existent vraiment ; `author` et
-      // `body` sont là depuis le premier jour et servent de repli.
+      /*
+       * ÉCRIRE LE TEXTE, OU NE RIEN ÉCRIRE DU TOUT (b197).
+       *
+       * On n'écrivait que les colonnes existantes — bonne idée — mais le
+       * filtre retirait `body` quand la colonne manquait, et la ligne
+       * partait quand même : date, morceau, live… et pas un mot. Le
+       * spectateur lisait « Message transmis », l'artiste recevait une
+       * coquille vide. Quatre mots ont été perdus comme ça.
+       *
+       * Le texte n'est pas une colonne parmi d'autres : c'est LE message.
+       * On écrit donc dans la colonne qui existe vraiment (`body`, ou
+       * `content` sur les bases créées avant le fichier SQL du projet) et,
+       * si aucune n'existe, on REFUSE — le spectateur est prévenu, plutôt
+       * que rassuré à tort.
+       */
       const cols = await knownColumns(base);
+      const colTexte = !cols
+        ? 'body'
+        : cols.has('body')
+          ? 'body'
+          : cols.has('content')
+            ? 'content'
+            : '';
+      const colAuteur = !cols
+        ? 'author'
+        : cols.has('author')
+          ? 'author'
+          : cols.has('sender_name')
+            ? 'sender_name'
+            : '';
+      if (colTexte === '') {
+        console.error('livre d’or — aucune colonne de texte dans la table');
+        res.status(200).json({
+          error: "Le livre d'or est indisponible.",
+          code: 'unavailable',
+          detail: 'aucune colonne de texte (ni body ni content)',
+        });
+        return;
+      }
       const payload = cols
         ? Object.fromEntries(
-            Object.entries(full).filter(([k]) => cols.has(k)),
+            Object.entries(full).filter(
+              ([k]) => cols.has(k) && k !== 'body' && k !== 'author',
+            ),
           )
-        : { author, body: text };
-      if (!payload.body) payload.body = text;
+        : {};
+      payload[colTexte] = text;
+      if (colAuteur !== '') payload[colAuteur] = author;
 
       const insert = (p) =>
         fetch(`${base}/rest/v1/live_messages`, {
@@ -175,7 +214,11 @@ export default async function handler(req, res) {
           // Dernière chance : l'écriture minimale, celle qui ne dépend
           // d'aucune migration. Un mot du public ne se perd pas pour une
           // colonne.
-          r = await insert({ author, body: text });
+          r = await insert(
+            colAuteur !== ''
+              ? { [colTexte]: text, [colAuteur]: author }
+              : { [colTexte]: text },
+          );
           if (!r.ok) detail += ` | minimal: ${await failureDetail(r)}`;
         }
       }
