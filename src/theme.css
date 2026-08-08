@@ -1269,6 +1269,15 @@ textarea.mono {
     flex-direction: row;
   }
 }
+/* Bouton de connexion sociale (b167) : le logo de la marque à gauche, le
+   libellé à côté. Hauteur confortable au pouce, fond neutre — les règles de
+   marque des fournisseurs demandent un fond uni qui ne concurrence pas leur
+   logo, ce que fait déjà `.btn.ghost`. */
+.oauthbtn {
+  gap: var(--sp-2);
+  min-height: 48px;
+  font-weight: 600;
+}
 .consentrow {
   display: flex;
   align-items: flex-start;

@@ -35,6 +35,7 @@ import {
   signOut,
   takeAuthError,
 } from '../lib/auth';
+import { ProviderMark } from './ProviderMark';
 import {
   cleanupOrphanCloudBands,
   clearPendingInvite,
@@ -693,7 +694,9 @@ export function AccountSection() {
         </div>
       ) : (
         <Field label={t('Email')}>
-          <div style={{ display: 'flex', gap: 8 }}>
+          {/* Le bouton passe à la ligne sur les petits écrans (b167) : à
+              360px la ligne débordait de l'écran. */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
               type="email"
               value={email}
@@ -702,10 +705,11 @@ export function AccountSection() {
               autoComplete="email"
               inputMode="email"
               onChange={(e) => setEmail(e.target.value)}
+              style={{ flex: '1 1 180px', minWidth: 0 }}
             />
             <button
               className="btn"
-              style={{ flexShrink: 0 }}
+              style={{ flex: '1 0 auto' }}
               title={t(
                 'Connexion OU création de compte — le lien magique fait les deux',
               )}
@@ -741,15 +745,18 @@ export function AccountSection() {
             {shownProviders.map((p) => (
               <button
                 key={p}
-                className="btn ghost block"
+                className="btn ghost block oauthbtn"
                 onClick={() => {
                   rememberConsent();
                   account.loginWith(p);
                 }}
               >
-                {p === 'google' && t('Continuer avec Google')}
-                {p === 'apple' && t('Continuer avec Apple')}
-                {p === 'facebook' && t('Continuer avec Facebook')}
+                <ProviderMark provider={p} size={19} />
+                <span>
+                  {p === 'google' && t('Continuer avec Google')}
+                  {p === 'apple' && t('Continuer avec Apple')}
+                  {p === 'facebook' && t('Continuer avec Facebook')}
+                </span>
               </button>
             ))}
           </div>
