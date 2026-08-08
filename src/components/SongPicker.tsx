@@ -25,6 +25,7 @@ import { useStore } from '../store';
 import { makeId, Setlist, Song } from '../types';
 import { Icon } from './Icon';
 import { Modal } from './ui';
+import { t } from '../i18n';
 
 const BAND_COLORS = [
   '#fbbf24',
@@ -60,7 +61,7 @@ export function AssignSheet({
   } = useStore();
   const song = songs.find((s) => s.id === songId);
 
-  const author = prefs.userName || artist.name || 'Moi';
+  const author = prefs.userName || artist.name || t('Moi');
   const initialSetlists = useMemo(
     () =>
       new Set(
@@ -101,6 +102,7 @@ export function AssignSheet({
 
   function addBandVersion(s: Song, bandId: string, bandName: string): Song {
     return switchVersion(
+      // Nom de la nouvelle version (donnée persistée) : jamais traduit.
       duplicateVersion(s, bandName || 'Groupe', bandId),
       s.activeVersionId,
     );
@@ -122,10 +124,10 @@ export function AssignSheet({
         // Retrait de répertoire = acte de niveau groupe (propagé à tous).
         if (
           !confirm(
-            `Retirer « ${song.title} » du répertoire de ${b.name || 'ce groupe'} ? ` +
-              'Le morceau sortira du répertoire du groupe pour TOUS les ' +
-              'membres — chacun garde la partition dans sa bibliothèque ' +
-              'personnelle.',
+            t(
+              'Retirer « {title} » du répertoire de {band} ? Le morceau sortira du répertoire du groupe pour TOUS les membres — chacun garde la partition dans sa bibliothèque personnelle.',
+              { title: song.title, band: b.name || t('ce groupe') },
+            ),
           )
         ) {
           continue;
@@ -179,12 +181,15 @@ export function AssignSheet({
   }
 
   return (
-    <Modal title={`Ajouter « ${song.title || 'Sans titre'} » à…`} onClose={onClose}>
+    <Modal
+      title={t('Ajouter « {title} » à…', { title: song.title || t('Sans titre') })}
+      onClose={onClose}
+    >
       <div className="field">
-        <label>Mes setlists</label>
+        <label>{t('Mes setlists')}</label>
         {sortedSetlists.length === 0 ? (
           <p className="help" style={{ margin: 0 }}>
-            Pas encore de setlist.
+            {t('Pas encore de setlist.')}
           </p>
         ) : (
           sortedSetlists.map((sl) => {
@@ -197,9 +202,9 @@ export function AssignSheet({
                 onClick={() => setWantSetlists((s) => toggleIn(s, sl.id))}
               >
                 <span className={`pickcb ${on ? 'on' : ''}`} aria-hidden="true" />
-                <span className="grow">{sl.name || '(sans nom)'}</span>
+                <span className="grow">{sl.name || t('(sans nom)')}</span>
                 {already && (
-                  <span className="picktag">déjà dans la setlist</span>
+                  <span className="picktag">{t('déjà dans la setlist')}</span>
                 )}
               </button>
             );
@@ -208,7 +213,7 @@ export function AssignSheet({
       </div>
       {bands.length > 0 && (
         <div className="field">
-          <label>Mes groupes</label>
+          <label>{t('Mes groupes')}</label>
           {bands.map((b, i) => {
             const on = wantBands.has(b.id);
             const already = initialBands.has(b.id);
@@ -229,8 +234,8 @@ export function AssignSheet({
                     background: BAND_COLORS[i % BAND_COLORS.length],
                   }}
                 />
-                <span className="grow">{b.name || 'Groupe sans nom'}</span>
-                {already && <span className="picktag">déjà au répertoire</span>}
+                <span className="grow">{b.name || t('Groupe sans nom')}</span>
+                {already && <span className="picktag">{t('déjà au répertoire')}</span>}
               </button>
             );
           })}
@@ -238,7 +243,7 @@ export function AssignSheet({
       )}
       <div className="spacer" />
       <button className="btn block" onClick={apply}>
-        Valider
+        {t('Valider')}
       </button>
     </Modal>
   );
@@ -304,14 +309,16 @@ export function SongCollector({
   const count = picked.size;
   const label = confirmLabel
     ? confirmLabel(count)
-    : `Ajouter ${count} morceau${count > 1 ? 'x' : ''}`;
+    : count > 1
+      ? t('Ajouter {n} morceaux', { n: count })
+      : t('Ajouter {n} morceau', { n: count });
 
   return (
     <div className="pickerfull">
       <div className="pickerfull-head">
         <button
           className="btn icon"
-          aria-label="Fermer"
+          aria-label={t('Fermer')}
           onClick={onClose}
           style={{ marginLeft: -6 }}
         >
@@ -321,7 +328,7 @@ export function SongCollector({
         <input
           type="text"
           autoFocus
-          placeholder="Rechercher un titre, un artiste…"
+          placeholder={t('Rechercher un titre, un artiste…')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -330,8 +337,8 @@ export function SongCollector({
         {filtered.length === 0 ? (
           <p className="help" style={{ textAlign: 'center' }}>
             {library.length === 0
-              ? 'Ta bibliothèque est vide — importe des morceaux d’abord.'
-              : 'Aucun morceau ne correspond.'}
+              ? t('Ta bibliothèque est vide — importe des morceaux d’abord.')
+              : t('Aucun morceau ne correspond.')}
           </p>
         ) : (
           filtered.map((s) => {
@@ -352,10 +359,10 @@ export function SongCollector({
                   <span className={`pickcb ${on ? 'on' : ''}`} aria-hidden="true" />
                 )}
                 <span className="grow" style={{ minWidth: 0 }}>
-                  <span className="title">{s.title || 'Sans titre'}</span>
+                  <span className="title">{s.title || t('Sans titre')}</span>
                   <span className="sub">
                     {here
-                      ? 'déjà au répertoire'
+                      ? t('déjà au répertoire')
                       : [s.artist, s.key].filter((x) => x !== '').join(' · ')}
                   </span>
                 </span>

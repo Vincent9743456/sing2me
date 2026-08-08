@@ -8,6 +8,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { createDictation, Dictation, dictationSupported } from '../lib/speech';
+import { t } from '../i18n';
 import { useStore } from '../store';
 import { makeId, Song, SongNote } from '../types';
 import { Field, Modal } from './ui';
@@ -41,13 +42,13 @@ async function aiSummarize(
     });
   } catch {
     throw new Error(
-      "Synthèse indisponible — nécessite la version en ligne (Vercel).",
+      t('Synthèse indisponible — nécessite la version en ligne (Vercel).'),
     );
   }
   const type = res.headers.get('content-type') ?? '';
   if (!type.includes('application/json')) {
     throw new Error(
-      "Synthèse indisponible — nécessite la version en ligne (Vercel).",
+      t('Synthèse indisponible — nécessite la version en ligne (Vercel).'),
     );
   }
   const body = (await res.json()) as {
