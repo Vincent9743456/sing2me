@@ -48,19 +48,32 @@ export default async function handler(req, res) {
             .map((n) => `performer.eq.${encodeURIComponent(n)}`)
             .join(',')},performer.eq.)`
         : '';
+    // `performer` dit QUI jouait (soi, ou l'un de ses groupes) et
+    // `setlist_name` quelle setlist tournait (b180) : c'est ce qui permet
+    // à l'historique d'annoncer « Solo » ou « avec Zakoustiks ».
     const select =
-      'song_title,song_artist,hearts,concert_id,concert_title,played_at';
+      'song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,setlist_name';
     let r = await fetch(
       `${base}/rest/v1/live_stats?select=${select}${filter}&order=played_at.desc&limit=500`,
       { headers: sbHeaders() },
     );
-    // Colonne `performer` pas encore créée (SQL non rejoué) : on retombe
-    // sur la lecture complète plutôt que de ne rien renvoyer.
+    // Colonnes pas encore créées (SQL non rejoué) : on retombe sur des
+    // lectures de plus en plus pauvres plutôt que de ne rien renvoyer.
+    const replis = [
+      `select=song_title,song_artist,hearts,concert_id,concert_title,played_at,performer&order=played_at.desc&limit=500`,
+      `select=song_title,song_artist,hearts,played_at&order=played_at.desc&limit=500`,
+    ];
     if (!r.ok && filter !== '') {
       r = await fetch(
         `${base}/rest/v1/live_stats?select=${select}&order=played_at.desc&limit=500`,
         { headers: sbHeaders() },
       );
+    }
+    for (const q of replis) {
+      if (r.ok) break;
+      r = await fetch(`${base}/rest/v1/live_stats?${q}`, {
+        headers: sbHeaders(),
+      });
     }
     if (!r.ok) {
       res.status(502).json({ error: `Supabase a répondu ${r.status}` });
