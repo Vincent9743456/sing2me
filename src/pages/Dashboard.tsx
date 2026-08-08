@@ -54,8 +54,20 @@ interface Stats {
   };
 }
 
-const usd = (n: number) =>
-  n >= 1 ? `${n.toFixed(2)} $` : `${(n * 100).toFixed(1)} ¢`;
+/**
+ * Affichage des montants EN EUROS, deux décimales (b163, demande
+ * Vincent) : pas de dixièmes ni de centièmes de centime — une dépense
+ * plus petite qu'un centime s'affiche « 0,00 € », ce qui dit exactement
+ * ce qu'il faut comprendre : elle est négligeable.
+ *
+ * Les fournisseurs facturent en dollars ; on convertit à un taux fixe,
+ * défini ici et nulle part ailleurs. Il n'a pas besoin d'être au jour le
+ * jour : à ces montants, l'écart est sans effet sur une décision.
+ */
+const USD_TO_EUR = 0.92;
+
+const eur = (usdAmount: number) =>
+  `${(usdAmount * USD_TO_EUR).toFixed(2).replace('.', ',')} €`;
 
 const FN_LABEL: Record<string, string> = {
   note: 'Notes de répétition',
@@ -116,8 +128,11 @@ export function Dashboard() {
   }, []);
 
   async function saveTopup(provider: 'anthropic' | 'openai', value: string) {
-    const amount = Number(value.replace(',', '.'));
-    if (!(amount > 0)) return;
+    const euros = Number(value.replace(',', '.'));
+    if (!(euros > 0)) return;
+    // Saisie en euros, stockage en dollars (unité de facturation des
+    // fournisseurs) : une seule conversion, au même taux que l'affichage.
+    const amount = euros / USD_TO_EUR;
     const s = await getValidSession();
     if (!s) return;
     const r = await fetch('/api/admin-stats', {
@@ -207,9 +222,16 @@ export function Dashboard() {
 
             <h2 className="pagetitle">{t('Coût des IA (30 derniers jours)')}</h2>
             <div className="statgrid">
-              <Stat label={t('Total')} value={usd(stats.ai.last30.total)} />
+              <Stat label={t('Total')} value={eur(stats.ai.last30.total)} />
               <Stat label={t('Appels')} value={stats.ai.last30.calls} />
             </div>
+            {stats.ai.last30.calls > 0 && (
+              <p className="help" style={{ marginTop: -6 }}>
+                {t('À ce rythme : environ {mois} par mois pour 100 appels.', {
+                  mois: eur((stats.ai.last30.total / stats.ai.last30.calls) * 100),
+                })}
+              </p>
+            )}
             <div className="list">
               {Object.entries(stats.ai.last30.byFn)
                 .sort((a, b) => b[1] - a[1])
@@ -218,7 +240,7 @@ export function Dashboard() {
                     <div className="grow">
                       <div className="title">{t(FN_LABEL[fn] ?? fn)}</div>
                     </div>
-                    <span className="stauthor">{usd(cost)}</span>
+                    <span className="stauthor">{eur(cost)}</span>
                   </div>
                 ))}
               {Object.keys(stats.ai.last30.byFn).length === 0 && (
@@ -246,8 +268,8 @@ export function Dashboard() {
                     </div>
                     <div className="sub">
                       {t('Rechargé {paid} · consommé {used}', {
-                        paid: usd(r?.paid ?? 0),
-                        used: usd(r?.used ?? 0),
+                        paid: eur(r?.paid ?? 0),
+                        used: eur(r?.used ?? 0),
                       })}
                     </div>
                   </div>
@@ -257,7 +279,7 @@ export function Dashboard() {
                       color: low ? 'var(--danger)' : 'var(--text)',
                     }}
                   >
-                    {usd(Math.max(0, r?.left ?? 0))}
+                    {eur(Math.max(0, r?.left ?? 0))}
                   </span>
                   <button
                     className="btn ghost small"
@@ -294,7 +316,7 @@ export function Dashboard() {
               ? t('Recharge Anthropic')
               : t('Recharge OpenAI')
           }
-          message={t('Montant en dollars, tel que tu viens de le payer.')}
+          message={t('Montant en euros, tel que tu viens de le payer.')}
           placeholder="10"
           confirmLabel={t('Noter le rechargement')}
           onSubmit={(v) => void saveTopup(topup, v)}

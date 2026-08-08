@@ -27,6 +27,9 @@
  */
 const MAX_BASE64 = 2_800_000; // ≈ 2 Mo d'audio réel
 
+/** Durée maximale d'une note dictée, en secondes (miroir du téléphone). */
+const MAX_NOTE_SECONDS = 90;
+
 import { costOfAudio, meter } from './meter.js';
 
 const EXT = {
@@ -129,10 +132,16 @@ export default async function handler(req, res) {
     }
     const body = await apiRes.json().catch(() => null);
     // Mesure de l'appel (b160), ATTENDUE (b161 : sinon elle meurt avec
-    // l'instance gelée). La durée exacte n'est pas renvoyée par le
-    // service : on l'estime à partir du poids, au débit d'enregistrement
-    // du téléphone (32 kbit/s), et on borne à la limite d'une note.
-    const seconds = Math.min(90, Math.round((bytes.length * 8) / 32000));
+    // l'instance gelée). La durée vient du TÉLÉPHONE (b163), qui la
+    // mesure vraiment : l'estimer au poids du fichier surestimait le
+    // coût d'un facteur 3 à 4 dès que le navigateur enregistrait à un
+    // débit supérieur à celui demandé (cas de Safari). Repli sur
+    // l'estimation au poids si l'app est ancienne.
+    const claimed = Number(req.body?.seconds);
+    const seconds =
+      Number.isFinite(claimed) && claimed > 0
+        ? Math.min(MAX_NOTE_SECONDS, Math.round(claimed))
+        : Math.min(MAX_NOTE_SECONDS, Math.round((bytes.length * 8) / 32000));
     await meter({
       fn: 'transcribe',
       provider: 'openai',

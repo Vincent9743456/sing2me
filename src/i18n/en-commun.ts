@@ -126,4 +126,8 @@ export const EN_COMMUN: Record<string, string> = {
     'The measurement tables are missing: run supabase/admin.sql in the Supabase SQL Editor. Until they exist, spending stays at zero and top-ups cannot be recorded.',
   'La mesure vient de démarrer : seuls les appels IA passés à partir de maintenant sont comptés. Ce que tu as consommé avant n’apparaît que dans les consoles Anthropic et OpenAI.':
     'Measurement has just started: only AI calls made from now on are counted. What you used before only appears in the Anthropic and OpenAI consoles.',
+  'À ce rythme : environ {mois} par mois pour 100 appels.':
+    'At this rate: about {mois} per month for 100 calls.',
+  'Montant en euros, tel que tu viens de le payer.':
+    'Amount in euros, as you just paid it.',
 };

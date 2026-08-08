@@ -35,6 +35,9 @@ async function aiSummarize(
     author: string;
     musicians: string[];
   } | null,
+  /** Portée imposée par l'utilisateur (b163) : note vivante à mettre à
+   *  jour, sans laisser l'IA choisir entre groupe et perso. */
+  previous = '',
 ): Promise<{ text: string; scope: 'groupe' | 'perso' | '' }> {
   let res: Response;
   try {
@@ -44,7 +47,7 @@ async function aiSummarize(
       body: JSON.stringify(
         opts
           ? { text, song, parts: [], detect: true, ...opts }
-          : { text, song, parts: [] },
+          : { text, song, parts: [], previous },
       ),
     });
   } catch {
@@ -71,15 +74,22 @@ async function aiSummarize(
   };
 }
 
-/** Transcription côté serveur : le téléphone enregistre, le serveur écrit. */
-async function transcribe(blob: Blob, mime: string): Promise<string> {
+/** Transcription côté serveur : le téléphone enregistre, le serveur écrit.
+ *  `seconds` = durée RÉELLE mesurée par le téléphone (b163) : le serveur
+ *  la devinait au poids du fichier, ce qui surestimait beaucoup le coût
+ *  quand le navigateur enregistre à un débit plus élevé que demandé. */
+async function transcribe(
+  blob: Blob,
+  mime: string,
+  seconds: number,
+): Promise<string> {
   const audio = await blobToBase64(blob);
   let res: Response;
   try {
     res = await fetch('/api/ai?fn=transcribe', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ audio, mime, lang: getLang() }),
+      body: JSON.stringify({ audio, mime, seconds, lang: getLang() }),
     });
   } catch {
     throw new Error(
@@ -200,6 +210,14 @@ export function NoteModal({
   textRef.current = text;
   const visibilityRef = useRef(visibility);
   visibilityRef.current = visibility;
+  /**
+   * L'utilisateur a-t-il CHOISI lui-même 👥 ou 🔒 ? (b163)
+   * Si oui, son choix fait loi : l'IA ne classe plus, et la fusion se
+   * fait avec la note vivante de CETTE portée uniquement. Sans ce garde-
+   * fou, une note dictée en « Personnelle » se retrouvait fusionnée avec
+   * la note du groupe — les deux se mélangeaient.
+   */
+  const visibilityChosen = useRef(false);
 
   const bandId = existing ? existing.bandId : initialBandId;
   const bandName =
@@ -358,7 +376,11 @@ export function NoteModal({
       return;
     }
     try {
-      const said = await transcribe(recording.blob, recording.mime);
+      const said = await transcribe(
+        recording.blob,
+        recording.mime,
+        recording.seconds,
+      );
       setRecState('off');
       if (said.trim() === '') {
         setInfo(t("Rien n'a été compris dans cet enregistrement."));
@@ -485,23 +507,34 @@ export function NoteModal({
     const living = livingRef.current;
     setError(null);
     setAiBusy(true);
+    // Portée IMPOSÉE par l'utilisateur (b163) : s'il a choisi 👥 ou 🔒
+    // lui-même, l'IA ne classe pas — elle met seulement à jour la note
+    // vivante de CETTE portée. Elle ne mélangera plus les deux.
+    const forced = !existing && visibilityChosen.current;
+    const forcedPrev =
+      visibilityRef.current === 'groupe' ? living.prevGroupe : living.prevPerso;
     try {
       const out = await aiSummarize(
         input,
         song.title,
-        existing
-          ? null // édition : simple reformulation, pas de portée
+        existing || forced
+          ? null // édition ou portée imposée : pas de classement
           : {
               previousGroup: living.prevGroupe?.text ?? '',
               previousPerso: living.prevPerso?.text ?? '',
               author,
               musicians,
             },
+        forced ? (forcedPrev?.text ?? '') : '',
       );
       if (out.text.trim() !== '') {
         setText(out.text);
         dictated.current = false;
-        if (!existing && out.scope !== '') {
+        if (forced) {
+          // La fusion a porté sur la note vivante de la portée choisie :
+          // c'est elle, et elle seule, que l'on remplacera.
+          mergedWith.current = forcedPrev?.id ?? null;
+        } else if (!existing && out.scope !== '') {
           // Portée détectée (b155) : la note bascule d'elle-même — et la
           // fusion remplacera la note vivante de CETTE portée.
           const vis = out.scope === 'perso' ? 'privee' : 'groupe';
@@ -656,6 +689,7 @@ export function NoteModal({
           className={`chip ${visibility === 'groupe' ? '' : 'off'}`}
           onClick={() => {
             setVisibility('groupe');
+            visibilityChosen.current = true; // choix explicite : l'IA n'y touche plus
             mergedWith.current = null; // autre contexte → autre note vivante
           }}
         >
@@ -665,6 +699,7 @@ export function NoteModal({
           className={`chip ${visibility === 'privee' ? '' : 'off'}`}
           onClick={() => {
             setVisibility('privee');
+            visibilityChosen.current = true; // choix explicite : l'IA n'y touche plus
             mergedWith.current = null; // autre contexte → autre note vivante
           }}
         >
