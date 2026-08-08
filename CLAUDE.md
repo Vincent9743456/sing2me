@@ -48,6 +48,13 @@
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
   SQL Editor (les fichiers sont idempotents) —
   https://supabase.com/dashboard/project/zssnwjtfzbymtsiccvao/sql/new.
+  **`create table if not exists` NE CORRIGE PAS une table existante**
+  (b195) : `live_messages` avait été créée avant ce fichier, sans colonne
+  `author` — toutes les lectures la demandaient et échouaient en 400,
+  pendant que l'écriture (qui interroge le schéma réel) continuait
+  d'enregistrer. Quatre messages en base, zéro à l'écran. Toute cascade de
+  replis doit donc se terminer par un `select=*`, qui ne peut pas échouer
+  sur une colonne inconnue.
   **État : `live.sql` rejoué INTÉGRALEMENT le 8 août 2026** — toutes les
   colonnes accumulées depuis b121 sont en place (`performer`,
   `setlist_name`, `live_id`, `band_id`, `session_id`, `owner_id`). Ne
