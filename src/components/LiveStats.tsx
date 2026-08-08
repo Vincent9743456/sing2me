@@ -62,6 +62,12 @@ export function LiveStats() {
     .map((n) => n.trim())
     .filter((n) => n !== '');
   const namesKey = names.join(',');
+  // cloudId de mes groupes : c'est ce qui dit au serveur quels lives sont
+  // les miens (un live de groupe appartient à tous ses membres, b188).
+  const cloudKey = bands
+    .map((b) => (b.cloudId ?? '').trim())
+    .filter((c) => c !== '')
+    .join(',');
 
   useEffect(() => {
     if (prefs.liveKey.trim() === '' || namesKey === '') {
@@ -69,15 +75,16 @@ export function LiveStats() {
       return;
     }
     let cancelled = false;
+    const cids = cloudKey === '' ? [] : cloudKey.split(',');
     void (async () => {
       setLoading(true);
       try {
         const [st, ms, se, fo, lv] = await Promise.all([
-          fetchLiveStats(prefs.liveKey, namesKey.split(',')),
+          fetchLiveStats(prefs.liveKey, namesKey.split(','), cids),
           fetchMessages(prefs.liveKey, namesKey.split(',')),
           fetchAudienceSessions(prefs.liveKey),
           fetchFollowerStats(prefs.liveKey, artist.name),
-          fetchPastLives(prefs.liveKey),
+          fetchPastLives(prefs.liveKey, namesKey.split(','), cids),
         ]);
         if (cancelled) return;
         setRows(lv);
@@ -99,7 +106,7 @@ export function LiveStats() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefs.liveKey, namesKey]);
+  }, [prefs.liveKey, namesKey, cloudKey]);
 
   // Report AUTOMATIQUE (instruction Vincent, b175) : les ❤ descendaient déjà
   // tout seuls dans la bibliothèque, les mots du public attendaient un clic.

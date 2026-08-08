@@ -91,9 +91,17 @@ export function LiveHistory() {
       try {
         const [se, st, ms, lv] = await Promise.all([
           fetchAudienceSessions(prefs.liveKey),
-          fetchLiveStats(prefs.liveKey, namesKey === '' ? [] : namesKey.split(',')),
+          fetchLiveStats(
+            prefs.liveKey,
+            namesKey === '' ? [] : namesKey.split(','),
+            cloudKey === '' ? [] : cloudKey.split(','),
+          ),
           fetchMessages(prefs.liveKey, namesKey === '' ? [] : namesKey.split(',')),
-          fetchPastLives(prefs.liveKey),
+          fetchPastLives(
+            prefs.liveKey,
+            namesKey === '' ? [] : namesKey.split(','),
+            cloudKey === '' ? [] : cloudKey.split(','),
+          ),
         ]);
         if (cancelled) return;
         setRows(lv);
@@ -111,7 +119,7 @@ export function LiveHistory() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefs.liveKey, namesKey]);
+  }, [prefs.liveKey, namesKey, cloudKey]);
 
   // La définition d'« un live » vit dans src/lib/pastlives.ts : l'onglet Live
   // et le compteur de la fiche Artiste doivent compter la MÊME chose.
