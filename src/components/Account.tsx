@@ -21,6 +21,7 @@ import {
   authAvailable,
   AuthSession,
   getValidSession,
+  enabledProviders,
   handleRedirectHash,
   OAuthProvider,
   setMarketingConsent,
@@ -63,9 +64,10 @@ import { Field } from './ui';
  * Boutons OAuth (Google / Facebook) : masqués tant que ces fournisseurs ne
  * sont pas activés dans Supabase — sinon le clic renvoie une erreur 400
  * « provider is not enabled ». Le lien magique par email fonctionne toujours.
- * Pour les réactiver une fois configurés : VITE_OAUTH_ENABLED=1 (Vercel).
+ * Depuis b166, l'app DEMANDE à Supabase quels fournisseurs sont actifs :
+ * plus rien à activer côté Vercel. VITE_OAUTH_ENABLED='0' reste un
+ * coupe-circuit pour tout masquer si besoin.
  */
-const OAUTH_ENABLED = import.meta.env.VITE_OAUTH_ENABLED === '1';
 
 /** Valide la forme d'une bibliothèque de groupe venant du cloud. */
 function sanitizeBand(raw: unknown): BandData {
@@ -539,6 +541,21 @@ export function AccountSection() {
    * sur le compte une fois la session ouverte.
    */
   const [consent, setConsent] = useState(false);
+  /**
+   * Fournisseurs réellement actifs dans Supabase (b166) : on les demande
+   * au serveur au lieu de dépendre d'une variable de compilation. Un
+   * fournisseur activé apparaît sans qu'on redéploie quoi que ce soit.
+   */
+  const [providers, setProviders] = useState<OAuthProvider[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void enabledProviders().then((list) => {
+      if (alive) setProviders(list);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
   const rememberConsent = () => {
     try {
       sessionStorage.setItem('sing2me/consentPending', consent ? '1' : '0');
@@ -546,6 +563,11 @@ export function AccountSection() {
       // stockage indisponible : le consentement se redemandera
     }
   };
+
+  // VITE_OAUTH_ENABLED ne sert plus qu'à COUPER les connexions sociales
+  // (valeur « 0 ») ; sinon, c'est Supabase qui fait foi.
+  const shownProviders =
+    import.meta.env.VITE_OAUTH_ENABLED === '0' ? [] : providers;
 
   if (!account) return null;
 
@@ -710,39 +732,26 @@ export function AccountSection() {
           </div>
         </Field>
       )}
-      {OAUTH_ENABLED && (
+      {shownProviders.length > 0 && (
         <>
           <p className="help" style={{ margin: '4px 0 8px' }}>
             {t('Ou connecte-toi en un geste :')}
           </p>
           <div className="oauthrow">
-            <button
-              className="btn ghost block"
-              onClick={() => {
-                rememberConsent();
-                account.loginWith('google');
-              }}
-            >
-              {t('Continuer avec Google')}
-            </button>
-            <button
-              className="btn ghost block"
-              onClick={() => {
-                rememberConsent();
-                account.loginWith('apple');
-              }}
-            >
-              {t('Continuer avec Apple')}
-            </button>
-            <button
-              className="btn ghost block"
-              onClick={() => {
-                rememberConsent();
-                account.loginWith('facebook');
-              }}
-            >
-              {t('Continuer avec Facebook')}
-            </button>
+            {shownProviders.map((p) => (
+              <button
+                key={p}
+                className="btn ghost block"
+                onClick={() => {
+                  rememberConsent();
+                  account.loginWith(p);
+                }}
+              >
+                {p === 'google' && t('Continuer avec Google')}
+                {p === 'apple' && t('Continuer avec Apple')}
+                {p === 'facebook' && t('Continuer avec Facebook')}
+              </button>
+            ))}
           </div>
         </>
       )}

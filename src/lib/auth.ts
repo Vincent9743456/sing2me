@@ -210,6 +210,36 @@ export async function verifyEmailCode(
 export type OAuthProvider = 'google' | 'facebook' | 'apple';
 
 /**
+ * Quels fournisseurs sont RÉELLEMENT activés dans Supabase (b166) ?
+ *
+ * Avant, l'affichage dépendait d'une variable de compilation
+ * (VITE_OAUTH_ENABLED) : activer Google dans Supabase ne suffisait pas,
+ * il fallait aussi penser à la variable ET à un redéploiement — trois
+ * endroits pour une seule décision, donc trois façons de se tromper.
+ * On demande maintenant directement à Supabase : les boutons
+ * apparaissent dès qu'un fournisseur est actif, sans rien redéployer.
+ */
+export async function enabledProviders(): Promise<OAuthProvider[]> {
+  if (!authAvailable()) return [];
+  try {
+    const res = await fetch(`${supabaseUrl()}/auth/v1/settings`, {
+      headers: { apikey: anonKey() },
+    });
+    if (!res.ok) return [];
+    const body = (await res.json()) as {
+      external?: Record<string, boolean>;
+    };
+    const ext = body.external ?? {};
+    const supported: OAuthProvider[] = ['google', 'apple', 'facebook'];
+    return supported.filter((p) => ext[p] === true);
+  } catch {
+    // Hors ligne ou serveur muet : on n'affiche aucun bouton social
+    // plutôt qu'un bouton qui échouerait.
+    return [];
+  }
+}
+
+/**
  * Redirige vers Google / Facebook / Apple (fournisseur activé dans
  * Supabase). Apple impose `response_mode=form_post` côté Apple, mais
  * Supabase s'en charge : côté app, la mécanique est la même.
