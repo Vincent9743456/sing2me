@@ -139,6 +139,13 @@ color: var(--text-dim); text-transform: uppercase;`
   structurent par `pagetitle` + espacement, pas par des cartes.
 - Modales : bottom-sheet mobile / centrée desktop (existant). Ajouter
   Échap + focus initial. Maximum une modale à la fois.
+- **Jamais de `backdrop-filter` sur un élément `position: fixed`** posé
+  au-dessus d'une page qui défile (barre d'onglets, barre du public,
+  contrôles du mode scène, boutons flottants). iOS repeint ces éléments
+  au mauvais endroit pendant l'inertie du défilement : la barre part au
+  milieu de l'écran (signalé deux fois par Vincent, b181 puis b183).
+  Fond OPAQUE issu des tokens (`--surface`, `--bg`). Le flou reste
+  permis sur les éléments `sticky` et les fonds de modale.
 
 ### Feedback
 - `Toast` (à créer, lot 3) : 1 message, auto-dismiss 3 s,

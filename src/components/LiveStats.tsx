@@ -127,7 +127,7 @@ export function LiveStats() {
     stats: stats ?? [],
     messages: messages ?? [],
     names,
-    bandCloudIds: bands.map((b) => b.cloudId ?? ''),
+    bands: bands.map((b) => ({ cloudId: b.cloudId ?? '', name: b.name })),
     me: [artist.name, prefs.userName],
     artistName: artist.name,
   }).length;

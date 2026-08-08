@@ -159,6 +159,13 @@ export interface Prefs {
    * les préférences, donc synchronisé avec le compte.
    */
   liveNames?: Record<string, string>;
+  /**
+   * Lives retirés de MON historique (b183). Le direct reste en base — il
+   * appartient aussi aux autres membres quand c'était un concert de groupe,
+   * et chacun décide de le garder ou non. Supprimer n'efface donc rien chez
+   * les autres : c'est mon classement, pas une destruction.
+   */
+  hiddenLives?: string[];
 }
 
 /** Membre d'un groupe (v1 locale : simple annuaire + invitations). */

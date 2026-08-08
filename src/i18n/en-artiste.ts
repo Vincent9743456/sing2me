@@ -107,6 +107,12 @@ export const EN_ARTISTE: Record<string, string> = {
   '❤ {h} · 💬 {m} · 👥 {u}': '❤ {h} · 💬 {m} · 👥 {u}',
   '← Fermer': '← Close',
   '✏️ Nommer ce live': '✏️ Name this live',
+  '🗑 Supprimer': '🗑 Delete',
+  'Supprimer ce live ?': 'Delete this live?',
+  'Il disparaît de TON historique. Si c’était un concert de groupe, les autres membres gardent le leur.':
+    'It disappears from YOUR history. If it was a band gig, the other members keep theirs.',
+  'Live retiré de ton historique.': 'Live removed from your history.',
+  'lancé par {qui}': 'started by {qui}',
   spectateurs: 'watching',
   'MORCEAUX JOUÉS': 'SONGS PLAYED',
   'MOTS DU PUBLIC': 'MESSAGES FROM THE AUDIENCE',
