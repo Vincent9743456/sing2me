@@ -15,7 +15,12 @@ import React, {
 
 import { bandKeysMatch, songKey } from './lib/normalizeTitle';
 import { ResetMarks } from './lib/sync';
-import { migrateConcert, migrateSetlist, migrateSong } from './lib/model';
+import {
+  isAbandonedSetlist,
+  migrateConcert,
+  migrateSetlist,
+  migrateSong,
+} from './lib/model';
 import { exampleSetlist, exampleSongs, SEED_KEY, SEED_VERSION } from './seed';
 import {
   ArtistProfile,
@@ -80,6 +85,11 @@ interface StoreValue extends AppState {
   clearBandRemoval: (bandId: string, key: string) => void;
   /** Réinitialise une partie des données (écran Réglages). */
   resetData: (parts: ResetParts) => void;
+  /**
+   * Retire une setlist DU GROUPE (b146) : elle disparaît chez tous les
+   * membres, mais reste chez son auteur — simplement détachée du groupe.
+   */
+  removeSetlistFromBand: (setlistId: string) => void;
 }
 
 /** Ce que l'utilisateur choisit d'effacer (réinitialisation partielle). */
@@ -114,9 +124,11 @@ function loadState(): AppState {
       return withEmbeddedLiveKey({
         // migration automatique de l'ancien modèle à sections
         songs: (Array.isArray(parsed.songs) ? parsed.songs : []).map(migrateSong),
-        setlists: (Array.isArray(parsed.setlists) ? parsed.setlists : []).map(
-          migrateSetlist,
-        ),
+        // Coquilles vides laissées par le défaut corrigé en b146 : on les
+        // retire au chargement (aucune donnée réelle n'y est perdue).
+        setlists: (Array.isArray(parsed.setlists) ? parsed.setlists : [])
+          .map(migrateSetlist)
+          .filter((sl) => !isAbandonedSetlist(sl)),
         concerts: (Array.isArray(parsed.concerts) ? parsed.concerts : []).map(
           migrateConcert,
         ),
@@ -344,7 +356,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({
       ...prev,
       bandRemovals: [
-        ...prev.bandRemovals.filter(
+        ...(prev.bandRemovals ?? []).filter(
           (r) => !(r.bandId === bandId && bandKeysMatch(r.key, key)),
         ),
       ].slice(-499).concat({ bandId, key, at: new Date().toISOString() }),
@@ -355,7 +367,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       // Correspondance souple : une annulation par « titre @ artiste »
       // efface aussi un vieux retrait « titre seul » (et inversement).
-      bandRemovals: prev.bandRemovals.filter(
+      bandRemovals: (prev.bandRemovals ?? []).filter(
         (r) => !(r.bandId === bandId && bandKeysMatch(r.key, key)),
       ),
     }));
@@ -407,6 +419,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  /**
+   * Retrait d'une setlist du répertoire d'un groupe (b146). Le retrait
+   * voyage dans `bandRemovals` — le même canal que les morceaux retirés —
+   * sous une clé préfixée « #setlist: » ; les membres l'appliquent à la
+   * synchro suivante. Chez l'auteur, la setlist est CONSERVÉE, détachée
+   * du groupe (bandId vide) : son travail n'est jamais perdu.
+   */
+  const removeSetlistFromBand = (setlistId: string) => {
+    setState((prev) => {
+      const sl = prev.setlists.find((x) => x.id === setlistId);
+      const bandId = sl?.bandId ?? '';
+      if (!sl || bandId === '') return prev;
+      return {
+        ...prev,
+        setlists: prev.setlists.map((x) =>
+          x.id === setlistId
+            ? { ...x, bandId: '', updatedAt: new Date().toISOString() }
+            : x,
+        ),
+        // `?? []` : un état hydraté depuis le cloud peut ne pas porter la
+        // liste (anciens bundles) — sans cette garde, le retrait faisait
+        // planter le rendu (bug trouvé en test, b146).
+        bandRemovals: [
+          ...(prev.bandRemovals ?? []).filter(
+            (r) => !(r.bandId === bandId && r.key === `#setlist:${setlistId}`),
+          ),
+        ]
+          .slice(-499)
+          .concat({
+            bandId,
+            key: `#setlist:${setlistId}`,
+            at: new Date().toISOString(),
+          }),
+      };
+    });
+  };
+
   const value: StoreValue = {
     ...state,
     hydrate,
@@ -424,6 +473,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     recordBandRemoval,
     clearBandRemoval,
     resetData,
+    removeSetlistFromBand,
   };
 
   return (

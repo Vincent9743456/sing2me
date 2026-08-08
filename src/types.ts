@@ -230,6 +230,15 @@ export interface Setlist {
   name: string;
   comment: string;
   /**
+   * Auteur de la setlist (b146) : identifiant du compte qui l'a créée.
+   * Seul lui peut la supprimer d'un groupe. Vide sur les setlists
+   * antérieures — dans ce cas, chacun garde la main (on ne bloque pas
+   * l'existant).
+   */
+  createdBy?: string;
+  /** Nom lisible de l'auteur, pour l'expliquer aux autres membres. */
+  createdByName?: string;
+  /**
    * Mots laissés par le public pendant les concerts joués sur cette
    * setlist (b139) : le mot appartient au CONCERT, pas au morceau qui
    * passait à cet instant — même s'il en garde la trace.

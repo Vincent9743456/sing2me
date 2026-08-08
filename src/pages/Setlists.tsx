@@ -3,13 +3,15 @@
  * groupe, un encart Solo, et un encart « IA » qui compose une setlist en
  * un clic selon le type de soirée. Vue synthétique au clic.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { LiveBanner } from '../components/LiveBanner';
+import { ConfirmSheet } from '../components/Feedback';
 import { Empty, Field, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { creatorMember, versionForBand } from '../lib/model';
 import { generateSetlistAI, repertoireForContext } from '../lib/setlistAI';
+import { getValidSession } from '../lib/auth';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -53,6 +55,7 @@ export function Setlists() {
     concerts,
     saveSetlist,
     deleteSetlist,
+    removeSetlistFromBand,
     saveBand,
   } = useStore();
   // E5 : la setlist du prochain concert (date la plus proche) est mise en avant.
@@ -64,6 +67,30 @@ export function Setlists() {
   // Capsules dépliées (par clé : id de groupe, '' pour Solo, 'ai' pour l'IA).
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
+  // Suppression : confirmée par une feuille (jamais confirm() natif).
+  const [confirmDel, setConfirmDel] = useState<Setlist | null>(null);
+  // Mon compte : pour savoir de quelles setlists je suis l'auteur (b146).
+  const [myId, setMyId] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const s = await getValidSession();
+      if (s && !cancelled) setMyId(s.userId);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  /**
+   * Qui peut retirer cette setlist ? Son auteur. Une setlist SOLO est
+   * toujours la mienne ; une setlist de groupe sans auteur connu (créée
+   * avant b146) reste supprimable par chacun — on ne bloque pas
+   * l'existant.
+   */
+  const canDelete = (sl: Setlist) =>
+    (sl.bandId ?? '') === '' ||
+    (sl.createdBy ?? '') === '' ||
+    (myId !== '' && sl.createdBy === myId);
   const [newName, setNewName] = useState('');
   const toggle = (k: string) =>
     setOpen((prev) => {
@@ -150,29 +177,42 @@ export function Setlists() {
             </button>
           </>
         )}
-        <button
-          className="btn ghost small"
-          style={{ color: 'var(--danger)' }}
-          title="Supprimer cette setlist"
-          aria-label="Supprimer cette setlist"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (confirm(`Supprimer « ${sl.name || 'cette setlist'} » ?`)) {
-              deleteSetlist(sl.id);
-            }
-          }}
-        >
-          <Icon name="trash" size={15} />
-        </button>
+        {/* Retirer une setlist : réservé à son auteur quand elle est
+            partagée avec un groupe (b146). */}
+        {canDelete(sl) && (
+          <button
+            className="btn icon"
+            style={{ color: 'var(--danger)', flexShrink: 0 }}
+            title="Supprimer cette setlist"
+            aria-label="Supprimer cette setlist"
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmDel(sl);
+            }}
+          >
+            <Icon name="trash" size={15} />
+          </button>
+        )}
       </div>
     );
   };
 
   /** Crée une setlist dans ce contexte et l'ouvre directement (éditable). */
+  /**
+   * Ouvre l'éditeur d'une NOUVELLE setlist — sans rien enregistrer (b146).
+   * Avant, la setlist était créée aussitôt : revenir en arrière sans rien
+   * saisir laissait une coquille « (sans nom) · 0 morceau », qui partait
+   * ensuite en synchro chez tous les membres du groupe. Elle n'existe
+   * désormais qu'à la première saisie réelle (nom, morceau…).
+   */
   function createSetlist(newBandId: string, context = '') {
-    const sl = { ...emptySetlist(), bandId: newBandId, context };
-    saveSetlist(sl);
-    navigate(`/setlist/${sl.id}`);
+    try {
+      sessionStorage.setItem('sing2me/newSetlistBand', newBandId);
+      sessionStorage.setItem('sing2me/newSetlistContext', context);
+    } catch {
+      /* stockage indisponible : le contexte sera simplement à re-choisir */
+    }
+    navigate('/setlist/new');
   }
 
   /** Crée un nouveau groupe (auto-créé) puis une setlist dedans. */
@@ -362,6 +402,27 @@ export function Setlists() {
       <button className="btn libfab" onClick={() => setCreateOpen(true)}>
         <Icon name="plus" size={17} /> Créer une setlist
       </button>
+
+      {confirmDel && (
+        <ConfirmSheet
+          title={`Supprimer « ${confirmDel.name || 'cette setlist'} » ?`}
+          message={
+            (confirmDel.bandId ?? '') !== ''
+              ? 'Elle disparaîtra pour tous les membres du groupe. Tu la garderas dans tes setlists, simplement détachée du groupe.'
+              : 'Les morceaux restent dans ta bibliothèque — seule la setlist disparaît.'
+          }
+          confirmLabel="Supprimer"
+          danger
+          onConfirm={() => {
+            if ((confirmDel.bandId ?? '') !== '') {
+              removeSetlistFromBand(confirmDel.id);
+            } else {
+              deleteSetlist(confirmDel.id);
+            }
+          }}
+          onClose={() => setConfirmDel(null)}
+        />
+      )}
 
       {createOpen && (
         <Modal
