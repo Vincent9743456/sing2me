@@ -604,13 +604,9 @@ export function NoteModal({
             {recState === 'transcribing' && t('✍️ Transcription…')}
           </button>
         )}
-        <button
-          className="btn ghost"
-          onClick={() => void runAi()}
-          disabled={text.trim() === '' || aiBusy}
-        >
-          {aiBusy ? t('✨ Synthèse…') : t('✨ Synthétiser (IA)')}
-        </button>
+        {/* Plus de bouton « Synthétiser » (b162, demande Vincent) : la
+            synthèse se déclenche TOUTE SEULE après une dictée, et une
+            note tapée au clavier n'a pas besoin d'être reformulée. */}
       </div>
       {/* L'état d'enregistrement doit être IMPOSSIBLE à rater (b151). */}
       {recState === 'starting' && (

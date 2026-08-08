@@ -440,8 +440,6 @@ export const EN_MORCEAUX: Record<string, string> = {
   '🎤 Dicter': '🎤 Dictate',
   '⏹ Annuler (micro…)': '⏹ Cancel (mic…)',
   '⏹ Arrêter la dictée': '⏹ Stop dictation',
-  '✨ Synthèse…': '✨ Summarizing…',
-  '✨ Synthétiser (IA)': '✨ Summarize (AI)',
   "🎤 Démarrage du micro… (autorise l'accès si demandé)":
     '🎤 Starting the mic… (allow access if asked)',
   "Enregistrement — parle, puis ⏹. La note sera résumée par l'IA.":
