@@ -38,6 +38,10 @@ interface PastLive {
   songs: LiveStat[];
   messages: LiveMessage[];
   hearts: number;
+  /** Qui jouait : '' = soi (solo), sinon le nom du groupe. */
+  band: string;
+  /** Setlist tournée, '' si aucune (ou SQL pas encore rejoué). */
+  setlist: string;
 }
 
 function jourLong(iso: string): string {
@@ -182,6 +186,20 @@ export function LiveHistory() {
           songs,
           messages: msgs,
           hearts: songs.reduce((n, x) => n + x.hearts, 0),
+          // Le `performer` archivé porte le nom du groupe quand c'en était
+          // un ; s'il vaut mon nom d'artiste, c'était en solo.
+          band: (() => {
+            const p = (
+              songs.find((x) => (x.performer ?? '') !== '')?.performer ??
+              seance?.artist_name ??
+              ''
+            ).trim();
+            return p === '' || p.toLowerCase() === artist.name.trim().toLowerCase()
+              ? ''
+              : p;
+          })(),
+          setlist:
+            songs.find((x) => (x.setlist_name ?? '') !== '')?.setlist_name ?? '',
         };
       })
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
@@ -254,6 +272,9 @@ export function LiveHistory() {
               </div>
               <div className="sub">
                 {nomDe(l) !== '' && <>{jourLong(l.startedAt)} · </>}
+                {l.band !== '' ? l.band : t('Solo')}
+                {l.setlist !== '' && <> · {l.setlist}</>}
+                {' · '}
                 {t('❤ {h} · 💬 {m} · 👥 {u}', {
                   h: l.hearts,
                   m: l.messages.length,
@@ -283,6 +304,9 @@ export function LiveHistory() {
             <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
               {jourLong(ouvert.startedAt)}
               {ouvert.endedAt !== null && <> → {heure(ouvert.endedAt)}</>}
+              {' · '}
+              {ouvert.band !== '' ? ouvert.band : t('Solo')}
+              {ouvert.setlist !== '' && <> · {ouvert.setlist}</>}
             </p>
             <div className="rowactions" style={{ justifyContent: 'center' }}>
               <button

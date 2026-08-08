@@ -113,12 +113,31 @@ export function LiveStats() {
   if (prefs.liveKey.trim() === '') return null;
 
   const totalHearts = (stats ?? []).reduce((n, s) => n + s.hearts, 0);
+  // Nombre de lives (b180) : même découpage que l'historique de l'onglet
+  // Live — deux morceaux séparés de plus de 3 h = deux concerts. Compté
+  // sur les morceaux archivés, pas sur les séances : celles-ci peuvent
+  // manquer sans qu'on le sache (voir LiveHistory).
+  const nbLives = (() => {
+    const TROU_MS = 3 * 60 * 60 * 1000;
+    const joues = [...(stats ?? [])]
+      .map((x) => new Date(x.played_at).getTime())
+      .filter((x) => Number.isFinite(x))
+      .sort((a, b) => a - b);
+    let n = 0;
+    let precedent = -Infinity;
+    for (const at of joues) {
+      if (at - precedent > TROU_MS) n++;
+      precedent = at;
+    }
+    return n;
+  })();
   const totalPublic = (sessions ?? []).reduce((n, s) => n + s.uniques, 0);
   const nbMessages = messages?.length ?? 0;
   const nbFollowers = followers?.count ?? 0;
   const rien =
     !loading &&
     error === null &&
+    nbLives === 0 &&
     totalHearts === 0 &&
     totalPublic === 0 &&
     nbMessages === 0 &&
@@ -175,6 +194,10 @@ export function LiveStats() {
       ) : (
         <>
           <div className="statgrid">
+            <div className="statcard">
+              <div className="statvalue">{nbLives}</div>
+              <div className="statlabel">🔴 {t('lives joués')}</div>
+            </div>
             <div className="statcard">
               <div className="statvalue">{totalHearts}</div>
               <div className="statlabel">❤ {t('reçus')}</div>

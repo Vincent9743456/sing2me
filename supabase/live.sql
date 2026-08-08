@@ -200,3 +200,11 @@ alter table live_messages add column if not exists setlist_name text not null de
 -- ------------------------------------------------------------
 alter table live_messages add column if not exists band_id text not null default '';
 create index if not exists live_messages_performer on live_messages (performer);
+
+-- ------------------------------------------------------------
+-- b180 : l'historique des lives annonce la setlist jouée. Les ❤ archivés
+-- portaient déjà `performer` (qui jouait) ; il leur manquait la setlist.
+-- Colonne facultative : sans elle, l'historique s'affiche simplement sans
+-- le nom du set.
+-- ------------------------------------------------------------
+alter table live_stats add column if not exists setlist_name text not null default '';

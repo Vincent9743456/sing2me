@@ -81,6 +81,8 @@ async function archivePlayedSong(base, row) {
       // À qui appartiennent ces ❤ (b138) : la clé ON AIR étant commune,
       // c'est le seul moyen de rendre à chacun ses statistiques.
       performer: row.artist?.name ?? '',
+      // Setlist tournée pendant ce live (b180) : l'historique l'annonce.
+      setlist_name: row.setlist_name ?? '',
       concert_id: row.concert?.id ?? '',
       concert_title: row.concert?.title ?? '',
       session_id: row.session_id ?? null,
@@ -155,14 +157,13 @@ async function closeLive(base, row) {
     if (Array.isArray(claimed) && claimed.length > 0) {
       await archivePlayedSong(base, row);
       await finalizeSession(base, row.session_id);
-      try {
-        await fetch(`${base}/rest/v1/live_messages?live_id=eq.${row.id}`, {
-          method: 'DELETE',
-          headers: sbHeaders(),
-        });
-      } catch {
-        /* purge best-effort */
-      }
+      // b180 — LES MOTS DU PUBLIC NE SONT PLUS EFFACÉS À LA CLÔTURE.
+      // Ils l'étaient pour qu'un nouveau direct n'hérite pas des messages
+      // du précédent. Mais chaque message porte son `live_id` et son
+      // horodatage : l'historique sait déjà à quel concert il appartient.
+      // La purge ne protégeait donc plus rien — elle détruisait
+      // simplement, à chaque « Arrêter », ce que le public venait
+      // d'écrire. C'est ce qui vidait la table.
     }
   } catch {
     /* clôture best-effort */
@@ -637,16 +638,9 @@ export default async function handler(req, res) {
       } catch {
         /* mesure best-effort */
       }
-      if (status === 'off') {
-        try {
-          await fetch(`${base}/rest/v1/live_messages?live_id=is.null`, {
-            method: 'DELETE',
-            headers: sbHeaders(),
-          });
-        } catch {
-          /* purge best-effort */
-        }
-      }
+      // b180 : même raison — un mot laissé hors direct (ou par un ancien
+      // bundle) appartient quand même à l'artiste. On ne l'efface plus.
+
       let r = await fetch(`${base}/rest/v1/live_state`, {
         method: 'POST',
         headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },

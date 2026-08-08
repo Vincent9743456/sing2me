@@ -70,6 +70,10 @@ export interface LiveStat {
   concert_id: string;
   concert_title: string;
   played_at: string;
+  /** Qui jouait : soi, ou l'un de ses groupes (b180). */
+  performer?: string;
+  /** Setlist tournée pendant ce live, si le SQL est à jour (b180). */
+  setlist_name?: string;
 }
 
 export interface LiveConcertRef {
