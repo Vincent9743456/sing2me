@@ -174,3 +174,20 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   qui utilise les stubs du dossier `typestubs/`) + tests node sur la
   logique pure. Si possible, `npm run build` avant de pousser.
 - Textes UI en français, ton chaleureux, tutoiement.
+- **Bilingue (b156) — le français reste la langue SOURCE du code.**
+  Toute chaîne d'INTERFACE s'écrit en français dans le code et passe par
+  `t('…')` (`src/i18n.ts`) ; la chaîne française EST la clé. L'anglais
+  vit dans les dictionnaires `src/i18n/en-*.ts` (un par domaine,
+  assemblés dans `i18n.en.ts`). Une clé absente s'affiche en français —
+  jamais de clé abstraite, jamais d'écran vide.
+  - Variables : `t('Ajouter {n} morceaux', { n })`. Pluriels : deux
+    chaînes distinctes (singulier / pluriel), pas de `${n>1?'x':''}`.
+  - `t()` ne s'appelle JAMAIS au niveau module (la langue est fixée au
+    rendu) : garder la constante en français, traduire au point de rendu.
+  - **Le contenu utilisateur n'est JAMAIS traduit** : partitions,
+    paroles, accords, titres, artistes, noms de groupes et de musiciens,
+    notes de répétition, commentaires, messages. Seule l'interface change
+    de langue.
+  - Langue = `prefs.lang` ('' = automatique, suit le téléphone), réglable
+    dans Réglages. En ajoutant un écran : enrichir le dictionnaire du
+    domaine concerné dans le même lot.

@@ -647,7 +647,7 @@ export function Import() {
         items[i] = {
           ...items[i],
           status: 'error',
-          message: e instanceof Error ? e.message : "L'import a échoué.",
+          message: e instanceof Error ? e.message : t("L'import a échoué."),
         };
       }
       setBulkItems([...items]);

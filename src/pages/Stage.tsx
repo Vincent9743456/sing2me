@@ -209,8 +209,9 @@ export function Stage({
     const onKey = (e: KeyboardEvent) => {
       // Ne pas capter les touches quand on écrit (dictée / saisie d'une note).
       if (noteOpenRef.current) return;
-      const t = document.activeElement?.tagName;
-      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+      // (nom `tag` et pas `t` : `t` est la fonction de traduction)
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       switch (e.key) {
         case 'ArrowRight':
         case 'PageDown':
@@ -396,25 +397,9 @@ export function Stage({
           fontSize={fontSize}
         />
       </div>
-      {noteOpen && originalSong && (
-        <NoteModal
-          song={originalSong}
-          author={prefs.userName}
-          initialBandId={noteBandId}
-          onClose={() => setNoteOpen(false)}
-          onSave={(n, replaces) => {
-            // Note vivante (b154) : la fusion IA remplace l'ancienne note.
-            if (replaces) {
-              replaceNote(originalSong.id, replaces, n);
-              return;
-            }
-            saveSong({
-              ...originalSong,
-              rehearsalNotes: [...originalSong.rehearsalNotes, n],
-            });
-          }}
-        />
-      )}
+      {/* UNE seule modale de note (b156) : ce bloc était dupliqué — en mode
+          scène, deux modales se superposaient, avec deux dictées possibles
+          en même temps. */}
       {noteOpen && originalSong && (
         <NoteModal
           song={originalSong}
