@@ -242,27 +242,81 @@ export default async function handler(req, res) {
         if (r.status !== 400 && r.status !== 422) break;
       }
       if (!r || !r.ok) {
-        // Livre d'or absent : liste vide plutôt qu'une erreur qui casse
-        // l'écran de statistiques de l'artiste.
-        res.status(200).json({ messages: [] });
+        // Livre d'or illisible : liste vide plutôt qu'une erreur qui casse
+        // l'écran de l'artiste — mais on DIT que la lecture a échoué, sinon
+        // « 0 mot » se confond avec « aucun mot » (b191).
+        res.status(200).json({
+          messages: [],
+          read: null,
+          kept: 0,
+          detail: await failureDetail(r),
+        });
         return;
       }
       const rows = await r.json();
       const all = Array.isArray(rows) ? rows : [];
-      // Comparaison SOUPLE : casse et espaces ne doivent pas faire perdre un
-      // mot du public. Un message sans propriétaire (avant b168, ou laissé
-      // hors direct) revient à celui qui demande — sinon il serait invisible
-      // pour tout le monde, ce qui est pire que de le montrer à son auteur.
+
+      /*
+       * À QUI APPARTIENT UN MOT (b191) — même règle que pour les morceaux
+       * (b188) : il appartient au LIVE pendant lequel il a été laissé, et un
+       * live est solo (son lanceur) ou de groupe (tous ses membres).
+       *
+       * Le tri par NOM seul ne suffisait pas : `performer` est le nom affiché
+       * au moment de l'écriture, et il peut ne pas correspondre à celui que
+       * le musicien porte aujourd'hui — auquel cas ses propres mots lui
+       * devenaient invisibles. Le rattachement par `live_id` ne dépend
+       * d'aucun nom.
+       */
       const norm = (v) => String(v ?? '').trim().toLowerCase();
       const mine = new Set(names.map(norm));
+      const mesGroupes = new Set(
+        String(req.query?.bands ?? '')
+          .slice(0, 900)
+          .split(',')
+          .map((c) => c.trim())
+          .filter((c) => c !== '')
+          .slice(0, 30),
+      );
+      let mesLives = new Set();
+      try {
+        const l = await fetch(
+          `${base}/rest/v1/lives?select=id,artist,band_id,started_by&limit=300`,
+          { headers: sbHeaders(false) },
+        );
+        if (l.ok) {
+          const lives = await l.json();
+          for (const r0 of Array.isArray(lives) ? lives : []) {
+            const bid = String(r0?.band_id ?? '').trim();
+            const par = norm(r0?.started_by);
+            const nom = norm(r0?.artist?.name);
+            const aMoi =
+              bid !== ''
+                ? mesGroupes.has(bid)
+                : par !== ''
+                  ? mine.has(par)
+                  : nom !== '' && mine.has(nom);
+            if (aMoi) mesLives.add(String(r0.id ?? ''));
+          }
+        }
+      } catch {
+        /* best-effort : on retombe sur le tri par nom */
+      }
+
       const messages =
         mine.size === 0
           ? all
           : all.filter((m) => {
+              // 1. Laissé pendant un de MES lives : à moi, sans discussion.
+              const lid = String(m.live_id ?? '').trim();
+              if (lid !== '' && mesLives.has(lid)) return true;
+              // 2. Sinon, le nom affiché. Le mot sans propriétaire revient à
+              //    celui qui demande — invisible pour tous serait pire.
               const who = norm(m.performer);
               return who === '' || mine.has(who);
             });
-      res.status(200).json({ messages });
+      // `read` / `kept` : de quoi distinguer « aucun mot en base » de « des
+      // mots existent mais aucun ne me revient » (diagnostic, b191).
+      res.status(200).json({ messages, read: all.length, kept: messages.length });
       return;
     }
 

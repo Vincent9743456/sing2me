@@ -27,6 +27,7 @@ import {
   LiveSession,
   LiveStat,
   PastLiveRow,
+  triMots,
 } from '../lib/live';
 import { buildPastLives, PastLive } from '../lib/pastlives';
 import { useStore } from '../store';
@@ -96,7 +97,11 @@ export function LiveHistory() {
             namesKey === '' ? [] : namesKey.split(','),
             cloudKey === '' ? [] : cloudKey.split(','),
           ),
-          fetchMessages(prefs.liveKey, namesKey === '' ? [] : namesKey.split(',')),
+          fetchMessages(
+            prefs.liveKey,
+            namesKey === '' ? [] : namesKey.split(','),
+            cloudKey === '' ? [] : cloudKey.split(','),
+          ),
           fetchPastLives(
             prefs.liveKey,
             namesKey === '' ? [] : namesKey.split(','),
@@ -400,6 +405,7 @@ function Diagnostic({
 }) {
   const [data, setData] = useState<Awaited<ReturnType<typeof fetchDiag>>>(null);
   const [asked, setAsked] = useState(false);
+  const tri = triMots();
   return (
     <details
       className="stfold"
@@ -428,6 +434,17 @@ function Diagnostic({
                 n: recus,
                 m: rattaches,
               })}
+            </span>
+          </div>
+          {/* Le maillon exact : combien de lignes le serveur a LU, et combien
+              il en a gardé pour ce compte (b191). « 0 lu » = lecture en
+              échec ; « lu > gardé » = ils appartiennent à quelqu'un d'autre. */}
+          <div className="strow">
+            <span style={{ flex: 1, fontSize: '0.8rem' }}>{t('tri côté serveur')}</span>
+            <span className="stauthor" style={{ fontSize: '0.78rem' }}>
+              {tri.read === null
+                ? t('lecture en échec : {d}', { d: tri.detail || '?' })
+                : t('{n} lus · {m} pour moi', { n: tri.read, m: tri.kept ?? 0 })}
             </span>
           </div>
           {data.tables.map((tb) => (

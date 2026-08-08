@@ -107,6 +107,9 @@ export const EN_ARTISTE: Record<string, string> = {
   'lives joués': 'lives played',
   'Pourquoi c’est vide ?': 'Why is this empty?',
   'Vérification…': 'Checking…',
+  'tri côté serveur': 'server-side sorting',
+  'lecture en échec : {d}': 'read failed: {d}',
+  '{n} lus · {m} pour moi': '{n} read · {m} mine',
   'mots reçus par l’app': 'messages received by the app',
   '{n} reçus · {m} rattachés à un live':
     '{n} received · {m} matched to a live',
