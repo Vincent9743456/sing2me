@@ -89,6 +89,23 @@ export const EN_ARTISTE: Record<string, string> = {
   'Exporter en PDF': 'Export as PDF',
   'Fermer': 'Close',
   'Fiche musicien': 'Musician profile',
+  Live: 'Live',
+  'Concerts passés': 'Past gigs',
+  'Tes derniers lives': 'Your recent lives',
+  'Historique indisponible pour l’instant — il reviendra.':
+    'History unavailable right now — it’ll be back.',
+  'Aucun live pour l’instant — lance-en un depuis le bouton GO LIVE.':
+    'No live yet — start one from the GO LIVE button.',
+  '❤ {h} · 💬 {m} · 👥 {u}': '❤ {h} · 💬 {m} · 👥 {u}',
+  '← Fermer': '← Close',
+  '✏️ Nommer ce live': '✏️ Name this live',
+  spectateurs: 'watching',
+  'MORCEAUX JOUÉS': 'SONGS PLAYED',
+  'MOTS DU PUBLIC': 'MESSAGES FROM THE AUDIENCE',
+  'Rien n’a été enregistré pendant ce live.':
+    'Nothing was recorded during this live.',
+  'Nommer ce live': 'Name this live',
+  'Par exemple : soirée chez Marco': 'For example: night at Marco’s',
   'Recherche de sa page publique…': 'Looking for their public page…',
   'Ce musicien n’a pas encore de page publique Sing2Me — ou son nom d’artiste est porté par plusieurs comptes.':
     'This musician doesn’t have a Sing2Me public page yet — or their artist name is used by several accounts.',

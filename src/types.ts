@@ -152,6 +152,13 @@ export interface Prefs {
   /** Langue de l'interface (b156) : '' ou absent = automatique
    *  (langue du téléphone), sinon 'fr' | 'en'. */
   lang?: '' | 'fr' | 'en';
+  /**
+   * Noms donnés APRÈS COUP aux directs passés (b176), par identifiant de
+   * session : « soirée chez Marco du 26 août ». Côté serveur une session
+   * n'a qu'une date ; c'est l'artiste qui sait ce que c'était. Rangé dans
+   * les préférences, donc synchronisé avec le compte.
+   */
+  liveNames?: Record<string, string>;
 }
 
 /** Membre d'un groupe (v1 locale : simple annuaire + invitations). */

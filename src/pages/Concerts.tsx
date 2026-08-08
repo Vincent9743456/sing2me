@@ -1,4 +1,5 @@
 import { LiveBanner } from '../components/LiveBanner';
+import { LiveHistory } from '../components/LiveHistory';
 import React, { useMemo, useState } from 'react';
 
 import { ShareModal } from '../components/ShareModal';
@@ -49,7 +50,7 @@ export function Concerts() {
     <>
       {/* Même patron que Morceaux/Setlists : un vrai bouton de création en
           haut du contenu, pas de « + » discret dans l'en-tête. */}
-      <TopBar title={t('Concerts')} />
+      <TopBar title={t('Live')} />
       <div className="page">
         <LiveBanner />
         <div
@@ -77,12 +78,19 @@ export function Concerts() {
             <ConcertRow key={c.id} concert={c} />
           ))}
         </div>
-        {past.length > 0 && <h2 className="pagetitle">{t('Passés')}</h2>}
+        {past.length > 0 && (
+          <h2 className="pagetitle">{t('Concerts passés')}</h2>
+        )}
         <div className="list">
           {past.map((c) => (
             <ConcertRow key={c.id} concert={c} />
           ))}
         </div>
+        <div className="spacer" />
+        {/* Historique des directs réellement joués (b176) : distinct des
+            concerts PLANIFIÉS ci-dessus — l'un se prévoit, l'autre s'est
+            passé et porte ce que le public a laissé. */}
+        <LiveHistory />
       </div>
     </>
   );
