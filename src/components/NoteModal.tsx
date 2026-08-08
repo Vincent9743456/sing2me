@@ -8,6 +8,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { createDictation, Dictation, dictationSupported } from '../lib/speech';
+import { t } from '../i18n';
 import { useStore } from '../store';
 import { makeId, Song, SongNote } from '../types';
 import { Field, Modal } from './ui';
@@ -41,13 +42,13 @@ async function aiSummarize(
     });
   } catch {
     throw new Error(
-      "Synthèse indisponible — nécessite la version en ligne (Vercel).",
+      t('Synthèse indisponible — nécessite la version en ligne (Vercel).'),
     );
   }
   const type = res.headers.get('content-type') ?? '';
   if (!type.includes('application/json')) {
     throw new Error(
-      "Synthèse indisponible — nécessite la version en ligne (Vercel).",
+      t('Synthèse indisponible — nécessite la version en ligne (Vercel).'),
     );
   }
   const body = (await res.json()) as {
@@ -55,7 +56,8 @@ async function aiSummarize(
     scope?: string;
     error?: string;
   };
-  if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
+  if (!res.ok || body.error)
+    throw new Error(body.error ?? t('Erreur {code}', { code: res.status }));
   return {
     text: body.text ?? '',
     scope: body.scope === 'perso' || body.scope === 'groupe' ? body.scope : '',
@@ -185,8 +187,9 @@ export function NoteModal({
       if (heard.current === false) {
         // Micro ouvert mais rien capté : le dire, plutôt que le silence.
         setInfo(
-          "Rien n'a été entendu. Parle plus près du micro — et si l'app " +
-            "installée ne capte rien, essaie dans Safari.",
+          t(
+            "Rien n'a été entendu. Parle plus près du micro — et si l'app installée ne capte rien, essaie dans Safari.",
+          ),
         );
         return;
       }
@@ -265,7 +268,9 @@ export function NoteModal({
     );
     if (!d) {
       setError(
-        "La dictée vocale n'est pas disponible dans ce navigateur — essaie Chrome ou Edge.",
+        t(
+          "La dictée vocale n'est pas disponible dans ce navigateur — essaie Chrome ou Edge.",
+        ),
       );
       return;
     }
@@ -279,8 +284,9 @@ export function NoteModal({
       if (fresh() && dictation.current === d) {
         stopRecording(false);
         setError(
-          "Le micro n'a pas démarré. Vérifie l'autorisation micro ; " +
-            "depuis l'app installée, essaie aussi dans Safari.",
+          t(
+            "Le micro n'a pas démarré. Vérifie l'autorisation micro ; depuis l'app installée, essaie aussi dans Safari.",
+          ),
         );
       }
     }, 6000);
@@ -320,8 +326,12 @@ export function NoteModal({
             setVisibility(vis);
             setInfo(
               out.scope === 'perso'
-                ? "🔒 L'IA a classé ce commentaire comme personnel — il ira dans ta note personnelle. Change la visibilité si besoin."
-                : "👥 L'IA a classé ce commentaire pour le groupe. Change la visibilité si besoin.",
+                ? t(
+                    "🔒 L'IA a classé ce commentaire comme personnel — il ira dans ta note personnelle. Change la visibilité si besoin.",
+                  )
+                : t(
+                    "👥 L'IA a classé ce commentaire pour le groupe. Change la visibilité si besoin.",
+                  ),
             );
           }
         } else if (!existing) {
@@ -332,7 +342,7 @@ export function NoteModal({
       }
     } catch (e) {
       // IA indisponible (hors-ligne…) : le texte brut reste tel quel.
-      setError(e instanceof Error ? e.message : 'La synthèse a échoué.');
+      setError(e instanceof Error ? e.message : t('La synthèse a échoué.'));
     } finally {
       setAiBusy(false);
     }
@@ -361,7 +371,7 @@ export function NoteModal({
 
   return (
     <Modal
-      title={existing ? 'Modifier la note' : 'Note de répétition'}
+      title={existing ? t('Modifier la note') : t('Note de répétition')}
       onClose={onClose}
     >
       {/* Note vivante (b154) : la note actuelle est rappelée, le nouveau
@@ -369,25 +379,27 @@ export function NoteModal({
       {previous !== null && (
         <div className="prevnote">
           <div className="prevnote-label">
-            Note actuelle{previous.author !== '' ? ` (${previous.author})` : ''} :
+            {t('Note actuelle')}
+            {previous.author !== '' ? ` (${previous.author})` : ''} :
           </div>
           <div className="prevnote-text">{previous.text}</div>
         </div>
       )}
-      <Field label={previous !== null ? 'Nouveau commentaire' : 'Note'}>
+      <Field label={previous !== null ? t('Nouveau commentaire') : t('Note')}>
         {/* Pas d'autoFocus (b152) : le clavier s'ouvrait dès l'ouverture et
             recouvrait toute la modale sur iPhone — on choisit d'abord
             clavier OU dictée, la modale entière sous les yeux. */}
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Départ batterie seule, break avant le pont, fin abrégée…"
+          placeholder={t('Départ batterie seule, break avant le pont, fin abrégée…')}
         />
       </Field>
       {previous !== null && (
         <p className="help" style={{ marginTop: -6 }}>
-          Ton commentaire met la note à jour : ce qui est contredit est
-          remplacé, le reste est conservé et complété.
+          {t(
+            'Ton commentaire met la note à jour : ce qui est contredit est remplacé, le reste est conservé et complété.',
+          )}
         </p>
       )}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -396,9 +408,9 @@ export function NoteModal({
             className={`btn ${recording ? 'danger' : 'ghost'}`}
             onClick={toggleRecording}
           >
-            {recState === 'off' && '🎤 Dicter'}
-            {recState === 'starting' && '⏹ Annuler (micro…)'}
-            {recState === 'on' && '⏹ Arrêter la dictée'}
+            {recState === 'off' && t('🎤 Dicter')}
+            {recState === 'starting' && t('⏹ Annuler (micro…)')}
+            {recState === 'on' && t('⏹ Arrêter la dictée')}
           </button>
         )}
         <button
@@ -406,20 +418,20 @@ export function NoteModal({
           onClick={() => void runAi()}
           disabled={text.trim() === '' || aiBusy}
         >
-          {aiBusy ? '✨ Synthèse…' : '✨ Synthétiser (IA)'}
+          {aiBusy ? t('✨ Synthèse…') : t('✨ Synthétiser (IA)')}
         </button>
       </div>
       {/* L'état d'enregistrement doit être IMPOSSIBLE à rater (b151). */}
       {recState === 'starting' && (
         <div className="recbanner starting" role="status">
-          🎤 Démarrage du micro… (autorise l'accès si demandé)
+          {t("🎤 Démarrage du micro… (autorise l'accès si demandé)")}
         </div>
       )}
       {recState === 'on' && (
         <div className="recbanner" role="status">
           <span className="recdot" aria-hidden="true" />
           <span>
-            Enregistrement — parle, puis ⏹. La note sera résumée par l'IA.
+            {t("Enregistrement — parle, puis ⏹. La note sera résumée par l'IA.")}
             {interim !== '' && <em className="recinterim"> « {interim} »</em>}
           </span>
         </div>
@@ -427,7 +439,7 @@ export function NoteModal({
       {/* Synthèse automatique en cours après la dictée (b153). */}
       {!recording && aiBusy && (
         <div className="recbanner starting" role="status">
-          ✨ Synthèse de la note par l'IA…
+          {t("✨ Synthèse de la note par l'IA…")}
         </div>
       )}
       {info && <p className="help">{info}</p>}
@@ -440,7 +452,7 @@ export function NoteModal({
             mergedWith.current = null; // autre contexte → autre note vivante
           }}
         >
-          👥 Visible du groupe
+          {t('👥 Visible du groupe')}
         </button>
         <button
           className={`chip ${visibility === 'privee' ? '' : 'off'}`}
@@ -449,13 +461,15 @@ export function NoteModal({
             mergedWith.current = null; // autre contexte → autre note vivante
           }}
         >
-          🔒 Personnelle
+          {t('🔒 Personnelle')}
         </button>
       </div>
       <p className="help">
-        Contexte : {bandName !== '' ? `avec ${bandName}` : 'solo / tous'} —
-        repris de la version affichée. Signée {author || 'sans nom'}, datée
-        automatiquement.
+        {t('Contexte : ')}
+        {bandName !== '' ? t('avec {band}', { band: bandName }) : t('solo / tous')}
+        {' — '}
+        {t('repris de la version affichée. Signée')} {author || t('sans nom')}
+        {t(', datée automatiquement.')}
       </p>
       <div style={{ display: 'flex', gap: 8 }}>
         <button
@@ -464,10 +478,10 @@ export function NoteModal({
           onClick={onSubmit}
           disabled={text.trim() === ''}
         >
-          {existing ? 'Enregistrer les modifications' : 'Enregistrer la note'}
+          {existing ? t('Enregistrer les modifications') : t('Enregistrer la note')}
         </button>
         <button className="btn ghost" onClick={onClose}>
-          Annuler
+          {t('Annuler')}
         </button>
       </div>
     </Modal>

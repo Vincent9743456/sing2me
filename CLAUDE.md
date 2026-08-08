@@ -174,3 +174,33 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   qui utilise les stubs du dossier `typestubs/`) + tests node sur la
   logique pure. Si possible, `npm run build` avant de pousser.
 - Textes UI en français, ton chaleureux, tutoiement.
+- **Bilingue (b156) — le français reste la langue SOURCE du code.**
+  Toute chaîne d'INTERFACE s'écrit en français dans le code et passe par
+  `t('…')` (`src/i18n.ts`) ; la chaîne française EST la clé. L'anglais
+  vit dans les dictionnaires `src/i18n/en-*.ts` (un par domaine,
+  assemblés dans `i18n.en.ts`). Une clé absente s'affiche en français —
+  jamais de clé abstraite, jamais d'écran vide.
+  - Variables : `t('Ajouter {n} morceaux', { n })`. Pluriels : deux
+    chaînes distinctes (singulier / pluriel), pas de `${n>1?'x':''}`.
+  - `t()` ne s'appelle JAMAIS au niveau module (la langue est fixée au
+    rendu) : garder la constante en français, traduire au point de rendu.
+  - **Le contenu utilisateur n'est JAMAIS traduit** : partitions,
+    paroles, accords, titres, artistes, noms de groupes et de musiciens,
+    notes de répétition, commentaires, messages. Seule l'interface change
+    de langue.
+  - Langue = `prefs.lang` ('' = automatique, suit le téléphone), réglable
+    dans Réglages. En ajoutant un écran : enrichir le dictionnaire du
+    domaine concerné dans le même lot.
+  - **Chacun voit l'app dans SA langue** (décision Vincent) : les pages
+    publiques (spectateur du QR, musicien invité à un bœuf) suivent la
+    langue du téléphone du LECTEUR, jamais celle de l'artiste —
+    `publicEntry.tsx` fait `setLang(detectLang())`.
+  - Dictionnaire ENFICHABLE (`registerTranslations`) : l'app musicien
+    charge tous les domaines, l'entrée publique légère ne charge que
+    `en-public.ts` (budget de poids : ~25 Ko, à ne pas gonfler avec des
+    traductions que le spectateur ne voit jamais).
+  - **CGU en français uniquement** (décision Vincent, août 2026) : texte
+    juridique non traduit ; en anglais, un avertissement dit que la
+    version française fait foi.
+  - Vérification : `node scripts/check-i18n.mjs` doit rester à
+    « Couverture complète » avant toute livraison.

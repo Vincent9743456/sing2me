@@ -53,6 +53,7 @@ import { mergeStates, SyncState } from '../lib/sync';
 import { navigate } from '../router';
 import { AppState, useStore } from '../store';
 import { emptyBand, makeId } from '../types';
+import { t } from '../i18n';
 import { Field } from './ui';
 
 /**
@@ -198,8 +199,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             .map((r) => ({ key: r.key, at: r.at }));
           // Notes supprimées : pierres tombales marquées « #note »
           const noteRemovals = (st.deleted ?? [])
-            .filter((t) => t.key === '#note')
-            .map((t) => ({ key: t.id, at: t.at }));
+            .filter((tomb) => tomb.key === '#note')
+            .map((tomb) => ({ key: tomb.id, at: tomb.at }));
           const localData = exportBandData(
             songs,
             setlists,
@@ -210,13 +211,13 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           const merged = mergeBandData(cloudData, localData);
           const skipKeys = new Set(
             (st.deleted ?? [])
-              .map((t) => t.key)
+              .map((tomb) => tomb.key)
               .filter((k): k is string => typeof k === 'string' && k !== ''),
           );
           // Setlists supprimées localement (par id) : à ne pas ressusciter
           // depuis le répertoire du groupe.
           const skipSetlistIds = new Set(
-            (st.deleted ?? []).map((t) => t.id),
+            (st.deleted ?? []).map((tomb) => tomb.id),
           );
           const applied = applyBandData(
             merged,
@@ -265,7 +266,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           } else {
             // Problème réseau passager : session conservée, on réessaiera
             setStatus('error');
-            setError('Synchronisation impossible pour le moment — nouvel essai automatique.');
+            setError(
+              t(
+                'Synchronisation impossible pour le moment — nouvel essai automatique.',
+              ),
+            );
           }
           return;
         }
@@ -307,7 +312,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) {
           setStatus('error');
           setError(
-            e instanceof Error ? e.message : 'Synchronisation impossible.',
+            e instanceof Error ? e.message : t('Synchronisation impossible.'),
           );
         }
       }
@@ -399,7 +404,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   const dirPhoto = store.artist.photo || '';
   useEffect(() => {
     if (!session) return;
-    const t = window.setTimeout(() => {
+    // `timer` : évite de masquer la fonction de traduction `t`.
+    const timer = window.setTimeout(() => {
       void (async () => {
         try {
           const valid = await getValidSession();
@@ -411,14 +417,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         }
       })();
     }, 1500);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.userId, dirName, dirPhoto]);
 
   // À chaque modification : pousser (debounce 3 s), best-effort.
   useEffect(() => {
     if (!session || !readyRef.current) return;
-    const t = window.setTimeout(() => {
+    // `timer` : évite de masquer la fonction de traduction `t`.
+    const timer = window.setTimeout(() => {
       void (async () => {
         try {
           const valid = await getValidSession();
@@ -432,7 +439,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         }
       })();
     }, 3000);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateJson, session?.userId]);
 
@@ -493,8 +500,9 @@ export function AccountSection() {
   if (!account.available) {
     return (
       <p className="help">
-        ☁ Synchronisation indisponible pour le moment — tes données restent
-        enregistrées sur cet appareil, rien n'est perdu.
+        {t(
+          "☁ Synchronisation indisponible pour le moment — tes données restent enregistrées sur cet appareil, rien n'est perdu.",
+        )}
       </p>
     );
   }
@@ -513,10 +521,10 @@ export function AccountSection() {
             flex: 1,
           }}
         >
-          ☁ Connecté
+          {t('☁ Connecté')}
         </span>
         <button className="btn ghost small" onClick={account.logout}>
-          Se déconnecter
+          {t('Se déconnecter')}
         </button>
       </div>
     );
@@ -525,29 +533,32 @@ export function AccountSection() {
   return (
     <div className="card">
       <p className="help" style={{ marginTop: 0 }}>
-        <strong>Connecte-toi ou crée ton compte (gratuit)</strong> — c'est le
-        même champ : entre ton email, le lien reçu te connecte (et crée le
-        compte s'il n'existe pas encore). Ta bibliothèque te suit ensuite sur
-        tous tes appareils.
+        <strong>{t('Connecte-toi ou crée ton compte (gratuit)')}</strong>
+        {t(
+          " — c'est le même champ : entre ton email, le lien reçu te connecte (et crée le compte s'il n'existe pas encore). Ta bibliothèque te suit ensuite sur tous tes appareils.",
+        )}
       </p>
       {sent ? (
         <div>
           <p style={{ marginTop: 0 }}>
             <strong style={{ color: 'var(--accent)' }}>
-              Lien envoyé à {email}
+              {t('Lien envoyé à {email}', { email })}
             </strong>
           </p>
           <p className="help">
-            Ouvre cet email <strong>sur cet appareil</strong> et touche le
-            lien — ou saisis ici le <strong>code de connexion</strong> de
-            l'email (recommandé si tu utilises l'app installée sur l'écran
-            d'accueil). Pense aux spams.
+            {t('Ouvre cet email ')}
+            <strong>{t('sur cet appareil')}</strong>
+            {t(' et touche le lien — ou saisis ici le ')}
+            <strong>{t('code de connexion')}</strong>
+            {t(
+              " de l'email (recommandé si tu utilises l'app installée sur l'écran d'accueil). Pense aux spams.",
+            )}
           </p>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <input
               type="text"
               value={code}
-              placeholder="Code de connexion"
+              placeholder={t('Code de connexion')}
               inputMode="numeric"
               autoComplete="one-time-code"
               /* Longueur configurable côté serveur (6 à 10 chiffres selon
@@ -572,13 +583,13 @@ export function AccountSection() {
                   })
                   .catch((e) =>
                     setLocalError(
-                      e instanceof Error ? e.message : 'Code refusé.',
+                      e instanceof Error ? e.message : t('Code refusé.'),
                     ),
                   )
                   .finally(() => setBusy(false));
               }}
             >
-              {busy ? '…' : 'Valider'}
+              {busy ? '…' : t('Valider')}
             </button>
           </div>
           {localError && (
@@ -596,23 +607,23 @@ export function AccountSection() {
                   .finally(() => setBusy(false));
               }}
             >
-              Renvoyer le lien
+              {t('Renvoyer le lien')}
             </button>
             <button
               className="btn ghost small"
               onClick={() => setSent(false)}
             >
-              Changer d'adresse
+              {t("Changer d'adresse")}
             </button>
           </div>
         </div>
       ) : (
-        <Field label="Email">
+        <Field label={t('Email')}>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               type="email"
               value={email}
-              placeholder="toi@exemple.com"
+              placeholder={t('toi@exemple.com')}
               autoFocus={joining}
               autoComplete="email"
               inputMode="email"
@@ -621,7 +632,9 @@ export function AccountSection() {
             <button
               className="btn"
               style={{ flexShrink: 0 }}
-              title="Connexion OU création de compte — le lien magique fait les deux"
+              title={t(
+                'Connexion OU création de compte — le lien magique fait les deux',
+              )}
               disabled={!email.includes('@') || busy}
               onClick={() => {
                 setBusy(true);
@@ -634,13 +647,13 @@ export function AccountSection() {
                   })
                   .catch((e: unknown) =>
                     setLocalError(
-                      e instanceof Error ? e.message : "L'envoi a échoué.",
+                      e instanceof Error ? e.message : t("L'envoi a échoué."),
                     ),
                   )
                   .finally(() => setBusy(false));
               }}
             >
-              {busy ? '…' : 'Recevoir mon lien'}
+              {busy ? '…' : t('Recevoir mon lien')}
             </button>
           </div>
         </Field>
@@ -651,13 +664,13 @@ export function AccountSection() {
             className="btn ghost"
             onClick={() => account.loginWith('google')}
           >
-            Continuer avec Google
+            {t('Continuer avec Google')}
           </button>
           <button
             className="btn ghost"
             onClick={() => account.loginWith('facebook')}
           >
-            Continuer avec Facebook
+            {t('Continuer avec Facebook')}
           </button>
         </div>
       )}
@@ -667,11 +680,11 @@ export function AccountSection() {
         </p>
       )}
       <p className="help" style={{ marginBottom: 0 }}>
-        Entre ton email et touche « Recevoir mon lien » : le lien magique te
-        connecte (et crée ton compte si besoin), sans mot de passe. En créant
-        un compte, tu acceptes les{' '}
+        {t(
+          'Entre ton email et touche « Recevoir mon lien » : le lien magique te connecte (et crée ton compte si besoin), sans mot de passe. En créant un compte, tu acceptes les',
+        )}{' '}
         <a href="#/cgu" style={{ color: 'var(--accent)' }}>
-          conditions d'utilisation
+          {t("conditions d'utilisation")}
         </a>
         .
       </p>

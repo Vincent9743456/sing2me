@@ -14,6 +14,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { currentLiveRef, fetchLiveForBands } from '../lib/live';
 import { navigate } from '../router';
 import { useStore } from '../store';
+import { t } from '../i18n';
 
 export function LiveBanner() {
   const { bands } = useStore();
@@ -85,7 +86,9 @@ export function LiveBanner() {
       }}
     >
       <span style={{ flex: 1 }}>
-        {session.mode === 'repet' ? '🎸 Répétition' : '🔴 Concert'} en cours
+        {session.mode === 'repet'
+          ? t('🎸 Répétition en cours')
+          : t('🔴 Concert en cours')}
         {session.group !== '' && (
           <>
             {' '}
@@ -101,7 +104,7 @@ export function LiveBanner() {
               fontSize: '0.85em',
             }}
           >
-            lancé par {session.by}
+            {t('lancé par {name}', { name: session.by })}
           </span>
         )}
       </span>
@@ -111,7 +114,7 @@ export function LiveBanner() {
           navigate(session.code !== '' ? `/follow/${session.code}` : '/follow')
         }
       >
-        Rejoindre 📡
+        {t('Rejoindre 📡')}
       </button>
     </div>
   );

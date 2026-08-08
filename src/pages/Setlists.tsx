@@ -9,6 +9,7 @@ import { LiveBanner } from '../components/LiveBanner';
 import { ConfirmSheet } from '../components/Feedback';
 import { Empty, Field, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
+import { t } from '../i18n';
 import { creatorMember, versionForBand } from '../lib/model';
 import { generateSetlistAI, repertoireForContext } from '../lib/setlistAI';
 import { getValidSession } from '../lib/auth';
@@ -130,9 +131,9 @@ export function Setlists() {
       >
         <div className="grow" style={{ minWidth: 0 }}>
           <div className="title">
-            {sl.name || '(sans nom)'}
+            {sl.name || t('(sans nom)')}
             {sl.id === nextConcertSetlistId && (
-              <span className="badge-next">Prochain concert</span>
+              <span className="badge-next">{t('Prochain concert')}</span>
             )}
           </div>
           <div
@@ -147,11 +148,15 @@ export function Setlists() {
               // Auteur rappelé quand ce n'est pas moi (b147) : on sait à
               // qui appartient une setlist partagée.
               !canDelete(sl) && (sl.createdByName ?? '') !== ''
-                ? `de ${sl.createdByName}`
+                ? t('de {nom}', { nom: sl.createdByName ?? '' })
                 : '',
-              `${info.count} morceau${info.count > 1 ? 'x' : ''}`,
+              info.count > 1
+                ? t('{n} morceaux', { n: info.count })
+                : t('{n} morceau', { n: info.count }),
               info.sec > 0 ? `${info.estimated ? '≈ ' : ''}${formatDuration(info.sec)}` : '',
-              info.reserve > 0 ? `${info.reserve} en réserve` : '',
+              info.reserve > 0
+                ? t('{n} en réserve', { n: info.reserve })
+                : '',
               sl.partyType && sl.partyType.trim() !== '' ? sl.partyType : '',
               sl.comment,
             ]
@@ -163,7 +168,7 @@ export function Setlists() {
           <>
             <button
               className="btn ghost small"
-              title="Régie (chanteur sans partition)"
+              title={t('Régie (chanteur sans partition)')}
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/remote/${sl.id}`);
@@ -178,7 +183,7 @@ export function Setlists() {
                 navigate(`/stage/${sl.id}`);
               }}
             >
-              <Icon name="play" size={13} /> Scène
+              <Icon name="play" size={13} /> {t('Scène')}
             </button>
           </>
         )}
@@ -188,8 +193,8 @@ export function Setlists() {
           <button
             className="btn icon"
             style={{ color: 'var(--danger)', flexShrink: 0 }}
-            title="Supprimer cette setlist"
-            aria-label="Supprimer cette setlist"
+            title={t('Supprimer cette setlist')}
+            aria-label={t('Supprimer cette setlist')}
             onClick={(e) => {
               e.stopPropagation();
               setConfirmDel(sl);
@@ -282,7 +287,9 @@ export function Setlists() {
           <div className="grow" style={{ minWidth: 0 }}>
             <div className="capsule-title">{name}</div>
             <div className="capsule-count">
-              {list.length} setlist{list.length > 1 ? 's' : ''}
+              {list.length > 1
+                ? t('{n} setlists', { n: list.length })
+                : t('{n} setlist', { n: list.length })}
             </div>
           </div>
           <span className={`capsule-chevron ${isOpen ? 'open' : ''}`}>
@@ -293,7 +300,7 @@ export function Setlists() {
           <div className="list capsule-body">
             {list.map(setlistRow)}
             <div className="row createcard" onClick={onCreate}>
-              <Icon name="plus" size={16} /> Créer une setlist
+              <Icon name="plus" size={16} /> {t('Créer une setlist')}
             </div>
           </div>
         )}
@@ -305,7 +312,7 @@ export function Setlists() {
     <>
       {/* Plus de raccourci « satellite » manuel (décision Vincent) : quand le
           leader passe ON AIR, la bannière LiveBanner invite les membres. */}
-      <TopBar title="Setlists" />
+      <TopBar title={t('Setlists')} />
       <div className="page">
         <LiveBanner />
         {setlists.length === 0 && (
@@ -313,13 +320,14 @@ export function Setlists() {
             <div
               style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 6 }}
             >
-              Ta première setlist
+              {t('Ta première setlist')}
             </div>
-            Crée ta première setlist pour ton prochain concert — tu glisseras
-            tes morceaux dans l’ordre.
+            {t(
+              'Crée ta première setlist pour ton prochain concert — tu glisseras tes morceaux dans l’ordre.',
+            )}
             <div className="spacer" />
             <button className="btn" onClick={() => setCreateOpen(true)}>
-              <Icon name="plus" size={16} /> Créer une setlist
+              <Icon name="plus" size={16} /> {t('Créer une setlist')}
             </button>
           </Empty>
         )}
@@ -327,7 +335,7 @@ export function Setlists() {
         {/* Solo toujours en premier (setlists solo, hors capsules de contexte). */}
         {capsule(
           '',
-          `Solo${artist.name !== '' ? ` — ${artist.name}` : ''}`,
+          `${t('Solo')}${artist.name !== '' ? ` — ${artist.name}` : ''}`,
           capAvatar(artist.photo ?? '', '🎤', 'var(--surface-high)'),
           setlists.filter(
             (s) => (s.bandId ?? '') === '' && (s.context ?? '') === '',
@@ -338,7 +346,7 @@ export function Setlists() {
         {bands.map((b, i) =>
           capsule(
             b.id,
-            b.name || 'Groupe sans nom',
+            b.name || t('Groupe sans nom'),
             capAvatar(
               b.photo ?? '',
               '👥',
@@ -378,9 +386,9 @@ export function Setlists() {
               ✨
             </span>
             <div className="grow" style={{ minWidth: 0 }}>
-              <div className="capsule-title">Setlist par l'IA</div>
+              <div className="capsule-title">{t("Setlist par l'IA")}</div>
               <div className="capsule-count">
-                Une setlist proposée selon l'ambiance
+                {t("Une setlist proposée selon l'ambiance")}
               </div>
             </div>
             <span className={`capsule-chevron ${open.has('ai') ? 'open' : ''}`}>
@@ -405,18 +413,24 @@ export function Setlists() {
       {/* Action principale unique, au même endroit que « Nouveau morceau »
           dans l'onglet Morceaux (bas droite). */}
       <button className="btn libfab" onClick={() => setCreateOpen(true)}>
-        <Icon name="plus" size={17} /> Créer une setlist
+        <Icon name="plus" size={17} /> {t('Créer une setlist')}
       </button>
 
       {confirmDel && (
         <ConfirmSheet
-          title={`Supprimer « ${confirmDel.name || 'cette setlist'} » ?`}
+          title={t('Supprimer « {nom} » ?', {
+            nom: confirmDel.name || t('cette setlist'),
+          })}
           message={
             (confirmDel.bandId ?? '') !== ''
-              ? 'Elle disparaîtra pour tous les membres du groupe. Tu la garderas dans tes setlists, simplement détachée du groupe.'
-              : 'Les morceaux restent dans ta bibliothèque — seule la setlist disparaît.'
+              ? t(
+                  'Elle disparaîtra pour tous les membres du groupe. Tu la garderas dans tes setlists, simplement détachée du groupe.',
+                )
+              : t(
+                  'Les morceaux restent dans ta bibliothèque — seule la setlist disparaît.',
+                )
           }
-          confirmLabel="Supprimer"
+          confirmLabel={t('Supprimer')}
           danger
           onConfirm={() => {
             if ((confirmDel.bandId ?? '') !== '') {
@@ -431,15 +445,16 @@ export function Setlists() {
 
       {createOpen && (
         <Modal
-          title="Créer une setlist"
+          title={t('Créer une setlist')}
           onClose={() => {
             setCreateOpen(false);
             setNewName('');
           }}
         >
           <p className="help" style={{ marginTop: 0 }}>
-            Dans quelle capsule ? Choisis-en une existante, ou crée-en une
-            nouvelle plus bas.
+            {t(
+              'Dans quelle capsule ? Choisis-en une existante, ou crée-en une nouvelle plus bas.',
+            )}
           </p>
           <div
             className="row"
@@ -451,7 +466,8 @@ export function Setlists() {
             {capAvatar(artist.photo ?? '', '🎤', 'var(--surface-high)')}
             <div className="grow" style={{ marginLeft: 10 }}>
               <div className="title">
-                Solo{artist.name !== '' ? ` — ${artist.name}` : ''}
+                {t('Solo')}
+                {artist.name !== '' ? ` — ${artist.name}` : ''}
               </div>
             </div>
             <span className="chevron">
@@ -473,7 +489,7 @@ export function Setlists() {
                 BAND_COLORS[i % BAND_COLORS.length],
               )}
               <div className="grow" style={{ marginLeft: 10 }}>
-                <div className="title">{b.name || 'Groupe sans nom'}</div>
+                <div className="title">{b.name || t('Groupe sans nom')}</div>
               </div>
               <span className="chevron">
                 <Icon name="plus" size={16} />
@@ -509,11 +525,13 @@ export function Setlists() {
               </div>
             ))}
           <div className="spacer" />
-          <Field label="Nouvelle capsule">
+          <Field label={t('Nouvelle capsule')}>
             <input
               type="text"
               value={newName}
-              placeholder="Nom (un groupe, ou un contexte : « Soirée entre amis »…)"
+              placeholder={t(
+                'Nom (un groupe, ou un contexte : « Soirée entre amis »…)',
+              )}
               onChange={(e) => setNewName(e.target.value)}
             />
           </Field>
@@ -521,18 +539,22 @@ export function Setlists() {
             <button
               className="btn"
               disabled={newName.trim() === ''}
-              title="Crée le groupe (tu en es le premier musicien) et une setlist dedans"
+              title={t(
+                'Crée le groupe (tu en es le premier musicien) et une setlist dedans',
+              )}
               onClick={() => {
                 createInNewBand(newName.trim());
                 setNewName('');
               }}
             >
-              <Icon name="users" size={14} /> Comme groupe
+              <Icon name="users" size={14} /> {t('Comme groupe')}
             </button>
             <button
               className="btn ghost"
               disabled={newName.trim() === ''}
-              title="Crée une capsule contextuelle (ex. « Soirée entre amis »), sans groupe"
+              title={t(
+                'Crée une capsule contextuelle (ex. « Soirée entre amis »), sans groupe',
+              )}
               onClick={() => {
                 const ctx = newName.trim();
                 setNewName('');
@@ -540,7 +562,7 @@ export function Setlists() {
                 createSetlist('', ctx);
               }}
             >
-              🎉 Comme contexte
+              {t('🎉 Comme contexte')}
             </button>
           </div>
         </Modal>
@@ -568,8 +590,8 @@ function AiSetlistCard({
   const available = repertoireForContext(songs, bandId).length;
   const contextLabel =
     bandId === ''
-      ? 'en solo'
-      : bands.find((b) => b.id === bandId)?.name || 'ce groupe';
+      ? t('en solo')
+      : bands.find((b) => b.id === bandId)?.name || t('ce groupe');
 
   async function generate() {
     if (busy) return;
@@ -593,7 +615,7 @@ function AiSetlistCard({
           versionId: versionForBand(s, bandId)?.id ?? '',
         }));
       if (items.length === 0) {
-        setError("L'IA n'a retenu aucun morceau — réessaie.");
+        setError(t("L'IA n'a retenu aucun morceau — réessaie."));
         return;
       }
       onCreated({
@@ -605,7 +627,7 @@ function AiSetlistCard({
         items,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Génération impossible.');
+      setError(e instanceof Error ? e.message : t('Génération impossible.'));
     } finally {
       setBusy(false);
     }
@@ -614,8 +636,15 @@ function AiSetlistCard({
   return (
     <>
       <p className="help" style={{ margin: '2px 0 8px' }}>
-        Un ordre proposé selon l'ambiance, dans le répertoire {contextLabel} (
-        {available} morceau{available > 1 ? 'x' : ''}).
+        {available > 1
+          ? t(
+              "Un ordre proposé selon l'ambiance, dans le répertoire {contexte} ({n} morceaux).",
+              { contexte: contextLabel, n: available },
+            )
+          : t(
+              "Un ordre proposé selon l'ambiance, dans le répertoire {contexte} ({n} morceau).",
+              { contexte: contextLabel, n: available },
+            )}
       </p>
       <div className="chips" style={{ marginBottom: 8 }}>
         {PARTY_PRESETS.map((p) => (
@@ -624,7 +653,7 @@ function AiSetlistCard({
             className={`chip ${partyType === p ? '' : 'off'}`}
             onClick={() => setPartyType(partyType === p ? '' : p)}
           >
-            {p}
+            {t(p)}
           </button>
         ))}
       </div>
@@ -634,12 +663,12 @@ function AiSetlistCard({
         <input
           type="text"
           value={partyType}
-          placeholder="Type de soirée (ou précise…)"
+          placeholder={t('Type de soirée (ou précise…)')}
           style={{ flex: 1, minWidth: 160 }}
           onChange={(e) => setPartyType(e.target.value)}
         />
         <label className="help" style={{ margin: 0 }}>
-          Durée
+          {t('Durée')}
           <input
             type="number"
             value={minutes}
@@ -653,19 +682,19 @@ function AiSetlistCard({
               )
             }
           />{' '}
-          min
+          {t('min')}
         </label>
         {bands.length > 0 && (
           <select
             value={bandId}
-            title="Contexte de la setlist (solo ou groupe)"
+            title={t('Contexte de la setlist (solo ou groupe)')}
             style={{ width: 'auto', padding: '4px 6px' }}
             onChange={(e) => setBandId(e.target.value)}
           >
-            <option value="">Solo</option>
+            <option value="">{t('Solo')}</option>
             {bands.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name || 'Groupe sans nom'}
+                {b.name || t('Groupe sans nom')}
               </option>
             ))}
           </select>
@@ -675,13 +704,15 @@ function AiSetlistCard({
           disabled={busy || available === 0}
           onClick={() => void generate()}
         >
-          {busy ? 'Génération…' : '✨ Générer'}
+          {busy ? t('Génération…') : t('✨ Générer')}
         </button>
       </div>
       {available === 0 && (
         <p className="help" style={{ marginBottom: 0 }}>
-          Aucun morceau {contextLabel} pour l'instant — affecte des morceaux à
-          ce répertoire d'abord.
+          {t(
+            "Aucun morceau {contexte} pour l'instant — affecte des morceaux à ce répertoire d'abord.",
+            { contexte: contextLabel },
+          )}
         </p>
       )}
       {error !== '' && (

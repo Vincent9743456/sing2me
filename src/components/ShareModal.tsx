@@ -9,6 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { createShortLink, encodeShare, shareUrl } from '../lib/share';
 import { useStore } from '../store';
 import { SharePayload } from '../types';
+import { t } from '../i18n';
 import { Modal } from './ui';
 
 export function ShareModal({
@@ -81,20 +82,20 @@ export function ShareModal({
     if (inv) {
       // F1 : message court, complet, une seule URL en dernière position
       // (aperçu propre dans WhatsApp/SMS).
-      subject = `${inv.from} t'invite à rejoindre ${inv.band} sur Sing2Me`;
-      body =
-        `🎶 ${inv.from} t'invite à rejoindre ${inv.band} sur Sing2Me.\n` +
-        `Partitions, setlists et répéts du groupe, partagées ` +
-        `automatiquement.\n` +
-        `C'est gratuit, rien à installer — clique et c'est prêt :\n` +
-        `${url}`;
+      subject = t("{from} t'invite à rejoindre {band} sur Sing2Me", {
+        from: inv.from,
+        band: inv.band,
+      });
+      body = t(
+        "🎶 {from} t'invite à rejoindre {band} sur Sing2Me.\nPartitions, setlists et répéts du groupe, partagées automatiquement.\nC'est gratuit, rien à installer — clique et c'est prêt :\n{url}",
+        { from: inv.from, band: inv.band, url: url ?? '' },
+      );
     } else {
-      subject = 'Un morceau partagé avec toi depuis Sing2Me 🎶';
-      body =
-        `Je te partage ça — ouvre simplement ce lien, aucune appli requise :` +
-        `\n${url}\n\n` +
-        `Partagé avec Sing2Me, le songbook des musiciens : paroles, accords, ` +
-        `transposition, mode scène. C'est gratuit — n'hésite pas à l'essayer.`;
+      subject = t('Un morceau partagé avec toi depuis Sing2Me 🎶');
+      body = t(
+        "Je te partage ça — ouvre simplement ce lien, aucune appli requise :\n{url}\n\nPartagé avec Sing2Me, le songbook des musiciens : paroles, accords, transposition, mode scène. C'est gratuit — n'hésite pas à l'essayer.",
+        { url: url ?? '' },
+      );
     }
     return { subject, body };
   }
@@ -117,14 +118,14 @@ export function ShareModal({
       {children}
       <div className="qrbox">
         {qr ? (
-          <img src={qr} alt="QR code de partage" />
+          <img src={qr} alt={t('QR code de partage')} />
         ) : (
           <p className="help">
             {url === null
-              ? 'Préparation du lien…'
-              : 'Contenu trop volumineux pour un QR code — utilise le lien ' +
-                'ci-dessous. (Astuce : avec la clé On Air renseignée et la ' +
-                'version en ligne, le lien devient court et le QR revient.)'}
+              ? t('Préparation du lien…')
+              : t(
+                  'Contenu trop volumineux pour un QR code — utilise le lien ci-dessous. (Astuce : avec la clé On Air renseignée et la version en ligne, le lien devient court et le QR revient.)',
+                )}
           </p>
         )}
         {url && (
@@ -143,18 +144,18 @@ export function ShareModal({
                         });
                     }}
                   >
-                    📤 Partager
+                    {t('📤 Partager')}
                   </button>
                 )}
               <button className="btn ghost" onClick={copy}>
-                {copied ? '✓ Lien copié !' : 'Copier le lien'}
+                {copied ? t('✓ Lien copié !') : t('Copier le lien')}
               </button>
               <a
                 className="btn ghost"
                 href={mailtoHref()}
                 style={{ textDecoration: 'none' }}
               >
-                ✉️ Email
+                {t('✉️ Email')}
               </a>
               <a
                 className="btn ghost"
@@ -168,17 +169,18 @@ export function ShareModal({
             </div>
             <div className="linkbox">{url}</div>
             <p className="help" style={{ textAlign: 'center' }}>
-              Le destinataire n'a besoin d'aucune application : le lien ouvre
-              une page web.
+              {t(
+                "Le destinataire n'a besoin d'aucune application : le lien ouvre une page web.",
+              )}
               {isShort
-                ? ' (Lien court — le contenu est servi par ton cloud.)'
+                ? t(' (Lien court — le contenu est servi par ton cloud.)')
                 : ''}
             </p>
           </>
         )}
       </div>
       <button className="btn ghost block" onClick={onClose}>
-        Fermer
+        {t('Fermer')}
       </button>
     </Modal>
   );

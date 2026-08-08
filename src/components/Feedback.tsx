@@ -14,6 +14,7 @@ import React, {
   useState,
 } from 'react';
 
+import { t } from '../i18n';
 import { Icon, IconName } from './Icon';
 import { useKeyboardLift } from './ui';
 
@@ -108,14 +109,14 @@ export function ConfirmSheet({
           onClose();
         }}
       >
-        {confirmLabel}
+        {t(confirmLabel)}
       </button>
       <button
         className="btn ghost block"
         style={{ marginTop: 8 }}
         onClick={onClose}
       >
-        Annuler
+        {t('Annuler')}
       </button>
     </Sheet>
   );
@@ -164,14 +165,14 @@ export function PromptSheet({
         style={{ marginBottom: 8 }}
       />
       <button className="btn block" onClick={submit}>
-        {confirmLabel}
+        {t(confirmLabel)}
       </button>
       <button
         className="btn ghost block"
         style={{ marginTop: 8 }}
         onClick={onClose}
       >
-        Annuler
+        {t('Annuler')}
       </button>
     </Sheet>
   );

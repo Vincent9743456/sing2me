@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 
 import { Icon, IconName } from './Icon';
+import { t } from '../i18n';
 import { GearCategory, GearItem, makeId } from '../types';
 
 export const GEAR_CATEGORIES: {
@@ -66,15 +67,19 @@ export function GearEditor({
             {g.name}
             <span className="stauthor">
               {' '}
-              · {GEAR_CATEGORIES.find((c) => c.value === g.category)?.label}
+              ·{' '}
+              {t(
+                GEAR_CATEGORIES.find((c) => c.value === g.category)?.label ??
+                  '',
+              )}
             </span>
           </span>
           <input
             type="number"
             min={1}
             value={g.qty ?? 1}
-            title="Quantité"
-            aria-label={`Quantité de ${g.name}`}
+            title={t('Quantité')}
+            aria-label={t('Quantité de {name}', { name: g.name })}
             style={{ width: 58, padding: '4px 6px', textAlign: 'center' }}
             onChange={(e) => {
               const n = Math.max(1, parseInt(e.target.value, 10) || 1);
@@ -89,8 +94,8 @@ export function GearEditor({
           />
           <button
             className="btn ghost small"
-            title="Retirer"
-            aria-label={`Retirer ${g.name}`}
+            title={t('Retirer')}
+            aria-label={t('Retirer {name}', { name: g.name })}
             onClick={() => onChange(items.filter((x) => x.id !== g.id))}
           >
             <Icon name="x" size={14} />
@@ -101,7 +106,7 @@ export function GearEditor({
         <input
           type="text"
           value={name}
-          placeholder="Câble XLR, guitare Takamine, HF Sennheiser…"
+          placeholder={t('Câble XLR, guitare Takamine, HF Sennheiser…')}
           style={{ flex: '2 1 150px' }}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
@@ -112,8 +117,8 @@ export function GearEditor({
           type="number"
           min={1}
           value={qty}
-          title="Quantité"
-          aria-label="Quantité"
+          title={t('Quantité')}
+          aria-label={t('Quantité')}
           style={{ width: 58, padding: '4px 6px', textAlign: 'center' }}
           onChange={(e) =>
             setQty(Math.max(1, parseInt(e.target.value, 10) || 1))
@@ -126,7 +131,7 @@ export function GearEditor({
         >
           {GEAR_CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>
-              {c.label}
+              {t(c.label)}
             </option>
           ))}
         </select>
@@ -135,7 +140,7 @@ export function GearEditor({
           disabled={name.trim() === ''}
           onClick={add}
         >
-          <Icon name="plus" size={14} /> Ajouter
+          <Icon name="plus" size={14} /> {t('Ajouter')}
         </button>
       </div>
     </div>

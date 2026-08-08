@@ -12,6 +12,7 @@ import {
   TopBar,
 } from '../components/ui';
 import { announceBandSong } from '../lib/bands';
+import { t } from '../i18n';
 import { songKey } from '../lib/importer';
 import {
   creatorMember,
@@ -376,10 +377,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
         title={
           <span
             style={{ cursor: 'pointer' }}
-            title="Modifier le nom"
+            title={t('Modifier le nom')}
             onClick={() => nameRef.current?.focus()}
           >
-            {draft.name || 'Sans titre'}
+            {draft.name || t('Sans titre')}
           </span>
         }
         onBack={() => navigate('/setlists')}
@@ -387,8 +388,8 @@ export function SetlistEdit({ id }: { id: string | null }) {
           !isNew ? (
             <button
               className="btn icon"
-              title="Autres actions"
-              aria-label="Autres actions"
+              title={t('Autres actions')}
+              aria-label={t('Autres actions')}
               onClick={() => setHeadMenu(true)}
             >
               <Icon name="more" size={20} />
@@ -398,18 +399,18 @@ export function SetlistEdit({ id }: { id: string | null }) {
       />
       <div className="page">
         {/* Le nom d'abord — premier élément, hors section repliée. */}
-        <Field label="Nom">
+        <Field label={t('Nom')}>
           <input
             ref={nameRef}
             type="text"
             value={draft.name}
-            placeholder="Concert du 15 août"
+            placeholder={t('Concert du 15 août')}
             onChange={(e) => update({ name: e.target.value })}
           />
         </Field>
         {/* Action principale de l'écran, visible sans défiler. */}
         <button className="btn block" onClick={() => setPicker(true)}>
-          <Icon name="plus" size={16} /> Ajouter un morceau
+          <Icon name="plus" size={16} /> {t('Ajouter un morceau')}
         </button>
         <div className="spacer" />
         {/* L'explication du glisser-déposer n'a de sens qu'à partir de
@@ -417,23 +418,24 @@ export function SetlistEdit({ id }: { id: string | null }) {
         {draft.items.length >= 2 && (
           <CoachMark
             id="setlist-reorder"
-            text="Glisse les morceaux pour changer l'ordre."
+            text={t("Glisse les morceaux pour changer l'ordre.")}
           />
         )}
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
-          Morceaux ({playedItems.length}
+          {t('Morceaux')} ({playedItems.length}
           {playedSec > 0
             ? ` · ${hasEstimate ? '≈ ' : ''}${formatDuration(playedSec)}`
             : ''}
           {reserveItems.length > 0
-            ? ` · ${reserveItems.length} en réserve`
+            ? ` · ${t('{n} en réserve', { n: reserveItems.length })}`
             : ''}
           )
         </h2>
         {hasEstimate && (
           <p className="help" style={{ marginTop: -6 }}>
-            Durée estimée à 5 min pour les morceaux dont la durée n'est pas
-            renseignée — renseigne-la sur la fiche du morceau pour affiner.
+            {t(
+              "Durée estimée à 5 min pour les morceaux dont la durée n'est pas renseignée — renseigne-la sur la fiche du morceau pour affiner.",
+            )}
           </p>
         )}
 
@@ -454,8 +456,8 @@ export function SetlistEdit({ id }: { id: string | null }) {
                   défilement de page. */}
               <span
                 className="drag"
-                title="Glisser pour réordonner"
-                aria-label="Glisser pour réordonner"
+                title={t('Glisser pour réordonner')}
+                aria-label={t('Glisser pour réordonner')}
                 onPointerDown={(e) => onHandleDown(e, idx)}
                 onPointerMove={onHandleMove}
                 onPointerUp={onHandleUp}
@@ -472,23 +474,25 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 <div
                   className="title"
                   style={{ cursor: song ? 'pointer' : 'default' }}
-                  title="Voir la partition"
+                  title={t('Voir la partition')}
                   onClick={() => openItemSong(item)}
                 >
-                  {song?.title ?? '(morceau supprimé)'}
+                  {song?.title ?? t('(morceau supprimé)')}
                   {song && song.artist !== '' && (
                     <span className="stauthor"> — {song.artist}</span>
                   )}
                 </div>
                 {item.reserve && (
-                  <div className="slreserve">☆ En réserve — jouée si besoin</div>
+                  <div className="slreserve">
+                    {t('☆ En réserve — jouée si besoin')}
+                  </div>
                 )}
               </div>
               <button
                 className="btn icon"
                 style={{ color: 'var(--danger)' }}
-                title="Retirer de la setlist"
-                aria-label="Retirer de la setlist"
+                title={t('Retirer de la setlist')}
+                aria-label={t('Retirer de la setlist')}
                 onClick={() =>
                   setDraft((d) => ({
                     ...d,
@@ -506,11 +510,15 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 }}
                 title={
                   item.reserve
-                    ? 'En réserve — cliquer pour la remettre dans le set joué'
-                    : 'Mettre en réserve (jouée seulement si besoin — hors durée prévue)'
+                    ? t('En réserve — cliquer pour la remettre dans le set joué')
+                    : t(
+                        'Mettre en réserve (jouée seulement si besoin — hors durée prévue)',
+                      )
                 }
                 aria-label={
-                  item.reserve ? 'Retirer de la réserve' : 'Mettre en réserve'
+                  item.reserve
+                    ? t('Retirer de la réserve')
+                    : t('Mettre en réserve')
                 }
                 onClick={() =>
                   setDraft((d) => ({
@@ -530,33 +538,35 @@ export function SetlistEdit({ id }: { id: string | null }) {
 
         <div className="spacer" />
         <Accordion
-          title="Infos de la setlist"
+          title={t('Infos de la setlist')}
           sub={[
-            `Groupe : ${bandName(draft.bandId ?? '') || 'Solo'}`,
+            t('Groupe : {nom}', {
+              nom: bandName(draft.bandId ?? '') || t('Solo'),
+            }),
             // Auteur rappelé quand ce n'est pas moi (b147).
             !isAuthor && (draft.createdByName ?? '') !== ''
-              ? `créée par ${draft.createdByName}`
+              ? t('créée par {nom}', { nom: draft.createdByName ?? '' })
               : '',
           ]
             .filter((x) => x !== '')
             .join(' · ')}
           defaultOpen={isNew}
         >
-        <Field label="Commentaire">
+        <Field label={t('Commentaire')}>
           <input
             type="text"
             value={draft.comment}
-            placeholder="Set acoustique, 45 minutes…"
+            placeholder={t('Set acoustique, 45 minutes…')}
             onChange={(e) => update({ comment: e.target.value })}
           />
         </Field>
-        <Field label="Groupe">
+        <Field label={t('Groupe')}>
           <select
             value={draft.bandId ?? ''}
             onChange={(e) => {
               let bandId = e.target.value;
               if (bandId === '__create__') {
-                const name = prompt('Nom du groupe');
+                const name = prompt(t('Nom du groupe'));
                 if (name === null || name.trim() === '') return;
                 // Le créateur est automatiquement le premier musicien
                 const b = {
@@ -584,16 +594,16 @@ export function SetlistEdit({ id }: { id: string | null }) {
               }));
             }}
           >
-            <option value="">Solo (par défaut)</option>
+            <option value="">{t('Solo (par défaut)')}</option>
             {bands.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name || 'Groupe sans nom'}
+                {b.name || t('Groupe sans nom')}
               </option>
             ))}
-            <option value="__create__">＋ Créer un groupe…</option>
+            <option value="__create__">{t('＋ Créer un groupe…')}</option>
           </select>
           <p className="help" style={{ marginTop: 4 }}>
-            La setlist utilise les versions propres à ce groupe.
+            {t('La setlist utilise les versions propres à ce groupe.')}
           </p>
         </Field>
         </Accordion>
@@ -602,10 +612,16 @@ export function SetlistEdit({ id }: { id: string | null }) {
             qui passait à cet instant. */}
         {(draft.fanMessages ?? []).length > 0 && (
           <Accordion
-            title="💬 Mots du public"
-            sub={`${(draft.fanMessages ?? []).length} message${
-              (draft.fanMessages ?? []).length > 1 ? 's' : ''
-            } reçu${(draft.fanMessages ?? []).length > 1 ? 's' : ''} en concert`}
+            title={t('💬 Mots du public')}
+            sub={
+              (draft.fanMessages ?? []).length > 1
+                ? t('{n} messages reçus en concert', {
+                    n: (draft.fanMessages ?? []).length,
+                  })
+                : t('{n} message reçu en concert', {
+                    n: (draft.fanMessages ?? []).length,
+                  })
+            }
           >
             {[...(draft.fanMessages ?? [])]
               .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
@@ -613,7 +629,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 <div key={m.id} className="notesbox" style={{ marginBottom: 8 }}>
                   <div style={{ whiteSpace: 'pre-wrap' }}>{m.text}</div>
                   <div className="help" style={{ marginTop: 4 }}>
-                    {m.author.trim() !== '' ? m.author : 'Un spectateur'}
+                    {m.author.trim() !== '' ? m.author : t('Un spectateur')}
                   </div>
                 </div>
               ))}
@@ -622,11 +638,11 @@ export function SetlistEdit({ id }: { id: string | null }) {
 
         {/* Sono & scène : écran dédié — la rangée dit si c'est renseigné. */}
         <AccordionNav
-          title="🔊 Sono & scène"
+          title={t('🔊 Sono & scène')}
           sub={
             sonoFilled
-              ? 'Renseignée — matériel, branchements, plan'
-              : 'Vide — matériel, branchements, plan'
+              ? t('Renseignée — matériel, branchements, plan')
+              : t('Vide — matériel, branchements, plan')
           }
           onClick={() => {
             saveSetlist(stamp(withValidatedMeta(draft)));
@@ -639,10 +655,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
             <>
               <button
                 className="btn ghost"
-                title="Vue d'ensemble propre et imprimable"
+                title={t("Vue d'ensemble propre et imprimable")}
                 onClick={() => navigate(`/setlist/${draft.id}/apercu`)}
               >
-                <Icon name="clipboard" size={15} /> Imprimer
+                <Icon name="clipboard" size={15} /> {t('Imprimer')}
               </button>
               <button
                 className="btn ghost"
@@ -651,17 +667,17 @@ export function SetlistEdit({ id }: { id: string | null }) {
                   navigate(`/stage/${draft.id}`);
                 }}
               >
-                <Icon name="play" size={14} /> Mode scène
+                <Icon name="play" size={14} /> {t('Mode scène')}
               </button>
               <button
                 className="btn ghost"
-                title="Vue chanteur sans partition"
+                title={t('Vue chanteur sans partition')}
                 onClick={() => {
                   saveSetlist(stamp(withValidatedMeta(draft)));
                   navigate(`/remote/${draft.id}`);
                 }}
               >
-                <Icon name="sliders" size={15} /> Régie
+                <Icon name="sliders" size={15} /> {t('Régie')}
               </button>
             </>
           )}
@@ -670,7 +686,9 @@ export function SetlistEdit({ id }: { id: string | null }) {
               pas de partage de setlist par lien. Supprimer vit dans le
               menu « … » de l'en-tête (une seule occurrence, confirmée). */}
         </div>
-        {saved && !metaDirty && <div className="savedhint">✓ Enregistré</div>}
+        {saved && !metaDirty && (
+          <div className="savedhint">{t('✓ Enregistré')}</div>
+        )}
       </div>
 
       {/* Validation visible des champs (b149) : rien ne part sans elle. */}
@@ -683,9 +701,13 @@ export function SetlistEdit({ id }: { id: string | null }) {
 
       {picker && (
         <SongCollector
-          title="Ajouter des morceaux"
+          title={t('Ajouter des morceaux')}
           alreadyIn={draft.items.map((it) => it.songId)}
-          confirmLabel={(n) => `Ajouter ${n} morceau${n > 1 ? 'x' : ''}`}
+          confirmLabel={(n) =>
+            n > 1
+              ? t('Ajouter {n} morceaux', { n })
+              : t('Ajouter {n} morceau', { n })
+          }
           onConfirm={(ids) => {
             for (const id of ids) {
               const s = songs.find((x) => x.id === id);
@@ -698,12 +720,12 @@ export function SetlistEdit({ id }: { id: string | null }) {
 
       {headMenu && (
         <MenuSheet
-          title={draft.name || 'Sans titre'}
+          title={draft.name || t('Sans titre')}
           items={
             isAuthor
               ? [
                   {
-                    label: 'Supprimer la setlist',
+                    label: t('Supprimer la setlist'),
                     icon: 'trash' as const,
                     danger: true,
                     onClick: () => setConfirmDelete(true),
@@ -713,9 +735,9 @@ export function SetlistEdit({ id }: { id: string | null }) {
                   {
                     // Seul l'auteur retire une setlist de groupe (b146) :
                     // on le DIT plutôt que de masquer l'action sans raison.
-                    label: `Créée par ${
-                      draft.createdByName || 'un autre musicien'
-                    } — elle seule peut la supprimer`,
+                    label: t('Créée par {nom} — elle seule peut la supprimer', {
+                      nom: draft.createdByName || t('un autre musicien'),
+                    }),
                     icon: 'lock' as const,
                     onClick: () => undefined,
                   },
@@ -726,13 +748,19 @@ export function SetlistEdit({ id }: { id: string | null }) {
       )}
       {confirmDelete && (
         <ConfirmSheet
-          title={`Supprimer « ${draft.name || 'Sans titre'} » ?`}
+          title={t('Supprimer « {nom} » ?', {
+            nom: draft.name || t('Sans titre'),
+          })}
           message={
             (draft.bandId ?? '') !== ''
-              ? 'Elle disparaîtra pour tous les membres du groupe. Tu la garderas dans tes setlists, simplement détachée du groupe.'
-              : 'Les morceaux restent dans ta bibliothèque — seule la setlist disparaît.'
+              ? t(
+                  'Elle disparaîtra pour tous les membres du groupe. Tu la garderas dans tes setlists, simplement détachée du groupe.',
+                )
+              : t(
+                  'Les morceaux restent dans ta bibliothèque — seule la setlist disparaît.',
+                )
           }
-          confirmLabel="Supprimer"
+          confirmLabel={t('Supprimer')}
           danger
           onConfirm={() => {
             // Setlist de GROUPE : elle disparaît chez les membres mais

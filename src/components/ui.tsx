@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { t } from '../i18n';
 import { navigate, Route } from '../router';
 import { Icon, IconName } from './Icon';
 import { Brand } from './Logo';
@@ -18,9 +19,9 @@ export function DndHint() {
   return (
     <div className="dndhint">
       <span>
-        🔕 Active « Ne pas déranger » sur ton téléphone : aucun appel ni
-        notification pendant le concert. L'écran, lui, restera allumé
-        automatiquement.
+        {t(
+          "🔕 Active « Ne pas déranger » sur ton téléphone : aucun appel ni notification pendant le concert. L'écran, lui, restera allumé automatiquement.",
+        )}
       </span>
       <button
         className="btn ghost small"
@@ -117,12 +118,16 @@ export function SaveBar({
 }) {
   if (!visible) return null;
   return (
-    <div className="savebar" role="toolbar" aria-label="Modifications en attente">
+    <div
+      className="savebar"
+      role="toolbar"
+      aria-label={t('Modifications en attente')}
+    >
       <button className="btn ghost" onClick={onCancel}>
-        Annuler
+        {t('Annuler')}
       </button>
       <button className="btn" onClick={onSave}>
-        ✓ {label}
+        ✓ {t(label)}
       </button>
     </div>
   );
@@ -146,7 +151,7 @@ export function TopBar({
     <div className="topbar">
       <div className="side">
         {onBack && (
-          <button className="btn icon" onClick={onBack} aria-label="Retour">
+          <button className="btn icon" onClick={onBack} aria-label={t('Retour')}>
             <Icon name="chevron-left" size={22} />
           </button>
         )}
@@ -235,7 +240,7 @@ export function TabBar({
               </span>
             )}
           </span>
-          {tab.label}
+          {t(tab.label)}
         </button>
       ))}
     </nav>

@@ -6,6 +6,8 @@
  */
 import React from 'react';
 
+import { t } from '../i18n';
+
 interface State {
   error: Error | null;
 }
@@ -56,12 +58,12 @@ export class ErrorBoundary extends React.Component<
         >
           <div style={{ fontSize: '2rem' }}>🎸</div>
           <h1 style={{ margin: 0, fontSize: '1.25rem' }}>
-            Oups — un petit couac
+            {t('Oups — un petit couac')}
           </h1>
           <p style={{ margin: 0, maxWidth: 420, opacity: 0.8, lineHeight: 1.5 }}>
-            L'application a rencontré une erreur inattendue. Tes données sont
-            en sécurité (elles restent sur ton appareil). Recharge pour
-            reprendre.
+            {t(
+              "L'application a rencontré une erreur inattendue. Tes données sont en sécurité (elles restent sur ton appareil). Recharge pour reprendre.",
+            )}
           </p>
           <button
             onClick={this.reset}
@@ -76,10 +78,12 @@ export class ErrorBoundary extends React.Component<
               color: '#16120a',
             }}
           >
-            Recharger l'application
+            {t("Recharger l'application")}
           </button>
           <details style={{ maxWidth: 420, opacity: 0.6, fontSize: '0.8rem' }}>
-            <summary style={{ cursor: 'pointer' }}>Détail technique</summary>
+            <summary style={{ cursor: 'pointer' }}>
+              {t('Détail technique')}
+            </summary>
             <pre
               style={{
                 whiteSpace: 'pre-wrap',

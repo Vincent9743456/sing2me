@@ -34,6 +34,7 @@ import {
   useToast,
 } from '../components/Feedback';
 import { CoachMark } from '../components/CoachMark';
+import { t } from '../i18n';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -67,9 +68,10 @@ function relativeDay(iso: string): string {
       new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()) /
       86400000,
   );
-  if (diff <= 0) return "aujourd'hui";
-  if (diff === 1) return 'hier';
-  if (diff < 7) return `il y a ${diff} j`;
+  if (diff <= 0) return t("aujourd'hui");
+  if (diff === 1) return t('hier');
+  if (diff < 7) return t('il y a {n} j', { n: diff });
+  // Date courte : reste en fr-FR (voir rapport i18n).
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
@@ -248,8 +250,8 @@ export function SongView({
   if (!song) {
     return (
       <>
-        <TopBar live={false} title="Morceau" onBack={() => navigate('/')} />
-        <Empty>Ce morceau n'existe plus.</Empty>
+        <TopBar live={false} title={t('Morceau')} onBack={() => navigate('/')} />
+        <Empty>{t("Ce morceau n'existe plus.")}</Empty>
       </>
     );
   }
@@ -319,8 +321,11 @@ export function SongView({
         live={false}
         title={
           ctxSetlist
-            ? `${song.title || '(sans titre)'} · ${ctxSetlist.name || 'Setlist'}`
-            : song.title || '(sans titre)'
+            ? t('{title} · {setlist}', {
+                title: song.title || t('(sans titre)'),
+                setlist: ctxSetlist.name || t('Setlist'),
+              })
+            : song.title || t('(sans titre)')
         }
         onBack={() =>
           ctxSetlist ? navigate(`/setlist/${ctxSetlist.id}`) : navigate('/')
@@ -330,17 +335,17 @@ export function SongView({
             {/* « Scène » (action principale) tout à droite — demande Vincent. */}
             <button
               className="btn ghost small"
-              title="Modifier la partition (paroles, accords, structure…)"
+              title={t('Modifier la partition (paroles, accords, structure…)')}
               onClick={() => navigate(`/song/${song.id}/edit`)}
             >
-              <Icon name="edit" size={15} /> Modifier
+              <Icon name="edit" size={15} /> {t('Modifier')}
             </button>
             <button
               className="btn small"
               title={
                 ctxSetlist
-                  ? 'Mode scène — la setlist entière (le public peut la suivre)'
-                  : 'Mode scène (plein écran)'
+                  ? t('Mode scène — la setlist entière (le public peut la suivre)')
+                  : t('Mode scène (plein écran)')
               }
               onClick={() =>
                 navigate(
@@ -350,7 +355,7 @@ export function SongView({
                 )
               }
             >
-              <Icon name="play" size={14} /> Scène
+              <Icon name="play" size={14} /> {t('Scène')}
             </button>
           </>
         }
@@ -368,17 +373,19 @@ export function SongView({
             }}
           >
             <span style={{ flex: 1 }}>
-              💡 <strong>Idée à travailler</strong>
+              💡 <strong>{t('Idée à travailler')}</strong>
               <br />
               <span className="help">
-                Jouable partout, mais pas encore validée dans ta bibliothèque.
+                {t(
+                  'Jouable partout, mais pas encore validée dans ta bibliothèque.',
+                )}
               </span>
             </span>
             <button
               className="btn small"
               onClick={() => saveSong({ ...song, idea: undefined })}
             >
-              ✓ Valider dans la bibliothèque
+              {t('✓ Valider dans la bibliothèque')}
             </button>
           </div>
         )}
@@ -401,8 +408,10 @@ export function SongView({
             className={`chip ${song.noSolo === true ? 'off' : ''}`}
             title={
               song.noSolo === true
-                ? 'Déqualifié du répertoire solo — cliquer pour le requalifier'
-                : 'Jouable en solo (par défaut) — cliquer pour le déqualifier si tu ne peux pas le jouer seul'
+                ? t('Déqualifié du répertoire solo — cliquer pour le requalifier')
+                : t(
+                    'Jouable en solo (par défaut) — cliquer pour le déqualifier si tu ne peux pas le jouer seul',
+                  )
             }
             onClick={() =>
               saveSong({
@@ -412,7 +421,7 @@ export function SongView({
             }
           >
             <Icon name="mic" size={12} />{' '}
-            {song.noSolo === true ? 'Pas en solo' : 'Solo ✓'}
+            {song.noSolo === true ? t('Pas en solo') : t('Solo ✓')}
           </button>
           {song.hearts > 0 && (
             <span className="chip static" style={{ color: 'var(--heart)' }}>
@@ -424,10 +433,12 @@ export function SongView({
           {!isBandVersion && song.versions.length < 2 && (
             <button
               className="btn ai small"
-              title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
+              title={t(
+                'Sing2Me cherche la version la mieux notée de cette partition et te la propose',
+              )}
               onClick={() => setUgUpgrade(true)}
             >
-              ★ Meilleure version ?
+              {t('★ Meilleure version ?')}
             </button>
           )}
         </div>
@@ -447,37 +458,43 @@ export function SongView({
               <div className="vb-title">
                 <span>
                   {isBandVersion
-                    ? `Version du groupe ${bandName(curBandId) || '—'}`
+                    ? t('Version du groupe {band}', { band: bandName(curBandId) || '—' })
                     : isSoloVersion
-                      ? 'Version Solo'
+                      ? t('Version Solo')
                       : isMainVersion
-                        ? 'Version de référence'
-                        : `Version « ${current.name} »`}
+                        ? t('Version de référence')
+                        : t('Version « {name} »', { name: current.name })}
                 </span>
                 {isBandVersion ? (
-                  <span className="vb-shared">partagée</span>
+                  <span className="vb-shared">{t('partagée')}</span>
                 ) : isSoloVersion ? (
-                  <span className="vb-solo">solo</span>
+                  <span className="vb-solo">{t('solo')}</span>
                 ) : isMainVersion ? (
-                  <span className="vb-ref">⭐ référence</span>
+                  <span className="vb-ref">{t('⭐ référence')}</span>
                 ) : (
-                  <span className="vb-solo">perso</span>
+                  <span className="vb-solo">{t('perso')}</span>
                 )}
               </div>
               <div className="vb-sub">
                 {isBandVersion
-                  ? 'Tes modifications de cette version arrivent chez tous les membres du groupe.'
+                  ? t(
+                      'Tes modifications de cette version arrivent chez tous les membres du groupe.',
+                    )
                   : isSoloVersion
-                    ? 'Ta façon de le jouer en solo — modifiable à part, jamais partagée. Les évolutions de l’originale s’y répercutent.'
+                    ? t(
+                        'Ta façon de le jouer en solo — modifiable à part, jamais partagée. Les évolutions de l’originale s’y répercutent.',
+                      )
                     : isMainVersion
-                      ? 'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres (tonalité/capo se répercutent).'
-                      : 'À toi seul — cette version n’est pas partagée.'}
+                      ? t(
+                          'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres (tonalité/capo se répercutent).',
+                        )
+                      : t('À toi seul — cette version n’est pas partagée.')}
               </div>
             </div>
             {song.versions.length >= 2 && (
               <select
                 value={current.id}
-                aria-label="Changer de version affichée"
+                aria-label={t('Changer de version affichée')}
                 onChange={(e) => onVersionChange(e.target.value)}
               >
                 {song.versions.map((v) => {
@@ -501,8 +518,10 @@ export function SongView({
             )}
             <button
               className="btn ghost small"
-              aria-label="Actions sur les versions"
-              title="Versions : référence, renommer, meilleure version, supprimer"
+              aria-label={t('Actions sur les versions')}
+              title={t(
+                'Versions : référence, renommer, meilleure version, supprimer',
+              )}
               onClick={() => setVersionMenu(true)}
             >
               ⋯
@@ -528,13 +547,13 @@ export function SongView({
             et le capo courants — un tap pour l'ouvrir, zéro place perdue. */}
         <CoachMark
           id="song-transpose"
-          text="Tonalité et capo sont ici — tout se transpose."
+          text={t('Tonalité et capo sont ici — tout se transpose.')}
         />
         {showTranspose && (
           <details className="stfold">
             <summary>
-              🎵 Tonalité{shownKey !== '' ? ` ${shownKey}` : ''}
-              {capo > 0 ? ` · Capo ${capo}` : ''} — transposer
+              {t('🎵 Tonalité')}{shownKey !== '' ? ` ${shownKey}` : ''}
+              {capo > 0 ? ` · ${t('Capo')} ${capo}` : ''} — {t('transposer')}
             </summary>
             <div className="spacer" />
             <div className="transpose">
@@ -542,10 +561,12 @@ export function SongView({
                 Capo restent groupés ; si la place manque, Capo passe à la
                 ligne en entier (une 2ᵉ ligne qui commence par « Capo »). */}
             <span className="transpose-unit">
-              <span className="lbl">Transposer</span>
+              <span className="lbl">{t('Transposer')}</span>
               <div className="stepper">
                 <button
-                  title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
+                  title={t(
+                    'Accords plus bas (capo +1) — la tonalité réelle ne change pas',
+                  )}
                   onClick={() => {
                     setShift((s) => s - 1);
                     setCapo((c) => Math.min(11, c + 1));
@@ -558,10 +579,10 @@ export function SongView({
                     ? shownKey
                     : shift === 0
                       ? '—'
-                      : `${shift > 6 ? shift - 12 : shift} ½t`}
+                      : t('{n} ½t', { n: shift > 6 ? shift - 12 : shift })}
                 </span>
                 <button
-                  title="Accords plus haut (capo −1)"
+                  title={t('Accords plus haut (capo −1)')}
                   onClick={() => {
                     setShift((s) => s + 1);
                     if (capo > 0) setCapo((c) => c - 1);
@@ -573,10 +594,10 @@ export function SongView({
             </span>
             {!displayReal && (
               <span className="transpose-unit">
-                <span className="lbl">Capo</span>
+                <span className="lbl">{t('Capo')}</span>
                 <div className="stepper">
                   <button
-                    title="Le capo change ce qui sonne, pas les accords affichés"
+                    title={t('Le capo change ce qui sonne, pas les accords affichés')}
                     onClick={() => setCapo((c) => Math.max(0, c - 1))}
                   >
                     −
@@ -593,10 +614,12 @@ export function SongView({
             <button
               className="btn ghost small"
               style={displayReal ? { color: 'var(--accent)' } : undefined}
-              title="Afficher les accords tels qu'ils doivent être joués sans capo — pratique pour la basse"
+              title={t(
+                "Afficher les accords tels qu'ils doivent être joués sans capo — pratique pour la basse",
+              )}
               onClick={toggleReal}
             >
-              {displayReal ? '✓ Accords sans capo' : 'Accords sans capo'}
+              {displayReal ? t('✓ Accords sans capo') : t('Accords sans capo')}
             </button>
             {(shift !== 0 || capo !== song.capo) && (
               <button
@@ -606,7 +629,7 @@ export function SongView({
                   setCapo(song.capo);
                 }}
               >
-                Réinitialiser
+                {t('Réinitialiser')}
               </button>
             )}
             </div>
@@ -637,10 +660,10 @@ export function SongView({
             alignItems: 'center',
           }}
         >
-          <span className="help">Dans :</span>
+          <span className="help">{t('Dans :')}</span>
           {memberBands.length === 0 && memberSetlists.length === 0 && (
             <span className="help" style={{ margin: 0 }}>
-              aucun groupe ni setlist
+              {t('aucun groupe ni setlist')}
             </span>
           )}
           {memberBands.map((b) => (
@@ -659,20 +682,20 @@ export function SongView({
                   marginRight: 4,
                 }}
               />
-              {b.name || 'Groupe sans nom'}
+              {b.name || t('Groupe sans nom')}
             </span>
           ))}
           {memberSetlists.map((sl) => (
             <span key={sl.id} className="chip static">
-              {sl.name || '(sans nom)'}
+              {sl.name || t('(sans nom)')}
             </span>
           ))}
           <button
             className="chip off"
-            title="Ajouter ce morceau à un groupe ou une setlist"
+            title={t('Ajouter ce morceau à un groupe ou une setlist')}
             onClick={() => setAssocOpen(true)}
           >
-            ＋ Ajouter à…
+            {t('＋ Ajouter à…')}
           </button>
         </div>
 
@@ -683,13 +706,16 @@ export function SongView({
           <div className="versionbar">
             <button
               className="btn ghost small"
-              title="Ta façon de le jouer en solo — modifiable à part, comme une version de groupe"
+              title={t(
+                'Ta façon de le jouer en solo — modifiable à part, comme une version de groupe',
+              )}
               onClick={() => {
+                // Nom de la version (donnée persistée) : jamais traduit.
                 saveSong(duplicateVersion(song, 'Solo', SOLO_BAND_ID));
                 setShift(0);
               }}
             >
-              🎙 Créer la version Solo
+              {t('🎙 Créer la version Solo')}
             </button>
           </div>
         )}
@@ -698,22 +724,23 @@ export function SongView({
           <div className="notesbox">
             <div className="label" style={{ display: 'flex', gap: 8 }}>
               <span style={{ flex: 1 }}>
-                Notes de répétition
+                {t('Notes de répétition')}
                 {current.bandId !== '' && bandName(current.bandId) !== ''
-                  ? ` · contexte ${bandName(current.bandId)}`
-                  : ' · solo / tous'}
+                  ? t(' · contexte {band}', { band: bandName(current.bandId) })
+                  : t(' · solo / tous')}
               </span>
               <button
                 className="btn ghost small"
                 onClick={() => setNoteModal('new')}
               >
-                ＋ Note
+                {t('＋ Note')}
               </button>
             </div>
             {allNotes.length === 0 && (
               <p className="help" style={{ margin: 0 }}>
-                Le journal du travail sur ce morceau : datées, signées,
-                partagées au groupe ou personnelles. Dictée vocale 🎤.
+                {t(
+                  'Le journal du travail sur ce morceau : datées, signées, partagées au groupe ou personnelles. Dictée vocale 🎤.',
+                )}
               </p>
             )}
             {allNotes.map((n) => (
@@ -728,7 +755,7 @@ export function SongView({
               >
                 <span
                   style={{ flex: 1, cursor: 'pointer' }}
-                  title="Modifier la note"
+                  title={t('Modifier la note')}
                   onClick={() => setNoteModal(n)}
                 >
                   <Icon name={n.visibility === 'privee' ? 'lock' : 'message'} size={13} />{' '}
@@ -741,7 +768,7 @@ export function SongView({
                 <button
                   className="btn ghost small"
                   style={{ color: 'var(--danger)' }}
-                  title="Supprimer la note (pour tout le monde)"
+                  title={t('Supprimer la note (pour tout le monde)')}
                   onClick={() => deleteNote(song.id, n.id)}
                 >
                   <Icon name="x" size={15} />
@@ -753,7 +780,9 @@ export function SongView({
 
         {showNotes && song.fanMessages.length > 0 && (
           <div className="notesbox" style={{ borderLeftColor: 'var(--heart)' }}>
-            <div className="label">💬 Messages du public ({song.fanMessages.length})</div>
+            <div className="label">
+              {t('💬 Messages du public ({n})', { n: song.fanMessages.length })}
+            </div>
             {[...song.fanMessages]
               .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
               .map((m) => (
@@ -765,7 +794,8 @@ export function SongView({
                     « {m.text} »
                     <span className="stauthor">
                       {' '}
-                      — {m.author !== '' ? m.author : 'anonyme'} ·{' '}
+                      — {m.author !== '' ? m.author : t('anonyme')} ·{' '}
+                      {/* Date courte : reste en fr-FR (voir rapport i18n). */}
                       {new Date(m.createdAt).toLocaleDateString('fr-FR', {
                         day: 'numeric',
                         month: 'short',
@@ -775,7 +805,7 @@ export function SongView({
                   <button
                     className="btn ghost small"
                     style={{ color: 'var(--danger)' }}
-                    title="Retirer ce message"
+                    title={t('Retirer ce message')}
                     onClick={() =>
                       saveSong({
                         ...song,
@@ -793,17 +823,17 @@ export function SongView({
         {/* Réglages personnels du musicien : locaux, jamais partagés */}
         <details className="stfold">
           <summary>
-            Mes réglages perso
+            {t('Mes réglages perso')}
             {song.mySetup?.instrument
               ? ` — ${song.mySetup.instrument}`
               : ''}
           </summary>
           <div className="spacer" />
-          <Field label="Instrument joué sur ce morceau">
+          <Field label={t('Instrument joué sur ce morceau')}>
             <input
               type="text"
               value={song.mySetup?.instrument ?? ''}
-              placeholder="Congas, cajon, guitare électro…"
+              placeholder={t('Congas, cajon, guitare électro…')}
               onChange={(e) =>
                 saveSong({
                   ...song,
@@ -815,10 +845,10 @@ export function SongView({
               }
             />
           </Field>
-          <Field label="Réglages (ampli, effets, retours…)">
+          <Field label={t('Réglages (ampli, effets, retours…)')}>
             <textarea
               value={song.mySetup?.notes ?? ''}
-              placeholder={'Drive canal 2, delay 320 ms\nRetour : voix + claviers'}
+              placeholder={t('Drive canal 2, delay 320 ms\nRetour : voix + claviers')}
               onChange={(e) =>
                 saveSong({
                   ...song,
@@ -831,8 +861,9 @@ export function SongView({
             />
           </Field>
           <p className="help">
-            Personnel : visible uniquement dans ton application (et affiché en
-            mode scène) — jamais inclus dans les partages.
+            {t(
+              'Personnel : visible uniquement dans ton application (et affiché en mode scène) — jamais inclus dans les partages.',
+            )}
           </p>
         </details>
 
@@ -847,13 +878,15 @@ export function SongView({
           style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
           onClick={() => setDelSongOpen(true)}
         >
-          <Icon name="trash" size={15} /> Supprimer ce morceau
+          <Icon name="trash" size={15} /> {t('Supprimer ce morceau')}
         </button>
         {delSongOpen && (
           <ConfirmSheet
-            title={`Supprimer « ${song.title || '(sans titre)'} » ?`}
-            message="Le morceau sera aussi retiré des setlists."
-            confirmLabel="Supprimer"
+            title={t('Supprimer « {title} » ?', {
+              title: song.title || t('(sans titre)'),
+            })}
+            message={t('Le morceau sera aussi retiré des setlists.')}
+            confirmLabel={t('Supprimer')}
             danger
             onConfirm={() => {
               deleteSong(song.id);
@@ -874,11 +907,11 @@ export function SongView({
               navigate(`/setlist/${ctxSetlist.id}/song/${fromSetlist.index - 1}`)
             }
           >
-            <Icon name="chevron-left" size={16} /> Précédent
+            <Icon name="chevron-left" size={16} /> {t('Précédent')}
           </button>
           <button
             className="btn ghost"
-            title="Revenir à la setlist"
+            title={t('Revenir à la setlist')}
             onClick={() => navigate(`/setlist/${ctxSetlist.id}`)}
           >
             <Icon name="list" size={15} /> {fromSetlist.index + 1}/
@@ -891,7 +924,7 @@ export function SongView({
               navigate(`/setlist/${ctxSetlist.id}/song/${fromSetlist.index + 1}`)
             }
           >
-            Suivant <Icon name="chevron-right" size={16} />
+            {t('Suivant')} <Icon name="chevron-right" size={16} />
           </button>
         </div>
       )}
@@ -900,19 +933,20 @@ export function SongView({
 
       {versionMenu && (
         <MenuSheet
-          title={`Version « ${current.name} »`}
+          title={t('Version « {name} »', { name: current.name })}
           items={[
             {
-              label: '★ Chercher une meilleure version (IA)',
+              label: t('★ Chercher une meilleure version (IA)'),
               icon: 'star',
               onClick: () => setUgUpgrade(true),
             },
             ...(!hasSoloVersion
               ? [
                   {
-                    label: '🎙 Créer la version Solo',
+                    label: t('🎙 Créer la version Solo'),
                     icon: 'mic' as const,
                     onClick: () => {
+                      // Nom de la version (donnée persistée) : jamais traduit.
                       saveSong(duplicateVersion(song, 'Solo', SOLO_BAND_ID));
                       setShift(0);
                     },
@@ -922,14 +956,14 @@ export function SongView({
             ...(!isMainVersion
               ? [
                   {
-                    label: '⭐ En faire la version de référence',
+                    label: t('⭐ En faire la version de référence'),
                     icon: 'star' as const,
                     onClick: () => setPromoteOpen(true),
                   },
                 ]
               : []),
             {
-              label: 'Renommer la version',
+              label: t('Renommer la version'),
               icon: 'edit' as const,
               onClick: () => setRenameOpen(true),
             },
@@ -937,8 +971,8 @@ export function SongView({
               ? [
                   {
                     label: isBandVersion
-                      ? 'Retirer cette version (et le morceau du groupe)'
-                      : `Supprimer la version « ${current.name} »`,
+                      ? t('Retirer cette version (et le morceau du groupe)')
+                      : t('Supprimer la version « {name} »', { name: current.name }),
                     icon: 'trash' as const,
                     danger: true,
                     onClick: () => setDelVersionOpen(true),
@@ -952,17 +986,21 @@ export function SongView({
 
       {promoteOpen && (
         <ConfirmSheet
-          title={`« ${current.name} » devient la référence ?`}
+          title={t('« {name} » devient la référence ?', { name: current.name })}
           message={
             (current.bandId ?? '') === ''
-              ? "Son contenu remplace l'originale (l'ancien contenu est effacé), et cette version disparaît — elle EST devenue l'originale. Les autres versions ne bougent pas."
-              : "Son contenu remplace celui de l'originale (l'ancien contenu est effacé). Cette version reste attachée à son contexte."
+              ? t(
+                  "Son contenu remplace l'originale (l'ancien contenu est effacé), et cette version disparaît — elle EST devenue l'originale. Les autres versions ne bougent pas.",
+                )
+              : t(
+                  "Son contenu remplace celui de l'originale (l'ancien contenu est effacé). Cette version reste attachée à son contexte.",
+                )
           }
-          confirmLabel="En faire la référence"
+          confirmLabel={t('En faire la référence')}
           onConfirm={() => {
             saveSong(promoteVersionToOriginal(song, current.id));
             setShift(0);
-            toast.show('C’est maintenant la version de référence ⭐');
+            toast.show(t('C’est maintenant la version de référence ⭐'));
           }}
           onClose={() => setPromoteOpen(false)}
         />
@@ -970,10 +1008,10 @@ export function SongView({
 
       {renameOpen && (
         <PromptSheet
-          title="Renommer la version"
+          title={t('Renommer la version')}
           initialValue={current.name}
-          placeholder="Nom de la version"
-          confirmLabel="Renommer"
+          placeholder={t('Nom de la version')}
+          confirmLabel={t('Renommer')}
           onSubmit={(name) => saveSong(renameVersion(song, current.id, name))}
           onClose={() => setRenameOpen(false)}
         />
@@ -981,15 +1019,17 @@ export function SongView({
 
       {delVersionOpen && (
         <ConfirmSheet
-          title={`Supprimer la version « ${current.name} » ?`}
+          title={t('Supprimer la version « {name} » ?', { name: current.name })}
           message={
             isBandVersion
-              ? 'Le morceau sortira aussi du répertoire du groupe pour tous les membres (chacun garde sa partition personnelle).'
+              ? t(
+                  'Le morceau sortira aussi du répertoire du groupe pour tous les membres (chacun garde sa partition personnelle).',
+                )
               : isMainVersion
-                ? 'La version suivante devient la référence du morceau.'
-                : 'Les autres versions du morceau sont conservées.'
+                ? t('La version suivante devient la référence du morceau.')
+                : t('Les autres versions du morceau sont conservées.')
           }
-          confirmLabel="Supprimer la version"
+          confirmLabel={t('Supprimer la version')}
           danger
           onConfirm={confirmDeleteVersion}
           onClose={() => setDelVersionOpen(false)}

@@ -13,6 +13,7 @@ import { Icon } from '../components/Icon';
 import { LinkPreviews } from '../components/LinkPreviews';
 import { ShareModal } from '../components/ShareModal';
 import { Field, Modal, SaveBar, TopBar } from '../components/ui';
+import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import {
   announceBandSong,
@@ -95,11 +96,11 @@ function Avatar({ name, photo }: { name: string; photo?: string }) {
 /** Ancienneté lisible (« il y a 2 h ») pour le sous-titre de la Discussion. */
 function ago(iso: string): string {
   const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (min < 1) return "à l'instant";
-  if (min < 60) return `il y a ${min} min`;
+  if (min < 1) return t("à l'instant");
+  if (min < 60) return t('il y a {min} min', { min });
   const h = Math.floor(min / 60);
-  if (h < 24) return `il y a ${h} h`;
-  return `il y a ${Math.floor(h / 24)} j`;
+  if (h < 24) return t('il y a {h} h', { h });
+  return t('il y a {j} j', { j: Math.floor(h / 24) });
 }
 
 export function BandEdit({ id }: { id: string }) {
@@ -261,14 +262,17 @@ export function BandEdit({ id }: { id: string }) {
     try {
       const s = await getValidSession();
       if (!s) {
-        setDirMsg('Connecte-toi (Profil artiste) pour chercher dans l’annuaire.');
+        setDirMsg(
+          t('Connecte-toi (Profil artiste) pour chercher dans l’annuaire.'),
+        );
         return;
       }
       const rows = await searchProfiles(s, dirQuery.trim());
       setDirResults(rows);
-      if (rows.length === 0) setDirMsg('Aucun musicien trouvé pour ce nom.');
+      if (rows.length === 0)
+        setDirMsg(t('Aucun musicien trouvé pour ce nom.'));
     } catch {
-      setDirMsg("L'annuaire n'est pas disponible pour le moment.");
+      setDirMsg(t("L'annuaire n'est pas disponible pour le moment."));
       setDirResults([]);
     } finally {
       setDirBusy(false);
@@ -279,7 +283,9 @@ export function BandEdit({ id }: { id: string }) {
     const cid = band?.cloudId;
     if (!cid) {
       setDirMsg(
-        'Publie d’abord le groupe (invite par lien) avant d’inviter depuis l’annuaire.',
+        t(
+          'Publie d’abord le groupe (invite par lien) avant d’inviter depuis l’annuaire.',
+        ),
       );
       return;
     }
@@ -310,7 +316,7 @@ export function BandEdit({ id }: { id: string }) {
         });
       }
     } catch (e) {
-      setDirMsg(e instanceof Error ? e.message : 'Invitation impossible.');
+      setDirMsg(e instanceof Error ? e.message : t('Invitation impossible.'));
     }
   }
 
@@ -324,8 +330,8 @@ export function BandEdit({ id }: { id: string }) {
       type: 'invite',
       view: 'paroles',
       invite: {
-        band: band.name || 'notre groupe',
-        from: prefs.userName || artist.name || 'Un musicien',
+        band: band.name || t('notre groupe'),
+        from: prefs.userName || artist.name || t('Un musicien'),
         bandId: band.id,
         cloudId: cloudRef?.cloudId,
         token: cloudRef?.token,
@@ -358,17 +364,19 @@ export function BandEdit({ id }: { id: string }) {
   if (!band) {
     return (
       <>
-        <TopBar title="Groupe" onBack={() => navigate('/bands')} />
+        <TopBar title={t('Groupe')} onBack={() => navigate('/bands')} />
         <div className="page">
         <button
           className="btn block"
           onClick={() => navigate(`/band/${band.id}/chat`)}
-          title="Discussion du groupe : préparer les répéts et concerts, proposer des morceaux"
+          title={t(
+            'Discussion du groupe : préparer les répéts et concerts, proposer des morceaux',
+          )}
         >
-          💬 Espace du groupe — discussion, répéts, concerts
+          💬 {t('Espace du groupe — discussion, répéts, concerts')}
         </button>
         <div className="spacer" />
-          <p className="help">Ce groupe n'existe plus.</p>
+          <p className="help">{t("Ce groupe n'existe plus.")}</p>
         </div>
       </>
     );
@@ -533,8 +541,10 @@ export function BandEdit({ id }: { id: string }) {
             {departures.map((d) => (
               <div key={d.userId} style={{ marginBottom: 8 }}>
                 <div>
-                  <strong>{d.name || 'Un musicien'}</strong> n'a plus accès au
-                  groupe — son application a été réinitialisée.
+                  <strong>{d.name || t('Un musicien')}</strong>{' '}
+                  {t(
+                    "n'a plus accès au groupe — son application a été réinitialisée.",
+                  )}
                 </div>
                 <div className="rowactions">
                   <button
@@ -558,7 +568,7 @@ export function BandEdit({ id }: { id: string }) {
                       })();
                     }}
                   >
-                    ↻ Lui renvoyer la demande
+                    {t('↻ Lui renvoyer la demande')}
                   </button>
                 </div>
               </div>
@@ -571,7 +581,7 @@ export function BandEdit({ id }: { id: string }) {
             <div className="bandhead">
               <button
                 className="bandhead-photo"
-                title="Modifier le groupe (photo, nom…)"
+                title={t('Modifier le groupe (photo, nom…)')}
                 onClick={() => startEditing()}
               >
                 {band.photo !== '' ? (
@@ -580,11 +590,11 @@ export function BandEdit({ id }: { id: string }) {
                   <span aria-hidden="true">👥</span>
                 )}
               </button>
-              <h1>{band.name || 'Groupe'}</h1>
+              <h1>{band.name || t('Groupe')}</h1>
               <button
                 className="bandhead-members"
                 onClick={() => setMembersOpen(true)}
-                title="Voir les musiciens du groupe"
+                title={t('Voir les musiciens du groupe')}
               >
                 <span className="avstack" aria-hidden="true">
                   {allMembers.slice(0, 4).map((m, i) => (
@@ -597,18 +607,24 @@ export function BandEdit({ id }: { id: string }) {
                     </span>
                   ))}
                   {pendingMembers.slice(0, 2).map((m, i) => (
-                    <span className="av pending" key={`p${i}`} title="En attente d'acceptation">
+                    <span
+                      className="av pending"
+                      key={`p${i}`}
+                      title={t("En attente d'acceptation")}
+                    >
                       {(m.name.trim()[0] || '?').toUpperCase()}
                     </span>
                   ))}
                 </span>
                 <span>
                   {band.owned === false && (band.ownerName ?? '') !== ''
-                  ? `créé par ${band.ownerName} · `
-                  : ''}
-                {memberCount} musicien{memberCount > 1 ? 's' : ''}
+                    ? t('créé par {nom} · ', { nom: band.ownerName })
+                    : ''}
+                  {memberCount > 1
+                    ? t('{n} musiciens', { n: memberCount })
+                    : t('{n} musicien', { n: memberCount })}
                   {pendingMembers.length > 0
-                    ? ` · ${pendingMembers.length} en attente`
+                    ? t(' · {n} en attente', { n: pendingMembers.length })
                     : ''}
                 </span>
               </button>
@@ -617,13 +633,15 @@ export function BandEdit({ id }: { id: string }) {
                   className={`btn ${fewMembers ? '' : 'ghost'}`}
                   disabled={inviteBusy}
                   onClick={() => void openInvite()}
-                  title="Inviter un musicien : il rejoint avec son compte, le répertoire se partage tout seul"
+                  title={t(
+                    'Inviter un musicien : il rejoint avec son compte, le répertoire se partage tout seul',
+                  )}
                 >
-                  {inviteBusy ? '…' : '＋ Inviter'}
+                  {inviteBusy ? '…' : `＋ ${t('Inviter')}`}
                 </button>
               ) : (
                 <span className="help" style={{ margin: 0 }}>
-                  Membre du groupe
+                  {t('Membre du groupe')}
                 </span>
               )}
             </div>
@@ -637,11 +655,11 @@ export function BandEdit({ id }: { id: string }) {
                 💬
               </span>
               <div className="grow" style={{ minWidth: 0 }}>
-                <div className="ti">Discussion</div>
+                <div className="ti">{t('Discussion')}</div>
                 <div className="su">
                   {lastMsg
                     ? `« ${lastMsg.text.slice(0, 40)}${lastMsg.text.length > 40 ? '…' : ''} » · ${ago(lastMsg.at)}`
-                    : 'Prépare répéts et concerts, propose des morceaux'}
+                    : t('Prépare répéts et concerts, propose des morceaux')}
                 </div>
               </div>
               <span className="chev" aria-hidden="true">
@@ -654,11 +672,15 @@ export function BandEdit({ id }: { id: string }) {
                 🎵
               </span>
               <div className="grow" style={{ minWidth: 0 }}>
-                <div className="ti">Répertoire du groupe</div>
+                <div className="ti">{t('Répertoire du groupe')}</div>
                 <div className="su">
-                  {repCount} morceau{repCount > 1 ? 'x' : ''}
+                  {repCount > 1
+                    ? t('{n} morceaux', { n: repCount })
+                    : t('{n} morceau', { n: repCount })}
                   {propCount > 0
-                    ? ` · ${propCount} proposition${propCount > 1 ? 's' : ''} à valider`
+                    ? propCount > 1
+                      ? t(' · {n} propositions à valider', { n: propCount })
+                      : t(' · {n} proposition à valider', { n: propCount })
                     : ''}
                 </div>
               </div>
@@ -675,11 +697,14 @@ export function BandEdit({ id }: { id: string }) {
                 📋
               </span>
               <div className="grow" style={{ minWidth: 0 }}>
-                <div className="ti">Setlists du groupe</div>
+                <div className="ti">{t('Setlists du groupe')}</div>
                 <div className="su">
                   {bandSetlists.length === 0
-                    ? 'Aucune setlist pour ce groupe'
-                    : `${bandSetlists[0].name || '(sans nom)'} · ${bandSetlists.length} au total`}
+                    ? t('Aucune setlist pour ce groupe')
+                    : t('{nom} · {n} au total', {
+                        nom: bandSetlists[0].name || t('(sans nom)'),
+                        n: bandSetlists.length,
+                      })}
                 </div>
               </div>
               <span className="chev" aria-hidden="true">
@@ -722,7 +747,9 @@ export function BandEdit({ id }: { id: string }) {
           )}
           <div className="spacer" />
           <label className="btn ghost small" style={{ cursor: 'pointer' }}>
-            {shown.photo !== '' ? 'Changer la photo' : 'Ajouter une photo'}
+            {shown.photo !== ''
+              ? t('Changer la photo')
+              : t('Ajouter une photo')}
             <input
               type="file"
               accept="image/*"
@@ -733,28 +760,28 @@ export function BandEdit({ id }: { id: string }) {
                 try {
                   update({ photo: await resizePhoto(file) });
                 } catch {
-                  alert("Cette image n'a pas pu être lue.");
+                  alert(t("Cette image n'a pas pu être lue."));
                 }
               }}
             />
           </label>
         </div>
 
-        <Field label="Nom du groupe">
+        <Field label={t('Nom du groupe')}>
           <input
             type="text"
             value={shown.name}
             onChange={(e) => update({ name: e.target.value })}
           />
         </Field>
-        <Field label="Biographie">
+        <Field label={t('Biographie')}>
           <textarea
             value={shown.bio}
             onChange={(e) => update({ bio: e.target.value })}
-            placeholder="Quelques lignes sur le groupe…"
+            placeholder={t('Quelques lignes sur le groupe…')}
           />
         </Field>
-        <Field label="Lien de pourboire (PayPal.me, Lydia…)">
+        <Field label={t('Lien de pourboire (PayPal.me, Lydia…)')}>
           <input
             type="url"
             value={shown.tipUrl}
@@ -763,7 +790,7 @@ export function BandEdit({ id }: { id: string }) {
           />
         </Field>
 
-        <h2 className="pagetitle">Streaming & réseaux</h2>
+        <h2 className="pagetitle">{t('Streaming & réseaux')}</h2>
         {shown.links.map((link) => (
           <div key={link.id} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <input
@@ -814,13 +841,13 @@ export function BandEdit({ id }: { id: string }) {
             update({ links: [...shown.links, { id: makeId(), label: '', url: '' }] })
           }
         >
-          ＋ Ajouter un lien
+          ＋ {t('Ajouter un lien')}
         </button>
 
-        <h2 className="pagetitle">Musiciens</h2>
+        <h2 className="pagetitle">{t('Musiciens')}</h2>
         {cloudMembers.length > 0 && (
           <>
-            <p className="help">Membres avec compte Sing2Me :</p>
+            <p className="help">{t('Membres avec compte Sing2Me :')}</p>
             {cloudMembers.map((m) => (
               <div
                 key={m.user_id}
@@ -833,7 +860,7 @@ export function BandEdit({ id }: { id: string }) {
               >
                 <span style={{ color: 'var(--accent)' }}>✓</span>
                 <span style={{ flex: 1 }}>
-                  {m.name || '(sans nom)'}
+                  {m.name || t('(sans nom)')}
                   {m.instrument !== '' && (
                     <span className="stauthor"> · {m.instrument}</span>
                   )}
@@ -841,11 +868,18 @@ export function BandEdit({ id }: { id: string }) {
                 <button
                   className="btn ghost small"
                   style={{ color: 'var(--danger)' }}
-                  title="Retirer du groupe"
+                  title={t('Retirer du groupe')}
                   onClick={() => {
                     const cid = band.cloudId;
                     if (!cid) return;
-                    if (!confirm(`Retirer ${m.name || 'ce musicien'} du groupe ?`)) return;
+                    if (
+                      !confirm(
+                        t('Retirer {nom} du groupe ?', {
+                          nom: m.name || t('ce musicien'),
+                        }),
+                      )
+                    )
+                      return;
                     void (async () => {
                       try {
                         const s = await getValidSession();
@@ -855,7 +889,9 @@ export function BandEdit({ id }: { id: string }) {
                           list.filter((x) => x.user_id !== m.user_id),
                         );
                       } catch {
-                        alert('Impossible de retirer ce membre pour le moment.');
+                        alert(
+                          t('Impossible de retirer ce membre pour le moment.'),
+                        );
                       }
                     })();
                   }}
@@ -865,7 +901,7 @@ export function BandEdit({ id }: { id: string }) {
               </div>
             ))}
             <div className="spacer" />
-            <p className="help">Autres musiciens (saisis à la main) :</p>
+            <p className="help">{t('Autres musiciens (saisis à la main) :')}</p>
           </>
         )}
         {/* Musiciens saisis à la main, SANS ceux qui ont déjà un compte
@@ -879,13 +915,13 @@ export function BandEdit({ id }: { id: string }) {
                 {(m.name.trim()[0] || '?').toUpperCase()}
               </span>
               <div className="grow" style={{ minWidth: 0 }}>
-                <div className="title">{m.name || '(invité)'}</div>
-                <div className="sub">⏳ En attente d'acceptation</div>
+                <div className="title">{m.name || t('(invité)')}</div>
+                <div className="sub">{t("⏳ En attente d'acceptation")}</div>
               </div>
               <button
                 className="btn ghost small"
                 style={{ color: 'var(--danger)' }}
-                title="Annuler l'invitation"
+                title={t("Annuler l'invitation")}
                 onClick={() =>
                   update({ members: shown.members.filter((x) => x.id !== m.id) })
                 }
@@ -904,7 +940,9 @@ export function BandEdit({ id }: { id: string }) {
           >
             {m.verified === true && (
               <span
-                title="Profil Sing2Me confirmé (carte de musicien reçue)"
+                title={t(
+                  'Profil Sing2Me confirmé (carte de musicien reçue)',
+                )}
                 style={{ color: 'var(--accent)', flexShrink: 0 }}
               >
                 ✓
@@ -917,16 +955,18 @@ export function BandEdit({ id }: { id: string }) {
               <div
                 className="grow"
                 style={{ minWidth: 0 }}
-                title="Nom géré par son compte — seul ce musicien peut le modifier"
+                title={t(
+                  'Nom géré par son compte — seul ce musicien peut le modifier',
+                )}
               >
-                <div className="title">{m.name || 'Musicien'}</div>
-                <div className="sub">Nom géré par son compte</div>
+                <div className="title">{m.name || t('Musicien')}</div>
+                <div className="sub">{t('Nom géré par son compte')}</div>
               </div>
             ) : (
               <input
                 type="text"
                 value={m.name}
-                placeholder="Nom du musicien"
+                placeholder={t('Nom du musicien')}
                 onChange={(e) =>
                   update({
                     members: shown.members.map((x) =>
@@ -939,7 +979,7 @@ export function BandEdit({ id }: { id: string }) {
             <input
               type="text"
               value={m.instrument}
-              placeholder="Instrument"
+              placeholder={t('Instrument')}
               style={{ maxWidth: 160 }}
               onChange={(e) =>
                 update({
@@ -953,7 +993,7 @@ export function BandEdit({ id }: { id: string }) {
               <button
                 className="btn ghost small"
                 style={{ color: 'var(--danger)' }}
-                title="Retirer ce musicien"
+                title={t('Retirer ce musicien')}
                 onClick={() =>
                   update({ members: shown.members.filter((x) => x.id !== m.id) })
                 }
@@ -964,7 +1004,7 @@ export function BandEdit({ id }: { id: string }) {
           </div>
           <details className="stfold" style={{ margin: '4px 0 0 8px' }}>
             <summary>
-              Matériel
+              {t('Matériel')}
               {(m.gear ?? []).length > 0 ? ` (${(m.gear ?? []).length})` : ''}
             </summary>
             <div className="spacer" />
@@ -992,7 +1032,7 @@ export function BandEdit({ id }: { id: string }) {
               })
             }
           >
-            ＋ Ajouter un musicien
+            ＋ {t('Ajouter un musicien')}
           </button>
         )}
 
@@ -1003,7 +1043,7 @@ export function BandEdit({ id }: { id: string }) {
               disabled={inviteBusy}
               onClick={() => void openInvite()}
             >
-              {inviteBusy ? '…' : '📨 Inviter un musicien'}
+              {inviteBusy ? '…' : `📨 ${t('Inviter un musicien')}`}
             </button>
           )}
           <button
@@ -1011,22 +1051,23 @@ export function BandEdit({ id }: { id: string }) {
             disabled={publicPayload === null}
             onClick={() => setShare(true)}
           >
-            Page publique / QR
+            {t('Page publique / QR')}
           </button>
           <button
             className="btn danger"
             onClick={() => setConfirmDel(true)}
           >
-            {isOwner ? 'Supprimer le groupe' : 'Quitter le groupe'}
+            {isOwner ? t('Supprimer le groupe') : t('Quitter le groupe')}
           </button>
         </div>
         <p className="help">
-          L'invitation contient le répertoire du groupe (morceaux de ses
-          setlists). Si le musicien a un compte Sing2Me, il rejoint le groupe
-          en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa
-          « carte de musicien » (l'ouvrir ici met à jour la liste manuelle).
+          {t(
+            "L'invitation contient le répertoire du groupe (morceaux de ses setlists). Si le musicien a un compte Sing2Me, il rejoint le groupe en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa « carte de musicien » (l'ouvrir ici met à jour la liste manuelle).",
+          )}
         </p>
-        {editSaved && !editDirty && <div className="savedhint">✓ Enregistré</div>}
+        {editSaved && !editDirty && (
+          <div className="savedhint">✓ {t('Enregistré')}</div>
+        )}
         <div className="spacer" />
         {/* Sortie visible seulement quand tout est enregistré : quand le
             brouillon diffère, la barre Valider / Annuler prend la main. */}
@@ -1035,7 +1076,7 @@ export function BandEdit({ id }: { id: string }) {
             className="btn ghost small"
             onClick={() => stopEditing()}
           >
-            ← Terminer
+            ← {t('Terminer')}
           </button>
         )}
           </>
@@ -1044,16 +1085,17 @@ export function BandEdit({ id }: { id: string }) {
       <SaveBar visible={editDirty} onSave={confirmEdit} onCancel={cancelEdit} />
 
       {addOpen && (
-        <Modal title="Ajouter un membre" onClose={() => setAddOpen(false)}>
+        <Modal title={t('Ajouter un membre')} onClose={() => setAddOpen(false)}>
           <p className="help" style={{ marginTop: 0 }}>
-            Cherche un musicien qui a déjà Sing2Me (il devra accepter), ou
-            envoie-lui un lien / email.
+            {t(
+              'Cherche un musicien qui a déjà Sing2Me (il devra accepter), ou envoie-lui un lien / email.',
+            )}
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               type="text"
               value={dirQuery}
-              placeholder="Nom du musicien…"
+              placeholder={t('Nom du musicien…')}
               autoFocus
               onChange={(e) => setDirQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -1066,7 +1108,7 @@ export function BandEdit({ id }: { id: string }) {
               disabled={dirQuery.trim().length < 2 || dirBusy}
               onClick={() => void doSearch()}
             >
-              {dirBusy ? '…' : 'Chercher'}
+              {dirBusy ? '…' : t('Chercher')}
             </button>
           </div>
           {dirMsg && <p className="help">{dirMsg}</p>}
@@ -1080,21 +1122,23 @@ export function BandEdit({ id }: { id: string }) {
                 >
                   <Avatar name={person.name} photo={person.photo} />
                   <div className="grow">
-                    <div className="title">{person.name || '(sans nom)'}</div>
+                    <div className="title">
+                      {person.name || t('(sans nom)')}
+                    </div>
                     {person.instrument !== '' && (
                       <div className="sub">{person.instrument}</div>
                     )}
                   </div>
                   {invited.has(person.user_id) ? (
                     <span style={{ color: 'var(--accent)', fontWeight: 650 }}>
-                      ✓ Invité
+                      ✓ {t('Invité')}
                     </span>
                   ) : (
                     <button
                       className="btn ghost small"
                       onClick={() => void invitePerson(person)}
                     >
-                      Inviter
+                      {t('Inviter')}
                     </button>
                   )}
                 </div>
@@ -1109,23 +1153,24 @@ export function BandEdit({ id }: { id: string }) {
               setInvite(true);
             }}
           >
-            🔗 Inviter par lien / email
+            🔗 {t('Inviter par lien / email')}
           </button>
         </Modal>
       )}
       {invitePrompt && (
         <Modal
-          title="Inviter un musicien"
+          title={t('Inviter un musicien')}
           onClose={() => setInvitePrompt(false)}
         >
           <p className="help" style={{ marginTop: 0 }}>
-            Qui invites-tu ? Note son prénom : il apparaîtra « en attente »
-            jusqu'à ce qu'il rejoigne, puis son nom d'artiste le remplacera.
+            {t(
+              "Qui invites-tu ? Note son prénom : il apparaîtra « en attente » jusqu'à ce qu'il rejoigne, puis son nom d'artiste le remplacera.",
+            )}
           </p>
           <input
             type="text"
             value={pendingName}
-            placeholder="Prénom de l'invité·e"
+            placeholder={t("Prénom de l'invité·e")}
             autoFocus
             onChange={(e) => setPendingName(e.target.value)}
           />
@@ -1152,7 +1197,7 @@ export function BandEdit({ id }: { id: string }) {
               setInvite(true);
             }}
           >
-            Obtenir le lien d'invitation
+            {t("Obtenir le lien d'invitation")}
           </button>
           <button
             className="btn ghost block"
@@ -1162,20 +1207,20 @@ export function BandEdit({ id }: { id: string }) {
               setInvite(true);
             }}
           >
-            Partager sans noter de prénom
+            {t('Partager sans noter de prénom')}
           </button>
         </Modal>
       )}
       {invite && invitePayload && (
         <ShareModal
-          title={`Inviter dans « ${band.name} »`}
+          title={t('Inviter dans « {nom} »', { nom: band.name })}
           payload={invitePayload}
           onClose={() => setInvite(false)}
         />
       )}
       {share && publicPayload && (
         <ShareModal
-          title={`Page publique — ${band.name}`}
+          title={t('Page publique — {nom}', { nom: band.name })}
           payload={publicPayload}
           onClose={() => setShare(false)}
         />
@@ -1183,9 +1228,13 @@ export function BandEdit({ id }: { id: string }) {
       {/* « ⋯ » de l'en-tête : tout l'avancé du groupe. */}
       {removeMember && (
         <ConfirmSheet
-          title={`Retirer ${removeMember.name || 'ce musicien'} du groupe ?`}
-          message="Il perdra l'accès au répertoire et aux setlists du groupe. Sa bibliothèque personnelle, elle, ne bouge pas. Tu pourras le réinviter plus tard."
-          confirmLabel="Retirer du groupe"
+          title={t('Retirer {nom} du groupe ?', {
+            nom: removeMember.name || t('ce musicien'),
+          })}
+          message={t(
+            "Il perdra l'accès au répertoire et aux setlists du groupe. Sa bibliothèque personnelle, elle, ne bouge pas. Tu pourras le réinviter plus tard.",
+          )}
+          confirmLabel={t('Retirer du groupe')}
           danger
           onConfirm={() => {
             const cid = band.cloudId;
@@ -1220,9 +1269,12 @@ export function BandEdit({ id }: { id: string }) {
       )}
 
       {membersOpen && (
-        <Modal title="Musiciens du groupe" onClose={() => setMembersOpen(false)}>
+        <Modal
+          title={t('Musiciens du groupe')}
+          onClose={() => setMembersOpen(false)}
+        >
           {allMembers.length === 0 && pendingMembers.length === 0 && (
-            <p className="help">Aucun musicien pour l'instant.</p>
+            <p className="help">{t("Aucun musicien pour l'instant.")}</p>
           )}
           {allMembers.map((m, i) => {
             const isMe =
@@ -1240,7 +1292,11 @@ export function BandEdit({ id }: { id: string }) {
                 className="row"
                 key={`a${i}`}
                 style={{ cursor: 'pointer' }}
-                title={isMe ? 'Voir / modifier ma fiche' : `Voir la fiche de ${m.name}`}
+                title={
+                  isMe
+                    ? t('Voir / modifier ma fiche')
+                    : t('Voir la fiche de {nom}', { nom: m.name })
+                }
                 onClick={() => {
                   if (isMe) {
                     setMembersOpen(false);
@@ -1256,7 +1312,7 @@ export function BandEdit({ id }: { id: string }) {
               >
                 <Avatar name={m.name} photo={photoOf(m)} />
                 <div className="grow" style={{ minWidth: 0 }}>
-                  <div className="title">{m.name || 'Musicien'}</div>
+                  <div className="title">{m.name || t('Musicien')}</div>
                   {m.instrument !== '' && (
                     <div className="sub">{m.instrument}</div>
                   )}
@@ -1265,8 +1321,12 @@ export function BandEdit({ id }: { id: string }) {
                   <button
                     className="btn icon"
                     style={{ color: 'var(--danger)', flexShrink: 0 }}
-                    title={`Retirer ${m.name || 'ce musicien'} du groupe`}
-                    aria-label={`Retirer ${m.name || 'ce musicien'} du groupe`}
+                    title={t('Retirer {nom} du groupe', {
+                      nom: m.name || t('ce musicien'),
+                    })}
+                    aria-label={t('Retirer {nom} du groupe', {
+                      nom: m.name || t('ce musicien'),
+                    })}
                     onClick={(e) => {
                       e.stopPropagation();
                       setRemoveMember({
@@ -1287,7 +1347,7 @@ export function BandEdit({ id }: { id: string }) {
         </Modal>
       )}
       {viewMember && (
-        <Modal title="Fiche musicien" onClose={() => setViewMember(null)}>
+        <Modal title={t('Fiche musicien')} onClose={() => setViewMember(null)}>
           <div style={{ textAlign: 'center', marginBottom: 'var(--sp-3)' }}>
             <div
               style={{
@@ -1299,7 +1359,7 @@ export function BandEdit({ id }: { id: string }) {
               <Avatar name={viewMember.name} photo={viewMember.photo} />
             </div>
             <h2 style={{ margin: '0 0 2px' }}>
-              {viewMember.name || 'Musicien'}
+              {viewMember.name || t('Musicien')}
             </h2>
             {(viewMember.instrument ?? '') !== '' && (
               <p className="help" style={{ margin: 0 }}>
@@ -1308,27 +1368,28 @@ export function BandEdit({ id }: { id: string }) {
             )}
           </div>
           <p className="help" style={{ textAlign: 'center' }}>
-            La fiche publique complète (bio, liens, pourboire) arrive avec les
-            pages d'artiste. En attendant, tu vois son nom et son instrument.
+            {t(
+              "La fiche publique complète (bio, liens, pourboire) arrive avec les pages d'artiste. En attendant, tu vois son nom et son instrument.",
+            )}
           </p>
         </Modal>
       )}
       {headerMenu && (
         <MenuSheet
-          title={band.name || 'Groupe'}
+          title={band.name || t('Groupe')}
           items={[
             {
-              label: 'Modifier le groupe',
+              label: t('Modifier le groupe'),
               icon: 'edit',
               onClick: () => startEditing(),
             },
             {
-              label: 'Page publique / QR',
+              label: t('Page publique / QR'),
               icon: 'qr',
               onClick: () => setShare(true),
             },
             {
-              label: isOwner ? 'Supprimer le groupe' : 'Quitter le groupe',
+              label: isOwner ? t('Supprimer le groupe') : t('Quitter le groupe'),
               icon: isOwner ? 'trash' : 'x',
               danger: true,
               onClick: () => setConfirmDel(true),
@@ -1341,15 +1402,23 @@ export function BandEdit({ id }: { id: string }) {
         <ConfirmSheet
           title={
             isOwner
-              ? `Supprimer le groupe « ${band.name || 'ce groupe'} » ?`
-              : `Quitter le groupe « ${band.name || 'ce groupe'} » ?`
+              ? t('Supprimer le groupe « {nom} » ?', {
+                  nom: band.name || t('ce groupe'),
+                })
+              : t('Quitter le groupe « {nom} » ?', {
+                  nom: band.name || t('ce groupe'),
+                })
           }
           message={
             isOwner
-              ? 'Le groupe sera dissous pour tous les membres (chacun garde ses copies personnelles des morceaux).'
-              : 'Tu quittes ce groupe. Tes copies personnelles des morceaux restent dans ta bibliothèque.'
+              ? t(
+                  'Le groupe sera dissous pour tous les membres (chacun garde ses copies personnelles des morceaux).',
+                )
+              : t(
+                  'Tu quittes ce groupe. Tes copies personnelles des morceaux restent dans ta bibliothèque.',
+                )
           }
-          confirmLabel={isOwner ? 'Supprimer le groupe' : 'Quitter le groupe'}
+          confirmLabel={isOwner ? t('Supprimer le groupe') : t('Quitter le groupe')}
           danger
           onConfirm={() => void dissolveOrLeave()}
           onClose={() => setConfirmDel(false)}

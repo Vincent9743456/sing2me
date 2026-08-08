@@ -5,6 +5,7 @@
  */
 import React from 'react';
 
+import { t } from '../i18n';
 import { parseContent, ParsedLine } from '../lib/chordpro';
 import { Spelling, transposeContent } from '../lib/chords';
 import { repairChordedLyrics } from '../lib/textRepair';
@@ -108,7 +109,7 @@ export function SongBody({
     <div style={{ fontSize: `${fontSize}rem` }}>
       {view === 'complete' && structureNotes !== '' && (
         <details className="stfold" open>
-          <summary>🗺 Structure</summary>
+          <summary>{t('🗺 Structure')}</summary>
           <p
             className="help"
             style={{ whiteSpace: 'pre-wrap', margin: '6px 0 10px' }}

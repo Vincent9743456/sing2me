@@ -7,6 +7,7 @@
  */
 import React, { useEffect, useState } from 'react';
 
+import { t } from '../i18n';
 import { navigate } from '../router';
 import { EXAMPLE_TAG } from '../seed';
 import { useStore } from '../store';
@@ -120,13 +121,13 @@ export function Onboarding() {
     {
       key: 'import',
       done: realSongs.length > 0,
-      label: 'Importe ton premier morceau',
+      label: t('Importe ton premier morceau'),
       onClick: () => navigate('/import'),
     },
     {
       key: 'stage',
       done: stagePlayed,
-      label: 'Joue-le en mode scène',
+      label: t('Joue-le en mode scène'),
       onClick: () => {
         const s = realSongs[0] ?? example;
         if (s) navigate(`/stage/song/${s.id}`);
@@ -135,13 +136,13 @@ export function Onboarding() {
     {
       key: 'setlist',
       done: realSetlists.length > 0,
-      label: 'Crée ta première setlist',
+      label: t('Crée ta première setlist'),
       onClick: () => navigate('/setlist/new'),
     },
     {
       key: 'invite',
       done: bands.some((b) => b.members.length >= 2),
-      label: 'Invite ton groupe',
+      label: t('Invite ton groupe'),
       onClick: () => navigate('/bands'),
     },
   ];
@@ -150,7 +151,9 @@ export function Onboarding() {
     {
       key: 'discover',
       done: flag('sing2me/onb/inv/discover'),
-      label: `Découvre le répertoire de ${justJoined?.name ?? 'ton groupe'}`,
+      label: t('Découvre le répertoire de {name}', {
+        name: justJoined?.name ?? t('ton groupe'),
+      }),
       onClick: () => {
         setFlag('sing2me/onb/inv/discover');
         try {
@@ -166,7 +169,7 @@ export function Onboarding() {
     {
       key: 'stage',
       done: stagePlayed,
-      label: 'Joue un morceau en mode scène',
+      label: t('Joue un morceau en mode scène'),
       onClick: () => {
         const s = realSongs[0] ?? songs[0];
         if (s) navigate(`/stage/song/${s.id}`);
@@ -175,7 +178,7 @@ export function Onboarding() {
     {
       key: 'chat',
       done: flag('sing2me/onb/inv/chat'),
-      label: 'Dis bonjour dans la discussion du groupe',
+      label: t('Dis bonjour dans la discussion du groupe'),
       onClick: () => {
         setFlag('sing2me/onb/inv/chat');
         if (justJoined) navigate(`/band/${justJoined.bandId}/chat`);
@@ -184,7 +187,7 @@ export function Onboarding() {
     {
       key: 'import',
       done: realSongs.length > 0,
-      label: 'Ajoute tes propres morceaux',
+      label: t('Ajoute tes propres morceaux'),
       onClick: () => navigate('/import'),
     },
   ];
@@ -201,19 +204,26 @@ export function Onboarding() {
   // F3 — Bannière de bienvenue après une adhésion par invitation.
   const banner = justJoined ? (
     <div className="card onbcard" style={{ borderColor: 'var(--ok)' }}>
-      <button className="onbclose" aria-label="Fermer" onClick={dismissJoined}>
+      <button
+        className="onbclose"
+        aria-label={t('Fermer')}
+        onClick={dismissJoined}
+      >
         <Icon name="x" size={16} />
       </button>
-      <div className="onbtitle">🎉 Tu as rejoint {justJoined.name} !</div>
+      <div className="onbtitle">
+        {t('🎉 Tu as rejoint {name} !', { name: justJoined.name })}
+      </div>
       <p className="help" style={{ marginTop: 4 }}>
-        Son répertoire arrive dans ta bibliothèque. Tes propres morceaux
-        restent à toi.
+        {t(
+          'Son répertoire arrive dans ta bibliothèque. Tes propres morceaux restent à toi.',
+        )}
       </p>
       <button
         className="btn"
         onClick={() => navigate(`/band/${justJoined.bandId}`)}
       >
-        <Icon name="users" size={15} /> Voir le groupe
+        <Icon name="users" size={15} /> {t('Voir le groupe')}
       </button>
     </div>
   ) : null;
@@ -224,26 +234,27 @@ export function Onboarding() {
       <div className="card onbcard">
         <button
           className="onbclose"
-          aria-label="Fermer"
+          aria-label={t('Fermer')}
           onClick={dismissWelcome}
         >
           <Icon name="x" size={16} />
         </button>
-        <div className="onbtitle">Bienvenue sur Sing2Me 🎶</div>
+        <div className="onbtitle">{t('Bienvenue sur Sing2Me 🎶')}</div>
         <p className="help" style={{ marginTop: 4 }}>
-          Commence par importer un morceau — colle un texte, un lien de
-          partition, un PDF ou un fichier Word.
+          {t(
+            'Commence par importer un morceau — colle un texte, un lien de partition, un PDF ou un fichier Word.',
+          )}
         </p>
         <div className="hstack" style={{ gap: 8, flexWrap: 'wrap' }}>
           <button className="btn" onClick={() => navigate('/import')}>
-            <Icon name="import" size={16} /> Importer mon premier morceau
+            <Icon name="import" size={16} /> {t('Importer mon premier morceau')}
           </button>
           {example && (
             <button
               className="btn ghost"
               onClick={() => navigate(`/stage/song/${example.id}`)}
             >
-              <Icon name="play" size={15} /> Voir un exemple en mode scène
+              <Icon name="play" size={15} /> {t('Voir un exemple en mode scène')}
             </button>
           )}
         </div>
@@ -257,7 +268,7 @@ export function Onboarding() {
     <div className="card onbcard">
       <div className="hstack" style={{ justifyContent: 'space-between' }}>
         <div className="onbtitle" style={{ fontSize: '0.98rem' }}>
-          Prise en main
+          {t('Prise en main')}
         </div>
         <button
           className="btn ghost small"
@@ -270,7 +281,7 @@ export function Onboarding() {
             setChecklistHidden(true);
           }}
         >
-          Masquer
+          {t('Masquer')}
         </button>
       </div>
       {steps.map((s) => (

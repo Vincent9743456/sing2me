@@ -9,6 +9,7 @@ import { gearIcon } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { StagePlan } from '../components/StagePlan';
 import { Field, Modal, SaveBar, TopBar } from '../components/ui';
+import { t } from '../i18n';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { emptySetup, Setlist, StageSetup } from '../types';
@@ -48,11 +49,11 @@ export function SetlistSono({ id }: { id: string }) {
       <>
         <TopBar
           live={false}
-          title="Sono & scène"
+          title={t('Sono & scène')}
           onBack={() => navigate('/setlists')}
         />
         <div className="page">
-          <p className="help">Cette setlist n'existe plus.</p>
+          <p className="help">{t('Cette setlist n\'existe plus.')}</p>
         </div>
       </>
     );
@@ -68,11 +69,11 @@ export function SetlistSono({ id }: { id: string }) {
   /** Inventaires disponibles : le mien + ceux des musiciens du groupe. */
   const gearSources = [
     {
-      owner: prefs.userName || artist.name || 'Moi',
+      owner: prefs.userName || artist.name || t('Moi'),
       items: artist.gear ?? [],
     },
     ...(bands.find((b) => b.id === (draft.bandId ?? ''))?.members ?? []).map(
-      (m) => ({ owner: m.name || 'Musicien', items: m.gear ?? [] }),
+      (m) => ({ owner: m.name || t('Musicien'), items: m.gear ?? [] }),
     ),
   ].filter((s) => s.items.length > 0);
 
@@ -116,7 +117,7 @@ export function SetlistSono({ id }: { id: string }) {
       .filter((m) => !present.has(m.id))
       .map((m, i) => ({
         id: m.id,
-        label: m.name || 'Musicien',
+        label: m.name || t('Musicien'),
         instrument: m.instrument,
         x: 0.5 + (i - (members.length - 1) / 2) * 0.22,
         y: 0.45,
@@ -131,14 +132,14 @@ export function SetlistSono({ id }: { id: string }) {
     <>
       <TopBar
         live={false}
-        title={`Sono & scène — ${draft.name || 'Sans titre'}`}
+        title={`${t('Sono & scène')} — ${draft.name || t('Sans titre')}`}
         onBack={() => navigate(`/setlist/${draft.id}`)}
       />
       <div className="page">
         <div className="field">
-          <label>Plan de scène</label>
+          <label>{t('Plan de scène')}</label>
           <p className="help" style={{ margin: '0 0 6px' }}>
-            Déplace chacun au doigt ou à la souris.
+            {t('Déplace chacun au doigt ou à la souris.')}
           </p>
           <StagePlan
             positions={setup.positions}
@@ -149,59 +150,68 @@ export function SetlistSono({ id }: { id: string }) {
           >
             {(draft.bandId ?? '') !== '' && (
               <button className="btn ghost small" onClick={seedPositions}>
-                <Icon name="users" size={14} /> Placer les musiciens du groupe
+                <Icon name="users" size={14} />{' '}
+                {t('Placer les musiciens du groupe')}
               </button>
             )}
             <button
               className="btn ghost small"
               onClick={() => setGearPicker(true)}
             >
-              <Icon name="speaker" size={14} /> Piocher le matériel des
-              musiciens
+              <Icon name="speaker" size={14} />{' '}
+              {t('Piocher le matériel des musiciens')}
             </button>
           </div>
         </div>
-        <Field label="Matériel">
+        <Field label={t('Matériel')}>
           <textarea
             value={setup.gear}
-            placeholder={'Sono 2×12", console 8 pistes, 3 micros SM58, DI basse…'}
+            placeholder={t(
+              'Sono 2×12", console 8 pistes, 3 micros SM58, DI basse…',
+            )}
             onChange={(e) => updateSetup({ gear: e.target.value })}
           />
         </Field>
-        <Field label="Branchements">
+        <Field label={t('Branchements')}>
           <textarea
             value={setup.wiring}
-            placeholder={'Voie 1 : chant lead\nVoie 2 : guitare (DI)\nVoie 3-4 : claviers…'}
+            placeholder={t(
+              'Voie 1 : chant lead\nVoie 2 : guitare (DI)\nVoie 3-4 : claviers…',
+            )}
             onChange={(e) => updateSetup({ wiring: e.target.value })}
           />
         </Field>
-        <Field label="Effets et réglages sono">
+        <Field label={t('Effets et réglages sono')}>
           <textarea
             value={setup.sound}
-            placeholder={'Reverb légère sur le chant, delay refrain de « Angie », retours…'}
+            placeholder={t(
+              'Reverb légère sur le chant, delay refrain de « Angie », retours…',
+            )}
             onChange={(e) => updateSetup({ sound: e.target.value })}
           />
         </Field>
-        {saved && !dirty && <div className="savedhint">✓ Enregistré</div>}
+        {saved && !dirty && (
+          <div className="savedhint">{t('✓ Enregistré')}</div>
+        )}
       </div>
 
       <SaveBar visible={dirty} onSave={confirmSetup} onCancel={cancelSetup} />
 
       {gearPicker && (
         <Modal
-          title="Matériel des musiciens"
+          title={t('Matériel des musiciens')}
           onClose={() => setGearPicker(false)}
         >
           <p className="help" style={{ marginTop: 0 }}>
-            Pioché dans « Mon matériel » (fiche Artiste) et dans le matériel
-            des musiciens du groupe. Un clic le place sur le plan de scène ;
-            un second l'en retire — de quoi vérifier que rien ne manque.
+            {t(
+              'Pioché dans « Mon matériel » (fiche Artiste) et dans le matériel des musiciens du groupe. Un clic le place sur le plan de scène ; un second l\'en retire — de quoi vérifier que rien ne manque.',
+            )}
           </p>
           {gearSources.length === 0 && (
             <p className="help">
-              Aucun matériel déclaré pour l'instant : remplis « Mon
-              matériel » dans l'onglet Artiste, et celui des musiciens dans
-              la fiche du groupe (section Musiciens → Matériel).
+              {t(
+                'Aucun matériel déclaré pour l\'instant : remplis « Mon matériel » dans l\'onglet Artiste, et celui des musiciens dans la fiche du groupe (section Musiciens → Matériel).',
+              )}
             </p>
           )}
           {gearSources.map((src) => (
@@ -235,7 +245,7 @@ export function SetlistSono({ id }: { id: string }) {
                     </div>
                     {placed ? (
                       <span style={{ color: 'var(--accent)', fontWeight: 700 }}>
-                        ✓ Sur le plan
+                        {t('✓ Sur le plan')}
                       </span>
                     ) : (
                       <span className="chevron">
@@ -251,7 +261,7 @@ export function SetlistSono({ id }: { id: string }) {
             className="btn ghost block"
             onClick={() => setGearPicker(false)}
           >
-            Fermer
+            {t('Fermer')}
           </button>
         </Modal>
       )}

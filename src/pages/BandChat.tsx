@@ -11,6 +11,7 @@ import { Icon } from '../components/Icon';
 import { CoachMark } from '../components/CoachMark';
 import { useNotifications } from '../components/Notifications';
 import { Modal, TopBar } from '../components/ui';
+import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import {
   BandMessage,
@@ -54,8 +55,8 @@ function dayLabel(iso: string): string {
   const startOf = (x: Date) =>
     new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diff = Math.floor((startOf(today) - startOf(d)) / 86400000);
-  if (diff <= 0) return "Aujourd'hui";
-  if (diff === 1) return 'Hier';
+  if (diff <= 0) return t("Aujourd'hui");
+  if (diff === 1) return t('Hier');
   return d.toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
@@ -76,7 +77,7 @@ export function BandChat({ id }: { id: string }) {
   const [myId, setMyId] = useState('');
   const cloudIdRef = useRef(band?.cloudId ?? '');
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const author = prefs.userName || artist.name || 'Moi';
+  const author = prefs.userName || artist.name || t('Moi');
   const { markMessagesSeen } = useNotifications();
 
   const load = useCallback(async () => {
@@ -85,7 +86,9 @@ export function BandChat({ id }: { id: string }) {
       const s = await getValidSession();
       if (!s) {
         setError(
-          "Connecte-toi (Profil artiste → Mon compte) pour accéder à l'espace du groupe.",
+          t(
+            "Connecte-toi (Profil artiste → Mon compte) pour accéder à l'espace du groupe.",
+          ),
         );
         return;
       }
@@ -101,15 +104,15 @@ export function BandChat({ id }: { id: string }) {
       markMessagesSeen(cloudIdRef.current);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Chargement impossible.');
+      setError(e instanceof Error ? e.message : t('Chargement impossible.'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [band?.id]);
 
   useEffect(() => {
     void load();
-    const t = window.setInterval(() => void load(), 20000);
-    return () => window.clearInterval(t);
+    const timer = window.setInterval(() => void load(), 20000);
+    return () => window.clearInterval(timer);
   }, [load]);
 
   // Défile vers le dernier message à l'arrivée du fil
@@ -135,7 +138,7 @@ export function BandChat({ id }: { id: string }) {
     setError(null);
     try {
       const s = await getValidSession();
-      if (!s) throw new Error('Connexion requise.');
+      if (!s) throw new Error(t('Connexion requise.'));
       await postBandMessage(s, cloudIdRef.current, {
         author,
         kind,
@@ -145,7 +148,7 @@ export function BandChat({ id }: { id: string }) {
       setKind('message');
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "L'envoi a échoué.");
+      setError(e instanceof Error ? e.message : t("L'envoi a échoué."));
     } finally {
       setBusy(false);
     }
@@ -163,7 +166,7 @@ export function BandChat({ id }: { id: string }) {
     setError(null);
     try {
       const s = await getValidSession();
-      if (!s) throw new Error('Connexion requise.');
+      if (!s) throw new Error(t('Connexion requise.'));
       if (cloudIdRef.current === '') {
         const ref = await ensureCloudBand(s, band.id, band.name);
         cloudIdRef.current = ref.cloudId;
@@ -176,7 +179,7 @@ export function BandChat({ id }: { id: string }) {
         const prev = song.activeVersionId;
         saveSong(
           switchVersion(
-            duplicateVersion(song, band.name || 'Groupe', band.id),
+            duplicateVersion(song, band.name || t('Groupe'), band.id),
             prev,
           ),
         );
@@ -186,36 +189,40 @@ export function BandChat({ id }: { id: string }) {
       await postBandMessage(s, cloudIdRef.current, {
         author,
         kind: 'chanson',
-        text: `${song.title || '(sans titre)'}${
+        text: `${song.title || t('(sans titre)')}${
           song.artist !== '' ? ` — ${song.artist}` : ''
         }`,
       });
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'La proposition a échoué.');
+      setError(e instanceof Error ? e.message : t('La proposition a échoué.'));
     } finally {
       setBusy(false);
     }
   }
 
   async function onDelete(m: BandMessage) {
-    if (!confirm('Supprimer ce message ?')) return;
+    if (!confirm(t('Supprimer ce message ?'))) return;
     try {
       const s = await getValidSession();
       if (!s) return;
       await deleteBandMessage(s, m.id);
       setMessages((prev) => (prev ?? []).filter((x) => x.id !== m.id));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Suppression impossible.');
+      setError(e instanceof Error ? e.message : t('Suppression impossible.'));
     }
   }
 
   if (!band) {
     return (
       <>
-        <TopBar live={false} title="Espace du groupe" onBack={() => navigate('/bands')} />
+        <TopBar
+          live={false}
+          title={t('Espace du groupe')}
+          onBack={() => navigate('/bands')}
+        />
         <div className="page">
-          <p className="help">Ce groupe n'existe plus.</p>
+          <p className="help">{t("Ce groupe n'existe plus.")}</p>
         </div>
       </>
     );
@@ -225,17 +232,19 @@ export function BandChat({ id }: { id: string }) {
     <>
       <TopBar
         live={false}
-        title={`💬 ${band.name || 'Espace du groupe'}`}
+        title={`💬 ${band.name || t('Espace du groupe')}`}
         onBack={() => navigate(`/band/${band.id}`)}
       />
       <div className="page">
         <CoachMark
           id="chat-propose"
-          text="Propose un morceau 🎵 — un bouton l'importera directement pour tout le groupe."
+          text={t(
+            "Propose un morceau 🎵 — un bouton l'importera directement pour tout le groupe.",
+          )}
         />
         {messages === null && error === null && (
           <p className="help" style={{ textAlign: 'center' }}>
-            Ouverture de l'espace du groupe…
+            {t("Ouverture de l'espace du groupe…")}
           </p>
         )}
         {error && (
@@ -245,8 +254,9 @@ export function BandChat({ id }: { id: string }) {
         )}
         {messages !== null && messages.length === 0 && (
           <p className="help" style={{ textAlign: 'center' }}>
-            Premier message à écrire ! Propose un morceau 🎵, une date de
-            répét 🥁, un plan de concert 🎤 — tout le groupe le verra.
+            {t(
+              'Premier message à écrire ! Propose un morceau 🎵, une date de répét 🥁, un plan de concert 🎤 — tout le groupe le verra.',
+            )}
           </p>
         )}
 
@@ -264,7 +274,7 @@ export function BandChat({ id }: { id: string }) {
                 <div className="hstack" style={{ gap: 8 }}>
                   <span style={{ flexShrink: 0 }}>{kindBadge(m.kind)}</span>
                   <strong style={{ flex: 1 }}>
-                    {m.author || 'Musicien'}
+                    {m.author || t('Musicien')}
                     <span className="stauthor" style={{ fontWeight: 400 }}>
                       {' '}
                       ·{' '}
@@ -277,7 +287,7 @@ export function BandChat({ id }: { id: string }) {
                   {m.user_id === myId && (
                     <button
                       className="btn icon"
-                      title="Supprimer ce message"
+                      title={t('Supprimer ce message')}
                       onClick={() => void onDelete(m)}
                     >
                       <Icon name="x" size={14} />
@@ -289,7 +299,7 @@ export function BandChat({ id }: { id: string }) {
                 </div>
                 {m.kind === 'chanson' && (
                   <div className="help" style={{ marginTop: 4 }}>
-                    Ajoutée au répertoire du groupe.
+                    {t('Ajoutée au répertoire du groupe.')}
                   </div>
                 )}
               </div>
@@ -304,19 +314,21 @@ export function BandChat({ id }: { id: string }) {
           style={{ marginBottom: 8 }}
           disabled={busy}
           onClick={() => setPickOpen(true)}
-          title="Choisir un morceau de ton répertoire et l'ajouter au répertoire du groupe"
+          title={t(
+            "Choisir un morceau de ton répertoire et l'ajouter au répertoire du groupe",
+          )}
         >
-          🎵 Proposer un morceau de mon répertoire
+          🎵 {t('Proposer un morceau de mon répertoire')}
         </button>
         <div className="chips" style={{ marginBottom: 8 }}>
           {KINDS.map((k) => (
             <button
               key={k.kind}
               className={`chip ${kind === k.kind ? '' : 'off'}`}
-              title={k.hint}
+              title={t(k.hint)}
               onClick={() => setKind(k.kind)}
             >
-              {k.label}
+              {t(k.label)}
             </button>
           ))}
         </div>
@@ -325,10 +337,10 @@ export function BandChat({ id }: { id: string }) {
           onChange={(e) => setText(e.target.value)}
           placeholder={
             kind === 'repet'
-              ? 'Ex. Répét jeudi 20h chez Marco ?'
+              ? t('Ex. Répét jeudi 20h chez Marco ?')
               : kind === 'concert'
-                ? 'Ex. Fête de la musique — on répond avant vendredi ?'
-                : 'Ton message au groupe…'
+                ? t('Ex. Fête de la musique — on répond avant vendredi ?')
+                : t('Ton message au groupe…')
           }
           style={{ minHeight: 70 }}
         />
@@ -337,10 +349,12 @@ export function BandChat({ id }: { id: string }) {
           onClick={() => void onSend()}
           disabled={text.trim() === '' || busy}
         >
-          {busy ? 'Envoi…' : 'Envoyer'}
+          {busy ? t('Envoi…') : t('Envoyer')}
         </button>
         <p className="help" style={{ textAlign: 'center' }}>
-          Visible par tous les membres du groupe. Actualisé automatiquement.
+          {t(
+            'Visible par tous les membres du groupe. Actualisé automatiquement.',
+          )}
         </p>
       </div>
 
@@ -383,14 +397,15 @@ function SongPicker({
   }, [songs, q]);
 
   return (
-    <Modal title="Proposer un morceau au groupe" onClose={onClose}>
+    <Modal title={t('Proposer un morceau au groupe')} onClose={onClose}>
       <p className="help">
-        Choisis un morceau de ton répertoire : il rejoint le répertoire du
-        groupe et tout le monde en est informé.
+        {t(
+          'Choisis un morceau de ton répertoire : il rejoint le répertoire du groupe et tout le monde en est informé.',
+        )}
       </p>
       <input
         type="text"
-        placeholder="Rechercher dans mon répertoire…"
+        placeholder={t('Rechercher dans mon répertoire…')}
         value={q}
         autoFocus
         onChange={(e) => setQ(e.target.value)}
@@ -399,8 +414,8 @@ function SongPicker({
       {list.length === 0 ? (
         <p className="help">
           {songs.some((s) => s.idea !== true)
-            ? 'Aucun morceau ne correspond à ta recherche.'
-            : "Ton répertoire est vide — ajoute d'abord un morceau."}
+            ? t('Aucun morceau ne correspond à ta recherche.')
+            : t("Ton répertoire est vide — ajoute d'abord un morceau.")}
         </p>
       ) : (
         <div className="list">
@@ -409,7 +424,7 @@ function SongPicker({
             return (
               <div className="row" key={s.id} onClick={() => onPick(s)}>
                 <div className="grow">
-                  <div className="title">{s.title || '(sans titre)'}</div>
+                  <div className="title">{s.title || t('(sans titre)')}</div>
                   <div className="sub">
                     {[s.artist, s.key].filter((x) => x !== '').join(' · ') || ' '}
                   </div>
@@ -417,9 +432,9 @@ function SongPicker({
                 {already ? (
                   <span
                     style={{ color: 'var(--accent)', fontWeight: 700 }}
-                    title="Déjà dans le répertoire du groupe"
+                    title={t('Déjà dans le répertoire du groupe')}
                   >
-                    ✓ Déjà proposée
+                    ✓ {t('Déjà proposée')}
                   </span>
                 ) : (
                   <span className="chevron">
@@ -433,7 +448,7 @@ function SongPicker({
       )}
       <div className="spacer" />
       <button className="btn ghost block" onClick={onClose}>
-        Fermer
+        {t('Fermer')}
       </button>
     </Modal>
   );

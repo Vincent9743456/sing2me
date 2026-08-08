@@ -9,6 +9,7 @@ import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
 import { useNotifications } from '../components/Notifications';
 import { Empty, Field, TopBar } from '../components/ui';
+import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import {
   BandDeparture,
@@ -89,7 +90,7 @@ export function Bands() {
         s,
         inv.id,
         accept,
-        prefs.userName || artist.name || 'Moi',
+        prefs.userName || artist.name || t('Moi'),
         '',
       );
       // Accepter = rejoindre : on crée le groupe en local (le répertoire
@@ -97,7 +98,7 @@ export function Bands() {
       if (accept && !bands.some((b) => b.cloudId === inv.band_id)) {
         saveBand({
           ...emptyBand(),
-          name: inv.band_name || 'Groupe',
+          name: inv.band_name || t('Groupe'),
           // Qui m'a invité = le créateur du groupe (b147).
           ownerName: inv.from_name || '',
           cloudId: inv.band_id,
@@ -122,7 +123,7 @@ export function Bands() {
   function confirmCreate() {
     const b = {
       ...emptyBand(),
-      name: newName.trim() || 'Mon groupe',
+      name: newName.trim() || t('Mon groupe'),
       owned: true, // je CRÉE ce groupe : j'en suis le propriétaire
       members: [creatorMember(artist, prefs.userName)],
     };
@@ -133,7 +134,7 @@ export function Bands() {
 
   return (
     <>
-      <TopBar title="Groupes" />
+      <TopBar title={t('Groupes')} />
       <div className="page">
         <LiveBanner />
         {memberNews.length > 0 && (
@@ -148,7 +149,7 @@ export function Bands() {
                   borderColor: 'var(--accent)',
                 }}
               >
-                🎉 <strong>{n.memberName}</strong> a rejoint{' '}
+                🎉 <strong>{n.memberName}</strong> {t('a rejoint')}{' '}
                 <strong>« {n.bandName} »</strong>.
               </div>
             ))}
@@ -161,7 +162,7 @@ export function Bands() {
         {departures.length > 0 && (
           <>
             <h2 className="pagetitle" style={{ marginTop: 0 }}>
-              À réinviter
+              {t('À réinviter')}
             </h2>
             {departures.map((d) => (
               <div
@@ -174,9 +175,10 @@ export function Bands() {
                 }}
               >
                 <div>
-                  <strong>{d.name || 'Un musicien'}</strong> n'a plus accès à{' '}
-                  <strong>« {d.bandName || 'ton groupe'} »</strong> — son
-                  application a été réinitialisée.
+                  <strong>{d.name || t('Un musicien')}</strong>{' '}
+                  {t("n'a plus accès à")}{' '}
+                  <strong>« {d.bandName || t('ton groupe')} »</strong>{' '}
+                  {t('— son application a été réinitialisée.')}
                 </div>
                 <div className="rowactions">
                   <button
@@ -184,7 +186,9 @@ export function Bands() {
                     disabled={reinviteBusy === d.userId}
                     onClick={() => void reinvite(d)}
                   >
-                    {reinviteBusy === d.userId ? '…' : '↻ Lui renvoyer la demande'}
+                    {reinviteBusy === d.userId
+                      ? '…'
+                      : t('↻ Lui renvoyer la demande')}
                   </button>
                 </div>
               </div>
@@ -195,7 +199,7 @@ export function Bands() {
         {invites.length > 0 && (
           <>
             <h2 className="pagetitle" style={{ marginTop: 0 }}>
-              Invitations reçues
+              {t('Invitations reçues')}
             </h2>
             {invites.map((inv) => (
               <div
@@ -204,9 +208,9 @@ export function Bands() {
                 style={{ padding: '10px 12px', marginBottom: 8 }}
               >
                 <div>
-                  <strong>{inv.from_name || 'Un musicien'}</strong> t'invite à
-                  rejoindre{' '}
-                  <strong>« {inv.band_name || 'un groupe'} »</strong>.
+                  <strong>{inv.from_name || t('Un musicien')}</strong>{' '}
+                  {t("t'invite à rejoindre")}{' '}
+                  <strong>« {inv.band_name || t('un groupe')} »</strong>.
                 </div>
                 <div className="rowactions">
                   <button
@@ -214,14 +218,14 @@ export function Bands() {
                     disabled={inviteBusy === inv.id}
                     onClick={() => void respond(inv, true)}
                   >
-                    Accepter
+                    {t('Accepter')}
                   </button>
                   <button
                     className="btn ghost"
                     disabled={inviteBusy === inv.id}
                     onClick={() => void respond(inv, false)}
                   >
-                    Refuser
+                    {t('Refuser')}
                   </button>
                 </div>
               </div>
@@ -231,8 +235,9 @@ export function Bands() {
         )}
         {bands.length === 0 && !creating ? (
           <Empty>
-            Joue à plusieurs : crée ton groupe, invite les autres, et
-            partagez répertoire, setlists et discussions.
+            {t(
+              'Joue à plusieurs : crée ton groupe, invite les autres, et partagez répertoire, setlists et discussions.',
+            )}
           </Empty>
         ) : (
           <div className="list">
@@ -258,7 +263,9 @@ export function Bands() {
                     <span style={{ fontSize: '1.4rem' }}>👥</span>
                   )}
                   <div className="grow">
-                    <div className="title">{band.name || '(sans nom)'}</div>
+                    <div className="title">
+                      {band.name || t('(sans nom)')}
+                    </div>
                     {/* Une personne, une ligne (b141) : le même musicien
                         pouvait apparaître deux fois — prénom d'invitation
                         (« Marco ») et identifiant de son compte
@@ -273,9 +280,11 @@ export function Bands() {
                           {/* Créateur rappelé quand ce n'est pas moi (b147). */}
                           {band.owned === false &&
                           (band.ownerName ?? '') !== ''
-                            ? `créé par ${band.ownerName} · `
+                            ? t('créé par {nom} · ', { nom: band.ownerName })
                             : ''}
-                          {n} musicien{n > 1 ? 's' : ''}
+                          {n > 1
+                            ? t('{n} musiciens', { n })
+                            : t('{n} musicien', { n })}
                           {n > 0
                             ? ` · ${people.map((m) => m.name).join(', ')}`
                             : ''}
@@ -286,10 +295,10 @@ export function Bands() {
                 </div>
                 <button
                   className="btn ghost small"
-                  title="Espace du groupe : discussion, répéts, concerts"
+                  title={t('Espace du groupe : discussion, répéts, concerts')}
                   onClick={() => navigate(`/band/${band.id}/chat`)}
                 >
-                  <Icon name="message" size={15} /> Discussion
+                  <Icon name="message" size={15} /> {t('Discussion')}
                   {band.cloudId != null &&
                     (notifications.unreadByBand[band.cloudId] ?? 0) > 0 && (
                       <span className="pillcount">
@@ -311,11 +320,11 @@ export function Bands() {
         <div className="spacer" />
         {creating ? (
           <div>
-            <Field label="Nom du groupe">
+            <Field label={t('Nom du groupe')}>
               <input
                 type="text"
                 value={newName}
-                placeholder="Mon groupe"
+                placeholder={t('Mon groupe')}
                 autoFocus
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => {
@@ -326,20 +335,20 @@ export function Bands() {
             </Field>
             <div className="rowactions">
               <button className="btn" onClick={confirmCreate}>
-                Créer le groupe
+                {t('Créer le groupe')}
               </button>
               <button className="btn ghost" onClick={cancelCreate}>
-                Annuler
+                {t('Annuler')}
               </button>
             </div>
           </div>
         ) : (
           <button className="btn block" onClick={() => setCreating(true)}>
-            ＋ Créer un groupe
+            ＋ {t('Créer un groupe')}
           </button>
         )}
         <p className="help" style={{ textAlign: 'center' }}>
-          Tu invites les autres ensuite, depuis la fiche du groupe.
+          {t('Tu invites les autres ensuite, depuis la fiche du groupe.')}
         </p>
       </div>
     </>

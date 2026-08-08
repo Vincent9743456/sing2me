@@ -18,6 +18,7 @@ import {
   ugTabToImportText,
 } from '../lib/ug';
 import { Song } from '../types';
+import { t } from '../i18n';
 
 /**
  * Applique une partition UG au morceau : remplace le contenu de la
@@ -110,7 +111,9 @@ export function UgUpgradeModal({
       })
       .catch((e) => {
         if (alive)
-          setError(e instanceof Error ? e.message : 'La recherche a échoué.');
+          setError(
+            e instanceof Error ? e.message : t('La recherche a échoué.'),
+          );
       });
     return () => {
       alive = false;
@@ -138,7 +141,9 @@ export function UgUpgradeModal({
       const tab = await fetchUgTab(r.url);
       setText(ugTabToImportText(tab));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "La récupération a échoué.");
+      setError(
+        e instanceof Error ? e.message : t('La récupération a échoué.'),
+      );
       setPicked(null);
     } finally {
       setBusy(false);
@@ -149,7 +154,10 @@ export function UgUpgradeModal({
   const issues = useMemo(() => {
     if (text === null) return [];
     try {
-      return analyzeImport(text, importText(text, song.title || 'Morceau'));
+      return analyzeImport(
+        text,
+        importText(text, song.title || t('Morceau')),
+      );
     } catch {
       return [];
     }
@@ -167,7 +175,9 @@ export function UgUpgradeModal({
       setText(await aiCleanText(text, hint || undefined));
       setAiDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Le nettoyage IA a échoué.');
+      setError(
+        e instanceof Error ? e.message : t('Le nettoyage IA a échoué.'),
+      );
     } finally {
       setAiBusy(false);
     }
@@ -185,9 +195,9 @@ export function UgUpgradeModal({
   }
 
   return (
-    <Modal title="Chercher une meilleure version" onClose={onClose}>
+    <Modal title={t('Chercher une meilleure version')} onClose={onClose}>
       {results === null && error === null && (
-        <p className="help">Recherche de la meilleure version…</p>
+        <p className="help">{t('Recherche de la meilleure version…')}</p>
       )}
       {error && (
         <div className="card" style={{ borderColor: 'var(--danger)' }}>
@@ -197,15 +207,17 @@ export function UgUpgradeModal({
 
       {sorted && sorted.length === 0 && (
         <p className="help">
-          Aucune version trouvée pour « {song.title}
-          {song.artist !== '' ? ` — ${song.artist}` : ''} ».
+          {t('Aucune version trouvée pour « {title}{artist} ».', {
+            title: song.title,
+            artist: song.artist !== '' ? ` — ${song.artist}` : '',
+          })}
         </p>
       )}
 
       {best && picked === null && (
         <>
           <div className="help" style={{ marginBottom: 6 }}>
-            SUGGESTION SING2ME — la mieux notée
+            {t('SUGGESTION SING2ME — la mieux notée')}
           </div>
           <div className="card" style={{ borderColor: 'var(--accent)' }}>
             <div className="title">
@@ -215,13 +227,13 @@ export function UgUpgradeModal({
             <div className="sub">{line(best)}</div>
             <div className="spacer" />
             <button className="btn block" onClick={() => void pick(best)}>
-              Voir cette version
+              {t('Voir cette version')}
             </button>
           </div>
           {sorted.length > 1 && (
             <>
               <div className="help" style={{ margin: '10px 0 6px' }}>
-                AUTRES VERSIONS
+                {t('AUTRES VERSIONS')}
               </div>
               <div
                 className="card"
@@ -243,15 +255,18 @@ export function UgUpgradeModal({
 
       {busy && (
         <p className="help" style={{ textAlign: 'center' }}>
-          Récupération de la partition…
+          {t('Récupération de la partition…')}
         </p>
       )}
 
       {picked && text !== null && (
         <>
           <div className="help" style={{ marginBottom: 6 }}>
-            APERÇU — {picked.title} ({line(picked)})
-            {aiDone ? ' · ✨ nettoyé à l’IA' : ''}
+            {t('APERÇU — {title} ({info})', {
+              title: picked.title,
+              info: line(picked),
+            })}
+            {aiDone ? t(' · ✨ nettoyé à l’IA') : ''}
           </div>
           <div
             className="card mono"
@@ -291,8 +306,10 @@ export function UgUpgradeModal({
                 disabled={aiBusy}
               >
                 {aiBusy
-                  ? '✨ Nettoyage en cours…'
-                  : "✨ L'analyse suggère un nettoyage IA — corriger avant d'appliquer"}
+                  ? t('✨ Nettoyage en cours…')
+                  : t(
+                      "✨ L'analyse suggère un nettoyage IA — corriger avant d'appliquer",
+                    )}
               </button>
             </>
           )}
@@ -302,7 +319,7 @@ export function UgUpgradeModal({
             onClick={() => onApply(text, 'version')}
             disabled={aiBusy}
           >
-            Ajouter comme nouvelle version (recommandé)
+            {t('Ajouter comme nouvelle version (recommandé)')}
           </button>
           <div className="spacer" />
           <button
@@ -310,12 +327,12 @@ export function UgUpgradeModal({
             onClick={() => onApply(text, 'replace')}
             disabled={aiBusy}
           >
-            Remplacer ma partition actuelle
+            {t('Remplacer ma partition actuelle')}
           </button>
           <p className="help">
-            « Nouvelle version » garde ta partition d'origine accessible dans
-            le sélecteur de versions ; « Remplacer » écrase le contenu de la
-            version affichée (notes et setlists conservées).
+            {t(
+              "« Nouvelle version » garde ta partition d'origine accessible dans le sélecteur de versions ; « Remplacer » écrase le contenu de la version affichée (notes et setlists conservées).",
+            )}
           </p>
           <button
             className="btn ghost small"
@@ -325,7 +342,7 @@ export function UgUpgradeModal({
               setAiDone(false);
             }}
           >
-            ← Autres versions
+            {t('← Autres versions')}
           </button>
         </>
       )}

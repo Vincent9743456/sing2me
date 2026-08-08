@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { Icon } from './Icon';
+import { t } from '../i18n';
 
 const OFF_KEY = 'sing2me/hintsOff';
 
@@ -85,10 +86,10 @@ export function CoachMark({
   return (
     <div className="coachmark">
       <span aria-hidden="true">💡</span>
-      <span className="grow">{text}</span>
+      <span className="grow">{t(text)}</span>
       <button
         className="coachclose"
-        aria-label="Fermer l'aide"
+        aria-label={t("Fermer l'aide")}
         onClick={() => {
           write(id, { ...read(id), dismissed: true });
           setShow(false);

@@ -9,6 +9,7 @@ import { ConfirmSheet, MenuSheet } from '../components/Feedback';
 import { Onboarding } from '../components/Onboarding';
 import { EXAMPLE_TAG } from '../seed';
 import { Empty, TopBar } from '../components/ui';
+import { t } from '../i18n';
 
 /** Ajout / retrait d'un morceau dans les setlists, sans quitter la liste. */
 function SetlistPicker({
@@ -50,10 +51,13 @@ function SetlistPicker({
   );
 
   return (
-    <Modal title={`« ${song.title || 'Sans titre'} » dans…`} onClose={onClose}>
+    <Modal
+      title={t('« {title} » dans…', { title: song.title || t('Sans titre') })}
+      onClose={onClose}
+    >
       {sorted.length === 0 && (
         <p className="help">
-          Pas encore de setlist — crée la première juste en dessous.
+          {t('Pas encore de setlist — crée la première juste en dessous.')}
         </p>
       )}
       {sorted.map((sl) => {
@@ -61,13 +65,18 @@ function SetlistPicker({
         const bandName =
           (sl.bandId ?? '') !== ''
             ? (bands.find((b) => b.id === sl.bandId)?.name ?? '')
-            : 'Solo';
+            : t('Solo');
         return (
           <div className="row" key={sl.id} onClick={() => toggle(sl)}>
             <div className="grow">
-              <div className="title">{sl.name || '(sans nom)'}</div>
+              <div className="title">{sl.name || t('(sans nom)')}</div>
               <div className="sub">
-                {[bandName, `${sl.items.length} morceau${sl.items.length > 1 ? 'x' : ''}`]
+                {[
+                  bandName,
+                  sl.items.length > 1
+                    ? t('{n} morceaux', { n: sl.items.length })
+                    : t('{n} morceau', { n: sl.items.length }),
+                ]
                   .filter((x) => x !== '')
                   .join(' · ')}
               </div>
@@ -75,9 +84,9 @@ function SetlistPicker({
             {has ? (
               <span
                 style={{ color: 'var(--accent)', fontWeight: 700 }}
-                title="Cliquer pour retirer"
+                title={t('Cliquer pour retirer')}
               >
-                ✓ Dedans
+                {t('✓ Dedans')}
               </span>
             ) : (
               <span className="chevron">
@@ -92,7 +101,7 @@ function SetlistPicker({
         <input
           type="text"
           value={newName}
-          placeholder="Nouvelle setlist (nom)…"
+          placeholder={t('Nouvelle setlist (nom)…')}
           onChange={(e) => setNewName(e.target.value)}
         />
         <button
@@ -118,12 +127,12 @@ function SetlistPicker({
             setNewName('');
           }}
         >
-          Créer
+          {t('Créer')}
         </button>
       </div>
       <div className="spacer" />
       <button className="btn ghost block" onClick={onClose}>
-        Fermer
+        {t('Fermer')}
       </button>
     </Modal>
   );
@@ -343,7 +352,7 @@ export function Library() {
       bandsBySong.set(s.id, set);
     });
     setlists.forEach((sl) => {
-      const name = sl.name || '(sans nom)';
+      const name = sl.name || t('(sans nom)');
       sl.items.forEach((it) => {
         if ((sl.bandId ?? '') !== '' && bandIndex.has(sl.bandId)) {
           bandsBySong.get(it.songId)?.add(sl.bandId);
@@ -439,7 +448,7 @@ export function Library() {
   const artistGroups = useMemo(() => {
     const groups: { name: string; songs: typeof filtered }[] = [];
     for (const s of filtered) {
-      const name = s.artist.trim() || 'Sans artiste';
+      const name = s.artist.trim() || t('Sans artiste');
       const last = groups[groups.length - 1];
       if (last && last.name === name) last.songs.push(s);
       else groups.push({ name, songs: [s] });
@@ -470,22 +479,22 @@ export function Library() {
                     }}
                   >
                     <div className="grow" style={{ minWidth: 0 }}>
-                      <div className="title">{song.title || '(sans titre)'}</div>
+                      <div className="title">{song.title || t('(sans titre)')}</div>
                       {(song.pendingBandId ?? '') !== '' ? (
                         <div
                           className="sub"
                           style={{ color: 'var(--accent)', fontWeight: 600 }}
                         >
-                          📥 Proposé par{' '}
+                          {t('📥 Proposé par')}{' '}
                           {bands.find((b) => b.id === song.pendingBandId)?.name ||
-                            'ton groupe'}
+                            t('ton groupe')}
                           {song.artist !== '' ? ` · ${song.artist}` : ''}
                         </div>
                       ) : (
                         <div className="sub">
                           {[
                             (song.tags ?? []).includes(EXAMPLE_TAG)
-                              ? 'Exemple'
+                              ? t('Exemple')
                               : '',
                             song.artist,
                             song.key,
@@ -510,7 +519,9 @@ export function Library() {
                           key={bid}
                           className="bandtag"
                           style={{ borderColor: color, color }}
-                          title={`Groupe : ${b?.name || 'sans nom'} — cliquer pour filtrer`}
+                          title={t('Groupe : {name} — cliquer pour filtrer', {
+                            name: b?.name || t('sans nom'),
+                          })}
                           onClick={(e) => {
                             e.stopPropagation();
                             setBandFilter(bandFilter === bid ? null : bid);
@@ -523,7 +534,7 @@ export function Library() {
                     {/* Plus d'icône presse-papier par ligne (bruit) : la
                         présence en setlist se voit dans « Ajouter à… ». */}
                     {song.hearts > 0 && (
-                      <span className="rowhearts" title="Cœurs reçus en concert">
+                      <span className="rowhearts" title={t('Cœurs reçus en concert')}>
                         <Icon name="heart" size={12} /> {song.hearts}
                       </span>
                     )}
@@ -531,7 +542,7 @@ export function Library() {
                       <span
                         className="rowhearts"
                         style={{ color: 'var(--accent)' }}
-                        title="Messages du public"
+                        title={t('Messages du public')}
                       >
                         <Icon name="message" size={12} /> {song.fanMessages.length}
                       </span>
@@ -539,20 +550,24 @@ export function Library() {
                     {(song.pendingBandId ?? '') !== '' && (
                       <button
                         className="btn small"
-                        title={`Accepter « ${song.title || 'ce morceau'} » dans ta bibliothèque`}
+                        title={t('Accepter « {title} » dans ta bibliothèque', {
+                          title: song.title || t('ce morceau'),
+                        })}
                         onClick={(e) => {
                           e.stopPropagation();
                           saveSong({ ...song, pendingBandId: undefined });
                           if (pendingCount <= 1) setShowPending(false);
                         }}
                       >
-                        ✓ Accepter
+                        {t('✓ Accepter')}
                       </button>
                     )}
                     <button
                       className="btn icon"
-                      title="Actions"
-                      aria-label={`Actions pour « ${song.title || 'ce morceau'} »`}
+                      title={t('Actions')}
+                      aria-label={t('Actions pour « {title} »', {
+                        title: song.title || t('ce morceau'),
+                      })}
                       onClick={(e) => {
                         e.stopPropagation();
                         setRowMenu(song);
@@ -572,7 +587,7 @@ export function Library() {
 
   return (
     <>
-      <TopBar title="Morceaux" />
+      <TopBar title={t('Morceaux')} />
       <div className="page">
         {showNudge && (
           <div
@@ -585,15 +600,16 @@ export function Library() {
             }}
           >
             <span className="help" style={{ flex: 1, margin: 0 }}>
-              ☁ Sauvegarde ta bibliothèque et retrouve-la sur tous tes
-              appareils — compte gratuit.
+              {t(
+                '☁ Sauvegarde ta bibliothèque et retrouve-la sur tous tes appareils — compte gratuit.',
+              )}
             </span>
             <button className="btn small" onClick={() => navigate('/artist')}>
-              Créer / me connecter
+              {t('Créer / me connecter')}
             </button>
             <button
               className="btn ghost small"
-              title="Ne plus afficher"
+              title={t('Ne plus afficher')}
               onClick={() => {
                 localStorage.setItem('sing2me/accountNudge', '1');
                 setNudgeHidden(true);
@@ -611,15 +627,15 @@ export function Library() {
           <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
             <input
               type="text"
-              placeholder="Rechercher un morceau, un artiste, un tag…"
+              placeholder={t('Rechercher un morceau, un artiste, un tag…')}
               value={query}
               style={query !== '' ? { paddingRight: 40, width: '100%' } : { width: '100%' }}
               onChange={(e) => setQuery(e.target.value)}
             />
             {query !== '' && (
               <button
-                aria-label="Effacer la recherche"
-                title="Effacer la recherche"
+                aria-label={t('Effacer la recherche')}
+                title={t('Effacer la recherche')}
                 onClick={() => setQuery('')}
                 style={{
                   position: 'absolute',
@@ -646,10 +662,10 @@ export function Library() {
             className={`btn ${filtersOpen || activeFilters > 0 ? '' : 'ghost'}`}
             style={{ flexShrink: 0, minHeight: 44 }}
             aria-expanded={filtersOpen}
-            title="Trier et filtrer la bibliothèque"
+            title={t('Trier et filtrer la bibliothèque')}
             onClick={() => setFiltersOpen((v) => !v)}
           >
-            <Icon name="sliders" size={16} /> Filtrer
+            <Icon name="sliders" size={16} /> {t('Filtrer')}
             {activeFilters > 0 && (
               <span className="filtercount">{activeFilters}</span>
             )}
@@ -659,14 +675,14 @@ export function Library() {
           <>
             <div className="spacer" />
             <div className="field" style={{ maxWidth: 220 }}>
-              <label>Tri</label>
+              <label>{t('Tri')}</label>
               <select
                 value={sort}
                 onChange={(e) => changeSort(e.target.value as SortMode)}
               >
-                <option value="title">Titre</option>
-                <option value="artist">Artiste</option>
-                <option value="recent">Récents</option>
+                <option value="title">{t('Titre')}</option>
+                <option value="artist">{t('Artiste')}</option>
+                <option value="recent">{t('Récents')}</option>
               </select>
             </div>
           </>
@@ -690,12 +706,14 @@ export function Library() {
                   setShowPending(false);
                 }}
               >
-                Tous les morceaux
+                {t('Tous les morceaux')}
               </button>
               {pendingCount > 0 && (
                 <button
                   className={`chip ${showPending ? '' : 'off'}`}
-                  title="Morceaux proposés par un groupe — à accepter avant qu'ils rejoignent ta bibliothèque"
+                  title={t(
+                    "Morceaux proposés par un groupe — à accepter avant qu'ils rejoignent ta bibliothèque",
+                  )}
                   onClick={() => {
                     setShowPending(!showPending);
                     setBandFilter(null);
@@ -703,13 +721,13 @@ export function Library() {
                     setShowNew(false);
                   }}
                 >
-                  📥 Propositions ({pendingCount})
+                  {t('📥 Propositions ({n})', { n: pendingCount })}
                 </button>
               )}
               {newCount > 0 && (
                 <button
                   className={`chip ${showNew ? '' : 'off'}`}
-                  title="Partitions ajoutées dans la semaine"
+                  title={t('Partitions ajoutées dans la semaine')}
                   onClick={() => {
                     setShowNew(!showNew);
                     setBandFilter(null);
@@ -717,13 +735,15 @@ export function Library() {
                     setShowPending(false);
                   }}
                 >
-                  ✨ Nouveautés ({newCount})
+                  {t('✨ Nouveautés ({n})', { n: newCount })}
                 </button>
               )}
               {ideaCount > 0 && (
                 <button
                   className={`chip ${showIdeas ? '' : 'off'}`}
-                  title="Morceaux importés non encore validés — réserve à travailler"
+                  title={t(
+                    'Morceaux importés non encore validés — réserve à travailler',
+                  )}
                   onClick={() => {
                     setShowIdeas(!showIdeas);
                     setBandFilter(null);
@@ -731,7 +751,7 @@ export function Library() {
                     setShowPending(false);
                   }}
                 >
-                  💡 Idées ({ideaCount})
+                  {t('💡 Idées ({n})', { n: ideaCount })}
                 </button>
               )}
             </div>
@@ -744,11 +764,13 @@ export function Library() {
                 style={{ marginTop: 'var(--sp-2)', alignItems: 'center' }}
               >
                 <span className="help" style={{ margin: 0 }}>
-                  Répertoires :
+                  {t('Répertoires :')}
                 </span>
                 <button
                   className={`chip ${bandFilter === '' && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
-                  title="Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)"
+                  title={t(
+                    'Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)',
+                  )}
                   onClick={() => {
                     setBandFilter('');
                     setShowIdeas(false);
@@ -756,7 +778,7 @@ export function Library() {
                     setShowPending(false);
                   }}
                 >
-                  <Icon name="mic" size={12} /> Solo
+                  <Icon name="mic" size={12} /> {t('Solo')}
                 </button>
                 {bands.map((b, i) => (
                   <button
@@ -782,7 +804,7 @@ export function Library() {
                         marginRight: 2,
                       }}
                     />
-                    {b.name || 'Groupe sans nom'}
+                    {b.name || t('Groupe sans nom')}
                   </button>
                 ))}
               </div>
@@ -795,38 +817,47 @@ export function Library() {
           <>
             {showIdeas && (
               <p className="help" style={{ margin: '6px 0 0' }}>
-                Réserve à travailler : jouables partout, mais pas encore
-                validées dans la bibliothèque — ouvre un morceau pour le
-                valider ✓ ou le supprimer.
+                {t(
+                  'Réserve à travailler : jouables partout, mais pas encore validées dans la bibliothèque — ouvre un morceau pour le valider ✓ ou le supprimer.',
+                )}
               </p>
             )}
             {showPending && (
               <p className="help" style={{ margin: '6px 0 0' }}>
-                Morceaux proposés par tes groupes : ils n'entreront dans ta
-                bibliothèque qu'une fois acceptés. Accepte d'un clic ✓ ceux
-                que tu veux garder — les autres restent ici sans t'encombrer.
+                {t(
+                  "Morceaux proposés par tes groupes : ils n'entreront dans ta bibliothèque qu'une fois acceptés. Accepte d'un clic ✓ ceux que tu veux garder — les autres restent ici sans t'encombrer.",
+                )}
               </p>
             )}
             {showNew && (
               <p className="help" style={{ margin: '6px 0 0' }}>
-                Partitions ajoutées cette semaine — {filtered.length} morceau
-                {filtered.length > 1 ? 'x' : ''}.
+                {filtered.length > 1
+                  ? t('Partitions ajoutées cette semaine — {n} morceaux.', {
+                      n: filtered.length,
+                    })
+                  : t('Partitions ajoutées cette semaine — {n} morceau.', {
+                      n: filtered.length,
+                    })}
               </p>
             )}
             {!showIdeas && !showNew && bandFilter !== null && (
               <p className="help" style={{ margin: '6px 0 0' }}>
-                Filtre actif :{' '}
+                {t('Filtre actif :')}{' '}
                 <strong style={{ color: 'var(--accent)' }}>
                   {bandFilter === ''
-                    ? 'Solo'
-                    : (bands.find((b) => b.id === bandFilter)?.name ?? 'Groupe')}
+                    ? t('Solo')
+                    : (bands.find((b) => b.id === bandFilter)?.name ?? t('Groupe'))}
                 </strong>{' '}
-                — {filtered.length} morceau{filtered.length > 1 ? 'x' : ''} ·{' '}
+                —{' '}
+                {filtered.length > 1
+                  ? t('{n} morceaux', { n: filtered.length })
+                  : t('{n} morceau', { n: filtered.length })}{' '}
+                ·{' '}
                 <button
                   className="btn ghost small"
                   onClick={() => setBandFilter(null)}
                 >
-                  Tout afficher
+                  {t('Tout afficher')}
                 </button>
               </p>
             )}
@@ -834,9 +865,9 @@ export function Library() {
         )}
         {tag !== null && (
           <p className="help" style={{ margin: '6px 0 0' }}>
-            Tag : <strong style={{ color: 'var(--accent)' }}>{tag}</strong> ·{' '}
+            {t('Tag :')} <strong style={{ color: 'var(--accent)' }}>{tag}</strong> ·{' '}
             <button className="btn ghost small" onClick={() => setTag(null)}>
-              Retirer
+              {t('Retirer')}
             </button>
           </p>
         )}
@@ -864,20 +895,21 @@ export function Library() {
               songs.length === 0 ? (
                 <Empty>
                   <div style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6 }}>
-                    Importe tes partitions
+                    {t('Importe tes partitions')}
                   </div>
-                  Colle un texte, un lien d'une page de partition, un PDF ou un
-                  fichier Word — Sing2Me met tout au propre.
+                  {t(
+                    "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — Sing2Me met tout au propre.",
+                  )}
                   <div className="spacer" />
                   <button
                     className="btn"
                     onClick={() => navigate('/import')}
                   >
-                    <Icon name="import" size={16} /> Importer mon premier morceau
+                    <Icon name="import" size={16} /> {t('Importer mon premier morceau')}
                   </button>
                 </Empty>
               ) : (
-                <Empty>Aucun morceau ne correspond à ta recherche.</Empty>
+                <Empty>{t('Aucun morceau ne correspond à ta recherche.')}</Empty>
               )
             ) : (
               <div className="list">
@@ -910,29 +942,35 @@ export function Library() {
       {bandFilter !== null && bandFilter !== '' ? (
         <button
           className="btn libfab"
-          title="Ajouter des morceaux au répertoire du groupe"
+          title={t('Ajouter des morceaux au répertoire du groupe')}
           onClick={() => setBandCollect(true)}
         >
-          <Icon name="plus" size={17} /> Ajouter des morceaux
+          <Icon name="plus" size={17} /> {t('Ajouter des morceaux')}
         </button>
       ) : (
         <button
           className="btn libfab"
-          title="Ajouter un morceau (importer un texte, un lien, un PDF… ou écrire à la main)"
+          title={t(
+            "Ajouter un morceau (importer un texte, un lien, un PDF… ou écrire à la main)",
+          )}
           onClick={() => navigate('/import')}
         >
-          <Icon name="plus" size={17} /> Nouveau morceau
+          <Icon name="plus" size={17} /> {t('Nouveau morceau')}
         </button>
       )}
       {bandCollect && bandFilter !== null && bandFilter !== '' && (
         <SongCollector
-          title={`Ajouter au répertoire — ${
-            bands.find((b) => b.id === bandFilter)?.name || 'groupe'
-          }`}
+          title={t('Ajouter au répertoire — {band}', {
+            band: bands.find((b) => b.id === bandFilter)?.name || t('groupe'),
+          })}
           alreadyIn={songs
             .filter((s) => versionForBand(s, bandFilter) !== null)
             .map((s) => s.id)}
-          confirmLabel={(n) => `Ajouter ${n} morceau${n > 1 ? 'x' : ''} au répertoire`}
+          confirmLabel={(n) =>
+            n > 1
+              ? t('Ajouter {n} morceaux au répertoire', { n })
+              : t('Ajouter {n} morceau au répertoire', { n })
+          }
           onConfirm={(ids) => {
             const b = bands.find((x) => x.id === bandFilter);
             if (!b) return;
@@ -948,7 +986,7 @@ export function Library() {
               clearBandRemoval(b.id, songKey(s.title, s.artist));
               void announceBandSong(
                 b.cloudId,
-                prefs.userName || artist.name || 'Moi',
+                prefs.userName || artist.name || t('Moi'),
                 s.title,
                 s.artist,
               );
@@ -965,25 +1003,25 @@ export function Library() {
       {/* Menu « ⋯ » d'un morceau : 4 actions maximum. */}
       {rowMenu && (
         <MenuSheet
-          title={rowMenu.title || 'Ce morceau'}
+          title={rowMenu.title || t('Ce morceau')}
           items={[
             {
-              label: 'Jouer (mode scène)',
+              label: t('Jouer (mode scène)'),
               icon: 'play',
               onClick: () => navigate(`/stage/song/${rowMenu.id}`),
             },
             {
-              label: 'Modifier',
+              label: t('Modifier'),
               icon: 'edit',
               onClick: () => navigate(`/song/${rowMenu.id}/edit`),
             },
             {
-              label: 'Ajouter à…',
+              label: t('Ajouter à…'),
               icon: 'plus',
               onClick: () => setRowAssign(rowMenu.id),
             },
             {
-              label: 'Supprimer',
+              label: t('Supprimer'),
               icon: 'trash',
               danger: true,
               onClick: () => setRowDelete(rowMenu),
@@ -997,9 +1035,11 @@ export function Library() {
       )}
       {rowDelete && (
         <ConfirmSheet
-          title={`Supprimer « ${rowDelete.title || 'ce morceau'} » ?`}
-          message="Le morceau sera aussi retiré des setlists."
-          confirmLabel="Supprimer"
+          title={t('Supprimer « {title} » ?', {
+            title: rowDelete.title || t('ce morceau'),
+          })}
+          message={t('Le morceau sera aussi retiré des setlists.')}
+          confirmLabel={t('Supprimer')}
           danger
           onConfirm={() => {
             deleteSong(rowDelete.id);
@@ -1034,7 +1074,7 @@ function SongPreview({
     recordBandRemoval,
     clearBandRemoval,
   } = useStore();
-  const author = prefs.userName || artist.name || 'Moi';
+  const author = prefs.userName || artist.name || t('Moi');
   const song = id ? songs.find((s) => s.id === id) : undefined;
   const paneRef = useRef<HTMLElement | null>(null);
   const [ugOpen, setUgOpen] = useState(false);
@@ -1118,14 +1158,14 @@ function SongPreview({
           plus d'écrasement ni de débordement quand l'écran se resserre. */}
       <div className="hstack" style={{ marginBottom: 4 }}>
         <strong style={{ flex: 1, fontSize: '1.1rem', minWidth: 0 }}>
-          {song.title || '(sans titre)'}
+          {song.title || t('(sans titre)')}
           {song.artist !== '' && (
             <span className="stauthor"> — {song.artist}</span>
           )}
         </strong>
         <button
           className="btn icon"
-          aria-label="Fermer l'aperçu"
+          aria-label={t("Fermer l'aperçu")}
           onClick={onClose}
         >
           <Icon name="x" size={18} />
@@ -1139,46 +1179,49 @@ function SongPreview({
           className="btn ghost small"
           onClick={() => navigate(`/song/${song.id}`)}
         >
-          Ouvrir
+          {t('Ouvrir')}
         </button>
         <button
           className="btn ghost small"
           onClick={() => navigate(`/song/${song.id}/edit`)}
-          title="Modifier la partition"
+          title={t('Modifier la partition')}
         >
-          <Icon name="edit" size={14} /> Modifier
+          <Icon name="edit" size={14} /> {t('Modifier')}
         </button>
         <button
           className="btn ai small"
           onClick={() => setUgOpen(true)}
-          title="Sing2Me cherche la version la mieux notée de cette partition et te la propose"
+          title={t(
+            'Sing2Me cherche la version la mieux notée de cette partition et te la propose',
+          )}
         >
-          ★ Meilleure version ?
+          {t('★ Meilleure version ?')}
         </button>
         <button
           className="btn ghost small"
           onClick={() => navigate(`/stage/song/${song.id}`)}
-          title="Mode scène"
+          title={t('Mode scène')}
         >
-          <Icon name="play" size={14} /> Scène
+          <Icon name="play" size={14} /> {t('Scène')}
         </button>
         <button
           className="btn ghost small"
-          title="Ajouter à une setlist"
+          title={t('Ajouter à une setlist')}
           onClick={() => onPickSetlist(song.id)}
         >
-          <Icon name="list" size={14} /> Setlist
+          <Icon name="list" size={14} /> {t('Setlist')}
         </button>
         <button
           className="btn ghost small"
           style={{ color: 'var(--danger)' }}
-          title="Supprimer ce morceau"
-          aria-label="Supprimer ce morceau"
+          title={t('Supprimer ce morceau')}
+          aria-label={t('Supprimer ce morceau')}
           onClick={() => {
             if (
               confirm(
-                `Supprimer « ${song.title || '(sans titre)'} » ? ` +
-                  'Le morceau sera aussi retiré des setlists.',
+                t('Supprimer « {title} » ? Le morceau sera aussi retiré des setlists.', {
+                  title: song.title || t('(sans titre)'),
+                }),
               )
             ) {
               deleteSong(song.id);
@@ -1202,7 +1245,7 @@ function SongPreview({
           <select
             style={{ width: 'auto', padding: '4px 8px', fontSize: '0.8rem' }}
             value={song.activeVersionId}
-            title="Changer de version (solo, groupe…)"
+            title={t('Changer de version (solo, groupe…)')}
             onChange={(e) => saveSong(switchVersion(song, e.target.value))}
           >
             {song.versions.map((v) => {
@@ -1232,10 +1275,10 @@ function SongPreview({
           alignItems: 'center',
         }}
       >
-        <span className="help">Dans :</span>
+        <span className="help">{t('Dans :')}</span>
         {memberBands.length === 0 && memberSetlists.length === 0 && (
           <span className="help" style={{ margin: 0 }}>
-            aucun groupe ni setlist
+            {t('aucun groupe ni setlist')}
           </span>
         )}
         {memberBands.map((b) => (
@@ -1254,20 +1297,20 @@ function SongPreview({
                 marginRight: 4,
               }}
             />
-            {b.name || 'Groupe sans nom'}
+            {b.name || t('Groupe sans nom')}
           </span>
         ))}
         {memberSetlists.map((sl) => (
           <span key={sl.id} className="chip static">
-            {sl.name || '(sans nom)'}
+            {sl.name || t('(sans nom)')}
           </span>
         ))}
         <button
           className="chip off"
-          title="Ajouter ce morceau à un groupe ou une setlist"
+          title={t('Ajouter ce morceau à un groupe ou une setlist')}
           onClick={() => setAssocOpen(true)}
         >
-          ＋ Ajouter à…
+          {t('＋ Ajouter à…')}
         </button>
       </div>
 
@@ -1277,10 +1320,12 @@ function SongPreview({
       {!displayReal && (
         <div className="transpose" style={{ marginBottom: 10 }}>
           <span className="transpose-unit">
-            <span className="lbl">Transposer</span>
+            <span className="lbl">{t('Transposer')}</span>
             <div className="stepper">
               <button
-                title="Accords plus bas (capo +1) — la tonalité réelle ne change pas"
+                title={t(
+                  'Accords plus bas (capo +1) — la tonalité réelle ne change pas',
+                )}
                 onClick={() => {
                   setShift((s) => s - 1);
                   setViewCapo((c) => Math.min(11, c + 1));
@@ -1293,10 +1338,10 @@ function SongPreview({
                   ? shapeKeyShown
                   : shift === 0
                     ? '—'
-                    : `${shift > 6 ? shift - 12 : shift} ½t`}
+                    : t('{n} ½t', { n: shift > 6 ? shift - 12 : shift })}
               </span>
               <button
-                title="Accords plus haut (capo −1)"
+                title={t('Accords plus haut (capo −1)')}
                 onClick={() => {
                   setShift((s) => s + 1);
                   if (viewCapo > 0) setViewCapo((c) => c - 1);
@@ -1307,10 +1352,10 @@ function SongPreview({
             </div>
           </span>
           <span className="transpose-unit">
-            <span className="lbl">Capo</span>
+            <span className="lbl">{t('Capo')}</span>
             <div className="stepper">
               <button
-                title="Le capo change ce qui sonne, pas les accords affichés"
+                title={t('Le capo change ce qui sonne, pas les accords affichés')}
                 onClick={() => setViewCapo((c) => Math.max(0, c - 1))}
               >
                 −
@@ -1329,7 +1374,7 @@ function SongPreview({
                 setViewCapo(song.capo);
               }}
             >
-              Réinitialiser
+              {t('Réinitialiser')}
             </button>
           )}
         </div>

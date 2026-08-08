@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Icon } from '../components/Icon';
 import { MenuSheet } from '../components/Feedback';
 import { Field, TopBar } from '../components/ui';
+import { t } from '../i18n';
 import { KEY_CHOICES } from '../lib/chords';
 import { importText } from '../lib/importer';
 import {
@@ -196,7 +197,7 @@ export function SongEdit({ id }: { id: string | null }) {
 
   function onSave() {
     if (draft.title.trim() === '') {
-      alert('Donne un titre à ton morceau.');
+      alert(t('Donne un titre à ton morceau.'));
       return;
     }
     // Plusieurs versions + partition modifiée → demander la portée.
@@ -209,7 +210,11 @@ export function SongEdit({ id }: { id: string | null }) {
 
   function onDelete() {
     if (
-      !confirm(`Supprimer « ${draft.title} » ? Le morceau sera retiré des setlists.`)
+      !confirm(
+        t('Supprimer « {title} » ? Le morceau sera retiré des setlists.', {
+          title: draft.title,
+        }),
+      )
     )
       return;
     deleteSong(draft.id);
@@ -220,25 +225,26 @@ export function SongEdit({ id }: { id: string | null }) {
     <>
       <TopBar
         live={false}
-        title={isNew ? 'Nouveau morceau' : 'Modifier'}
+        title={isNew ? t('Nouveau morceau') : t('Modifier')}
         onBack={() => history.back()}
       />
       <div className="page">
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
-          🎵 Le morceau — commun à toutes les versions
+          {t('🎵 Le morceau — commun à toutes les versions')}
         </h2>
         <p className="help">
-          Ces champs modifient le morceau <strong>partout</strong> : toutes
-          les versions et toutes les setlists.
+          {t('Ces champs modifient le morceau ')}
+          <strong>{t('partout')}</strong>
+          {t(' : toutes les versions et toutes les setlists.')}
         </p>
-        <Field label="Titre">
+        <Field label={t('Titre')}>
           <input
             type="text"
             value={draft.title}
             onChange={(e) => update({ title: e.target.value })}
           />
         </Field>
-        <Field label="Artiste">
+        <Field label={t('Artiste')}>
           <input
             type="text"
             value={draft.artist}
@@ -246,7 +252,7 @@ export function SongEdit({ id }: { id: string | null }) {
           />
         </Field>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Field label="Durée (m:ss)">
+          <Field label={t('Durée (m:ss)')}>
             <input
               type="text"
               value={durationText}
@@ -254,21 +260,21 @@ export function SongEdit({ id }: { id: string | null }) {
               onChange={(e) => setDurationText(e.target.value)}
             />
           </Field>
-          <Field label="Tags (séparés par des virgules)">
+          <Field label={t('Tags (séparés par des virgules)')}>
             <input
               type="text"
               value={tagsText}
-              placeholder="rock, slow, ouverture…"
+              placeholder={t('rock, slow, ouverture…')}
               onChange={(e) => setTagsText(e.target.value)}
             />
           </Field>
         </div>
 
         <h2 className="pagetitle">
-          🎼 La partition —{' '}
+          {t('🎼 La partition —')}{' '}
           {draft.versions.length > 1
-            ? 'propre à la version choisie'
-            : 'version unique'}
+            ? t('propre à la version choisie')
+            : t('version unique')}
         </h2>
         {/* Bandeau : rappelle CE QUE tu modifies et si c'est partagé. */}
         <div
@@ -278,40 +284,52 @@ export function SongEdit({ id }: { id: string | null }) {
           <div className="vb-main">
             <div className="vb-title">
               <span>
-                Tu modifies :{' '}
+                {t('Tu modifies :')}{' '}
                 {editingOriginal
-                  ? 'la version de référence'
+                  ? t('la version de référence')
                   : editingSolo
-                    ? 'la version Solo'
+                    ? t('la version Solo')
                     : versionBandId
-                      ? `version du groupe ${editBand?.name || 'sans nom'}`
-                      : `version « ${versionName.trim() || activeVersion(draft).name} »`}
+                      ? t('version du groupe {band}', {
+                          band: editBand?.name || t('sans nom'),
+                        })
+                      : t('version « {name} »', {
+                          name: versionName.trim() || activeVersion(draft).name,
+                        })}
               </span>
               {editingOriginal ? (
-                <span className="vb-ref">⭐ référence</span>
+                <span className="vb-ref">{t('⭐ référence')}</span>
               ) : editingSolo ? (
-                <span className="vb-solo">solo</span>
+                <span className="vb-solo">{t('solo')}</span>
               ) : versionBandId ? (
-                <span className="vb-shared">partagée</span>
+                <span className="vb-shared">{t('partagée')}</span>
               ) : (
-                <span className="vb-solo">perso</span>
+                <span className="vb-solo">{t('perso')}</span>
               )}
             </div>
             <div className="vb-sub">
               {editingOriginal
                 ? draft.versions.length > 1
-                  ? 'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres versions (tonalité/capo se répercutent).'
-                  : 'Version maîtresse, personnelle : la base de ce morceau.'
+                  ? t(
+                      'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres versions (tonalité/capo se répercutent).',
+                    )
+                  : t('Version maîtresse, personnelle : la base de ce morceau.')
                 : editingSolo
-                  ? 'Ta façon de le jouer en solo — l’originale et les versions de groupe ne bougent pas.'
+                  ? t(
+                      'Ta façon de le jouer en solo — l’originale et les versions de groupe ne bougent pas.',
+                    )
                   : versionBandId
-                    ? 'À l’enregistrement, tes changements partent vers tous les membres du groupe.'
-                    : 'Modifications privées à cette version — les autres versions gardent leurs réglages.'}
+                    ? t(
+                        'À l’enregistrement, tes changements partent vers tous les membres du groupe.',
+                      )
+                    : t(
+                        'Modifications privées à cette version — les autres versions gardent leurs réglages.',
+                      )}
             </div>
           </div>
         </div>
         {draft.versions.length > 1 && (
-          <Field label="Version modifiée">
+          <Field label={t('Version modifiée')}>
             <select
               value={draft.activeVersionId}
               onChange={(e) => switchEditVersion(e.target.value)}
@@ -319,7 +337,7 @@ export function SongEdit({ id }: { id: string | null }) {
               {draft.versions.map((v, i) => (
                 <option key={v.id} value={v.id}>
                   {v.name}
-                  {i === 0 ? ' — principale' : ''}
+                  {i === 0 ? ` — ${t('principale')}` : ''}
                   {v.key !== '' ? ` (${v.key})` : ''}
                 </option>
               ))}
@@ -327,7 +345,7 @@ export function SongEdit({ id }: { id: string | null }) {
           </Field>
         )}
         {draft.versions.length > 1 && (
-          <Field label="Nom de cette version">
+          <Field label={t('Nom de cette version')}>
             <input
               type="text"
               value={versionName}
@@ -338,42 +356,45 @@ export function SongEdit({ id }: { id: string | null }) {
         {editingOriginal && (
           <>
             <p className="help">
-              🔒 L’originale est toujours <strong>personnelle</strong> : la
-              modifier se répercute sur la version Solo et les versions de
-              groupe qui la suivent. Pour une version dédiée à un groupe,
-              utilise « Ajouter à… » depuis la partition.
+              {t('🔒 L’originale est toujours ')}
+              <strong>{t('personnelle')}</strong>
+              {t(
+                ' : la modifier se répercute sur la version Solo et les versions de groupe qui la suivent. Pour une version dédiée à un groupe, utilise « Ajouter à… » depuis la partition.',
+              )}
             </p>
             {!isNew && (
               <div style={{ marginBottom: 'var(--sp-3)' }}>
                 <button
                   type="button"
                   className="btn ghost small"
-                  title="Ta version pour jouer seul — modifiable sans toucher l’originale (créée si besoin)"
+                  title={t(
+                    'Ta version pour jouer seul — modifiable sans toucher l’originale (créée si besoin)',
+                  )}
                   onClick={editSoloVersion}
                 >
-                  🎙 Modifier plutôt la version Solo
+                  {t('🎙 Modifier plutôt la version Solo')}
                 </button>
               </div>
             )}
           </>
         )}
         {bands.length > 0 && !editingOriginal && !editingSolo && (
-          <Field label="Cette version est pour">
+          <Field label={t('Cette version est pour')}>
             <select
               value={versionBandId}
               onChange={(e) => setVersionBandId(e.target.value)}
             >
-              <option value="">Solo (ma version par défaut)</option>
+              <option value="">{t('Solo (ma version par défaut)')}</option>
               {bands.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.name || 'Groupe sans nom'}
+                  {b.name || t('Groupe sans nom')}
                 </option>
               ))}
             </select>
           </Field>
         )}
         <div style={{ display: 'flex', gap: 8 }}>
-          <Field label="Tonalité">
+          <Field label={t('Tonalité')}>
             <select
               value={draft.key}
               onChange={(e) => update({ key: e.target.value })}
@@ -391,14 +412,14 @@ export function SongEdit({ id }: { id: string | null }) {
               ))}
             </select>
           </Field>
-          <Field label="Tempo (BPM)">
+          <Field label={t('Tempo (BPM)')}>
             <input
               type="number"
               value={draft.tempo > 0 ? draft.tempo : ''}
               onChange={(e) => update({ tempo: parseInt(e.target.value, 10) || 0 })}
             />
           </Field>
-          <Field label="Capo">
+          <Field label={t('Capo')}>
             <input
               type="number"
               value={draft.capo > 0 ? draft.capo : ''}
@@ -409,57 +430,61 @@ export function SongEdit({ id }: { id: string | null }) {
         {draft.versions.length > 1 && (
           <p className="help">
             {draft.activeVersionId === draft.versions[0].id
-              ? '⚑ Version principale : un changement de tonalité ou de capo ' +
-                'est répercuté sur les versions qui la suivaient (celles sans ' +
-                'réglage propre), et partagé avec le groupe à la ' +
-                'synchronisation.'
-              : 'Cette version garde ses propres tonalité et capo — la ' +
-                "version principale n'est pas affectée."}
+              ? t(
+                  '⚑ Version principale : un changement de tonalité ou de capo est répercuté sur les versions qui la suivaient (celles sans réglage propre), et partagé avec le groupe à la synchronisation.',
+                )
+              : t(
+                  "Cette version garde ses propres tonalité et capo — la version principale n'est pas affectée.",
+                )}
           </p>
         )}
         {draft.versions.length > 1 && (
           <p className="help">
-            À l'enregistrement, Sing2Me te demandera si tes changements de
-            partition valent pour <strong>cette version</strong> seulement ou
-            pour <strong>toutes les versions</strong>.
+            {t(
+              "À l'enregistrement, Sing2Me te demandera si tes changements de partition valent pour",
+            )}{' '}
+            <strong>{t('cette version')}</strong> {t('seulement ou pour')}{' '}
+            <strong>{t('toutes les versions')}</strong>.
           </p>
         )}
 
-        <h2 className="pagetitle">Structure</h2>
+        <h2 className="pagetitle">{t('Structure')}</h2>
         <p className="help">
-          L'arrangement stable du morceau, en écriture libre : enchaînements,
-          départs, arrêts, consignes… (« intro batterie seule », « refrain
-          x2 à la fin »). Pour le journal daté des répétitions (qui a dit
-          quoi, partagé ou privé), utilise les Notes de répétition sur la
-          fiche du morceau.
+          {t(
+            "L'arrangement stable du morceau, en écriture libre : enchaînements, départs, arrêts, consignes… (« intro batterie seule », « refrain x2 à la fin »). Pour le journal daté des répétitions (qui a dit quoi, partagé ou privé), utilise les Notes de répétition sur la fiche du morceau.",
+          )}
         </p>
         <textarea
           value={draft.structureNotes ?? ''}
           onChange={(e) => update({ structureNotes: e.target.value })}
-          placeholder={'Intro batterie seule\nDernier refrain x2, a cappella sur 2 mesures\n…'}
+          placeholder={t(
+            'Intro batterie seule\nDernier refrain x2, a cappella sur 2 mesures\n…',
+          )}
           style={{ minHeight: 90 }}
         />
 
-        <h2 className="pagetitle">Paroles + accords</h2>
+        <h2 className="pagetitle">{t('Paroles + accords')}</h2>
         <p className="help">
-          Un seul bloc continu. Accords entre crochets :
-          [Am]Sous le ciel de [F]Port-Louis
+          {t(
+            'Un seul bloc continu. Accords entre crochets : [Am]Sous le ciel de [F]Port-Louis',
+          )}
         </p>
         <textarea
           className="mono"
           style={{ minHeight: 280 }}
           value={draft.lyrics}
           onChange={(e) => update({ lyrics: e.target.value })}
-          placeholder={'[Am]Première ligne…\n\nSuite des paroles…'}
+          placeholder={t('[Am]Première ligne…\n\nSuite des paroles…')}
         />
 
         <div className="spacer" />
         <p className="help">
-          💬 Les notes de répétition (partagées ou personnelles, dictée
-          vocale…) s'ajoutent depuis la page du morceau.
+          {t(
+            "💬 Les notes de répétition (partagées ou personnelles, dictée vocale…) s'ajoutent depuis la page du morceau.",
+          )}
         </p>
         <button className="btn block" onClick={onSave}>
-          Enregistrer
+          {t('Enregistrer')}
         </button>
         {!isNew && (
           <>
@@ -468,11 +493,11 @@ export function SongEdit({ id }: { id: string | null }) {
               className="btn ghost block"
               onClick={() => navigate(`/song/${draft.id}`)}
             >
-              <Icon name="eye" size={15} /> Voir la partition
+              <Icon name="eye" size={15} /> {t('Voir la partition')}
             </button>
             <div className="spacer" />
             <button className="btn danger block" onClick={onDelete}>
-              Supprimer le morceau
+              {t('Supprimer le morceau')}
             </button>
           </>
         )}
@@ -480,14 +505,14 @@ export function SongEdit({ id }: { id: string | null }) {
 
       {askScope && (
         <MenuSheet
-          title="Appliquer tes modifications à…"
+          title={t('Appliquer tes modifications à…')}
           items={[
             {
-              label: 'Cette version seulement',
+              label: t('Cette version seulement'),
               onClick: () => commitSave('current'),
             },
             {
-              label: `Toutes les versions (${draft.versions.length})`,
+              label: t('Toutes les versions ({n})', { n: draft.versions.length }),
               onClick: () => commitSave('all'),
             },
           ]}

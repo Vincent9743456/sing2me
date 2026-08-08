@@ -7,6 +7,7 @@ import React, { useRef, useState } from 'react';
 
 import { gearIcon } from './GearEditor';
 import { Icon } from './Icon';
+import { t } from '../i18n';
 import { makeId, StagePos } from '../types';
 
 export function StagePlan({
@@ -34,8 +35,8 @@ export function StagePlan({
   return (
     <div>
       <div className="stageplan" ref={ref}>
-        <span className="edge back">FOND DE SCÈNE</span>
-        <span className="edge front">PUBLIC</span>
+        <span className="edge back">{t('FOND DE SCÈNE')}</span>
+        <span className="edge front">{t('PUBLIC')}</span>
         {positions.map((p) => (
           <div
             key={p.id}
@@ -63,8 +64,8 @@ export function StagePlan({
             {!readOnly && onChange && (
               <button
                 className="premove"
-                title={`Retirer ${p.label}`}
-                aria-label={`Retirer ${p.label} du plan`}
+                title={t('Retirer {name}', { name: p.label })}
+                aria-label={t('Retirer {name} du plan', { name: p.label })}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() =>
                   onChange(positions.filter((x) => x.id !== p.id))
@@ -78,8 +79,10 @@ export function StagePlan({
         {positions.length === 0 && (
           <span className="help planempty">
             {readOnly
-              ? 'Plan de scène vide.'
-              : 'Ajoute les musiciens ci-dessous, puis déplace-les au doigt ou à la souris.'}
+              ? t('Plan de scène vide.')
+              : t(
+                  'Ajoute les musiciens ci-dessous, puis déplace-les au doigt ou à la souris.',
+                )}
           </span>
         )}
       </div>
@@ -88,14 +91,14 @@ export function StagePlan({
           <input
             type="text"
             value={newName}
-            placeholder="Nom"
+            placeholder={t('Nom')}
             style={{ flex: '1 1 110px' }}
             onChange={(e) => setNewName(e.target.value)}
           />
           <input
             type="text"
             value={newInstr}
-            placeholder="Instrument"
+            placeholder={t('Instrument')}
             style={{ flex: '1 1 110px' }}
             onChange={(e) => setNewInstr(e.target.value)}
           />
@@ -117,7 +120,7 @@ export function StagePlan({
               setNewInstr('');
             }}
           >
-            <Icon name="plus" size={14} /> Placer
+            <Icon name="plus" size={14} /> {t('Placer')}
           </button>
         </div>
       )}

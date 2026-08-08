@@ -5,6 +5,7 @@
  */
 import React from 'react';
 
+import { t } from '../i18n';
 import { ArtistLink } from '../types';
 
 /** URL d'intégration YouTube (watch / youtu.be / shorts / embed). */
@@ -60,7 +61,7 @@ export function LinkPreviews({
         <div className="embedbox video">
           <iframe
             src={yt}
-            title="Vidéo YouTube"
+            title={t('Vidéo YouTube')}
             allow="encrypted-media; picture-in-picture"
             allowFullScreen
             loading="lazy"
@@ -71,7 +72,7 @@ export function LinkPreviews({
         <div className="embedbox" style={{ height: sp.height }}>
           <iframe
             src={sp.src}
-            title="Écoute Spotify"
+            title={t('Écoute Spotify')}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
             style={{ borderRadius: 12 }}

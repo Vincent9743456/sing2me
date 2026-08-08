@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 
 import { TopBar } from '../components/ui';
+import { t } from '../i18n';
 import { navigate } from '../router';
 
 export function Report() {
@@ -42,7 +43,7 @@ export function Report() {
       setError(
         e instanceof Error
           ? e.message
-          : "L'envoi a échoué — réessaie dans un instant.",
+          : t("L'envoi a échoué — réessaie dans un instant."),
       );
     } finally {
       setBusy(false);
@@ -51,29 +52,29 @@ export function Report() {
 
   return (
     <>
-      <TopBar title="Signaler un contenu" onBack={() => navigate('/cgu')} />
+      <TopBar title={t('Signaler un contenu')} onBack={() => navigate('/cgu')} />
       <div className="page">
         {sent ? (
           <div className="card" style={{ marginTop: 0 }}>
-            <h2 style={{ marginTop: 0 }}>✅ Signalement transmis</h2>
+            <h2 style={{ marginTop: 0 }}>{t('✅ Signalement transmis')}</h2>
             <p>
-              Merci. Nous examinons chaque signalement et retirons rapidement
-              tout contenu qui doit l'être.
+              {t(
+                "Merci. Nous examinons chaque signalement et retirons rapidement tout contenu qui doit l'être.",
+              )}
             </p>
             <button className="btn block" onClick={() => navigate('/')}>
-              Revenir à l'accueil
+              {t("Revenir à l'accueil")}
             </button>
           </div>
         ) : (
           <>
             <p className="help">
-              Repère un contenu qui ne devrait pas être là (droits d'auteur,
-              contenu inapproprié…) ? Signale-le : nous nous engageons à
-              examiner chaque demande et à retirer rapidement ce qui doit
-              l'être.
+              {t(
+                "Repère un contenu qui ne devrait pas être là (droits d'auteur, contenu inapproprié…) ? Signale-le : nous nous engageons à examiner chaque demande et à retirer rapidement ce qui doit l'être.",
+              )}
             </p>
             <div className="field">
-              <label>Adresse concernée</label>
+              <label>{t('Adresse concernée')}</label>
               <input
                 type="text"
                 value={url}
@@ -82,20 +83,20 @@ export function Report() {
               />
             </div>
             <div className="field">
-              <label>Motif du signalement</label>
+              <label>{t('Motif du signalement')}</label>
               <textarea
                 value={reason}
-                placeholder="Décris le problème (contenu, droits, etc.)"
+                placeholder={t('Décris le problème (contenu, droits, etc.)')}
                 style={{ minHeight: 110 }}
                 onChange={(e) => setReason(e.target.value)}
               />
             </div>
             <div className="field">
-              <label>Ton contact (facultatif — pour te répondre)</label>
+              <label>{t('Ton contact (facultatif — pour te répondre)')}</label>
               <input
                 type="text"
                 value={contact}
-                placeholder="Email ou nom"
+                placeholder={t('Email ou nom')}
                 onChange={(e) => setContact(e.target.value)}
               />
             </div>
@@ -104,7 +105,7 @@ export function Report() {
               disabled={reason.trim() === '' || busy}
               onClick={() => void submit()}
             >
-              {busy ? 'Envoi…' : 'Envoyer le signalement'}
+              {busy ? t('Envoi…') : t('Envoyer le signalement')}
             </button>
             {error && (
               <p style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p>

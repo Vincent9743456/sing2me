@@ -20,6 +20,7 @@ import {
   ugTabToImportText,
 } from '../lib/ug';
 import { useToast } from '../components/Feedback';
+import { t } from '../i18n';
 import { addSongAsVersion } from '../lib/model';
 import { looksGarbled } from '../lib/textRepair';
 import { parseUgTabHtml } from '../lib/ugHtml';
@@ -175,9 +176,9 @@ export function Import() {
   // qui va se passer (fusion en nouvelle version, jamais de doublon).
   const duplicate = useMemo(() => {
     if (!preview) return null;
-    const t = title.trim() !== '' ? title : preview.song.title;
+    const currentTitle = title.trim() !== '' ? title : preview.song.title;
     const a = artist.trim() !== '' ? artist : preview.song.artist;
-    return findSameSong(songs, t, preview.song.lyrics, a);
+    return findSameSong(songs, currentTitle, preview.song.lyrics, a);
   }, [songs, title, artist, preview]);
 
   // Analyse automatique : l'IA n'est suggérée que si elle peut aider.
@@ -190,7 +191,7 @@ export function Import() {
   // Titre / artiste détectés → repris automatiquement (champs modifiables)
   useEffect(() => {
     if (!preview) return;
-    if (preview.stats.hadTitle) setTitle((t) => (t.trim() === '' ? preview.song.title : t));
+    if (preview.stats.hadTitle) setTitle((prev) => (prev.trim() === '' ? preview.song.title : prev));
     if (preview.stats.hadArtist) setArtist((a) => (a.trim() === '' ? preview.song.artist : a));
   }, [preview]);
 
@@ -205,8 +206,9 @@ export function Import() {
         const tab = parseUgTabHtml(await file.text());
         if (!tab) {
           setError(
-            'Cette page enregistrée ne contient pas de partition lisible — ' +
-              'pour une LISTE de partitions, passe par « 3 · Import en masse ».',
+            t(
+              'Cette page enregistrée ne contient pas de partition lisible — pour une LISTE de partitions, passe par « 3 · Import en masse ».',
+            ),
           );
           return;
         }
@@ -229,8 +231,9 @@ export function Import() {
       }
     } catch {
       setError(
-        "Ce fichier n'a pas pu être lu. Essaie un fichier texte " +
-          '(.txt, .cho, .pro, .onsong) ou Word (.docx), ou colle le texte.',
+        t(
+          "Ce fichier n'a pas pu être lu. Essaie un fichier texte (.txt, .cho, .pro, .onsong) ou Word (.docx), ou colle le texte.",
+        ),
       );
     } finally {
       if (fileRef.current) fileRef.current.value = '';
@@ -247,7 +250,7 @@ export function Import() {
       if (tab.title) setTitle(tab.title);
       if (tab.artist) setArtist(tab.artist);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "L'import a échoué.");
+      setError(e instanceof Error ? e.message : t("L'import a échoué."));
     } finally {
       setUgLoading(false);
     }
@@ -263,10 +266,10 @@ export function Import() {
       const results = await searchUgTabs(ugQuery.trim());
       setUgResults(results);
       if (results.length === 0) {
-        setError('Aucune version trouvée pour cette recherche.');
+        setError(t('Aucune version trouvée pour cette recherche.'));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'La recherche a échoué.');
+      setError(e instanceof Error ? e.message : t('La recherche a échoué.'));
     } finally {
       setUgSearching(false);
     }
@@ -279,7 +282,8 @@ export function Import() {
   useEffect(() => {
     const q = ugQuery.trim();
     if (q.length < 3) return;
-    const t = window.setTimeout(() => {
+    // (nom `timer` et pas `t` : `t` est la fonction de traduction)
+    const timer = window.setTimeout(() => {
       const seq = ++searchSeq.current;
       setMethod('ug');
       setError(null);
@@ -290,18 +294,18 @@ export function Import() {
           if (seq !== searchSeq.current) return;
           setUgResults(results);
           if (results.length === 0) {
-            setError('Aucune version trouvée pour cette recherche.');
+            setError(t('Aucune version trouvée pour cette recherche.'));
           }
         })
         .catch((e: unknown) => {
           if (seq !== searchSeq.current) return;
-          setError(e instanceof Error ? e.message : 'La recherche a échoué.');
+          setError(e instanceof Error ? e.message : t('La recherche a échoué.'));
         })
         .finally(() => {
           if (seq === searchSeq.current) setUgSearching(false);
         });
     }, 400);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ugQuery]);
 
@@ -315,7 +319,7 @@ export function Import() {
         .join(' — ');
       setText(await aiCleanText(text, hint || undefined));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Le nettoyage IA a échoué.');
+      setError(e instanceof Error ? e.message : t('Le nettoyage IA a échoué.'));
     } finally {
       setAiLoading(false);
     }
@@ -339,9 +343,8 @@ export function Import() {
       if (validated) merged = { ...merged, idea: false };
       saveSong(merged);
       toast.show(
-        `Ajouté comme nouvelle version de « ${twin.title} »${
-          validated ? ' — idée validée ✓' : ''
-        }`,
+        t('Ajouté comme nouvelle version de « {title} »', { title: twin.title }) +
+          (validated ? t(' — idée validée ✓') : ''),
       );
       navigate(`/song/${merged.id}`);
       return;
@@ -377,7 +380,11 @@ export function Import() {
             // Sinon : page de LISTE (mes partitions, favoris) → liens
             const links = extractUgLinks(html);
             if (links.length === 0)
-              failed.push(`${f.name} (ni partition ni lien de page de partition)`);
+              failed.push(
+                t('{name} (ni partition ni lien de page de partition)', {
+                  name: f.name,
+                }),
+              );
             else linksFound.push(...links);
           }
         } else if (lower.endsWith('.docx')) {
@@ -406,7 +413,7 @@ export function Import() {
     }
     if (docs.length > 0) setBulkFiles((prev) => [...prev, ...docs]);
     if (failed.length > 0) {
-      setError(`Non retenus : ${failed.join(', ')}`);
+      setError(t('Non retenus : {list}', { list: failed.join(', ') }));
     }
     if (bulkFileRef.current) bulkFileRef.current.value = '';
   }
@@ -449,7 +456,7 @@ export function Import() {
     );
     for (let i = 0; i < items.length; i++) {
       if (bulkCancel.current) {
-        items[i] = { ...items[i], status: 'error', message: 'Annulé' };
+        items[i] = { ...items[i], status: 'error', message: t('Annulé') };
         setBulkItems([...items]);
         continue;
       }
@@ -477,15 +484,18 @@ export function Import() {
               ) {
                 throw msg.includes('429')
                   ? new Error(
-                      'Le service limite le débit — relance l’import dans ' +
-                        'quelques minutes, les morceaux déjà importés seront ignorés',
+                      t(
+                        'Le service limite le débit — relance l’import dans quelques minutes, les morceaux déjà importés seront ignorés',
+                      ),
                     )
                   : e;
               }
               const wait = [5, 15, 30][attempt] ?? 30;
               items[i] = {
                 ...items[i],
-                message: `⏳ Le service demande une pause — nouvel essai dans ${wait} s`,
+                message: t('⏳ Le service demande une pause — nouvel essai dans {wait} s', {
+                  wait,
+                }),
               };
               setBulkItems([...items]);
               await new Promise((r) => setTimeout(r, wait * 1000));
@@ -511,7 +521,7 @@ export function Import() {
         if (tabArtist && (!res.stats.hadArtist || song.artist === ''))
           song.artist = tabArtist;
         if (song.lyrics.trim() === '') {
-          throw new Error('fichier vide ou illisible');
+          throw new Error(t('fichier vide ou illisible'));
         }
         // Même principe qu'à l'unité : l'IA n'est proposée que si l'analyse
         // détecte un vrai problème de format — et seulement pour ces morceaux.
@@ -536,8 +546,9 @@ export function Import() {
             ...items[i],
             status: 'skip',
             title: song.title,
-            message:
+            message: t(
               'supprimé de Sing2Me — non réimporté (passe par « Document ou lien » pour le récupérer)',
+            ),
           };
         } else if (existing && garbled) {
           // Le PDF est brouillé et le morceau (tout aussi brouillé) est
@@ -547,7 +558,7 @@ export function Import() {
             ...items[i],
             status: 'ok',
             title: existing.title,
-            message: '⚠ police PDF brouillée — décodage IA proposé',
+            message: t('⚠ police PDF brouillée — décodage IA proposé'),
             needsAi: true,
             songId: existing.id,
             raw,
@@ -591,7 +602,7 @@ export function Import() {
               ...items[i],
               status: 'ok',
               title: existing.title,
-              message: '🔧 mis à jour (accords récupérés)',
+              message: t('🔧 mis à jour (accords récupérés)'),
             };
           } else {
             // Doublon : si le contenu diffère des versions déjà présentes,
@@ -605,7 +616,7 @@ export function Import() {
                 ...items[i],
                 status: 'dup',
                 title: song.title,
-                message: `déjà présent (« ${existing.title} »)`,
+                message: t('déjà présent (« {title} »)', { title: existing.title }),
               };
             } else {
               const merged = addSongAsVersion(
@@ -621,7 +632,7 @@ export function Import() {
                 ...items[i],
                 status: 'ok',
                 title: existing.title,
-                message: '➕ ajouté comme nouvelle version',
+                message: t('➕ ajouté comme nouvelle version'),
               };
             }
           }
@@ -635,8 +646,8 @@ export function Import() {
             title: song.title,
             message: needsAi
               ? garbled
-                ? '⚠ police PDF brouillée — décodage IA proposé'
-                : '⚠ format à revoir — IA conseillée'
+                ? t('⚠ police PDF brouillée — décodage IA proposé')
+                : t('⚠ format à revoir — IA conseillée')
               : '',
             needsAi,
             songId: song.id,
@@ -647,7 +658,7 @@ export function Import() {
         items[i] = {
           ...items[i],
           status: 'error',
-          message: e instanceof Error ? e.message : "L'import a échoué.",
+          message: e instanceof Error ? e.message : t("L'import a échoué."),
         };
       }
       setBulkItems([...items]);
@@ -673,7 +684,7 @@ export function Import() {
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       if (!it.needsAi || !it.songId || !it.raw) continue;
-      items[i] = { ...it, message: '✨ nettoyage IA…' };
+      items[i] = { ...it, message: t('✨ nettoyage IA…') };
       setBulkItems([...items]);
       try {
         const old = songs.find((s) => s.id === it.songId);
@@ -695,13 +706,13 @@ export function Import() {
           fanMessages: old.fanMessages,
           rehearsalNotes: old.rehearsalNotes,
         });
-        items[i] = { ...it, needsAi: false, message: '✨ nettoyé à l’IA' };
+        items[i] = { ...it, needsAi: false, message: t('✨ nettoyé à l’IA') };
       } catch (e) {
         items[i] = {
           ...it,
           message:
             '⚠ ' +
-            (e instanceof Error ? e.message : 'le nettoyage IA a échoué'),
+            (e instanceof Error ? e.message : t('le nettoyage IA a échoué')),
         };
       }
       done++;
@@ -713,7 +724,7 @@ export function Import() {
 
   const loadingMsg = ugLoading ? (
     <p className="help" style={{ textAlign: 'center' }}>
-      Récupération de la partition…
+      {t('Récupération de la partition…')}
     </p>
   ) : null;
   const errorCard = error ? (
@@ -728,7 +739,7 @@ export function Import() {
       <>
         <div style={{ display: 'flex', gap: 8 }}>
           <div className="field" style={{ flex: 1 }}>
-            <label>Titre</label>
+            <label>{t('Titre')}</label>
             <input
               type="text"
               value={title}
@@ -736,7 +747,7 @@ export function Import() {
             />
           </div>
           <div className="field" style={{ flex: 1 }}>
-            <label>Artiste</label>
+            <label>{t('Artiste')}</label>
             <input
               type="text"
               value={artist}
@@ -747,9 +758,9 @@ export function Import() {
         {preview && (
           <div className="card">
             <div>
-              Titre : <strong>{title.trim() || preview.song.title}</strong>
+              {t('Titre : ')}<strong>{title.trim() || preview.song.title}</strong>
               {(artist.trim() || preview.song.artist) !== '' && (
-                <> — Artiste : {artist.trim() || preview.song.artist}</>
+                <> — {t('Artiste : ')}{artist.trim() || preview.song.artist}</>
               )}
             </div>
             {/* Message humain — le détail technique (parties, lignes
@@ -758,16 +769,18 @@ export function Import() {
               {[
                 preview.stats.mergedChordLines > 0 ||
                 /\[[A-G][#b]?/.test(preview.song.lyrics)
-                  ? '✓ Accords et paroles récupérés'
-                  : '✓ Paroles récupérées',
-                preview.song.key !== '' ? `tonalité ${preview.song.key}` : '',
+                  ? t('✓ Accords et paroles récupérés')
+                  : t('✓ Paroles récupérées'),
+                preview.song.key !== ''
+                  ? t('tonalité {key}', { key: preview.song.key })
+                  : '',
               ]
                 .filter((x) => x !== '')
                 .join(' · ')}
             </div>
             {issues.length === 0 ? (
               <div style={{ color: 'var(--accent)', marginTop: 8 }}>
-                ✅ Analyse : rien à corriger.
+                {t('✅ Analyse : rien à corriger.')}
               </div>
             ) : (
               <div style={{ marginTop: 8 }}>
@@ -789,9 +802,9 @@ export function Import() {
             )}
             {duplicate && (
               <div style={{ marginTop: 8 }}>
-                ℹ Tu as déjà « {duplicate.title} »
-                {duplicate.idea === true ? ' (dans tes idées)' : ''} : cet
-                import le rejoindra comme nouvelle version — aucun doublon.
+                {t('ℹ Tu as déjà « {title} »', { title: duplicate.title })}
+                {duplicate.idea === true ? t(' (dans tes idées)') : ''}
+                {t(' : cet import le rejoindra comme nouvelle version — aucun doublon.')}
               </div>
             )}
           </div>
@@ -801,7 +814,7 @@ export function Import() {
         {preview && preview.song.lyrics.trim() !== '' && (
           <div className="card importpreview">
             <div className="help" style={{ marginBottom: 6 }}>
-              Aperçu de la partition
+              {t('Aperçu de la partition')}
             </div>
             <div className="importpreview-body">
               <SongBody
@@ -823,13 +836,13 @@ export function Import() {
               disabled={aiLoading}
             >
               {aiLoading
-                ? '✨ Nettoyage en cours…'
-                : "✨ L'analyse suggère un nettoyage IA — corriger le format"}
+                ? t('✨ Nettoyage en cours…')
+                : t("✨ L'analyse suggère un nettoyage IA — corriger le format")}
             </button>
             <p className="help">
-              L'IA réécrit la partition au format standard (accords [Am] dans
-              les paroles, sections nommées) pour régler les points ⚠
-              ci-dessus. Version en ligne + clé IA requises.
+              {t(
+                "L'IA réécrit la partition au format standard (accords [Am] dans les paroles, sections nommées) pour régler les points ⚠ ci-dessus. Version en ligne + clé IA requises.",
+              )}
             </p>
             <div className="spacer" />
           </>
@@ -838,14 +851,14 @@ export function Import() {
           className="btn ghost block"
           onClick={() => onImport(true)}
           disabled={text.trim() === ''}
-          title="Jouable tout de suite, mais rangé dans les idées à travailler"
+          title={t('Jouable tout de suite, mais rangé dans les idées à travailler')}
         >
-          Garder comme idée — à travailler avant validation
+          {t('Garder comme idée — à travailler avant validation')}
         </button>
         <p className="help" style={{ textAlign: 'center' }}>
-          Une « idée » est jouable immédiatement (concert, demande du public…)
-          mais reste dans ta réserve jusqu'à ce que tu la valides dans la
-          bibliothèque.
+          {t(
+            "Une « idée » est jouable immédiatement (concert, demande du public…) mais reste dans ta réserve jusqu'à ce que tu la valides dans la bibliothèque.",
+          )}
         </p>
         {/* Action principale COLLANTE : visible même en défilant la longue
             partition (elle se cale au-dessus de la barre d'onglets). */}
@@ -855,7 +868,7 @@ export function Import() {
             onClick={() => onImport(false)}
             disabled={text.trim() === ''}
           >
-            Ajouter à ma bibliothèque
+            {t('Ajouter à ma bibliothèque')}
           </button>
         </div>
       </>
@@ -863,17 +876,17 @@ export function Import() {
 
   return (
     <>
-      <TopBar live={false} title="Ajouter un morceau" onBack={() => history.back()} />
+      <TopBar live={false} title={t('Ajouter un morceau')} onBack={() => history.back()} />
       <div className="page">
         {/* 1 — Recherche : la première chose visible, toujours en tête */}
         <div className="field">
-          <label>Rechercher un morceau</label>
+          <label>{t('Rechercher un morceau')}</label>
           {/* La recherche part toute seule pendant la frappe (400 ms) —
               pas de bouton ; Entrée lance tout de suite (secours clavier). */}
           <input
             type="text"
             value={ugQuery}
-            placeholder="Titre et artiste — ex. Angie Rolling Stones"
+            placeholder={t('Titre et artiste — ex. Angie Rolling Stones')}
             onChange={(e) => setUgQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') void onUgSearch();
@@ -881,8 +894,8 @@ export function Import() {
           />
           <p className="help" style={{ marginTop: 4 }}>
             {ugSearching
-              ? '🔎 Recherche en cours…'
-              : 'Tape le titre (et l’artiste) : les résultats arrivent tout seuls.'}
+              ? t('🔎 Recherche en cours…')
+              : t('Tape le titre (et l’artiste) : les résultats arrivent tout seuls.')}
           </p>
         </div>
 
@@ -910,7 +923,7 @@ export function Import() {
                       r.artist,
                       r.type,
                       r.rating > 0 ? `★ ${r.rating}` : '',
-                      r.votes > 0 ? `${r.votes} votes` : '',
+                      r.votes > 0 ? t('{n} votes', { n: r.votes }) : '',
                     ]
                       .filter((x) => x !== '')
                       .join(' · ')}
@@ -942,22 +955,22 @@ export function Import() {
           open={othersOpen || method !== 'ug'}
           onToggle={(e) => setOthersOpen((e.target as HTMLDetailsElement).open)}
         >
-          <summary>Autres façons d'importer</summary>
+          <summary>{t("Autres façons d'importer")}</summary>
           <div className="chips" style={{ margin: '8px 0 12px' }}>
             <button
               className={`chip ${method === 'doc' ? '' : 'off'}`}
               onClick={() => setMethod(method === 'doc' ? 'ug' : 'doc')}
             >
-              Document ou lien
+              {t('Document ou lien')}
             </button>
             <button
               className={`chip ${method === 'bulk' ? '' : 'off'}`}
               onClick={() => setMethod(method === 'bulk' ? 'ug' : 'bulk')}
             >
-              Import en masse
+              {t('Import en masse')}
             </button>
             <button className="chip off" onClick={() => navigate('/song/new')}>
-              Écrire à la main
+              {t('Écrire à la main')}
             </button>
           </div>
         </details>
@@ -967,7 +980,7 @@ export function Import() {
         {method === 'doc' && (
           <>
             <div className="field">
-              <label>Coller un lien vers la partition</label>
+              <label>{t('Coller un lien vers la partition')}</label>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   type="url"
@@ -980,13 +993,13 @@ export function Import() {
                   onClick={() => void loadUgUrl(ugUrl.trim())}
                   disabled={ugUrl.trim() === '' || ugLoading}
                 >
-                  {ugLoading ? '…' : 'Récupérer'}
+                  {ugLoading ? '…' : t('Récupérer')}
                 </button>
               </div>
               <p className="help" style={{ marginTop: 4 }}>
-                Un lien reconnu est importé automatiquement. Sinon, ouvre la
-                page, copie son texte et colle-le ci-dessous : l'analyse (et
-                l'IA si besoin) reconstruit la partition.
+                {t(
+                  "Un lien reconnu est importé automatiquement. Sinon, ouvre la page, copie son texte et colle-le ci-dessous : l'analyse (et l'IA si besoin) reconstruit la partition.",
+                )}
               </p>
             </div>
             <div className="spacer" />
@@ -994,7 +1007,7 @@ export function Import() {
               className="btn ghost block"
               onClick={() => fileRef.current?.click()}
             >
-              Choisir un fichier (txt, cho, pro, onsong, docx, pdf…)
+              {t('Choisir un fichier (txt, cho, pro, onsong, docx, pdf…)')}
             </button>
             <input
               ref={fileRef}
@@ -1005,29 +1018,29 @@ export function Import() {
             />
             {fileName && (
               <p className="help" style={{ textAlign: 'center' }}>
-                Fichier : {fileName}
+                {t('Fichier : ')}{fileName}
               </p>
             )}
             <div className="spacer" />
             {/* Coller le texte à la main : replié par défaut pour alléger
                 l'écran — le lien et le fichier restent accessibles d'un geste. */}
             <details className="stfold" open={text.trim() !== ''}>
-              <summary>Ou coller le texte de la partition</summary>
+              <summary>{t('Ou coller le texte de la partition')}</summary>
               <div className="spacer" />
               <textarea
                 className="mono"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder={
+                placeholder={t(
                   'Formats reconnus automatiquement :\n\n' +
-                  '• Accords au-dessus des paroles :\n' +
-                  '    Am        F\n' +
-                  "    Sous le ciel qui s'endort\n\n" +
-                  '• ChordPro / OnSong :\n' +
-                  '    {title: Mon morceau}  ou  Title: Mon morceau\n' +
-                  "    [Am]Sous le ciel [F]qui s'endort\n\n" +
-                  '• Sections : [Couplet 1], Refrain:, [Verse], [Chorus]…'
-                }
+                    '• Accords au-dessus des paroles :\n' +
+                    '    Am        F\n' +
+                    "    Sous le ciel qui s'endort\n\n" +
+                    '• ChordPro / OnSong :\n' +
+                    '    {title: Mon morceau}  ou  Title: Mon morceau\n' +
+                    "    [Am]Sous le ciel [F]qui s'endort\n\n" +
+                    '• Sections : [Couplet 1], Refrain:, [Verse], [Chorus]…',
+                )}
               />
             </details>
             {loadingMsg}
@@ -1043,8 +1056,9 @@ export function Import() {
               onClick={() => bulkFileRef.current?.click()}
               disabled={bulkRunning}
             >
-              Déposer des fichiers — page de partition enregistrée (.html) ou
-              fichiers
+              {t(
+                'Déposer des fichiers — page de partition enregistrée (.html) ou fichiers',
+              )}
             </button>
             <input
               ref={bulkFileRef}
@@ -1055,29 +1069,30 @@ export function Import() {
               onChange={(e) => void onBulkFiles(e)}
             />
             <p className="help">
-              <strong>Le plus simple pour reprendre ta collection :</strong>{' '}
-              ouvre la page qui liste tes partitions (ta page « mes partitions »
-              ou tes favoris) et{' '}
+              <strong>{t('Le plus simple pour reprendre ta collection :')}</strong>{' '}
+              {t(
+                'ouvre la page qui liste tes partitions (ta page « mes partitions » ou tes favoris) et',
+              )}{' '}
               <strong>
-                fais d'abord afficher toutes tes partitions sur la page
+                {t("fais d'abord afficher toutes tes partitions sur la page")}
               </strong>{' '}
-              (réglage du nombre par page, ou fais défiler / passe les pages en
-              bas de liste jusqu'à tout voir). Ensuite enregistre la page
-              (Ctrl+S) et dépose le fichier .html ici. S'il reste plusieurs
-              pages, enregistre chacune : tu peux déposer tous les fichiers
-              .html en une fois, les liens s'additionnent sans doublons.{' '}
-              <strong>Pages de partition personnelles</strong> : ouvre chaque
-              page de partition et enregistre-la (Ctrl+S) — dépose ces .html
-              ici, la partition est extraite directement du fichier, sans passer
-              par le serveur. Tu peux aussi déposer plusieurs fichiers de
-              partitions exportés d'une autre application (txt, ChordPro,
-              OnSong, Word, PDF) : un fichier = un morceau.
+              {t(
+                "(réglage du nombre par page, ou fais défiler / passe les pages en bas de liste jusqu'à tout voir). Ensuite enregistre la page (Ctrl+S) et dépose le fichier .html ici. S'il reste plusieurs pages, enregistre chacune : tu peux déposer tous les fichiers .html en une fois, les liens s'additionnent sans doublons.",
+              )}{' '}
+              <strong>{t('Pages de partition personnelles')}</strong>{' '}
+              {t(
+                ': ouvre chaque page de partition et enregistre-la (Ctrl+S) — dépose ces .html ici, la partition est extraite directement du fichier, sans passer par le serveur. Tu peux aussi déposer plusieurs fichiers de partitions exportés d’une autre application (txt, ChordPro, OnSong, Word, PDF) : un fichier = un morceau.',
+              )}
             </p>
             {bulkFiles.length > 0 && (
               <p className="help">
-                📄 {bulkFiles.length} fichier
-                {bulkFiles.length > 1 ? 's' : ''} de partition prêt
-                {bulkFiles.length > 1 ? 's' : ''} :{' '}
+                {bulkFiles.length > 1
+                  ? t('📄 {n} fichiers de partition prêts :', {
+                      n: bulkFiles.length,
+                    })
+                  : t('📄 {n} fichier de partition prêt :', {
+                      n: bulkFiles.length,
+                    })}{' '}
                 {bulkFiles.map((f) => f.name).join(', ')}{' '}
                 <a
                   href="#"
@@ -1086,13 +1101,13 @@ export function Import() {
                     if (!bulkRunning) setBulkFiles([]);
                   }}
                 >
-                  retirer
+                  {t('retirer')}
                 </a>
               </p>
             )}
             <div className="spacer" />
             <div className="field">
-              <label>Ou colle des liens de pages de partition (un par ligne)</label>
+              <label>{t('Ou colle des liens de pages de partition (un par ligne)')}</label>
               <textarea
                 className="mono"
                 value={bulkInput}
@@ -1105,20 +1120,31 @@ export function Import() {
                 }
               />
               <p className="help" style={{ marginTop: 4 }}>
-                Tu peux coller en vrac (texte, page copiée…) : seules les
-                pages de partition sont retenues, sans doublons. Cet import
-                sert à récupérer <strong>ta</strong> collection (tes partitions,
-                tes favoris) — {MAX_BULK_LINKS} liens max par fournée.
+                {t(
+                  'Tu peux coller en vrac (texte, page copiée…) : seules les pages de partition sont retenues, sans doublons. Cet import sert à récupérer',
+                )}{' '}
+                <strong>{t('ta')}</strong>{' '}
+                {t('collection (tes partitions, tes favoris) —')} {MAX_BULK_LINKS}{' '}
+                {t('liens max par fournée.')}
                 {bulkLinks.length > 0 && (
                   <>
                     {' '}
                     <strong>
-                      {bulkLinks.length} lien{bulkLinks.length > 1 ? 's' : ''}{' '}
-                      détecté{bulkLinks.length > 1 ? 's' : ''}
-                      {bulkLinks.length >= MAX_BULK_LINKS
-                        ? ' (plafond atteint)'
-                        : ''}
-                      .
+                      {bulkLinks.length > 1
+                        ? t('{n} liens détectés{cap}.', {
+                            n: bulkLinks.length,
+                            cap:
+                              bulkLinks.length >= MAX_BULK_LINKS
+                                ? t(' (plafond atteint)')
+                                : '',
+                          })
+                        : t('{n} lien détecté{cap}.', {
+                            n: bulkLinks.length,
+                            cap:
+                              bulkLinks.length >= MAX_BULK_LINKS
+                                ? t(' (plafond atteint)')
+                                : '',
+                          })}
                     </strong>
                   </>
                 )}
@@ -1131,7 +1157,7 @@ export function Import() {
                   onClick={() => void onBulkImport(false)}
                   disabled={bulkTotal === 0}
                 >
-                  Tout ajouter à ma bibliothèque
+                  {t('Tout ajouter à ma bibliothèque')}
                   {bulkTotal > 0 ? ` (${bulkTotal})` : ''}
                 </button>
                 <div className="spacer" />
@@ -1140,7 +1166,7 @@ export function Import() {
                   onClick={() => void onBulkImport(true)}
                   disabled={bulkTotal === 0}
                 >
-                  Tout garder comme idées — à travailler
+                  {t('Tout garder comme idées — à travailler')}
                 </button>
               </>
             ) : (
@@ -1153,7 +1179,7 @@ export function Import() {
                       ).length
                     }
                     total={bulkItems.length}
-                    label="Import en cours"
+                    label={t('Import en cours')}
                   />
                 )}
                 <button
@@ -1162,7 +1188,7 @@ export function Import() {
                     bulkCancel.current = true;
                   }}
                 >
-                  Arrêter après le morceau en cours
+                  {t('Arrêter après le morceau en cours')}
                 </button>
               </>
             )}
@@ -1197,42 +1223,44 @@ export function Import() {
                 {!bulkRunning && (
                   <div style={{ marginTop: 8 }}>
                     <strong>
-                      {bulkItems.filter((x) => x.status === 'ok').length}{' '}
-                      importé
                       {bulkItems.filter((x) => x.status === 'ok').length > 1
-                        ? 's'
-                        : ''}
+                        ? t('{n} importés', {
+                            n: bulkItems.filter((x) => x.status === 'ok').length,
+                          })
+                        : t('{n} importé', {
+                            n: bulkItems.filter((x) => x.status === 'ok').length,
+                          })}
                     </strong>
                     {' · '}
-                    {bulkItems.filter((x) => x.status === 'dup').length} déjà
-                    présent
                     {bulkItems.filter((x) => x.status === 'dup').length > 1
-                      ? 's'
-                      : ''}
+                      ? t('{n} déjà présents', {
+                          n: bulkItems.filter((x) => x.status === 'dup').length,
+                        })
+                      : t('{n} déjà présent', {
+                          n: bulkItems.filter((x) => x.status === 'dup').length,
+                        })}
                     {bulkItems.some((x) => x.status === 'skip') && (
                       <>
                         {' · '}
-                        {
-                          bulkItems.filter((x) => x.status === 'skip').length
-                        }{' '}
-                        supprimé
-                        {bulkItems.filter((x) => x.status === 'skip').length >
-                        1
-                          ? 's'
-                          : ''}{' '}
-                        de Sing2Me (non réimporté
-                        {bulkItems.filter((x) => x.status === 'skip').length >
-                        1
-                          ? 's'
-                          : ''}
-                        )
+                        {bulkItems.filter((x) => x.status === 'skip').length > 1
+                          ? t('{n} supprimés de Sing2Me (non réimportés)', {
+                              n: bulkItems.filter((x) => x.status === 'skip')
+                                .length,
+                            })
+                          : t('{n} supprimé de Sing2Me (non réimporté)', {
+                              n: bulkItems.filter((x) => x.status === 'skip')
+                                .length,
+                            })}
                       </>
                     )}
                     {' · '}
-                    {bulkItems.filter((x) => x.status === 'error').length} échec
                     {bulkItems.filter((x) => x.status === 'error').length > 1
-                      ? 's'
-                      : ''}
+                      ? t('{n} échecs', {
+                          n: bulkItems.filter((x) => x.status === 'error').length,
+                        })
+                      : t('{n} échec', {
+                          n: bulkItems.filter((x) => x.status === 'error').length,
+                        })}
                   </div>
                 )}
               </div>
@@ -1243,8 +1271,8 @@ export function Import() {
                 total={aiProg.total}
                 label={
                   bulkAiRunning
-                    ? 'Nettoyage IA en cours'
-                    : 'Nettoyage IA terminé'
+                    ? t('Nettoyage IA en cours')
+                    : t('Nettoyage IA terminé')
                 }
               />
             )}
@@ -1259,19 +1287,21 @@ export function Import() {
                     disabled={bulkAiRunning}
                   >
                     {bulkAiRunning
-                      ? '✨ Nettoyage IA en cours…'
-                      : `✨ Nettoyer à l'IA les ${
-                          bulkItems.filter((x) => x.needsAi).length
-                        } partition${
-                          bulkItems.filter((x) => x.needsAi).length > 1
-                            ? 's'
-                            : ''
-                        } au format problématique`}
+                      ? t('✨ Nettoyage IA en cours…')
+                      : bulkItems.filter((x) => x.needsAi).length > 1
+                        ? t(
+                            "✨ Nettoyer à l'IA les {n} partitions au format problématique",
+                            { n: bulkItems.filter((x) => x.needsAi).length },
+                          )
+                        : t(
+                            "✨ Nettoyer à l'IA les {n} partition au format problématique",
+                            { n: bulkItems.filter((x) => x.needsAi).length },
+                          )}
                   </button>
                   <p className="help">
-                    L'IA ne touche que les morceaux marqués ⚠ — les autres
-                    restent tels quels. Chaque morceau garde son titre, son
-                    artiste et son statut (bibliothèque ou idée).
+                    {t(
+                      "L'IA ne touche que les morceaux marqués ⚠ — les autres restent tels quels. Chaque morceau garde son titre, son artiste et son statut (bibliothèque ou idée).",
+                    )}
                   </p>
                 </>
               )}
