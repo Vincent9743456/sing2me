@@ -1242,6 +1242,12 @@ textarea.mono {
   font-weight: 500;
   color: var(--text-dim);
 }
+/* Transcription provisoire, affichée en direct pendant la dictée. */
+.recinterim {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-dim);
+}
 .recdot {
   width: 10px;
   height: 10px;
