@@ -29,6 +29,7 @@ import {
   messagesBySong,
   PastLiveRow,
 } from '../lib/live';
+import { liveReady } from '../lib/liveAuth';
 import { buildPastLives } from '../lib/pastlives';
 import { fetchFollowerStats, FollowerStats } from '../lib/fanbase';
 import { useStore } from '../store';
@@ -70,7 +71,7 @@ export function LiveStats() {
     .join(',');
 
   useEffect(() => {
-    if (prefs.liveKey.trim() === '' || namesKey === '') {
+    if (!liveReady(prefs.liveKey) || namesKey === '') {
       setLoading(false);
       return;
     }
@@ -123,7 +124,7 @@ export function LiveStats() {
 
   // Le direct n'est pas configuré : rien à montrer, et surtout rien à
   // expliquer ici — le réglage vit dans « Modifier ».
-  if (prefs.liveKey.trim() === '') return null;
+  if (!liveReady(prefs.liveKey)) return null;
 
   const totalHearts = (stats ?? []).reduce((n, s) => n + s.hearts, 0);
   // Nombre de lives : EXACTEMENT ceux de l'historique de l'onglet Live —

@@ -29,6 +29,7 @@ import {
   PastLiveRow,
   triMots,
 } from '../lib/live';
+import { liveReady } from '../lib/liveAuth';
 import { buildPastLives, PastLive } from '../lib/pastlives';
 import { useStore } from '../store';
 
@@ -83,7 +84,7 @@ export function LiveHistory() {
     .join(',');
 
   useEffect(() => {
-    if (prefs.liveKey.trim() === '') {
+    if (!liveReady(prefs.liveKey)) {
       setLoading(false);
       return;
     }
@@ -165,7 +166,7 @@ export function LiveHistory() {
     savePrefs({ ...prefs, liveNames: next });
   }
 
-  if (prefs.liveKey.trim() === '') return null;
+  if (!liveReady(prefs.liveKey)) return null;
   if (loading) {
     return (
       <>

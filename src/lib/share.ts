@@ -5,6 +5,7 @@
  *   la page publique se reconstruit entièrement depuis le lien.
  * (Avec Supabase, ces liens deviendront de courts identifiants.)
  */
+import { liveHeaders } from './liveAuth';
 import { SharePayload } from '../types';
 
 function bytesToBase64Url(bytes: Uint8Array): string {
@@ -78,7 +79,7 @@ export async function createShortLink(
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-live-key': liveKey,
+        ...liveHeaders(liveKey),
       },
       body: JSON.stringify({ payload }),
     });

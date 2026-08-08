@@ -31,6 +31,7 @@ import {
   pushSetlist,
 } from '../lib/live';
 import { getValidSession } from '../lib/auth';
+import { liveReady } from '../lib/liveAuth';
 import { bandToProfile } from '../lib/model';
 import {
   cachedPublicName,
@@ -306,14 +307,14 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
    * les compteurs locaux, jamais d'addition en double.
    */
   useEffect(() => {
-    if (prefs.liveKey.trim() === '') return;
+    if (!liveReady(prefs.liveKey)) return;
     // `timer` : évite de masquer la fonction de traduction `t`.
     const timer = window.setTimeout(() => void syncHeartsRef.current(), 1500);
     return () => window.clearTimeout(timer);
   }, [prefs.liveKey]);
 
   useEffect(() => {
-    if (status === 'off' || prefs.liveKey.trim() === '') return;
+    if (status === 'off' || !liveReady(prefs.liveKey)) return;
     const id = window.setInterval(() => void syncHeartsRef.current(), 60000);
     return () => window.clearInterval(id);
   }, [status, prefs.liveKey]);

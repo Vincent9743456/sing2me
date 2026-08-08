@@ -208,3 +208,30 @@ create index if not exists live_messages_performer on live_messages (performer);
 -- le nom du set.
 -- ------------------------------------------------------------
 alter table live_stats add column if not exists setlist_name text not null default '';
+
+-- ------------------------------------------------------------
+-- b192 : à qui appartient un live — l'identifiant du COMPTE, plus un nom.
+--
+-- La clé ON AIR était commune à l'installation : le serveur ne savait pas
+-- qui l'appelait, et devait trier sur `performer` / `started_by`, c'est-à-
+-- dire sur des NOMS AFFICHÉS. Un nom change (majuscule, nom de famille
+-- ajouté, profil rempli après coup) et les statistiques d'un musicien
+-- devenaient celles d'un autre — ou disparaissaient.
+--
+-- `owner_id` est l'identifiant du compte qui a lancé le direct. Il ne
+-- change jamais. Les lignes antérieures restent lisibles : la lecture
+-- accepte encore le rattachement par nom en repli.
+-- ------------------------------------------------------------
+alter table lives add column if not exists owner_id uuid;
+create index if not exists lives_owner on lives (owner_id);
+
+-- Les morceaux archivés et les mots du public héritent du propriétaire de
+-- leur live : c'est ce qui permet de les rendre à leur artiste sans jamais
+-- comparer deux chaînes de caractères.
+alter table live_stats add column if not exists owner_id uuid;
+create index if not exists live_stats_owner on live_stats (owner_id);
+alter table live_messages add column if not exists owner_id uuid;
+create index if not exists live_messages_owner on live_messages (owner_id);
+
+-- Séances de mesure : même rattachement (compteur de spectateurs).
+alter table live_sessions add column if not exists owner_id uuid;

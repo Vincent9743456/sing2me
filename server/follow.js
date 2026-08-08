@@ -15,6 +15,8 @@
 function configured() {
   return !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 }
+import { identifie, refuse } from './identity.js';
+
 function sbHeaders() {
   const key = process.env.SUPABASE_SERVICE_KEY;
   return {
@@ -62,8 +64,9 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'GET') {
-      if (req.headers['x-live-key'] !== process.env.LIVE_KEY) {
-        res.status(403).json({ error: 'Clé On Air incorrecte' });
+      const qui = await identifie(req);
+      if (!qui.ok) {
+        refuse(res);
         return;
       }
       const artist = String(req.query?.artist ?? '').trim();
