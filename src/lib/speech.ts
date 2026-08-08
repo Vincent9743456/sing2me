@@ -44,9 +44,13 @@ export interface Dictation {
 
 /**
  * Crée une session de dictée.
- * - `onText` reçoit chaque segment finalisé ;
+ * - `onText` reçoit chaque segment finalisé — ATTENTION iOS : les
+ *   segments finaux arrivent souvent APRÈS `stop()`, l'appelant doit
+ *   continuer à les accepter un court instant après l'arrêt ;
  * - `onStart` est appelé quand le micro écoute RÉELLEMENT (événement
  *   `onstart`, ou premier résultat si le navigateur ne l'émet pas) ;
+ * - `onInterim` reçoit la transcription PROVISOIRE en cours (affichage
+ *   en direct — chaîne vide quand elle est consommée/finalisée) ;
  * - `onEnd` est appelé quand la reconnaissance s'arrête (au plus une fois) ;
  * - `onError` reçoit un message lisible.
  */
@@ -55,6 +59,7 @@ export function createDictation(
   onEnd: () => void,
   onError: (message: string) => void,
   onStart?: () => void,
+  onInterim?: (text: string) => void,
 ): Dictation | null {
   const Ctor = getRecognitionCtor();
   if (!Ctor) return null;
@@ -80,17 +85,26 @@ export function createDictation(
   };
   rec.lang = 'fr-FR';
   rec.continuous = true;
-  rec.interimResults = false;
+  // Résultats provisoires ACTIVÉS (b153) : sur iPhone, les segments
+  // finaux n'arrivent souvent qu'à l'arrêt — sans le provisoire, rien ne
+  // s'affiche pendant qu'on parle et l'utilisateur croit que rien ne
+  // fonctionne.
+  rec.interimResults = true;
   rec.onstart = emitStart;
   rec.onresult = (event: any) => {
     emitStart(); // certains navigateurs n'émettent pas onstart
+    let interim = '';
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
-      if (result.isFinal && result[0]) {
-        const text = String(result[0].transcript ?? '').trim();
+      if (!result[0]) continue;
+      const text = String(result[0].transcript ?? '').trim();
+      if (result.isFinal) {
         if (text !== '') onText(text);
+      } else if (text !== '') {
+        interim += (interim === '' ? '' : ' ') + text;
       }
     }
+    onInterim?.(interim);
   };
   rec.onerror = (event: any) => {
     const code = String(event?.error ?? 'inconnu');

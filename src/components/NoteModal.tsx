@@ -70,11 +70,26 @@ export function NoteModal({
   const recording = recState !== 'off';
   const [aiBusy, setAiBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  /** Transcription PROVISOIRE affichée en direct pendant qu'on parle. */
+  const [interim, setInterim] = useState('');
   const dictation = useRef<Dictation | null>(null);
-  // N° de session : les événements d'une dictée abandonnée (onEnd tardif
-  // d'iOS…) ne doivent pas toucher l'état de la suivante.
+  // N° de session : les événements d'ÉTAT d'une dictée abandonnée (onEnd
+  // tardif d'iOS…) ne doivent pas toucher la suivante. Le TEXTE, lui,
+  // reste accepté après l'arrêt (gate séparé) : sur iPhone les segments
+  // finaux n'arrivent souvent qu'APRÈS stop() — b152 les jetait, d'où
+  // « j'ai dicté, rien ne s'affiche ».
   const session = useRef(0);
+  const textGate = useRef(0);
   const watchdog = useRef(0);
+  /** La session en cours a-t-elle entendu quelque chose ? (provisoire ou final) */
+  const heard = useRef(false);
+  /** Du texte a-t-il été dicté (finalisé) depuis le dernier passage IA ? */
+  const dictated = useRef(false);
+  const autoAi = useRef(0);
+  // Miroir du texte pour les minuteries (synthèse différée).
+  const textRef = useRef(text);
+  textRef.current = text;
 
   const bandId = existing ? existing.bandId : initialBandId;
   const bandName =
@@ -83,39 +98,81 @@ export function NoteModal({
   useEffect(() => {
     return () => {
       session.current++;
+      textGate.current++;
       window.clearTimeout(watchdog.current);
+      window.clearTimeout(autoAi.current);
       dictation.current?.abort();
     };
   }, []);
 
-  /** Coupe la dictée immédiatement, quel que soit l'humeur du navigateur. */
-  function stopRecording() {
+  /**
+   * Synthèse AUTOMATIQUE (demande Vincent, b153) : à l'arrêt de la
+   * dictée, la note est résumée par l'IA sans geste supplémentaire.
+   * Différée de 1,4 s pour laisser arriver les segments finaux tardifs
+   * d'iOS. Si l'IA est indisponible (hors-ligne…), le texte brut reste.
+   */
+  function scheduleAutoSummary() {
+    window.clearTimeout(autoAi.current);
+    autoAi.current = window.setTimeout(() => {
+      if (heard.current === false) {
+        // Micro ouvert mais rien capté : le dire, plutôt que le silence.
+        setInfo(
+          "Rien n'a été entendu. Parle plus près du micro — et si l'app " +
+            "installée ne capte rien, essaie dans Safari.",
+        );
+        return;
+      }
+      if (dictated.current && textRef.current.trim() !== '') {
+        dictated.current = false;
+        void runAi();
+      }
+    }, 1400);
+  }
+
+  /** Coupe la dictée immédiatement, quel que soit l'humeur du navigateur.
+   *  Le texte finalisé qui arrive juste APRÈS (typique iOS) est conservé. */
+  function stopRecording(withSummary = true) {
     session.current++;
     window.clearTimeout(watchdog.current);
     setRecState('off');
+    setInterim('');
     const d = dictation.current;
     dictation.current = null;
     d?.stop();
-    d?.abort();
+    // Petit délai avant l'arrêt FORCÉ : laisser le navigateur finaliser
+    // les derniers mots (abort() les jetterait).
+    window.setTimeout(() => d?.abort(), 1600);
+    if (withSummary) scheduleAutoSummary();
   }
 
   function toggleRecording() {
     setError(null);
+    setInfo(null);
     if (recording) {
       stopRecording();
       return;
     }
+    window.clearTimeout(autoAi.current);
     const sid = ++session.current;
+    const gate = ++textGate.current;
     const fresh = () => session.current === sid;
+    heard.current = false;
     const d = createDictation(
       (t) => {
-        if (fresh()) setText((prev) => (prev.trim() === '' ? t : prev + ' ' + t));
+        // Gate TEXTE (pas session) : accepté aussi après l'arrêt.
+        if (textGate.current === gate) {
+          heard.current = true;
+          dictated.current = true;
+          setText((prev) => (prev.trim() === '' ? t : prev + ' ' + t));
+        }
       },
       () => {
         if (fresh()) {
           window.clearTimeout(watchdog.current);
           setRecState('off');
+          setInterim('');
           dictation.current = null;
+          scheduleAutoSummary();
         }
       },
       (msg) => {
@@ -123,6 +180,7 @@ export function NoteModal({
           window.clearTimeout(watchdog.current);
           setError(msg);
           setRecState('off');
+          setInterim('');
           dictation.current = null;
         }
       },
@@ -131,6 +189,10 @@ export function NoteModal({
           window.clearTimeout(watchdog.current);
           setRecState('on');
         }
+      },
+      (t) => {
+        if (t !== '') heard.current = true;
+        if (fresh()) setInterim(t);
       },
     );
     if (!d) {
@@ -147,7 +209,7 @@ export function NoteModal({
     window.clearTimeout(watchdog.current);
     watchdog.current = window.setTimeout(() => {
       if (fresh() && dictation.current === d) {
-        stopRecording();
+        stopRecording(false);
         setError(
           "Le micro n'a pas démarré. Vérifie l'autorisation micro ; " +
             "depuis l'app installée, essaie aussi dans Safari.",
@@ -157,13 +219,19 @@ export function NoteModal({
     d.start();
   }
 
-  async function onAi() {
-    if (text.trim() === '' || aiBusy) return;
+  async function runAi() {
+    const input = textRef.current;
+    if (input.trim() === '' || aiBusy) return;
     setError(null);
     setAiBusy(true);
     try {
-      setText(await aiSummarize(text, song.title));
+      const summary = await aiSummarize(input, song.title);
+      if (summary.trim() !== '') {
+        setText(summary);
+        dictated.current = false;
+      }
     } catch (e) {
+      // IA indisponible (hors-ligne…) : le texte brut reste tel quel.
       setError(e instanceof Error ? e.message : 'La synthèse a échoué.');
     } finally {
       setAiBusy(false);
@@ -172,7 +240,8 @@ export function NoteModal({
 
   function onSubmit() {
     if (text.trim() === '') return;
-    stopRecording();
+    window.clearTimeout(autoAi.current);
+    stopRecording(false);
     onSave(
       existing
         ? { ...existing, text: text.trim(), visibility }
@@ -217,7 +286,7 @@ export function NoteModal({
         )}
         <button
           className="btn ghost"
-          onClick={() => void onAi()}
+          onClick={() => void runAi()}
           disabled={text.trim() === '' || aiBusy}
         >
           {aiBusy ? '✨ Synthèse…' : '✨ Synthétiser (IA)'}
@@ -231,10 +300,20 @@ export function NoteModal({
       )}
       {recState === 'on' && (
         <div className="recbanner" role="status">
-          <span className="recdot" aria-hidden="true" /> Enregistrement en
-          cours — parle, le texte s'ajoute au fur et à mesure.
+          <span className="recdot" aria-hidden="true" />
+          <span>
+            Enregistrement — parle, puis ⏹. La note sera résumée par l'IA.
+            {interim !== '' && <em className="recinterim"> « {interim} »</em>}
+          </span>
         </div>
       )}
+      {/* Synthèse automatique en cours après la dictée (b153). */}
+      {!recording && aiBusy && (
+        <div className="recbanner starting" role="status">
+          ✨ Synthèse de la note par l'IA…
+        </div>
+      )}
+      {info && <p className="help">{info}</p>}
       {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
       <div className="chips" style={{ marginBottom: 10 }}>
         <button
