@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { streamLinks } from './streamLinks';
+import { t } from '../../i18n';
 import { LivePublicSong } from '../../lib/live';
 import { decodeHtmlEntities } from '../../lib/textRepair';
 
@@ -35,7 +36,7 @@ export default function SetlistBrowser({
         {idx !== null && setlist[idx] ? (
           <>
             <button className="btn ghost small" onClick={() => onIdx(null)}>
-              ◀ La setlist
+              {t('◀ La setlist')}
             </button>
             <h2 className="livetitle" style={{ marginTop: 10 }}>
               {setlist[idx].title}
@@ -47,7 +48,7 @@ export default function SetlistBrowser({
             )}
             <div className="livelyrics">
               {decodeHtmlEntities(setlist[idx].lyrics) ||
-                '(paroles non disponibles)'}
+                t('(paroles non disponibles)')}
             </div>
             <div className="rowactions" style={{ justifyContent: 'center' }}>
               <button
@@ -55,32 +56,34 @@ export default function SetlistBrowser({
                 disabled={idx <= 0}
                 onClick={() => onIdx(Math.max(0, idx - 1))}
               >
-                ‹ Précédent
+                {t('‹ Précédent')}
               </button>
               <button
                 className="btn ghost small"
                 disabled={idx >= setlist.length - 1}
                 onClick={() => onIdx(Math.min(setlist.length - 1, idx + 1))}
               >
-                Suivant ›
+                {t('Suivant ›')}
               </button>
             </div>
           </>
         ) : (
           <>
             <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-              La setlist du concert — tape un morceau pour lire les paroles.
+              {t('La setlist du concert — tape un morceau pour lire les paroles.')}
             </p>
             {setlist.length === 0 && (
               <p className="help" style={{ textAlign: 'center' }}>
-                Setlist momentanément indisponible.
+                {t('Setlist momentanément indisponible.')}
               </p>
             )}
             {setlist.map((s, i) => (
               <button key={i} className="remoterow" onClick={() => onIdx(i)}>
                 <span className="num">{i + 1}</span>
                 <span className="grow">
-                  <span className="rtitle">{s.title || '(sans titre)'}</span>
+                  <span className="rtitle">
+                    {s.title || t('(sans titre)')}
+                  </span>
                   {s.artist !== '' && <span className="rsub">{s.artist}</span>}
                 </span>
                 {souvenir && (
@@ -95,7 +98,7 @@ export default function SetlistBrowser({
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn ghost small"
-                        title={`Chercher sur ${l.name}`}
+                        title={t('Chercher sur {name}', { name: l.name })}
                       >
                         {l.name[0]}
                       </a>
@@ -110,12 +113,12 @@ export default function SetlistBrowser({
                 style={{ marginTop: 8 }}
                 onClick={onSouvenir}
               >
-                🎧 {souvenir ? 'Masquer' : 'Garder un souvenir'} — écouter sur
-                Spotify / Apple / Deezer
+                🎧 {souvenir ? t('Masquer') : t('Garder un souvenir')}{' '}
+                {t('— écouter sur Spotify / Apple / Deezer')}
               </button>
             )}
             <button className="btn ghost block" onClick={onClose}>
-              Fermer
+              {t('Fermer')}
             </button>
           </>
         )}
