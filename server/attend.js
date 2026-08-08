@@ -46,11 +46,45 @@ export default async function handler(req, res) {
     const liveId = String(req.body?.liveId ?? '').slice(0, 60);
     if (liveId !== '' && liveId !== 'legacy') {
       const r2 = await fetch(
-        `${base}/rest/v1/lives?id=eq.${encodeURIComponent(liveId)}&select=status,session_id&limit=1`,
+        `${base}/rest/v1/lives?id=eq.${encodeURIComponent(liveId)}&select=status,session_id,artist,started_at&limit=1`,
         { headers: sbHeaders() },
       );
       const rows2 = r2.ok ? await r2.json() : [];
-      const row2 = Array.isArray(rows2) && rows2[0] ? rows2[0] : null;
+      let row2 = Array.isArray(rows2) && rows2[0] ? rows2[0] : null;
+      // Séance manquante (b181) : elle n'est créée qu'en « best-effort » au
+      // lancement du direct, et son échec passe inaperçu. Sans elle, AUCUNE
+      // présence n'était enregistrée — d'où « 0 spectateur » alors qu'il y
+      // avait du public. On la crée donc ici, à la première présence
+      // constatée, et on la rattache au direct.
+      if (row2 && row2.status !== 'off' && !row2.session_id) {
+        try {
+          const cr = await fetch(`${base}/rest/v1/live_sessions`, {
+            method: 'POST',
+            headers: { ...sbHeaders(), prefer: 'return=representation' },
+            body: JSON.stringify({
+              artist_name: row2.artist?.name ?? '',
+              started_at: row2.started_at ?? new Date().toISOString(),
+            }),
+          });
+          if (cr.ok) {
+            const arr = await cr.json();
+            const id = Array.isArray(arr) && arr[0] ? arr[0].id : null;
+            if (id) {
+              await fetch(
+                `${base}/rest/v1/lives?id=eq.${encodeURIComponent(liveId)}`,
+                {
+                  method: 'PATCH',
+                  headers: sbHeaders(),
+                  body: JSON.stringify({ session_id: id }),
+                },
+              );
+              row2 = { ...row2, session_id: id };
+            }
+          }
+        } catch {
+          /* rattrapage best-effort */
+        }
+      }
       if (row2 && row2.status !== 'off' && row2.session_id) {
         await fetch(`${base}/rest/v1/live_attendance`, {
           method: 'POST',

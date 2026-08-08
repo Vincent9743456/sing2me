@@ -110,7 +110,10 @@ h3 {
   max-width: 860px;
   width: 100%;
   margin: 0 auto;
-  padding-bottom: 72px;
+  /* Réserve la hauteur RÉELLE de la barre du bas (b181) : 72 px fixes
+     laissaient les dernières lignes sous la barre sur un iPhone, où
+     s'ajoute la zone du trait tactile. */
+  padding-bottom: calc(78px + env(safe-area-inset-bottom));
 }
 
 /* ---------- En-tête ---------- */
@@ -166,6 +169,11 @@ h3 {
   border-top: 1px solid var(--border-soft);
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
   z-index: 10;
+  /* iOS repeint mal un élément fixe flouté pendant l'inertie du
+     défilement : la barre semblait remonter au milieu de la page. Lui
+     donner sa propre couche de composition règle le symptôme (b181). */
+  transform: translateZ(0);
+  will-change: transform;
 }
 .tabbar button {
   flex: 1;
@@ -3068,7 +3076,10 @@ h2.pagetitle {
   background: rgba(0, 0, 0, 0.94);
   z-index: 130;
   overflow-y: auto;
-  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  /* App installée : le haut passait SOUS l'heure et le réseau, cachant le
+     bouton « Fermer » (b181). */
+  padding: calc(24px + env(safe-area-inset-top)) 16px
+    calc(24px + env(safe-area-inset-bottom));
 }
 .stagelist .inner {
   max-width: 560px;
