@@ -7,6 +7,8 @@
 import QRCode from 'qrcode';
 import React, { useEffect, useState } from 'react';
 
+import { t } from '../../i18n';
+
 export default function ShareLive({
   url,
   artistName,
@@ -40,7 +42,9 @@ export default function ShareLive({
   }, [url]);
 
   const title =
-    artistName !== '' ? `${artistName} est en direct 🎶` : 'Concert en direct 🎶';
+    artistName !== ''
+      ? t('{name} est en direct 🎶', { name: artistName })
+      : t('Concert en direct 🎶');
 
   async function share() {
     try {
@@ -69,39 +73,42 @@ export default function ShareLive({
     >
       <div className="inner">
         <button className="btn block" onClick={onClose}>
-          ← Revenir aux paroles
+          {t('← Revenir aux paroles')}
         </button>
         <h2 style={{ textAlign: 'center', margin: '16px 0 4px' }}>
-          📣 Faire venir du monde
+          {t('📣 Faire venir du monde')}
         </h2>
         <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-          Fais scanner ce QR sur ton écran, ou envoie le lien : la personne
-          arrive directement sur le direct.
+          {t(
+            'Fais scanner ce QR sur ton écran, ou envoie le lien : la personne arrive directement sur le direct.',
+          )}
         </p>
         {qr && (
           <div className="qrbox">
-            <img src={qr} alt="QR d'accès au direct" />
+            <img src={qr} alt={t("QR d'accès au direct")} />
             <div className="linkbox">{url}</div>
           </div>
         )}
         <div className="rowactions" style={{ justifyContent: 'center' }}>
           {canShare && (
             <button className="btn" onClick={() => void share()}>
-              📤 Partager
+              {t('📤 Partager')}
             </button>
           )}
           <button className="btn ghost" onClick={() => void copy()}>
-            {copied ? '✓ Lien copié' : '🔗 Copier le lien'}
+            {copied ? t('✓ Lien copié') : t('🔗 Copier le lien')}
           </button>
         </div>
         {joinCode !== '' && (
           <p className="help" style={{ textAlign: 'center' }}>
-            Depuis l'appli Sing2Me : onglet Concerts → « Rejoindre un
-            direct », code <strong>{joinCode}</strong>.
+            {t(
+              "Depuis l'appli Sing2Me : onglet Concerts → « Rejoindre un direct », code",
+            )}{' '}
+            <strong>{joinCode}</strong>.
           </p>
         )}
         <button className="btn ghost block" onClick={onClose}>
-          ← Revenir aux paroles
+          {t('← Revenir aux paroles')}
         </button>
       </div>
     </div>

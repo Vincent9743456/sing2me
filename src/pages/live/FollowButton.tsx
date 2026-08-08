@@ -4,6 +4,7 @@
  */
 import React, { useState } from 'react';
 
+import { t } from '../../i18n';
 import { followArtist } from '../../lib/fanbase';
 
 export default function FollowButton({ artistName }: { artistName: string }) {
@@ -57,7 +58,7 @@ export default function FollowButton({ artistName }: { artistName: string }) {
       setOpen(false);
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : 'Le suivi a échoué — réessaie.',
+        e instanceof Error ? e.message : t('Le suivi a échoué — réessaie.'),
       );
     } finally {
       setBusy(false);
@@ -68,10 +69,10 @@ export default function FollowButton({ artistName }: { artistName: string }) {
     return (
       <div style={{ textAlign: 'center', margin: '14px 0' }}>
         <button className="btn ghost" disabled>
-          ✓ Tu suis {artistName}
+          {t('✓ Tu suis {name}', { name: artistName })}
         </button>
         <p className="help" style={{ marginTop: 6 }}>
-          Tu seras prévenu(e) de ses prochains concerts.
+          {t('Tu seras prévenu(e) de ses prochains concerts.')}
         </p>
       </div>
     );
@@ -82,18 +83,18 @@ export default function FollowButton({ artistName }: { artistName: string }) {
       {!open ? (
         <div style={{ textAlign: 'center' }}>
           <button className="btn" onClick={() => setOpen(true)}>
-            ⭐ Suivre {artistName}
+            {t('⭐ Suivre {name}', { name: artistName })}
           </button>
         </div>
       ) : (
         <div className="card">
           <div className="label" style={{ marginBottom: 6 }}>
-            ⭐ Suivre {artistName}
+            {t('⭐ Suivre {name}', { name: artistName })}
           </div>
           <input
             type="email"
             value={email}
-            placeholder="Ton email"
+            placeholder={t('Ton email')}
             autoCapitalize="none"
             autoCorrect="off"
             style={{ marginBottom: 8 }}
@@ -109,8 +110,10 @@ export default function FollowButton({ artistName }: { artistName: string }) {
               style={{ width: 'auto', marginTop: 3 }}
             />
             <span className="help" style={{ margin: 0 }}>
-              Je souhaite recevoir les actualités de {artistName} (prochains
-              concerts). Désabonnement possible à tout moment.
+              {t(
+                'Je souhaite recevoir les actualités de {name} (prochains concerts). Désabonnement possible à tout moment.',
+                { name: artistName },
+              )}
             </span>
           </label>
           <label
@@ -123,7 +126,9 @@ export default function FollowButton({ artistName }: { artistName: string }) {
               style={{ width: 'auto', marginTop: 3 }}
             />
             <span className="help" style={{ margin: 0 }}>
-              Partager mon email avec {artistName} (facultatif).
+              {t('Partager mon email avec {name} (facultatif).', {
+                name: artistName,
+              })}
             </span>
           </label>
           <button
@@ -131,7 +136,7 @@ export default function FollowButton({ artistName }: { artistName: string }) {
             disabled={busy || !consent || !email.includes('@')}
             onClick={() => void submit()}
           >
-            {busy ? '…' : 'Suivre'}
+            {busy ? '…' : t('Suivre')}
           </button>
           {error && (
             <p style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p>

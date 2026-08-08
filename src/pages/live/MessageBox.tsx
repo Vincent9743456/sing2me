@@ -4,6 +4,7 @@
  */
 import React, { useState } from 'react';
 
+import { t } from '../../i18n';
 import { sendMessage } from '../../lib/live';
 
 export default function MessageBox({
@@ -49,7 +50,7 @@ export default function MessageBox({
       setError(
         e instanceof Error
           ? e.message
-          : "L'envoi a échoué — réessaie dans un instant.",
+          : t("L'envoi a échoué — réessaie dans un instant."),
       );
     } finally {
       setBusy(false);
@@ -62,16 +63,16 @@ export default function MessageBox({
     <div className="tipbox">
       <div className="tiptitle">
         {songTitle !== ''
-          ? `💬 Un mot sur « ${songTitle} » ?`
-          : '💬 Un mot pour les musiciens ?'}
+          ? t('💬 Un mot sur « {title} » ?', { title: songTitle })
+          : t('💬 Un mot pour les musiciens ?')}
       </div>
       {sent ? (
         <>
           <p style={{ margin: '6px 0', fontWeight: 650 }}>
-            ✅ Message transmis aux musiciens — merci ! 🎸
+            {t('✅ Message transmis aux musiciens — merci ! 🎸')}
           </p>
           <button className="btn ghost small" onClick={() => setSent(false)}>
-            Envoyer un autre mot
+            {t('Envoyer un autre mot')}
           </button>
         </>
       ) : (
@@ -79,13 +80,13 @@ export default function MessageBox({
           <input
             type="text"
             value={name}
-            placeholder="Ton prénom (optionnel)"
+            placeholder={t('Ton prénom (optionnel)')}
             style={{ marginBottom: 8 }}
             onChange={(e) => setName(e.target.value)}
           />
           <textarea
             value={text}
-            placeholder="Bravo pour ce concert !…"
+            placeholder={t('Bravo pour ce concert !…')}
             style={{ minHeight: 70, marginBottom: 8 }}
             onChange={(e) => setText(e.target.value)}
           />
@@ -94,7 +95,7 @@ export default function MessageBox({
             disabled={text.trim() === '' || busy}
             onClick={() => void onSend()}
           >
-            {busy ? 'Envoi…' : 'Envoyer'}
+            {busy ? t('Envoi…') : t('Envoyer')}
           </button>
           {error && (
             <p style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p>

@@ -384,12 +384,12 @@ export function SharePage({
         <div className="card" style={{ textAlign: 'center' }}>
           <h1 style={{ marginBottom: 2 }}>🎸 {payload.member.name}</h1>
           <p className="help" style={{ marginTop: 4 }}>
-            a créé son profil Sing2Me
+            {t('a créé son profil Sing2Me')}
             {payload.member.instrument !== ''
               ? ` — ${payload.member.instrument}`
               : ''}
             {payload.member.bandName !== ''
-              ? ` · groupe « ${payload.member.bandName} »`
+              ? ` · ${t('groupe « {band} »', { band: payload.member.bandName })}`
               : ''}
           </p>
           {memberDone !== null ? (
@@ -397,8 +397,10 @@ export function SharePage({
           ) : cardBand ? (
             <div style={{ textAlign: 'left' }}>
               <p className="help">
-                Remplace un musicien de « {cardBand.name} » par ce profil, ou
-                ajoute-le :
+                {t(
+                  'Remplace un musicien de « {band} » par ce profil, ou ajoute-le :',
+                  { band: cardBand.name },
+                )}
               </p>
               {cardBand.members.map((m) => (
                 <div
@@ -411,7 +413,7 @@ export function SharePage({
                   }}
                 >
                   <span style={{ flex: 1 }}>
-                    {m.name || '(sans nom)'}
+                    {m.name || t('(sans nom)')}
                     {m.instrument !== '' && (
                       <span className="stauthor"> · {m.instrument}</span>
                     )}
@@ -436,11 +438,11 @@ export function SharePage({
                         ),
                       });
                       setMemberDone(
-                        `${m.name || '(sans nom)'} → ${member.name}`,
+                        `${m.name || t('(sans nom)')} → ${member.name}`,
                       );
                     }}
                   >
-                    Remplacer
+                    {t('Remplacer')}
                   </button>
                 </div>
               ))}
@@ -461,20 +463,24 @@ export function SharePage({
                       },
                     ],
                   });
-                  setMemberDone(`${member.name} ajouté au groupe`);
+                  setMemberDone(
+                    t('{name} ajouté au groupe', { name: member.name }),
+                  );
                 }}
               >
-                ＋ Ajouter comme nouveau musicien
+                {t('＋ Ajouter comme nouveau musicien')}
               </button>
             </div>
           ) : (
             <p className="help">
-              Cette carte répond à une invitation de groupe : ouvre ce lien sur
-              l'appareil où le groupe
               {payload.member.bandName !== ''
-                ? ` « ${payload.member.bandName} »`
-                : ''}{' '}
-              est géré pour mettre à jour ses musiciens.
+                ? t(
+                    "Cette carte répond à une invitation de groupe : ouvre ce lien sur l'appareil où le groupe « {band} » est géré pour mettre à jour ses musiciens.",
+                    { band: payload.member.bandName },
+                  )
+                : t(
+                    "Cette carte répond à une invitation de groupe : ouvre ce lien sur l'appareil où le groupe est géré pour mettre à jour ses musiciens.",
+                  )}
             </p>
           )}
         </div>
@@ -487,10 +493,10 @@ export function SharePage({
             {[
               payload.song.artist,
               payload.view !== 'paroles' && payload.song.key !== ''
-                ? `Tonalité ${payload.song.key}`
+                ? t('Tonalité {key}', { key: payload.song.key })
                 : '',
               payload.view !== 'paroles' && payload.song.capo > 0
-                ? `Capo ${payload.song.capo}`
+                ? t('Capo {n}', { n: payload.song.capo })
                 : '',
             ]
               .filter((x) => x !== '')
@@ -499,7 +505,7 @@ export function SharePage({
           {payload.view === 'complete' &&
             payload.song.rehearsalNotes.length > 0 && (
               <div className="notesbox">
-                <div className="label">Notes de répétition</div>
+                <div className="label">{t('Notes de répétition')}</div>
                 {payload.song.rehearsalNotes
                   .map((n) => (
                     <div key={n.id}>
@@ -525,7 +531,7 @@ export function SharePage({
           )}
           {payload.view === 'complete' && payload.setlist?.setup && (
             <details className="stfold" style={{ margin: '10px 0 16px' }}>
-              <summary>Sono &amp; scène</summary>
+              <summary>{t('Sono & scène')}</summary>
               <div className="spacer" />
               {payload.setlist.setup.positions.length > 0 && (
                 <StagePlan
@@ -535,19 +541,19 @@ export function SharePage({
               )}
               {payload.setlist.setup.gear !== '' && (
                 <div className="notesbox" style={{ marginTop: 10 }}>
-                  <div className="label">Matériel</div>
+                  <div className="label">{t('Matériel')}</div>
                   {payload.setlist.setup.gear}
                 </div>
               )}
               {payload.setlist.setup.wiring !== '' && (
                 <div className="notesbox">
-                  <div className="label">Branchements</div>
+                  <div className="label">{t('Branchements')}</div>
                   {payload.setlist.setup.wiring}
                 </div>
               )}
               {payload.setlist.setup.sound !== '' && (
                 <div className="notesbox">
-                  <div className="label">Effets &amp; réglages sono</div>
+                  <div className="label">{t('Effets & réglages sono')}</div>
                   {payload.setlist.setup.sound}
                 </div>
               )}
@@ -574,7 +580,7 @@ export function SharePage({
               {payload.view === 'complete' &&
                 song.rehearsalNotes.length > 0 && (
                   <div className="notesbox">
-                    <div className="label">Notes de répétition</div>
+                    <div className="label">{t('Notes de répétition')}</div>
                     {song.rehearsalNotes
                           .map((n) => (
                         <div key={n.id}>
@@ -598,13 +604,20 @@ export function SharePage({
             <div>
               <strong>
                 {payload.invite
-                  ? `${payload.invite.from} t'invite à rejoindre « ${payload.invite.band} » sur Sing2Me 🎸`
-                  : 'Tu joues dans le groupe ?'}
+                  ? t("{from} t'invite à rejoindre « {band} » sur Sing2Me 🎸", {
+                      from: payload.invite.from,
+                      band: payload.invite.band,
+                    })
+                  : t('Tu joues dans le groupe ?')}
               </strong>
               <p className="help" style={{ margin: '4px 0 0' }}>
-                Récupère {payload.type === 'song' ? 'ce morceau' : 'ces morceaux'}{' '}
-                dans ton propre Sing2Me (gratuit) : répertoire chez toi,
-                transposition, notes personnelles…
+                {payload.type === 'song'
+                  ? t(
+                      'Récupère ce morceau dans ton propre Sing2Me (gratuit) : répertoire chez toi, transposition, notes personnelles…',
+                    )
+                  : t(
+                      'Récupère ces morceaux dans ton propre Sing2Me (gratuit) : répertoire chez toi, transposition, notes personnelles…',
+                    )}
               </p>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -613,7 +626,7 @@ export function SharePage({
                 account?.email != null &&
                 (joined !== null ? (
                   <span style={{ color: 'var(--accent)', alignSelf: 'center' }}>
-                    ✓ Tu fais partie de « {joined} » !
+                    {t('✓ Tu fais partie de « {band} » !', { band: joined })}
                   </span>
                 ) : (
                   <button
@@ -621,18 +634,22 @@ export function SharePage({
                     disabled={joinBusy}
                     onClick={() => void joinCloudBand()}
                   >
-                    {joinBusy ? '…' : `🤝 Rejoindre « ${payload.invite.band} »`}
+                    {joinBusy
+                      ? '…'
+                      : t('🤝 Rejoindre « {band} »', {
+                          band: payload.invite.band,
+                        })}
                   </button>
                 ))}
               {added ? (
                 <>
                   {payload.invite && !payload.invite.cloudId && (
                     <button className="btn" onClick={makeCard}>
-                      📇 Ma carte pour le groupe
+                      {t('📇 Ma carte pour le groupe')}
                     </button>
                   )}
                   <button className="btn ghost" onClick={() => navigate('/')}>
-                    Ouvrir ma bibliothèque
+                    {t('Ouvrir ma bibliothèque')}
                   </button>
                 </>
               ) : (
@@ -640,7 +657,7 @@ export function SharePage({
                   className={`btn ${payload.invite?.cloudId ? 'ghost' : ''}`}
                   onClick={addToLibrary}
                 >
-                  ➕ Ajouter à ma bibliothèque
+                  {t('➕ Ajouter à ma bibliothèque')}
                 </button>
               )}
             </div>
@@ -654,14 +671,16 @@ export function SharePage({
         payload.invite?.cloudId &&
         account?.email == null && (
           <p className="help" style={{ textAlign: 'center' }}>
-            💡 Avec un compte Sing2Me (gratuit, onglet Artiste → Mon compte), tu
-            rejoindrais ce groupe en un clic.
+            {t(
+              '💡 Avec un compte Sing2Me (gratuit, onglet Artiste → Mon compte), tu rejoindrais ce groupe en un clic.',
+            )}
           </p>
         )}
       {added && payload.invite && !payload.invite.cloudId && (
         <p className="help" style={{ textAlign: 'center' }}>
-          📇 Renvoie ta carte de musicien à celui qui t'a invité : ton nom
-          d'artiste remplacera ton nom dans le groupe.
+          {t(
+            "📇 Renvoie ta carte de musicien à celui qui t'a invité : ton nom d'artiste remplacera ton nom dans le groupe.",
+          )}
         </p>
       )}
 
@@ -683,7 +702,7 @@ export function SharePage({
                 target="_blank"
                 rel="noreferrer"
               >
-                📍 {payload.event.venue || 'Le lieu'}
+                📍 {payload.event.venue || t('Le lieu')}
               </a>
             )}
             {payload.event.eventUrl !== '' && (
@@ -693,7 +712,7 @@ export function SharePage({
                 target="_blank"
                 rel="noreferrer"
               >
-                📅 L'événement
+                {t("📅 L'événement")}
               </a>
             )}
           </div>
@@ -706,7 +725,7 @@ export function SharePage({
       {payload.concerts && payload.concerts.length > 0 && (
         <>
           <h2 className="pagetitle" style={{ textAlign: 'center' }}>
-            Prochaines dates
+            {t('Prochaines dates')}
           </h2>
           {payload.concerts.map((c, i) => (
             <DateLine key={i} c={c} />
@@ -716,23 +735,23 @@ export function SharePage({
 
       <div className="footer">
         <a className="ctabanner" href={location.origin + location.pathname}>
-          <LogoMark size={22} /> Téléchargez <strong>Sing2Me</strong> — votre
-          songbook, gratuit
+          <LogoMark size={22} /> {t('Téléchargez')} <strong>Sing2Me</strong>{' '}
+          {t('— votre songbook, gratuit')}
         </a>
         <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
           <a href="#/cgu" style={{ color: 'var(--text-dim)' }}>
-            Conditions d'utilisation
+            {t("Conditions d'utilisation")}
           </a>
           {' · '}
           <a href="#/report" style={{ color: 'var(--text-dim)' }}>
-            Signaler un contenu
+            {t('Signaler un contenu')}
           </a>
         </p>
       </div>
 
       {card && (
         <ShareModal
-          title="Ma carte de musicien — à envoyer au groupe"
+          title={t('Ma carte de musicien — à envoyer au groupe')}
           payload={card}
           onClose={() => setCard(null)}
         />

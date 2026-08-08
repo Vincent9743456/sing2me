@@ -7,6 +7,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { ChordLine } from '../../components/SongBody';
+import { t } from '../../i18n';
 import { parseContent } from '../../lib/chordpro';
 import {
   spellingForKey,
@@ -83,23 +84,24 @@ export default function MusicianLive({
           public) — le bouton en bas de partition reste pour qui a tout lu. */}
       <div style={{ textAlign: 'center', margin: '0 0 10px' }}>
         <button className="btn ghost small" onClick={onPublic}>
-          ← Revenir à la vue public
+          {t('← Revenir à la vue public')}
         </button>
       </div>
       <div className={`livebadge ${state.status === 'pause' ? 'pause' : ''}`}>
         {state.status === 'pause'
-          ? '⏸ PAUSE'
+          ? t('⏸ PAUSE')
           : state.mode === 'repet'
-            ? '🎸 RÉPÉTITION'
-            : '🎸 VUE MUSICIEN'}
+            ? t('🎸 RÉPÉTITION')
+            : t('🎸 VUE MUSICIEN')}
       </div>
       {!active || !song ? (
         <p style={{ textAlign: 'center', fontSize: '1.05rem' }}>
-          En attente de la session…
+          {t('En attente de la session…')}
           <br />
           <span className="help">
-            Dès que le leader lance un morceau, ta partition s'affiche ici,
-            avec les accords dans la tonalité jouée.
+            {t(
+              "Dès que le leader lance un morceau, ta partition s'affiche ici, avec les accords dans la tonalité jouée.",
+            )}
           </span>
         </p>
       ) : (
@@ -110,17 +112,22 @@ export default function MusicianLive({
               song.artist,
               showReal
                 ? realKey !== ''
-                  ? `Accords réels · ${realKey}`
-                  : 'Accords réels'
+                  ? t('Accords réels · {key}', { key: realKey })
+                  : t('Accords réels')
                 : shapeKey !== ''
                   ? capo > 0
-                    ? `Formes ${shapeKey} · Capo ${capo} (sonne en ${realKey})`
-                    : `Tonalité ${shapeKey}`
+                    ? t('Formes {shape} · Capo {capo} (sonne en {real})', {
+                        shape: shapeKey,
+                        capo,
+                        real: realKey,
+                      })
+                    : t('Tonalité {key}', { key: shapeKey })
                   : '',
               myShift !== 0
-                ? `Ma transpo ${myShift > 0 ? '+' : ''}${myShift}${
-                    myKey !== '' ? ` (${myKey})` : ''
-                  }`
+                ? t('Ma transpo {shift}{keyPart}', {
+                    shift: `${myShift > 0 ? '+' : ''}${myShift}`,
+                    keyPart: myKey !== '' ? ` (${myKey})` : '',
+                  })
                 : '',
             ]
               .filter((x) => x !== '')
@@ -135,8 +142,11 @@ export default function MusicianLive({
                 }
               >
                 {showReal
-                  ? `🎸 Voir comme le leader (${shapeKey}, capo ${capo})`
-                  : `🎸 Voir les vrais accords (${realKey})`}
+                  ? t('🎸 Voir comme le leader ({shape}, capo {capo})', {
+                      shape: shapeKey,
+                      capo,
+                    })
+                  : t('🎸 Voir les vrais accords ({key})', { key: realKey })}
               </button>
             </div>
           )}
@@ -144,19 +154,19 @@ export default function MusicianLive({
             <div className="rowactions" style={{ justifyContent: 'center' }}>
               <button
                 className="btn ghost"
-                aria-label="Transposer un demi-ton plus bas"
+                aria-label={t('Transposer un demi-ton plus bas')}
                 onClick={() => setMyShift((s) => Math.max(-11, s - 1))}
               >
                 ♭ −1
               </button>
               {myShift !== 0 && (
                 <button className="btn ghost" onClick={() => setMyShift(0)}>
-                  Tonalité du leader
+                  {t('Tonalité du leader')}
                 </button>
               )}
               <button
                 className="btn ghost"
-                aria-label="Transposer un demi-ton plus haut"
+                aria-label={t('Transposer un demi-ton plus haut')}
                 onClick={() => setMyShift((s) => Math.min(11, s + 1))}
               >
                 ♯ +1
@@ -177,7 +187,7 @@ export default function MusicianLive({
                 disabled={keepMsg !== ''}
                 onClick={() => setKeepMsg(onKeep(song))}
               >
-                {keepMsg !== '' ? `✓ ${keepMsg}` : '➕ Garder ce morceau'}
+                {keepMsg !== '' ? `✓ ${keepMsg}` : t('➕ Garder ce morceau')}
               </button>
             </div>
           )}
@@ -203,7 +213,7 @@ export default function MusicianLive({
       )}
       <p className="help" style={{ textAlign: 'center' }}>
         <button className="btn ghost small" onClick={onPublic}>
-          ← Vue public
+          {t('← Vue public')}
         </button>
       </p>
     </>

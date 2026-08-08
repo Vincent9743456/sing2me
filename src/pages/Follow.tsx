@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import { SongBody } from '../components/SongBody';
 import { DndHint, TopBar } from '../components/ui';
+import { t } from '../i18n';
 import { semitonesBetween, spellingForKey } from '../lib/chords';
 import { normalizeTitle } from '../lib/importer';
 import { BandSong, fetchLive } from '../lib/live';
@@ -85,30 +86,31 @@ export function Follow({ code = '' }: { code?: string } = {}) {
 
   return (
     <>
-      <TopBar title="📡 Suivi du groupe" onBack={() => navigate('/')} />
+      <TopBar title={t('📡 Suivi du groupe')} onBack={() => navigate('/')} />
       <div className="page">
         <DndHint />
         {offline && (
           <div className="card" style={{ borderColor: 'var(--accent-dark)' }}>
-            <strong>Pas de réseau</strong>
+            <strong>{t('Pas de réseau')}</strong>
             <p className="help" style={{ margin: '4px 0 10px' }}>
-              Le suivi automatique est indisponible — ta bibliothèque locale,
-              elle, fonctionne toujours.
+              {t(
+                'Le suivi automatique est indisponible — ta bibliothèque locale, elle, fonctionne toujours.',
+              )}
             </p>
             <button className="btn" onClick={() => navigate('/')}>
-              Ouvrir ma bibliothèque
+              {t('Ouvrir ma bibliothèque')}
             </button>
           </div>
         )}
 
         {!offline && bandSong === null && (
           <div className="empty">
-            En attente du leader…
+            {t('En attente du leader…')}
             <br />
             <span className="help">
-              Dès qu'il active « 📡 Synchroniser le groupe » (panneau ON AIR)
-              et ouvre un morceau, il s'affichera ici — dans ta vue, transposé
-              dans sa tonalité.
+              {t(
+                "Dès qu'il active « 📡 Synchroniser le groupe » (panneau ON AIR) et ouvre un morceau, il s'affichera ici — dans ta vue, transposé dans sa tonalité.",
+              )}
             </span>
           </div>
         )}
@@ -121,10 +123,14 @@ export function Follow({ code = '' }: { code?: string } = {}) {
                 <span className="chip static off">{bandSong.artist}</span>
               )}
               {bandSong.key !== '' && (
-                <span className="chip static off">Tonalité {bandSong.key}</span>
+                <span className="chip static off">
+                  {t('Tonalité {key}', { key: bandSong.key })}
+                </span>
               )}
               {semis !== 0 && (
-                <span className="chip static off">transposé automatiquement</span>
+                <span className="chip static off">
+                  {t('transposé automatiquement')}
+                </span>
               )}
             </div>
 
@@ -133,7 +139,7 @@ export function Follow({ code = '' }: { code?: string } = {}) {
               (localSong.mySetup?.instrument || localSong.mySetup?.notes) && (
                 <div className="notesbox">
                   <div className="label">
-                    Mes réglages
+                    {t('Mes réglages')}
                     {localSong.mySetup.instrument !== ''
                       ? ` — ${localSong.mySetup.instrument}`
                       : ''}
@@ -152,11 +158,14 @@ export function Follow({ code = '' }: { code?: string } = {}) {
               />
             ) : (
               <div className="empty">
-                « {bandSong.title} » n'est pas dans ta bibliothèque.
+                {t("« {title} » n'est pas dans ta bibliothèque.", {
+                  title: bandSong.title,
+                })}
                 <br />
                 <span className="help">
-                  Demande au leader de te partager le répertoire (invitation de
-                  groupe) — tu pourras l'ajouter en un clic.
+                  {t(
+                    "Demande au leader de te partager le répertoire (invitation de groupe) — tu pourras l'ajouter en un clic.",
+                  )}
                 </span>
               </div>
             )}
