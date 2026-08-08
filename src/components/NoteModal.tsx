@@ -8,7 +8,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { createDictation, Dictation, dictationSupported } from '../lib/speech';
-import { t } from '../i18n';
+import {
+  blobToBase64,
+  Recorder,
+  recordingSupported,
+  startRecording,
+} from '../lib/recorder';
+import { getLang, t } from '../i18n';
 import { useStore } from '../store';
 import { makeId, Song, SongNote } from '../types';
 import { Field, Modal } from './ui';
@@ -64,6 +70,69 @@ async function aiSummarize(
   };
 }
 
+/** Transcription côté serveur : le téléphone enregistre, le serveur écrit. */
+async function transcribe(blob: Blob, mime: string): Promise<string> {
+  const audio = await blobToBase64(blob);
+  let res: Response;
+  try {
+    res = await fetch('/api/ai?fn=transcribe', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ audio, mime, lang: getLang() }),
+    });
+  } catch {
+    throw new Error(
+      t('Transcription indisponible — il faut être connecté au réseau.'),
+    );
+  }
+  const type = res.headers.get('content-type') ?? '';
+  if (!type.includes('application/json')) {
+    throw new Error(
+      t('Transcription indisponible — nécessite la version en ligne (Vercel).'),
+    );
+  }
+  const body = (await res.json()) as { text?: string; error?: string };
+  if (!res.ok || body.error) {
+    throw new Error(body.error ?? `Erreur ${res.status}`);
+  }
+  return body.text ?? '';
+}
+
+/**
+ * Quel chemin de dictée ? (b157)
+ * - `native` : reconnaissance du navigateur — gratuite, texte en direct ;
+ * - `server` : on enregistre et le serveur transcrit — le seul qui marche
+ *   dans une app installée sur iPhone (Apple y bride la reconnaissance).
+ * Un échec du chemin natif est MÉMORISÉ : on ne refait pas subir l'attente
+ * à l'utilisateur une seconde fois.
+ */
+const PATH_KEY = 'sing2me/dictationPath';
+
+function isIosStandalone(): boolean {
+  try {
+    const nav = navigator as Navigator & { standalone?: boolean };
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const standalone =
+      nav.standalone === true ||
+      window.matchMedia?.('(display-mode: standalone)').matches === true;
+    return ios && standalone;
+  } catch {
+    return false;
+  }
+}
+
+function preferredPath(): 'native' | 'server' {
+  try {
+    if (localStorage.getItem(PATH_KEY) === 'server') return 'server';
+  } catch {
+    // stockage indisponible : on décide au cas par cas
+  }
+  // App installée sur iPhone : la reconnaissance du navigateur n'y répond
+  // pas — on va droit au serveur plutôt que d'attendre pour rien.
+  if (isIosStandalone() && recordingSupported()) return 'server';
+  return dictationSupported() ? 'native' : 'server';
+}
+
 export function NoteModal({
   song,
   author,
@@ -96,8 +165,12 @@ export function NoteModal({
    * un tap sur Arrêter coupe l'état tout de suite (iOS n'émet parfois
    * jamais `onend`, ce qui figeait l'écran sans issue).
    */
-  const [recState, setRecState] = useState<'off' | 'starting' | 'on'>('off');
-  const recording = recState !== 'off';
+  const [recState, setRecState] = useState<
+    'off' | 'starting' | 'on' | 'transcribing'
+  >('off');
+  const recording = recState === 'starting' || recState === 'on';
+  /** Enregistreur du chemin serveur (b157). */
+  const recorder = useRef<Recorder | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -172,6 +245,7 @@ export function NoteModal({
       window.clearTimeout(watchdog.current);
       window.clearTimeout(autoAi.current);
       dictation.current?.abort();
+      recorder.current?.cancel();
     };
   }, []);
 
@@ -216,11 +290,97 @@ export function NoteModal({
     if (withSummary) scheduleAutoSummary();
   }
 
+  /** Chemin SERVEUR : on enregistre ici, le serveur transcrit (b157). */
+  async function startServerDictation(because?: string) {
+    setError(null);
+    if (!recordingSupported()) {
+      setError(
+        t("Ce navigateur ne sait pas enregistrer le micro — essaie Chrome ou Safari."),
+      );
+      return;
+    }
+    if (because) setInfo(because);
+    setRecState('starting');
+    try {
+      recorder.current = await startRecording(() => {
+        // Durée maximale atteinte : on transcrit ce qui a été dit.
+        void finishServerDictation();
+      });
+      setRecState('on');
+    } catch {
+      setRecState('off');
+      recorder.current = null;
+      setError(
+        t(
+          "Micro indisponible — autorise l'accès au microphone pour ce site, puis réessaie.",
+        ),
+      );
+    }
+  }
+
+  /** Arrête l'enregistrement et fait transcrire. */
+  async function finishServerDictation() {
+    const rec = recorder.current;
+    if (!rec) return;
+    recorder.current = null;
+    setRecState('transcribing');
+    setInfo(null);
+    let recording: Awaited<ReturnType<Recorder['stop']>> = null;
+    try {
+      recording = await rec.stop();
+    } catch {
+      recording = null;
+    }
+    if (!recording) {
+      setRecState('off');
+      setInfo(
+        t(
+          "Rien n'a été entendu. Parle plus près du micro — et si l'app installée ne capte rien, essaie dans Safari.",
+        ),
+      );
+      return;
+    }
+    try {
+      const said = await transcribe(recording.blob, recording.mime);
+      setRecState('off');
+      if (said.trim() === '') {
+        setInfo(t("Rien n'a été compris dans cet enregistrement."));
+        return;
+      }
+      heard.current = true;
+      dictated.current = true;
+      setText((prev) => (prev.trim() === '' ? said : prev + ' ' + said));
+      // Même suite que la dictée du navigateur : synthèse + fusion + portée.
+      scheduleAutoSummary();
+    } catch (e) {
+      setRecState('off');
+      setError(e instanceof Error ? e.message : t('La transcription a échoué.'));
+    }
+  }
+
+  /** Coupe l'enregistrement serveur SANS transcrire (annulation). */
+  function cancelServerDictation() {
+    recorder.current?.cancel();
+    recorder.current = null;
+    setRecState('off');
+    setInfo(null);
+  }
+
   function toggleRecording() {
     setError(null);
     setInfo(null);
+    // Chemin serveur en cours : arrêter = transcrire.
+    if (recorder.current) {
+      void finishServerDictation();
+      return;
+    }
     if (recording) {
       stopRecording();
+      return;
+    }
+    if (recState === 'transcribing') return;
+    if (preferredPath() === 'server') {
+      void startServerDictation();
       return;
     }
     window.clearTimeout(autoAi.current);
@@ -283,9 +443,17 @@ export function NoteModal({
     watchdog.current = window.setTimeout(() => {
       if (fresh() && dictation.current === d) {
         stopRecording(false);
-        setError(
+        // b157 : plutôt que de renvoyer l'utilisateur vers Safari, on
+        // BASCULE sur la dictée par le serveur — et on s'en souvient pour
+        // ne plus jamais lui faire attendre ces 6 secondes.
+        try {
+          localStorage.setItem(PATH_KEY, 'server');
+        } catch {
+          // stockage indisponible : la bascule vaudra pour cette fois
+        }
+        void startServerDictation(
           t(
-            "Le micro n'a pas démarré. Vérifie l'autorisation micro ; depuis l'app installée, essaie aussi dans Safari.",
+            'Le micro du navigateur ne répond pas — on passe par la dictée enregistrée. Parle, puis appuie sur ⏹.',
           ),
         );
       }
@@ -352,6 +520,7 @@ export function NoteModal({
     if (text.trim() === '') return;
     window.clearTimeout(autoAi.current);
     stopRecording(false);
+    cancelServerDictation();
     onSave(
       existing
         ? { ...existing, text: text.trim(), visibility }
@@ -403,7 +572,10 @@ export function NoteModal({
         </p>
       )}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-        {dictationSupported() && (
+        {/* b157 : dicter est possible même sans reconnaissance vocale dans
+            le navigateur (Firefox, Samsung Internet, app iPhone
+            installée) — on enregistre et le serveur transcrit. */}
+        {(dictationSupported() || recordingSupported()) && (
           <button
             className={`btn ${recording ? 'danger' : 'ghost'}`}
             onClick={toggleRecording}
@@ -411,6 +583,7 @@ export function NoteModal({
             {recState === 'off' && t('🎤 Dicter')}
             {recState === 'starting' && t('⏹ Annuler (micro…)')}
             {recState === 'on' && t('⏹ Arrêter la dictée')}
+            {recState === 'transcribing' && t('✍️ Transcription…')}
           </button>
         )}
         <button
@@ -436,8 +609,14 @@ export function NoteModal({
           </span>
         </div>
       )}
+      {/* Transcription en cours côté serveur (b157). */}
+      {recState === 'transcribing' && (
+        <div className="recbanner starting" role="status">
+          {t('✍️ Transcription de ce que tu viens de dire…')}
+        </div>
+      )}
       {/* Synthèse automatique en cours après la dictée (b153). */}
-      {!recording && aiBusy && (
+      {!recording && recState !== 'transcribing' && aiBusy && (
         <div className="recbanner starting" role="status">
           {t("✨ Synthèse de la note par l'IA…")}
         </div>

@@ -6,13 +6,15 @@
  *   /api/ai-clean   → /api/ai?fn=clean
  *   /api/ai-note    → /api/ai?fn=note
  *   /api/setlist-ai → /api/ai?fn=setlist
+ *   /api/ai-transcribe → /api/ai?fn=transcribe
  * La logique de chaque endpoint vit dans server/.
  */
 import clean from '../server/ai-clean.js';
 import note from '../server/ai-note.js';
 import setlist from '../server/setlist-ai.js';
+import transcribe from '../server/ai-transcribe.js';
 
-const handlers = { clean, note, setlist };
+const handlers = { clean, note, setlist, transcribe };
 
 // Compat : si la réécriture Vercel ne transmet pas ?fn= (anciens bundles
 // appelant l'URL d'origine, ex. /api/ai-clean), on route par le chemin.
@@ -20,6 +22,7 @@ const byPath = {
   'ai-clean': 'clean',
   'ai-note': 'note',
   'setlist-ai': 'setlist',
+  'ai-transcribe': 'transcribe',
 };
 
 export default async function handler(req, res) {

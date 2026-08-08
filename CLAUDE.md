@@ -147,6 +147,16 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     définitive — l'ancienne commission ~7 % est abandonnée).
   - Aucun chiffre (prix, seuil de spectateurs) n'est arrêté : ne jamais en
     afficher tant que les fondateurs ne les ont pas fixés.
+- **Dictée (b157)** : deux chemins, choisis automatiquement — la
+  reconnaissance du navigateur (gratuite, texte en direct) quand elle
+  marche, sinon l'ENREGISTREMENT + transcription serveur
+  (`/api/ai?fn=transcribe`, `server/ai-transcribe.js`). L'app installée
+  sur iPhone part directement au serveur (Apple y bride la
+  reconnaissance) ; un échec du chemin natif bascule et se mémorise
+  (`sing2me/dictationPath`). L'audio n'est jamais conservé. Variables
+  Vercel : `TRANSCRIBE_API_KEY` (obligatoire), `TRANSCRIBE_URL` et
+  `TRANSCRIBE_MODEL` (facultatives, dialecte OpenAI par défaut) — Claude
+  ne transcrit pas l'audio, d'où un service tiers.
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
   par les composants Feedback (règle 10 — dette existante) ; OAuth
   Google/Facebook à configurer ; OCR des PDF scannés ; app native
