@@ -93,15 +93,24 @@ function initialRole(): 'public' | 'musicien' {
 
 export function Live({
   code = '',
+  artistName = '',
   onKeep,
 }: {
   code?: string;
+  /**
+   * Direct désigné par l'IDENTITÉ de l'artiste (b170). C'est le chemin
+   * normal : le spectateur reste sur /sonnom, et si le concert s'arrête et
+   * repart, la page retrouve le nouveau direct toute seule. Un code de
+   * session, lui, mourait avec la session.
+   */
+  artistName?: string;
   /** App seulement : « Garder ce morceau » (copie perso en Idée) — voir
    *  lib/keepSong. L'entrée publique légère ne passe rien (pas de store). */
   onKeep?: (song: NonNullable<LiveState['song']>) => string;
 } = {}) {
-  // Code de salon : prop (route de l'app #/live/CODE) ou ?c= (entrée
-  // publique /live?c=482913 — le QR du lanceur l'embarque).
+  // Code de salon : plus produit nulle part depuis b170. On le lit encore
+  // (prop de l'ancienne route #/live/CODE, ou ?c= d'un vieux lien partagé)
+  // pour ne casser aucune adresse déjà en circulation.
   const joinCode =
     code !== ''
       ? code
@@ -179,7 +188,7 @@ export function Live({
     async function tick() {
       try {
         // Appel de SUIVI : position (morceau courant) + statut.
-        const s = await fetchLive(joinCode);
+        const s = await fetchLive(joinCode, artistName);
         if (cancelled) return;
         setState(s);
         stateIdRef.current = s.id;
@@ -198,7 +207,7 @@ export function Live({
         if (s.setlistCount !== lastSetlistCount.current) {
           lastSetlistCount.current = s.setlistCount;
           if (s.setlistCount > 0) {
-            const list = await fetchLiveSetlist(joinCode);
+            const list = await fetchLiveSetlist(joinCode, artistName);
             if (!cancelled && list.length > 0) {
               setBrowseSetlist(list);
               saveCachedSetlist(list);
@@ -279,9 +288,11 @@ export function Live({
   // Ce que voit le public : rien d'une répétition (réservée aux musiciens).
   const publicSession = state.mode === 'concert';
   const liveNow = publicSession && state.status === 'on' && state.song !== null;
-  const pauseNow =
-    publicSession &&
-    (state.status === 'pause' || (state.status === 'on' && !state.song));
+  // Direct en cours mais aucune partition affichée : le concert n'a pas
+  // encore commencé, ou l'artiste est entre deux morceaux (b170). Ce n'est
+  // PAS une pause déclarée — on ne dit donc pas la même chose.
+  const waitingNow = publicSession && state.status === 'on' && !state.song;
+  const pauseNow = publicSession && state.status === 'pause';
   // L'artiste choisit ce qui s'affiche (réglages « Écran public »).
   const ps = { ...defaultPublicScreen(), ...(state.artist?.publicScreen ?? {}) };
   // Consultable dès qu'on a un set (serveur OU cache) — vrai même hors ligne,
@@ -295,10 +306,14 @@ export function Live({
   // bœuf fait venir d'autres musiciens.
   const sessionActive = state.status === 'on' || state.status === 'pause';
   const canShare = sessionActive && (publicSession || role === 'musicien');
-  const shareCode = joinCode !== '' ? joinCode : (state.joinCode ?? '');
-  const shareUrl = `${location.origin}/live${
-    shareCode !== '' ? `?c=${shareCode}` : ''
-  }`;
+  // Adresse à partager : celle où l'on se trouve déjà (b170). Quand la page
+  // est ouverte sur /sonnom, c'est l'adresse STABLE de l'artiste — elle
+  // survit à l'arrêt et au redémarrage du concert, contrairement à un code
+  // de session.
+  const shareUrl =
+    artistName !== ''
+      ? `${location.origin}${location.pathname}`
+      : `${location.origin}/live`;
 
   async function openBrowse() {
     setBrowseIdx(null);
@@ -306,7 +321,7 @@ export function Live({
     setBrowseOpen(true);
     // Repli réseau : si rien en cache, on tente une récupération (best-effort).
     if (browseSetlist === null) {
-      const list = await fetchLiveSetlist(joinCode);
+      const list = await fetchLiveSetlist(joinCode, artistName);
       if (list.length > 0) {
         setBrowseSetlist(list);
         saveCachedSetlist(list);
@@ -408,7 +423,6 @@ export function Live({
           <ShareLive
             url={shareUrl}
             artistName={state.artist?.name ?? ''}
-            joinCode={shareCode}
             onClose={() => setShareOpen(false)}
           />
         </Suspense>
@@ -488,11 +502,19 @@ export function Live({
             </button>
           )}
         </>
-      ) : pauseNow ? (
+      ) : pauseNow || waitingNow ? (
         <>
-          <div className="livebadge pause">{t('⏸ PAUSE')}</div>
+          {waitingNow ? (
+            <div className="livebadge">
+              <span className="dot" /> {t('EN DIRECT')}
+            </div>
+          ) : (
+            <div className="livebadge pause">{t('⏸ PAUSE')}</div>
+          )}
           <p style={{ textAlign: 'center', fontSize: '1.1rem' }}>
-            {t('Le concert reprend dans un instant…')}
+            {waitingNow
+              ? t('Le concert commence dans un instant…')
+              : t('Le concert reprend dans un instant…')}
           </p>
           {ps.profile && <ArtistBlock state={state} showLinks={ps.links} />}
           {ps.tips && <TipBox artist={state.artist} />}
@@ -586,18 +608,22 @@ function ArtistBlock({
 }) {
   const artist = state.artist;
   if (!artist || artist.name === '') return null;
+  // Profil diffusé par un ancien bundle, ou fiche de groupe incomplète : les
+  // champs peuvent manquer. La page du SPECTATEUR ne doit jamais planter pour
+  // ça — c'est l'écran le moins rattrapable de l'application (b170).
+  const links = artist.links ?? [];
   return (
     <div className="artisthead">
-      {artist.photo !== '' && <img src={artist.photo} alt={artist.name} />}
+      {(artist.photo ?? '') !== '' && <img src={artist.photo} alt={artist.name} />}
       <h1 style={{ margin: '10px 0 4px' }}>{artist.name}</h1>
-      {artist.bio !== '' && (
+      {(artist.bio ?? '') !== '' && (
         <p className="help" style={{ whiteSpace: 'pre-wrap' }}>
           {artist.bio}
         </p>
       )}
-      {showLinks && artist.links.length > 0 && (
+      {showLinks && links.length > 0 && (
         <div className="links">
-          {artist.links
+          {links
             .filter((l) => l.url !== '')
             .map((l) => (
               <a key={l.id} href={l.url} target="_blank" rel="noreferrer">

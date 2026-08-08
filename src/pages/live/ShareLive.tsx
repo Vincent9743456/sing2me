@@ -12,13 +12,11 @@ import { t } from '../../i18n';
 export default function ShareLive({
   url,
   artistName,
-  joinCode,
   onClose,
 }: {
-  /** Lien direct vers CE live (avec code de salon quand il existe). */
+  /** Adresse stable de l'artiste — elle survit à l'arrêt du concert. */
   url: string;
   artistName: string;
-  joinCode: string;
   onClose: () => void;
 }) {
   const [qr, setQr] = useState<string | null>(null);
@@ -99,14 +97,6 @@ export default function ShareLive({
             {copied ? t('✓ Lien copié') : t('🔗 Copier le lien')}
           </button>
         </div>
-        {joinCode !== '' && (
-          <p className="help" style={{ textAlign: 'center' }}>
-            {t(
-              "Depuis l'appli Sing2Me : onglet Concerts → « Rejoindre un direct », code",
-            )}{' '}
-            <strong>{joinCode}</strong>.
-          </p>
-        )}
         <button className="btn ghost block" onClick={onClose}>
           {t('← Revenir aux paroles')}
         </button>

@@ -101,11 +101,21 @@ async function readJson(res: Response): Promise<any> {
   return res.json();
 }
 
-export async function fetchLive(code = ''): Promise<LiveState> {
+/**
+ * État d'un direct. `artist` (b170) désigne le direct par l'IDENTITÉ de
+ * l'artiste et non par une session : c'est ce qui permet au spectateur de
+ * rester sur la même adresse quand le concert s'arrête et repart. `code`
+ * n'est plus produit nulle part — il n'est lu que pour honorer un vieux lien.
+ */
+export async function fetchLive(code = '', artist = ''): Promise<LiveState> {
   let res: Response;
   try {
     res = await fetch(
-      code !== '' ? `/api/live?code=${encodeURIComponent(code)}` : '/api/live',
+      artist !== ''
+        ? `/api/live?artist=${encodeURIComponent(artist)}`
+        : code !== ''
+          ? `/api/live?code=${encodeURIComponent(code)}`
+          : '/api/live',
     );
   } catch {
     throw new Error(OFFLINE_MSG);
@@ -193,12 +203,17 @@ export async function fetchLiveForArtist(
 }
 
 /** Récupère la setlist diffusée (parcours public). Best-effort → []. */
-export async function fetchLiveSetlist(code = ''): Promise<LivePublicSong[]> {
+export async function fetchLiveSetlist(
+  code = '',
+  artist = '',
+): Promise<LivePublicSong[]> {
   try {
     const res = await fetch(
-      code !== ''
-        ? `/api/live?setlist=1&code=${encodeURIComponent(code)}`
-        : '/api/live?setlist=1',
+      artist !== ''
+        ? `/api/live?setlist=1&artist=${encodeURIComponent(artist)}`
+        : code !== ''
+          ? `/api/live?setlist=1&code=${encodeURIComponent(code)}`
+          : '/api/live?setlist=1',
     );
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return [];
@@ -451,7 +466,7 @@ export async function fetchLiveStats(
 /* ------------------------------------------------------------------ */
 /* Multi-live (b121) : référence du direct que CE musicien a lancé.    */
 /*  liveId + writeToken (seul le lanceur pilote son live) + joinCode   */
-/*  (code de salon à 6 chiffres, affiché en grand pour communication). */
+/*  (le join_code reste un identifiant INTERNE : plus jamais affiché). */
 /* ------------------------------------------------------------------ */
 
 export interface LiveRef {

@@ -10,15 +10,19 @@ import { LogoMark } from '../components/Logo';
 import { TipBox } from '../components/TipBox';
 import { t } from '../i18n';
 import { fetchLiveForArtist } from '../lib/live';
+import { Live } from './Live';
 import { fetchPublicPage } from '../lib/publicPages';
 import { ArtistProfile } from '../types';
+
+/** Rythme de veille du concert : assez vif pour qu'un spectateur arrivé en
+ *  avance bascule tout seul quand ça démarre, assez calme pour le réseau. */
+const WATCH_MS = 8000;
 
 export function PublicArtist({ name }: { name: string }) {
   const [profile, setProfile] = useState<ArtistProfile | null | undefined>(
     undefined,
   );
   const [liveNow, setLiveNow] = useState(false);
-  const [liveCode, setLiveCode] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -26,27 +30,41 @@ export function PublicArtist({ name }: { name: string }) {
       const page = await fetchPublicPage(name);
       if (cancelled) return;
       setProfile(page ? page.profile : null);
-      // L'artiste est-il en concert en ce moment ? (multi-live : SON direct)
-      try {
-        const live = await fetchLiveForArtist(page?.profile.name ?? '');
-        if (!cancelled && live && live.mode === 'concert') {
-          setLiveNow(true);
-          setLiveCode(live.joinCode);
-          // QR unique et éternel : pendant le concert, le scan doit aboutir
-          // DIRECTEMENT aux paroles — on bascule sans attendre de clic (la
-          // fiche reste consultable depuis le direct via la photo d'artiste).
-          location.replace(
-            live.joinCode !== '' ? `/live?c=${live.joinCode}` : '/live',
-          );
-        }
-      } catch {
-        /* pas de direct : page statique */
-      }
     })();
     return () => {
       cancelled = true;
     };
   }, [name]);
+
+  // Veille du concert (b170). Plus de redirection vers un code de session :
+  // le spectateur RESTE sur cette adresse, qui est celle de l'artiste. On
+  // regarde en boucle s'il est en train de jouer — donc un concert qui
+  // s'arrête et repart est retrouvé tout seul, sans rescanner le QR.
+  const performer = profile?.name ?? '';
+  useEffect(() => {
+    if (performer === '') return;
+    let cancelled = false;
+    const look = async () => {
+      try {
+        const live = await fetchLiveForArtist(performer);
+        if (!cancelled) setLiveNow(live != null && live.mode === 'concert');
+      } catch {
+        // Réseau perdu : on garde ce qu'on affichait déjà.
+      }
+    };
+    void look();
+    const id = window.setInterval(() => void look(), WATCH_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [performer]);
+
+  // En concert : les paroles, ici même. Le direct est désigné par le NOM de
+  // l'artiste, jamais par une session.
+  if (liveNow && performer !== '') {
+    return <Live artistName={performer} />;
+  }
 
   if (profile === undefined) {
     return (
@@ -87,16 +105,6 @@ export function PublicArtist({ name }: { name: string }) {
 
   return (
     <div className="public">
-      {liveNow && (
-        <div style={{ textAlign: 'center', marginBottom: 14 }}>
-          {/* Lien ABSOLU vers l'entrée publique légère : la page peut être
-              servie depuis /lenom, un hash relatif serait cassé. */}
-          <a className="btn block" href={liveCode !== '' ? `/live?c=${liveCode}` : '/live'}>
-            🔴 {t('{name} est EN DIRECT — suivre le concert', { name: shownName })}
-          </a>
-        </div>
-      )}
-
       <div className="artisthead">
         {profile.photo !== '' && (
           <img src={profile.photo} alt={shownName} />
