@@ -138,10 +138,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState('');
-  // Nom public dictable : rappelé AVANT le code de salon quand on est en
-  // direct (« dis-leur livemyband.fr/tonnom ») — demande Vincent, b136.
+  // Nom public dictable, annoncé au micro pendant le concert
+  // (« dis-leur livemyband.fr/tonnom ») — demande Vincent, b136.
   const [publicName, setPublicName] = useState(() => cachedPublicName());
-  const [codeCopied, setCodeCopied] = useState(false);
   const currentRef = useRef<LiveSong | null>(null);
   const setlistRef = useRef<LivePublicSong[] | null>(null);
   const statusRef = useRef(status);
@@ -190,7 +189,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     const tick = async () => {
       try {
-        // Multi-live : le leader sonde SON direct (via son code de salon).
+        // Multi-live : le leader sonde SON direct (référence interne).
         const s = await fetchLive(currentLiveRef()?.joinCode ?? '');
         if (cancelled) return;
         setHearts(s.hearts);
@@ -520,13 +519,10 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 </select>
               </div>
             )}
-            {/* Code de salon (multi-live b121) : affiché EN GRAND dès le
-                lancement — se communique à la voix ou par message, et se
-                copie d'un tap. Les musiciens/spectateurs le saisissent dans
-                « Rejoindre un direct » (onglet Concerts) ou via le QR. */}
-            {/* Le LIEN À DICTER passe AVANT le code (demande Vincent, b136) :
-                c'est ce que l'artiste annonce au public au micro ; le code de
-                salon n'est qu'un raccourci pour les musiciens. */}
+            {/* L'ADRESSE À DICTER est la seule chose à retenir (b170) :
+                c'est ce que l'artiste annonce au micro, et c'est aussi ce que
+                vise son QR. Elle ne change jamais — contrairement au code de
+                session qu'elle remplace, qui mourait avec la session. */}
             {status !== 'off' && publicName !== '' && (
               <div style={{ textAlign: 'center', margin: '10px 0' }}>
                 <div className="label">{t('Adresse à annoncer au public')}</div>
@@ -536,43 +532,6 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 >
                   {location.host}/{publicName}
                 </div>
-              </div>
-            )}
-            {status !== 'off' && (currentLiveRef()?.joinCode ?? '') !== '' && (
-              <div style={{ textAlign: 'center', margin: '10px 0' }}>
-                <div className="label">{t('Code pour rejoindre')}</div>
-                <button
-                  className="btn ghost"
-                  title={t('Copier le code')}
-                  style={{
-                    fontSize: '2rem',
-                    letterSpacing: 6,
-                    fontVariantNumeric: 'tabular-nums',
-                    padding: '8px 18px',
-                  }}
-                  onClick={() => {
-                    const c = currentLiveRef()?.joinCode ?? '';
-                    try {
-                      void navigator.clipboard.writeText(c);
-                      setCodeCopied(true);
-                      window.setTimeout(() => setCodeCopied(false), 1800);
-                    } catch {
-                      /* presse-papier indisponible */
-                    }
-                  }}
-                >
-                  {(currentLiveRef()?.joinCode ?? '').replace(
-                    /^(\d{3})(\d{3})$/,
-                    '$1 $2',
-                  )}
-                </button>
-                <p className="help" style={{ margin: '4px 0 0' }}>
-                  {codeCopied
-                    ? t('✓ Code copié !')
-                    : t(
-                        'Dicte-le ou copie-le — musiciens et public le saisissent dans « Rejoindre un direct ».',
-                      )}
-                </p>
               </div>
             )}
             <div

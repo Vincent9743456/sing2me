@@ -51,6 +51,7 @@ export const EN_PUBLIC: Record<string, string> = {
   'L\'envoi a échoué — réessaie dans un instant.': 'Sending failed — try again in a moment.',
   'La setlist du concert — tape un morceau pour lire les paroles.': 'The concert setlist — tap a song to read the lyrics.',
   'Le concert reprend dans un instant…': 'The concert resumes in a moment…',
+  'Le concert commence dans un instant…': 'The concert starts in a moment…',
   'Le lieu': 'The venue',
   'Le répertoire du groupe arrive tout seul': 'The band’s repertoire arrives on its own',
   'Le suivi a échoué — réessaie.': 'Following failed — try again.',

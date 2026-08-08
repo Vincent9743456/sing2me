@@ -127,10 +127,20 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     lien (les boutons « Partager au groupe / au public » ont été retirés ;
     la page de réception /s/… des anciens liens reste) ;
   - **multi-live (b121)** : plusieurs directs simultanés — table `lives`
-    (une ligne par direct, `join_code` à 6 chiffres + `write_token` du
-    lanceur), plus de scène globale unique ; l'ancienne ligne `live_state`
-    n'est lue qu'en repli pour les vieux bundles. Le code de salon est un
-    SÉLECTEUR de session (fluidité), pas une protection ;
+    (une ligne par direct, `join_code` + `write_token` du lanceur), plus de
+    scène globale unique ; l'ancienne ligne `live_state` n'est lue qu'en
+    repli pour les vieux bundles ;
+  - **le spectateur suit une IDENTITÉ, pas une session** (décision Vincent,
+    b170 — annule le code de salon visible de b121) : le QR mène à
+    `/sonnom`, le public y RESTE, et la page résout le direct par le NOM de
+    l'artiste (`/api/live?artist=`) en boucle. Trois états sur cette même
+    adresse : pas de direct → la fiche de l'artiste ; direct sans partition
+    → « Le concert commence dans un instant… » ; partition diffusée → les
+    paroles. Un concert coupé puis relancé crée une nouvelle session : avec
+    un code, l'ancienne adresse mourait et il fallait rescanner ; avec le
+    nom, la page le retrouve seule. Le `join_code` reste un identifiant
+    INTERNE (jamais affiché, jamais saisi) et `?c=` n'est plus lu que pour
+    honorer un lien déjà en circulation ;
   - **ligne rouge « outil, pas catalogue »** (§A.4 du mémo fondateurs) :
     aucune recherche de morceaux côté serveur, aucune base mutualisée entre
     comptes, aucun préremplissage de bibliothèque ; un morceau ne circule
