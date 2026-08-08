@@ -376,12 +376,18 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
       // nom dictable réservé automatiquement s'il manquait (b136) — le QR
       // pointe vers /sonnom, cette page ne doit jamais être vide. Silencieux
       // et non bloquant : un souci réseau ne retarde pas le concert.
+      //
+      // On y publie MON profil, jamais celui du groupe (b183) : mon QR est
+      // unique et sert aux deux, mais un concert de groupe ne doit pas
+      // remplacer définitivement ma fiche par celle du groupe. Ce que le
+      // public voit PENDANT le direct vient de l'état du live (`artist`
+      // ci-dessous) — c'est là que mon choix solo/groupe s'applique.
       if (next !== 'off') {
         void (async () => {
           try {
             const s = await getValidSession();
             if (!s) return;
-            const name = await ensurePublicPage(s, performer);
+            const name = await ensurePublicPage(s, artist);
             if (name) setPublicName(name);
           } catch {
             /* best-effort */

@@ -156,6 +156,20 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     été effacées. La définition vit à UN seul endroit,
     `src/lib/pastlives.ts` (historique de l'onglet Live et compteur de la
     fiche Artiste : même fonction, même chiffre) ;
+  - **à qui appartient un live** (b183) : je l'ai lancé → il est à moi ; il
+    est tagué d'un groupe → il appartient aux MEMBRES de ce groupe (un
+    concert de groupe est un acte collectif) ; lancé en solo par quelqu'un
+    d'autre → il ne me regarde pas. JAMAIS de « oui » par défaut : une
+    ligne sans identité n'appartient à personne (avant b183, elle tombait
+    chez tout le monde). Même filtre sur les morceaux archivés du repli.
+    **Supprimer un live est LOCAL** (`prefs.hiddenLives`) : rien n'est
+    effacé côté serveur, les autres membres gardent le leur ;
+  - **mon QR est unique, mon choix au lancement décide de ce que voit le
+    public** (b183) : le passage en direct réserve/rafraîchit ma fiche
+    publique avec MON profil, jamais celui du groupe (sinon un concert de
+    groupe remplaçait définitivement ma fiche perso). L'identité du
+    concert (solo ou groupe) voyage dans l'état du live (`artist`) et ne
+    vaut que pendant le direct ;
   - **ligne rouge « outil, pas catalogue »** (§A.4 du mémo fondateurs) :
     aucune recherche de morceaux côté serveur, aucune base mutualisée entre
     comptes, aucun préremplissage de bibliothèque ; un morceau ne circule

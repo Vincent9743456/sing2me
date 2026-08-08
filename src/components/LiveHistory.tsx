@@ -13,7 +13,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { PromptSheet } from './Feedback';
+import { ConfirmSheet, PromptSheet, useToast } from './Feedback';
 import { Icon } from './Icon';
 import { t } from '../i18n';
 import {
@@ -57,6 +57,12 @@ export function LiveHistory() {
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<PastLive | null>(null);
+  const [deleting, setDeleting] = useState<PastLive | null>(null);
+  const toast = useToast();
+  // Lives retirés de MON historique : un simple classement personnel, jamais
+  // propagé aux autres membres du groupe (b183).
+  const caches = prefs.hiddenLives ?? [];
+  const cachesKey = caches.join(',');
 
   const names = [artist.name, ...bands.map((b) => b.name)]
     .map((n) => n.trim())
@@ -116,16 +122,27 @@ export function LiveHistory() {
         stats,
         messages,
         names,
-        bandCloudIds: cloudKey === '' ? [] : cloudKey.split(','),
+        bands: bands.map((b) => ({ cloudId: b.cloudId ?? '', name: b.name })),
         me: meKey === '' ? [] : meKey.split(','),
         artistName: artist.name,
-      }),
+      }).filter((l) => !caches.includes(l.id)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, sessions, stats, messages, namesKey, cloudKey, meKey],
+    [rows, sessions, stats, messages, namesKey, cloudKey, meKey, cachesKey],
   );
 
   function nomDe(live: PastLive): string {
     return (prefs.liveNames ?? {})[live.id] ?? '';
+  }
+  /**
+   * Retirer un live de MON historique. Rien n'est effacé côté serveur : si
+   * c'était un concert de groupe, il appartient aussi aux autres membres, et
+   * eux seuls décident de le garder (instruction Vincent, b183).
+   */
+  function supprimer(live: PastLive) {
+    const next = [...caches.filter((id) => id !== live.id), live.id];
+    savePrefs({ ...prefs, hiddenLives: next.slice(-500) });
+    setOpen(null);
+    toast.show(t('Live retiré de ton historique.'));
   }
   function renommer(live: PastLive, nom: string) {
     const next = { ...(prefs.liveNames ?? {}) };
@@ -191,6 +208,9 @@ export function LiveHistory() {
               <div className="sub">
                 {nomDe(l) !== '' && <>{jourLong(l.startedAt)} · </>}
                 {l.band !== '' ? l.band : t('Solo')}
+                {l.startedBy !== '' && (
+                  <> · {t('lancé par {qui}', { qui: l.startedBy })}</>
+                )}
                 {l.setlist !== '' && <> · {l.setlist}</>}
                 {' · '}
                 {t('❤ {h} · 💬 {m} · 👥 {u}', {
@@ -224,6 +244,9 @@ export function LiveHistory() {
               {ouvert.endedAt !== null && <> → {heure(ouvert.endedAt)}</>}
               {' · '}
               {ouvert.band !== '' ? ouvert.band : t('Solo')}
+              {ouvert.startedBy !== '' && (
+                <> · {t('lancé par {qui}', { qui: ouvert.startedBy })}</>
+              )}
               {ouvert.setlist !== '' && <> · {ouvert.setlist}</>}
             </p>
             <div className="rowactions" style={{ justifyContent: 'center' }}>
@@ -232,6 +255,12 @@ export function LiveHistory() {
                 onClick={() => setRenaming(ouvert)}
               >
                 {t('✏️ Nommer ce live')}
+              </button>
+              <button
+                className="btn ghost small"
+                onClick={() => setDeleting(ouvert)}
+              >
+                {t('🗑 Supprimer')}
               </button>
             </div>
 
@@ -299,6 +328,22 @@ export function LiveHistory() {
             )}
           </div>
         </div>
+      )}
+
+      {deleting && (
+        <ConfirmSheet
+          title={t('Supprimer ce live ?')}
+          message={t(
+            'Il disparaît de TON historique. Si c’était un concert de groupe, les autres membres gardent le leur.',
+          )}
+          confirmLabel={t('Supprimer')}
+          danger
+          onConfirm={() => {
+            supprimer(deleting);
+            setDeleting(null);
+          }}
+          onClose={() => setDeleting(null)}
+        />
       )}
 
       {renaming && (

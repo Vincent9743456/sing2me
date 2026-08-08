@@ -164,16 +164,16 @@ h3 {
   display: flex;
   justify-content: center;
   gap: 4px;
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(14px);
+  /* PAS de `backdrop-filter` ici (b183). Sur iOS, un élément fixe FLOUTÉ
+     au-dessus d'une longue liste est repeint au mauvais endroit pendant
+     l'inertie du défilement : la barre partait au milieu de l'écran et se
+     remettait en place en remontant. Lui donner sa propre couche
+     (`translateZ`, b181) n'y changeait rien — c'est le flou lui-même qui
+     coûte le repaint. Fond opaque : même lisibilité, aucun calcul. */
+  background: var(--surface);
   border-top: 1px solid var(--border-soft);
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
   z-index: 10;
-  /* iOS repeint mal un élément fixe flouté pendant l'inertie du
-     défilement : la barre semblait remonter au milieu de la page. Lui
-     donner sa propre couche de composition règle le symptôme (b181). */
-  transform: translateZ(0);
-  will-change: transform;
 }
 .tabbar button {
   flex: 1;
@@ -1810,8 +1810,9 @@ textarea.mono {
   align-items: center;
   gap: 8px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, #000 80%, transparent);
-  backdrop-filter: blur(12px);
+  /* Opaque, sans flou (b183) : en mode scène on fait défiler les paroles
+     sous cette barre — c'est le cas qui déclenche le repaint fautif iOS. */
+  background: #000;
   border-top: 1px solid var(--border-soft);
 }
 .stage .controls .btn {
@@ -2111,8 +2112,10 @@ textarea.mono {
   align-items: stretch;
   padding: var(--sp-2) var(--sp-3)
     calc(var(--sp-2) + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--bg) 86%, transparent);
-  backdrop-filter: blur(10px);
+  /* Fond opaque, pas de flou (b183) : cette barre reste à l'écran pendant
+     que le public fait défiler les paroles — exactement la situation où
+     iOS repeint un élément fixe flouté au mauvais endroit. */
+  background: var(--bg);
   border-top: 1px solid var(--border);
 }
 .pubbar button {
@@ -2519,8 +2522,8 @@ h2.pagetitle {
   height: 38px;
   border-radius: 50%;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface-high) 78%, transparent);
-  backdrop-filter: blur(8px);
+  /* Opaque (b183) : flotte au-dessus d'une liste qui défile. */
+  background: var(--surface-high);
   color: var(--text-dim);
   font-size: 1rem;
   font-weight: 700;
@@ -2765,8 +2768,9 @@ h2.pagetitle {
   justify-content: center;
   gap: 10px;
   padding: 10px 16px;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(10px);
+  /* Fond opaque, pas de flou : même bug de repaint iOS que la barre
+     d'onglets (voir .tabbar, b183). */
+  background: var(--bg);
   border-top: 1px solid var(--border-soft);
 }
 .savebar .btn {
@@ -3197,8 +3201,8 @@ h2.pagetitle {
 }
 .setnav .btn {
   pointer-events: auto;
-  background: color-mix(in srgb, var(--surface-high) 94%, transparent);
-  backdrop-filter: blur(10px);
+  /* Opaque (b183) : flotte au-dessus des paroles qui défilent. */
+  background: var(--surface-high);
   box-shadow: var(--shadow-soft);
 }
 .setnav .btn:disabled {

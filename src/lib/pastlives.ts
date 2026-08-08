@@ -29,6 +29,8 @@ export interface PastLive {
   hearts: number;
   /** Qui jouait : '' = soi (solo), sinon le nom du groupe. */
   band: string;
+  /** Qui a appuyé sur GO LIVE, si ce n'est pas moi ('' sinon). */
+  startedBy: string;
   /** Setlist tournée, '' si aucune (ou SQL pas encore rejoué). */
   setlist: string;
 }
@@ -42,8 +44,8 @@ export interface PastLivesInput {
   messages: LiveMessage[];
   /** Mon nom d'artiste + ceux de mes groupes (identités affichées). */
   names: string[];
-  /** cloudId des groupes dont je suis membre. */
-  bandCloudIds: string[];
+  /** Mes groupes : cloudId (appartenance) et nom (affichage). */
+  bands: { cloudId: string; name: string }[];
   /** Mes noms personnels (nom d'artiste, pseudo) : « qui a lancé ». */
   me: string[];
   /** Mon nom d'artiste, pour distinguer « Solo » d'un concert de groupe. */
@@ -63,24 +65,23 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
   const mine = new Set(
     input.names.map((n) => n.trim().toLowerCase()).filter((n) => n !== ''),
   );
-  const mesGroupes = new Set(
-    input.bandCloudIds.map((c) => c.trim()).filter((c) => c !== ''),
+  const mesGroupes = new Map<string, string>(
+    input.bands
+      .map((b): [string, string] => [b.cloudId.trim(), b.name.trim()])
+      .filter(([c]) => c !== ''),
   );
   const moi = input.me.map((n) => n.trim().toLowerCase()).filter((n) => n !== '');
   const moiSeul = artistName.trim().toLowerCase();
 
-  const aMoi = (v: string | null | undefined) => {
-    const w = String(v ?? '')
-      .trim()
-      .toLowerCase();
-    return w === '' || mine.size === 0 || mine.has(w);
-  };
   /**
-   * Ce live est-il le mien ? Trois façons de l'être — il porte mon nom (ou
-   * celui d'un de mes groupes), il est tagué d'un groupe dont je suis membre,
-   * ou c'est MOI qui l'ai lancé. La troisième compte : un concert lancé au nom
-   * d'un groupe porte le nom du GROUPE, et disparaissait de mon historique
-   * tant que ce groupe n'était pas encore dans ma bibliothèque.
+   * Ce live est-il le mien ? Quatre questions, dans cet ordre — et JAMAIS de
+   * « oui » par défaut (b183). L'ancienne version considérait un live sans
+   * nom d'artiste comme appartenant à tout le monde : l'historique d'un autre
+   * musicien pouvait atterrir chez soi.
+   *
+   * Règle actée : je l'ai lancé → il est à moi ; il est tagué d'un groupe →
+   * il appartient aux MEMBRES de ce groupe (un concert de groupe est un acte
+   * collectif) ; lancé en solo par quelqu'un d'autre → il ne me regarde pas.
    */
   const monLive = (r: PastLiveRow) => {
     const par = String(r.started_by ?? '')
@@ -88,8 +89,12 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
       .toLowerCase();
     if (par !== '' && moi.includes(par)) return true;
     const bid = String(r.band_id ?? '').trim();
-    if (bid !== '' && mesGroupes.has(bid)) return true;
-    return aMoi(r.artist?.name);
+    if (bid !== '') return mesGroupes.has(bid);
+    if (par !== '') return false; // solo de quelqu'un d'autre
+    const nom = String(r.artist?.name ?? '')
+      .trim()
+      .toLowerCase();
+    return nom !== '' && mine.has(nom); // vieux live, sans lanceur enregistré
   };
   const at = (iso: string | null | undefined) => {
     const v = new Date(String(iso ?? '')).getTime();
@@ -98,15 +103,26 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
   /** Le nom affiché est-il un groupe, ou moi ? */
   const groupe = (nom: string) =>
     nom !== '' && nom.toLowerCase() !== moiSeul ? nom : '';
+  /** Qui a lancé, à n'afficher que si ce n'est pas moi. */
+  const lanceur = (v: string | null | undefined) => {
+    const w = String(v ?? '').trim();
+    return w !== '' && !moi.includes(w.toLowerCase()) ? w : '';
+  };
 
-  const mesSeances = (sessions ?? []).filter((s) => aMoi(s.artist_name));
+  const mesSeances = sessions ?? [];
   const restants = new Set(stats.map((_, i) => i));
 
   const construit = (
     id: string,
     debut: number,
     fin: number,
-    opts: { band: string; setlist: string; ouvert: boolean; uniques: number },
+    opts: {
+      band: string;
+      startedBy: string;
+      setlist: string;
+      ouvert: boolean;
+      uniques: number;
+    },
   ): PastLive => {
     const songs: LiveStat[] = [];
     stats.forEach((x, i) => {
@@ -131,6 +147,7 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
       messages: msgs,
       hearts: songs.reduce((n, x) => n + x.hearts, 0),
       band: opts.band,
+      startedBy: opts.startedBy,
       setlist: opts.setlist,
     };
   };
@@ -146,9 +163,13 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
     const ouvert = r.status !== 'off';
     const fin = ouvert ? maintenant : at(r.updated_at) || debut;
     const seance = mesSeances.find((se) => se.id === r.session_id);
+    // Le nom du groupe vient de MA bibliothèque quand je le connais : c'est
+    // le seul à jour si le groupe a été renommé depuis le concert.
+    const duGroupe = mesGroupes.get(String(r.band_id ?? '').trim()) ?? '';
     out.push(
       construit(r.id, debut, fin, {
-        band: groupe((r.artist?.name ?? '').trim()),
+        band: duGroupe !== '' ? duGroupe : groupe((r.artist?.name ?? '').trim()),
+        startedBy: lanceur(r.started_by),
         setlist: r.setlist_name ?? '',
         ouvert,
         uniques: seance?.uniques ?? 0,
@@ -156,9 +177,18 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
     );
   }
   // 2) Morceaux orphelins (lives d'avant b182) : reconstitution au temps.
+  //    Un morceau joué par quelqu'un d'autre n'entre PAS dans mon historique,
+  //    même si le serveur me l'a laissé passer (b183). Le nom vide reste
+  //    admis : c'est l'archive d'avant la colonne `performer`.
   const orphelins = [...restants]
     .map((i) => stats[i])
     .filter((x) => !Number.isNaN(at(x.played_at)))
+    .filter((x) => {
+      const p = String(x.performer ?? '')
+        .trim()
+        .toLowerCase();
+      return p === '' || mine.size === 0 || mine.has(p);
+    })
     .sort((a, b) => a.played_at.localeCompare(b.played_at));
   let paquet: LiveStat[] = [];
   const vider = () => {
@@ -170,6 +200,7 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
         band: groupe(
           (paquet.find((x) => (x.performer ?? '') !== '')?.performer ?? '').trim(),
         ),
+        startedBy: '',
         setlist:
           paquet.find((x) => (x.setlist_name ?? '') !== '')?.setlist_name ?? '',
         ouvert: false,
