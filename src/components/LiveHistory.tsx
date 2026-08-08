@@ -20,6 +20,7 @@ import { Icon } from './Icon';
 import { t } from '../i18n';
 import {
   fetchAudienceSessions,
+  fetchDiag,
   fetchLiveStats,
   fetchMessages,
   LiveMessage,
@@ -169,6 +170,10 @@ export function LiveHistory() {
         <p className="help">
           {t('Aucun live pour l’instant — lance-en un depuis le bouton GO LIVE.')}
         </p>
+        {/* Un écran vide ne dit pas POURQUOI il est vide : ici, on peut le
+            demander (b178). Les directs sont journalisés dans une table
+            distincte, et son absence passait jusqu'ici inaperçue. */}
+        <Diagnostic liveKey={prefs.liveKey} />
       </>
     );
   }
@@ -314,5 +319,50 @@ export function LiveHistory() {
         />
       )}
     </>
+  );
+}
+
+/**
+ * « Pourquoi c'est vide ? » (b178) — replié par défaut, en petits
+ * caractères : ça ne s'adresse pas à l'usage courant, mais ça évite un
+ * aller-retour d'une journée quand un écran reste à zéro sans raison.
+ */
+function Diagnostic({ liveKey }: { liveKey: string }) {
+  const [data, setData] = useState<Awaited<ReturnType<typeof fetchDiag>>>(null);
+  const [asked, setAsked] = useState(false);
+  return (
+    <details
+      className="stfold"
+      onToggle={(e) => {
+        if (!(e.currentTarget as HTMLDetailsElement).open || asked) return;
+        setAsked(true);
+        void fetchDiag(liveKey).then(setData);
+      }}
+    >
+      <summary>{t('Pourquoi c’est vide ?')}</summary>
+      <div className="spacer" />
+      {data === null ? (
+        <p className="help">{t('Vérification…')}</p>
+      ) : data.configured === false ? (
+        <p className="help">{data.note ?? t('Le direct n’est pas configuré.')}</p>
+      ) : (
+        <div className="card">
+          {data.tables.map((tb) => (
+            <div className="strow" key={tb.table}>
+              <span style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                {tb.table}
+              </span>
+              <span className="stauthor" style={{ fontSize: '0.78rem' }}>
+                {!tb.ok
+                  ? t('inaccessible : {d}', { d: tb.detail || '?' })
+                  : tb.rows === 0
+                    ? t('vide')
+                    : t('{n} ligne(s)', { n: tb.rows ?? 0 })}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </details>
   );
 }
