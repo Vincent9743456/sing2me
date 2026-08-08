@@ -424,16 +424,20 @@ export async function fetchDiag(
 export async function fetchMessages(
   key: string,
   names: string | string[] = [],
+  /** cloudId de mes groupes : un mot laissé pendant un concert du groupe
+   *  appartient à tous ses membres (b191, même règle que les morceaux). */
+  bandCloudIds: string[] = [],
 ): Promise<LiveMessage[]> {
   const who = (Array.isArray(names) ? names : [names])
     .map((n) => n.trim())
     .filter((n) => n !== '');
+  const cids = bandCloudIds.map((c) => c.trim()).filter((c) => c !== '');
   let res: Response;
   try {
     res = await fetch(
-      who.length > 0
-        ? `/api/live-x?fn=message&performer=${encodeURIComponent(who.join(','))}`
-        : '/api/live-x?fn=message',
+      `/api/live-x?fn=message` +
+        (who.length > 0 ? `&performer=${encodeURIComponent(who.join(','))}` : '') +
+        (cids.length > 0 ? `&bands=${encodeURIComponent(cids.join(','))}` : ''),
       { headers: { 'x-live-key': key } },
     );
   } catch {
@@ -441,7 +445,28 @@ export async function fetchMessages(
   }
   const body = await readJson(res);
   if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
+  // Compteurs du diagnostic : combien de lignes le serveur a LU, combien il
+  // en a gardé pour moi. Sans eux, « 0 mot » se confond avec « aucun mot ».
+  dernierTriMots = {
+    read: typeof body.read === 'number' ? body.read : null,
+    kept: typeof body.kept === 'number' ? body.kept : null,
+    detail: typeof body.detail === 'string' ? body.detail : '',
+  };
   return Array.isArray(body.messages) ? body.messages : [];
+}
+
+/** Ce que la dernière lecture du livre d'or a vu (diagnostic uniquement). */
+export interface TriMots {
+  /** Lignes lues en base (null = la lecture a échoué). */
+  read: number | null;
+  /** Lignes retenues pour ce compte. */
+  kept: number | null;
+  /** Raison technique de l'échec, s'il y en a une. */
+  detail: string;
+}
+let dernierTriMots: TriMots = { read: null, kept: null, detail: '' };
+export function triMots(): TriMots {
+  return dernierTriMots;
 }
 
 /** Messages du public regroupés par morceau. */
