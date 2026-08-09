@@ -39,6 +39,11 @@ export function applyUgTextToSong(
   text: string,
   mode: 'replace' | 'version',
 ): Song {
+  // Le doute de l'import portait sur le contenu qu'on remplace (b218) :
+  // choisir une autre partition, c'est justement l'avoir vérifiée.
+  // Signalement de Vincent : le badge « 🔎 À vérifier » survivait à tout —
+  // nouvelle version, suppression de l'originale, il restait là.
+  if (song.needsCheck) song = { ...song, needsCheck: undefined };
   const fresh = importText(text, song.title).song;
   const patch = (v: { key: string }) => ({
     key: fresh.key !== '' ? fresh.key : v.key,

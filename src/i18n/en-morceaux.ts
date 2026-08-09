@@ -297,6 +297,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   'N’en faire qu’un seul': 'Keep it as one',
   'Tes morceaux restent à toi : tu peux tout réexporter à tout moment (carnet PDF ou fichiers texte), et rien n’est jamais supprimé sans toi.':
     'Your songs stay yours: you can export everything at any time (PDF songbook or text files), and nothing is ever deleted without you.',
+  '✓ Partition vérifiée': '✓ Chart checked',
   'À vérifier': 'To check',
   'Morceaux dont l’import a douté — un coup d’œil suffit souvent':
     'Songs the import wasn’t sure about — a quick look is usually enough',
