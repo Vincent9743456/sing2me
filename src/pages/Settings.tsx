@@ -10,7 +10,7 @@
  *   enterré par id (pierres tombales) pour que la suppression se propage
  *   aux autres appareils sans bloquer un futur ré-import.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { ConfirmSheet, useToast } from '../components/Feedback';
 import { Icon } from '../components/Icon';
@@ -20,7 +20,15 @@ import { getValidSession } from '../lib/auth';
 import { leaveBand } from '../lib/bands';
 import { LiveStatus, pushLive, pushSetlist } from '../lib/live';
 import { navigate } from '../router';
-import { ResetParts, useStore } from '../store';
+import { AppState, ResetParts, useStore } from '../store';
+import {
+  backupFileName,
+  decrireRestauration,
+  makeBackup,
+  readBackup,
+} from '../lib/backup';
+import { mergeStates, SyncState } from '../lib/sync';
+import { APP_BUILD } from '../version';
 
 const RESET_CHOICES: {
   key: keyof ResetParts;
@@ -57,9 +65,84 @@ const RESET_CHOICES: {
 ];
 
 export function Settings() {
+  const store = useStore();
   const { songs, setlists, concerts, bands, resetData, prefs, savePrefs } =
-    useStore();
+    store;
   const toast = useToast();
+  const fichierRef = useRef<HTMLInputElement | null>(null);
+
+  /** Compose l'état complet, dans la forme attendue par la restauration. */
+  function etatComplet(): AppState {
+    return {
+      songs: store.songs,
+      setlists: store.setlists,
+      concerts: store.concerts,
+      bands: store.bands,
+      artist: store.artist,
+      prefs: store.prefs,
+      deleted: store.deleted,
+      bandRemovals: store.bandRemovals,
+      resetAt: store.resetAt,
+    };
+  }
+
+  /**
+   * Écrit le fichier de sauvegarde. Passe par un lien de téléchargement :
+   * c'est le seul chemin qui marche partout, y compris dans l'app installée
+   * sur iPhone, où le fichier atterrit dans « Fichiers ».
+   */
+  function sauvegarder() {
+    try {
+      const backup = makeBackup(etatComplet(), APP_BUILD);
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = backupFileName();
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast.show(
+        t('Sauvegarde enregistrée — {n} morceaux.', { n: store.songs.length }),
+      );
+    } catch {
+      toast.show(t('La sauvegarde n’a pas pu être écrite.'));
+    }
+  }
+
+  /**
+   * Relit un fichier et FUSIONNE. On ne remplace jamais : ce qui manque
+   * revient, ce qui existe des deux côtés garde sa version la plus récente.
+   * Restaurer une vieille sauvegarde ne peut donc pas effacer le travail
+   * d'hier — un filet, pas un piège.
+   */
+  async function restaurer(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (fichierRef.current) fichierRef.current.value = '';
+    if (!f) return;
+    const lu = readBackup(await f.text());
+    if (lu.ok !== true) {
+      toast.show(lu.raison);
+      return;
+    }
+    const avant = etatComplet();
+    const { nouveaux } = decrireRestauration(avant, lu.backup);
+    const fusionne = mergeStates(
+      avant as unknown as SyncState,
+      lu.backup.state as unknown as SyncState,
+    );
+    store.hydrate(fusionne as unknown as AppState);
+    toast.show(
+      nouveaux > 1
+        ? t('{n} morceaux retrouvés.', { n: nouveaux })
+        : nouveaux === 1
+          ? t('1 morceau retrouvé.')
+          : t('Rien à ajouter — tout y était déjà.'),
+    );
+  }
   const [picked, setPicked] = useState<Set<keyof ResetParts>>(new Set());
   const [confirming, setConfirming] = useState(false);
   // Tableau de bord fondateur (b160) : l'entrée n'apparaît que pour les
@@ -184,6 +267,30 @@ export function Settings() {
           }
           onClick={() => navigate('/export-pdf')}
         />
+        <AccordionNav
+          title={t('💾 Enregistrer une sauvegarde')}
+          sub={t(
+            'Un fichier que tu gardes chez toi — il se relit même sans nous',
+          )}
+          onClick={sauvegarder}
+        />
+        <AccordionNav
+          title={t('↩︎ Restaurer une sauvegarde')}
+          sub={t('Ajoute ce qui manque, n’écrase jamais ce qui est plus récent')}
+          onClick={() => fichierRef.current?.click()}
+        />
+        <input
+          ref={fichierRef}
+          type="file"
+          accept=".json,application/json"
+          style={{ display: 'none' }}
+          onChange={(e) => void restaurer(e)}
+        />
+        <p className="help">
+          {t(
+            'Ta bibliothèque vit sur ce téléphone ; la copie en ligne sert à la retrouver sur un autre appareil. Une sauvegarde te met à l’abri des deux à la fois.',
+          )}
+        </p>
 
         <div className="spacer" />
         <h2 className="pagetitle">{t('Réinitialiser')}</h2>

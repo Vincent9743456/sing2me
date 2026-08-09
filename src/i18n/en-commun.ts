@@ -23,6 +23,29 @@ export const EN_COMMUN: Record<string, string> = {
     'Your charts, lyrics, notes and messages are never translated — only the interface changes language.',
   Exporter: 'Export',
   '📄 Exporter la bibliothèque en PDF': '📄 Export the library as PDF',
+  // Sauvegarde et restauration : le filet qui ne dépend d'aucun serveur.
+  '💾 Enregistrer une sauvegarde': '💾 Save a backup',
+  'Un fichier que tu gardes chez toi — il se relit même sans nous':
+    'A file you keep — it reads back even without us',
+  '↩︎ Restaurer une sauvegarde': '↩︎ Restore a backup',
+  'Ajoute ce qui manque, n’écrase jamais ce qui est plus récent':
+    'Adds what is missing, never overwrites anything newer',
+  'Ta bibliothèque vit sur ce téléphone ; la copie en ligne sert à la retrouver sur un autre appareil. Une sauvegarde te met à l’abri des deux à la fois.':
+    'Your library lives on this phone; the online copy is there to find it again on another device. A backup covers you against losing both.',
+  'Sauvegarde enregistrée — {n} morceaux.': 'Backup saved — {n} songs.',
+  'La sauvegarde n’a pas pu être écrite.': 'The backup could not be written.',
+  '{n} morceaux retrouvés.': '{n} songs recovered.',
+  '1 morceau retrouvé.': '1 song recovered.',
+  'Rien à ajouter — tout y était déjà.': 'Nothing to add — it was all there.',
+  'Ce fichier n’est pas lisible — il a peut-être été tronqué.':
+    'This file cannot be read — it may have been truncated.',
+  'Ce fichier ne contient pas de sauvegarde.':
+    'This file does not contain a backup.',
+  'Ce fichier ne vient pas de Sing2Me.': 'This file does not come from Sing2Me.',
+  'Cette sauvegarde est incomplète — ses morceaux sont illisibles.':
+    'This backup is incomplete — its songs cannot be read.',
+  'Sauvegarde en ligne incohérente — ta bibliothèque locale a été conservée.':
+    'Inconsistent online backup — your local library was kept.',
   '{n} morceau': '{n} song',
   '{n} morceaux': '{n} songs',
   ' — carnet imprimable, « Enregistrer en PDF »':
