@@ -13,7 +13,12 @@ import React, {
   useState,
 } from 'react';
 
-import { bandKeysMatch, songKey } from './lib/normalizeTitle';
+import {
+  bandKeysMatch,
+  keyTitlePart,
+  normalizeTitle,
+  songKey,
+} from './lib/normalizeTitle';
 import { ResetMarks } from './lib/sync';
 import {
   isAbandonedSetlist,
@@ -173,10 +178,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(loadState);
   const timer = useRef<number | null>(null);
 
-  // Contenu témoin (lot E) : à la toute première ouverture, on injecte 2
-  // morceaux d'exemple + 1 setlist. Une seule fois (drapeau), jamais réinjecté
-  // après suppression. EXCEPTION : un invité (lien de groupe/partage) reçoit du
-  // vrai contenu, pas les exemples.
+  /**
+   * Contenu témoin : deux morceaux d'exemple à la toute première ouverture.
+   *
+   * DEUX GARDES, apprises à nos dépens (b200 — signalé par Marco, qui a vu
+   * « À la claire fontaine » et « Le temps des cerises » revenir après les
+   * avoir supprimés) :
+   *
+   *  1. Les exemples reçoivent un identifiant NEUF à chaque injection : une
+   *     pierre tombale, qui vise un identifiant, ne pouvait donc jamais les
+   *     arrêter. On compare maintenant par TITRE — un exemple enterré ne
+   *     réapparaît plus jamais.
+   *  2. Le seed s'exécutait au montage, AVANT que la synchronisation n'ait
+   *     rapatrié la bibliothèque du compte. Sur un appareil dont le stockage
+   *     local a été vidé, l'app voyait une bibliothèque vide et injectait les
+   *     exemples par-dessus une vraie collection. Quand un compte est
+   *     connecté, on laisse donc à la synchro le temps de parler.
+   */
   useEffect(() => {
     let seeded = false;
     try {
@@ -186,34 +204,58 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
     if (seeded) return;
     // Sur un lien de partage/invitation (#/s/… ou #/p/…), on ne seede pas et
-    // on ne pose PAS le drapeau : l'invité voit du vrai contenu, et un simple
-    // visiteur de partage garde ses exemples pour sa première vraie ouverture.
-    // (Le drapeau « pendingInvite » n'est posé qu'APRÈS le clic « rejoindre »,
-    // donc trop tard pour couvrir l'atterrissage sur la page d'invitation.)
+    // on ne pose PAS le drapeau : l'invité voit du vrai contenu.
     try {
       if (/^#\/(s|p)\//.test(location.hash)) return;
     } catch {
       /* location indisponible */
     }
     let invited = false;
+    let connecte = false;
     try {
       invited = localStorage.getItem('sing2me/pendingInvite') !== null;
+      connecte = localStorage.getItem('sing2me/session') !== null;
     } catch {
       invited = false;
     }
-    // On marque comme fait dans tous les cas (invité inclus : pas d'exemples).
-    try {
-      localStorage.setItem(SEED_KEY, SEED_VERSION);
-    } catch {
-      // stockage indisponible : tant pis, pas d'exemples
+    const poser = () => {
+      try {
+        localStorage.setItem(SEED_KEY, SEED_VERSION);
+      } catch {
+        // stockage indisponible : tant pis, pas d'exemples
+      }
+    };
+    if (invited) {
+      poser();
+      return;
     }
-    if (invited) return;
-    setState((prev) => {
-      if (prev.songs.length > 0 || prev.setlists.length > 0) return prev;
-      const songs = exampleSongs();
-      const setlist = exampleSetlist(songs.map((s) => s.id));
-      return { ...prev, songs, setlists: [setlist] };
-    });
+    const injecter = () => {
+      poser();
+      setState((prev) => {
+        if (prev.songs.length > 0 || prev.setlists.length > 0) return prev;
+        // Garde 1 : un exemple ENTERRÉ ne revient pas. La comparaison se fait
+        // sur le titre, seul repère stable — l'identifiant, lui, est neuf.
+        const enterres = new Set(
+          prev.deleted
+            .map((t) => keyTitlePart(t.key ?? ''))
+            .filter((t) => t !== ''),
+        );
+        const songs = exampleSongs().filter(
+          (sg) => !enterres.has(normalizeTitle(sg.title)),
+        );
+        if (songs.length === 0) return prev;
+        const setlist = exampleSetlist(songs.map((sg) => sg.id));
+        return { ...prev, songs, setlists: [setlist] };
+      });
+    };
+    // Garde 2 : avec un compte, la bibliothèque arrive du cloud — on lui
+    // laisse le temps. `injecter` re-teste de toute façon avant d'écrire.
+    if (!connecte) {
+      injecter();
+      return;
+    }
+    const id = window.setTimeout(injecter, 6000);
+    return () => window.clearTimeout(id);
     // au montage uniquement
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -475,6 +517,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (parts.songs) resetAt.songs = at;
       if (parts.setlists) resetAt.setlists = at;
       if (parts.concerts) resetAt.concerts = at;
+      // L'onglet s'appelle « Live » : réinitialiser les concerts doit aussi
+      // vider l'historique des directs (remarque de Marco). Les lives sont
+      // côté serveur et souvent collectifs — on ne les efface pas, on arrête
+      // de montrer ceux d'avant.
+      if (parts.concerts) resetAt.lives = at;
       if (parts.bands) resetAt.bands = at;
       return {
         ...prev,

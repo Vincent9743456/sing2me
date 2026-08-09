@@ -52,6 +52,12 @@ export interface PastLivesInput {
   artistName: string;
   /** Injectable pour les tests ; sinon l'heure courante. */
   now?: number;
+  /**
+   * Point zéro de l'historique (b200) : les lives commencés AVANT cette date
+   * ne s'affichent plus. Posé en réinitialisant les concerts — rien n'est
+   * effacé côté serveur, les autres membres gardent le leur.
+   */
+  depuis?: string;
 }
 
 /**
@@ -181,6 +187,10 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
     };
   };
 
+  const zero = at(input.depuis);
+  const apresLeZero = (debut: number) =>
+    Number.isNaN(zero) || debut >= zero;
+
   const out: PastLive[] = [];
   // 1) Les lives RÉELLEMENT enregistrés, du plus récent au plus ancien.
   for (const r of [...rows].sort((a, b) =>
@@ -188,6 +198,7 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
   )) {
     const debut = at(r.started_at);
     if (Number.isNaN(debut)) continue; // live d'avant b182 : bornes perdues
+    if (!apresLeZero(debut)) continue; // effacé par une réinitialisation
     if (!monLive(r)) continue;
     const ouvert = r.status !== 'off';
     const fin = ouvert ? maintenant : at(r.updated_at) || debut;
@@ -289,5 +300,7 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
   }
   vider();
 
-  return out.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  return out
+    .filter((l) => apresLeZero(at(l.startedAt)))
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }

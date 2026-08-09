@@ -43,6 +43,13 @@ export interface ResetMarks {
   setlists?: string;
   concerts?: string;
   bands?: string;
+  /**
+   * Réinitialisation des LIVES (b200). Ils vivent côté serveur et
+   * appartiennent parfois à tout un groupe : on ne les efface donc pas, on
+   * cesse d'afficher ceux qui ont commencé avant cette date. Même principe
+   * que la suppression d'un live, qui est déjà locale (b183).
+   */
+  lives?: string;
 }
 
 interface WithId {
