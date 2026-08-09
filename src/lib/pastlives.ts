@@ -122,6 +122,8 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
 
   const mesSeances = sessions ?? [];
   const restants = new Set(stats.map((_, i) => i));
+  /** Séances déjà rattachées à un live : jamais comptées deux fois. */
+  const seancesPrises = new Set<string>();
 
   const construit = (
     id: string,
@@ -216,6 +218,7 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
     const ouvert = r.status !== 'off';
     const fin = ouvert ? maintenant : at(r.updated_at) || debut;
     const seance = mesSeances.find((se) => se.id === r.session_id);
+    if (seance) seancesPrises.add(seance.id);
     // Le nom du groupe vient de MA bibliothèque quand je le connais : c'est
     // le seul à jour si le groupe a été renommé depuis le concert.
     const duGroupe = mesGroupes.get(String(r.band_id ?? '').trim()) ?? '';
@@ -260,6 +263,7 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
   for (const [sid, liste] of parSeance) {
     liste.sort((a, b) => a.played_at.localeCompare(b.played_at));
     const seance = mesSeances.find((se) => se.id === sid);
+    if (seance) seancesPrises.add(seance.id);
     const debut = seance ? at(seance.started_at) : at(liste[0].played_at);
     const fin = seance?.ended_at
       ? at(seance.ended_at)
@@ -288,6 +292,27 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
     .filter(aMoiLeMorceau)
     .sort((a, b) => a.played_at.localeCompare(b.played_at));
   let paquet: LiveStat[] = [];
+  /**
+   * Séance de mesure d'audience d'un live RECONSTITUÉ (b203). Ces lives-là
+   * n'ont plus d'identifiant : leur public était donc perdu, et la fiche
+   * artiste annonçait « 0 spectateurs » alors que la séance existait bel et
+   * bien en base. On rattache par recouvrement des horaires — c'est la seule
+   * piste qui reste, et elle est réservée aux archives sans identifiant,
+   * comme le rattachement des morceaux (b186). Une séance déjà prise par un
+   * vrai live n'est jamais recomptée.
+   */
+  const seancePour = (debut: number, fin: number): number => {
+    const se = mesSeances.find((s) => {
+      if (seancesPrises.has(s.id)) return false;
+      const d = at(s.started_at);
+      const f = s.ended_at ? at(s.ended_at) : maintenant;
+      if (Number.isNaN(d)) return false;
+      return d - MARGE_MS <= fin && (Number.isNaN(f) ? d : f) + MARGE_MS >= debut;
+    });
+    if (!se) return 0;
+    seancesPrises.add(se.id);
+    return se.uniques;
+  };
   const vider = () => {
     if (paquet.length === 0) return;
     const debut = at(paquet[0].played_at);
@@ -301,7 +326,7 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
         setlist:
           paquet.find((x) => (x.setlist_name ?? '') !== '')?.setlist_name ?? '',
         ouvert: false,
-        uniques: 0,
+        uniques: seancePour(debut, fin),
       }),
     );
     paquet = [];

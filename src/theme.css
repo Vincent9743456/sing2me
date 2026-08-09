@@ -3082,6 +3082,30 @@ h2.pagetitle {
   border-color: var(--accent);
 }
 
+/* Rangée de puces qui DÉFILE au lieu de s'empiler (b203).
+   Avec six groupes, les répertoires occupaient quatre lignes et
+   repoussaient les morceaux hors de l'écran — « tout ça prend beaucoup de
+   place, la partition est illisible » (Vincent). Une rangée, un geste
+   latéral : le nombre de groupes ne coûte plus de hauteur. */
+.chips.scrollrow {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  /* Le geste s'arrête proprement sur une puce, jamais entre deux. */
+  scroll-snap-type: x proximity;
+  /* Les puces sont rondes : sans cette marge, la sélection est rognée. */
+  padding-bottom: var(--sp-1);
+  -webkit-overflow-scrolling: touch;
+}
+.chips.scrollrow::-webkit-scrollbar {
+  display: none;
+}
+.chips.scrollrow > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
 /* Mode scène : choix libre d'un morceau (l'ordre de la setlist reste) */
 .stagelist {
   position: fixed;

@@ -64,7 +64,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Tous les morceaux': 'All songs',
   "Morceaux proposés par un groupe — à accepter avant qu'ils rejoignent ta bibliothèque":
     'Songs proposed by a band — accept them before they join your library',
-  '📥 Propositions ({n})': '📥 Proposals ({n})',
+  '📥 À valider': '📥 To approve',
   'Partitions ajoutées dans la semaine': 'Charts added this week',
   '✨ Nouveautés ({n})': '✨ New ({n})',
   'Morceaux importés non encore validés — réserve à travailler':
@@ -75,8 +75,6 @@ export const EN_MORCEAUX: Record<string, string> = {
     'Repertoire playable solo (every song by default, unless disqualified from its page)',
   'Réserve à travailler : jouables partout, mais pas encore validées dans la bibliothèque — ouvre un morceau pour le valider ✓ ou le supprimer.':
     'Work-in-progress stash: playable anywhere, but not yet confirmed in the library — open a song to confirm ✓ it or delete it.',
-  "Morceaux proposés par tes groupes : ils n'entreront dans ta bibliothèque qu'une fois acceptés. Accepte d'un clic ✓ ceux que tu veux garder — les autres restent ici sans t'encombrer.":
-    "Songs proposed by your bands: they won't enter your library until accepted. Accept the ones you want to keep with one click ✓ — the others just stay here, out of your way.",
   'Partitions ajoutées cette semaine — {n} morceaux.': 'Charts added this week — {n} songs.',
   'Partitions ajoutées cette semaine — {n} morceau.': 'Charts added this week — {n} song.',
   'Filtre actif :': 'Active filter:',
