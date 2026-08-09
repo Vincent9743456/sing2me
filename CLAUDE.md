@@ -265,6 +265,15 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     groupe remplaçait définitivement ma fiche perso). L'identité du
     concert (solo ou groupe) voyage dans l'état du live (`artist`) et ne
     vaut que pendant le direct ;
+  - **le risque juridique d'ON AIR est ASSUMÉ** (arbitrage Vincent, août
+    2026) : afficher les paroles au public pendant un concert est une
+    communication au public, distincte de l'exécution des œuvres déjà
+    couverte par la SACEM au niveau du lieu. Vincent connaît la question et
+    prend le risque. **Ne plus la soulever** — ni dans une réflexion, ni
+    dans une recommandation, ni comme réserve en marge d'un autre sujet.
+    Cela ne change rien aux autres garde-fous, qui restent en vigueur : la
+    page de signalement, le cloisonnement par compte, l'absence de
+    catalogue mutualisé.
   - **ligne rouge « outil, pas catalogue »** (§A.4 du mémo fondateurs) :
     aucune recherche de morceaux côté serveur, aucune base mutualisée entre
     comptes, aucun préremplissage de bibliothèque ; un morceau ne circule
