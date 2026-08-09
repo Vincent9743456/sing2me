@@ -108,6 +108,38 @@ export interface LiveMessage {
 const OFFLINE_MSG =
   "Le mode ON AIR nécessite la version en ligne de l'application (Vercel).";
 
+/**
+ * Délai maximum d'un appel au direct (b216). Sans lui, `fetch` peut rester
+ * en attente INDÉFINIMENT sur un réseau qui traîne : le bouton « Arrêter »
+ * restait alors sur « ⏳ Arrêt… » pour toujours, et l'artiste ne pouvait
+ * plus fermer son direct (signalement de Vincent, en plein essai). Une
+ * action doit toujours pouvoir se terminer — quitte à échouer.
+ */
+const DELAI_MAX_MS = 12000;
+
+export const TIMEOUT_MSG =
+  'Le serveur ne répond pas. Vérifie ta connexion et réessaie.';
+
+async function fetchAvecDelai(
+  url: string,
+  init: RequestInit,
+  ms = DELAI_MAX_MS,
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const minuteur = window.setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } catch (e) {
+    throw new Error(
+      e instanceof DOMException && e.name === 'AbortError'
+        ? TIMEOUT_MSG
+        : OFFLINE_MSG,
+    );
+  } finally {
+    window.clearTimeout(minuteur);
+  }
+}
+
 async function readJson(res: Response): Promise<any> {
   const type = res.headers.get('content-type') ?? '';
   if (!type.includes('application/json')) throw new Error(OFFLINE_MSG);
@@ -646,16 +678,11 @@ export async function pushLive(
     payload.liveId = ref.liveId;
     payload.writeToken = ref.writeToken;
   }
-  let res: Response;
-  try {
-    res = await fetch('/api/live', {
-      method: 'POST',
-      headers: liveHeaders(key, { 'content-type': 'application/json' }),
-      body: JSON.stringify(payload),
-    });
-  } catch {
-    throw new Error(OFFLINE_MSG);
-  }
+  const res = await fetchAvecDelai('/api/live', {
+    method: 'POST',
+    headers: liveHeaders(key, { 'content-type': 'application/json' }),
+    body: JSON.stringify(payload),
+  });
   const body = await readJson(res);
   // Référence périmée (live déjà clos/expiré côté serveur) : on repart
   // proprement — une clôture est considérée réussie, un lancement recrée.
@@ -673,6 +700,47 @@ export async function pushLive(
     });
   }
   if (update.status === 'off') saveLiveRef(null);
+}
+
+/**
+ * Clôture EN ATTENTE (b216) : quand « Arrêter » n'atteint pas le serveur,
+ * l'artiste ne doit pas rester prisonnier de son propre direct. Il arrête
+ * sur son téléphone, et l'application rappelle le serveur toute seule dès
+ * qu'elle y arrive. Le jeton d'écriture est conservé pour ça — sans lui,
+ * plus personne ne pourrait clore ce direct.
+ */
+const CLOTURE_KEY = 'sing2me/clotureEnAttente';
+
+export function noterClotureEnAttente(): void {
+  try {
+    localStorage.setItem(CLOTURE_KEY, '1');
+  } catch {
+    /* stockage indisponible */
+  }
+}
+
+export function clotureEnAttente(): boolean {
+  try {
+    return localStorage.getItem(CLOTURE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Rejoue la clôture ; `true` si le serveur l'a enfin acceptée. */
+export async function rejouerCloture(key: string): Promise<boolean> {
+  if (!clotureEnAttente()) return false;
+  try {
+    await pushLive(key, { status: 'off' });
+  } catch {
+    return false; // on réessaiera au prochain tour
+  }
+  try {
+    localStorage.removeItem(CLOTURE_KEY);
+  } catch {
+    /* stockage indisponible */
+  }
+  return true;
 }
 
 /** URL publique du direct, à partager / mettre en QR.

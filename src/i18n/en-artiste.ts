@@ -425,4 +425,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'le groupe': 'the band',
   'Impossible de transmettre le groupe pour le moment.':
     'Cannot hand the band over right now.',
+  // b216 — un arrêt de direct qui n'atteint pas le serveur.
+  '⏹ Arrêter quand même': '⏹ Stop anyway',
+  'Le serveur n’a pas répondu. Tu peux couper ici : ton téléphone sort du direct, et l’application préviendra le serveur dès qu’elle y arrive.':
+    'The server did not answer. You can stop here: your phone leaves the live, and the app will tell the server as soon as it can.',
 };

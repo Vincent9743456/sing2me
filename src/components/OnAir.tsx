@@ -28,6 +28,9 @@ import {
   messagesBySong,
   pushBandSong,
   pushLive,
+  clotureEnAttente,
+  noterClotureEnAttente,
+  rejouerCloture,
   pushSetlist,
 } from '../lib/live';
 import { getValidSession } from '../lib/auth';
@@ -166,6 +169,8 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   );
   const [panel, setPanel] = useState(false);
   const [busy, setBusy] = useState(false);
+  // L'arrêt n'a pas atteint le serveur : on propose de couper ici (b216).
+  const [arretForce, setArretForce] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState('');
@@ -239,11 +244,17 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     };
     void tick();
     const id = window.setInterval(() => void tick(), 5000);
+    // Clôture restée en travers : on rappelle le serveur tant qu'il le faut.
+    const rattrapage = window.setInterval(() => {
+      if (clotureEnAttente()) void rejouerCloture(prefs.liveKey);
+    }, 15000);
+    if (clotureEnAttente()) void rejouerCloture(prefs.liveKey);
     return () => {
       cancelled = true;
       window.clearInterval(id);
+      window.clearInterval(rattrapage);
     };
-  }, [status]);
+  }, [status, prefs.liveKey]);
 
   // Reporte les totaux de ❤ (historique des directs) dans la bibliothèque.
   const syncHearts = useCallback(async () => {
@@ -488,9 +499,24 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : t('Action impossible.'));
+      // Un arrêt qui n'atteint pas le serveur ne doit PAS retenir l'artiste
+      // (b216) : il coupe ici, et l'application rappellera le serveur toute
+      // seule. À défaut, le direct se ferme de lui-même côté serveur (1 h
+      // sans partition). On le dit, sans rien cacher.
+      if (next === 'off') setArretForce(true);
     } finally {
       setBusy(false);
     }
+  }
+
+  /** Arrêt LOCAL, quand le serveur ne répond pas : on n'enferme personne. */
+  function arreterIci() {
+    noterClotureEnAttente();
+    setArretForce(false);
+    setError(null);
+    setStatus('off');
+    setPanel(false);
+    setCurrent(null);
   }
 
   async function showQr() {
@@ -649,7 +675,19 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
               <button className="btn ghost" onClick={() => void showQr()}>
                 {t('Mon QR unique')}
               </button>
+              {arretForce && (
+                <button className="btn danger" onClick={arreterIci}>
+                  {t('⏹ Arrêter quand même')}
+                </button>
+              )}
             </div>
+            {arretForce && (
+              <p className="help" style={{ textAlign: 'center' }}>
+                {t(
+                  'Le serveur n’a pas répondu. Tu peux couper ici : ton téléphone sort du direct, et l’application préviendra le serveur dès qu’elle y arrive.',
+                )}
+              </p>
+            )}
             {qr && (
               <div className="qrbox">
                 <img src={qr} alt={t('QR unique de tes sessions')} />
