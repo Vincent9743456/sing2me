@@ -232,17 +232,23 @@ export function Live({
     };
   }, []);
 
-  // Mesure d'audience (chantier 2) : signale la présence de ce spectateur à
-  // la session en cours pour le comptage des uniques. SANS limite ni blocage,
-  // best-effort, silencieux. Un ping au chargement puis toutes les 90 s.
+  /**
+   * Mesure d'audience : signale la présence de ce spectateur pour le
+   * comptage des uniques. Sans limite ni blocage, best-effort, silencieux.
+   *
+   * Le premier signalement partait AU MONTAGE, quand l'identifiant du direct
+   * n'était pas encore connu (b201) : il tombait alors dans l'ancien chemin,
+   * sans séance, et n'enregistrait rien. Le suivant n'arrivait que 90 s plus
+   * tard — un spectateur qui écoutait un morceau, laissait un cœur et
+   * repartait n'était jamais compté. On signale donc dès que le direct est
+   * identifié, puis toutes les 90 s.
+   */
   useEffect(() => {
-    void pingAttendance(stateIdRef.current);
-    const id = window.setInterval(
-      () => void pingAttendance(stateIdRef.current),
-      90000,
-    );
+    if (state.id === '') return;
+    void pingAttendance(state.id);
+    const id = window.setInterval(() => void pingAttendance(state.id), 90000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [state.id]);
 
   // Setlist souvenir : chargée une fois (le dernier concert terminé).
   useEffect(() => {

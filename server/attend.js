@@ -95,6 +95,30 @@ export default async function handler(req, res) {
             last_seen: new Date().toISOString(),
           }),
         });
+        // Compteur d'uniques tenu à jour PENDANT le direct (b201) : il ne
+        // l'était qu'à la clôture, et l'artiste voyait donc 0 spectateur en
+        // pleine session. Léger, best-effort.
+        try {
+          const c = await fetch(
+            `${base}/rest/v1/live_attendance?session_id=eq.${row2.session_id}&select=device_id`,
+            { headers: { ...sbHeaders(), prefer: 'count=exact' } },
+          );
+          const range = c.headers.get('content-range') || '';
+          const m = /\/(\d+)$/.exec(range);
+          const uniques = m ? parseInt(m[1], 10) : 0;
+          if (uniques > 0) {
+            await fetch(
+              `${base}/rest/v1/live_sessions?id=eq.${row2.session_id}`,
+              {
+                method: 'PATCH',
+                headers: sbHeaders(),
+                body: JSON.stringify({ uniques }),
+              },
+            );
+          }
+        } catch {
+          /* comptage best-effort */
+        }
       }
       res.status(200).json({ ok: true });
       return;

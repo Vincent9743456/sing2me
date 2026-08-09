@@ -173,14 +173,27 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
       const t = at(m.created_at);
       return !Number.isNaN(t) && t >= debut - MARGE_MS && t <= fin + MARGE_MS;
     });
+    const hearts = songs.reduce((n, x) => n + x.hearts, 0);
+    /*
+     * PLANCHER DE BON SENS (b201, remarque de Vincent) : « je ne peux pas
+     * avoir eu 0 spectateur si j'ai reçu 1 message et 1 cœur ».
+     *
+     * Le comptage des présences vient d'un signalement que le spectateur
+     * peut ne jamais envoyer — il repart avant, le réseau coupe, la page se
+     * ferme. Un cœur ou un mot, eux, PROUVENT qu'il y avait quelqu'un. Le
+     * chiffre affiché ne doit jamais contredire ce qu'on lit juste à côté.
+     * On ne gonfle rien : on garantit seulement qu'il n'annonce pas moins
+     * que ce qui est démontré.
+     */
+    const prouve = hearts > 0 || msgs.length > 0 ? 1 : 0;
     return {
       id,
       startedAt: new Date(debut).toISOString(),
       endedAt: opts.ouvert ? null : new Date(fin).toISOString(),
-      uniques: opts.uniques,
+      uniques: Math.max(opts.uniques, prouve),
       songs,
       messages: msgs,
-      hearts: songs.reduce((n, x) => n + x.hearts, 0),
+      hearts,
       band: opts.band,
       startedBy: opts.startedBy,
       setlist: opts.setlist,
