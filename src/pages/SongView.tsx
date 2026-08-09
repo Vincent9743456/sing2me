@@ -92,6 +92,7 @@ export function SongView({
     artist,
     saveSong,
     deleteSong,
+    acceptSong,
     setlists,
     saveSetlist,
     recordBandRemoval,
@@ -397,7 +398,11 @@ export function SongView({
             </span>
             <button
               className="btn small"
-              onClick={() => saveSong({ ...song, idea: undefined })}
+              /* Même règle que « ✓ Accepter » et que la programmation dans
+                 une setlist : elle vit dans le store (b206). C'était le
+                 TROISIÈME endroit à écrire l'adoption d'un morceau à sa
+                 façon — et deux d'entre eux avaient déjà divergé (b205). */
+              onClick={() => acceptSong(song.id)}
             >
               {t('✓ Valider dans la bibliothèque')}
             </button>
