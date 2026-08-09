@@ -377,6 +377,11 @@ retour) · **Copier le lien de sa page** · **Retirer du groupe** ·
 Dans la liste des musiciens, celui qui a créé le groupe porte la mention
 **⭐ créateur**.
 
+Les deux grandes portes du groupe ouvrent une **vue filtrée** sur ce
+groupe : « Répertoire du groupe » ouvre l'onglet Morceaux sur son
+répertoire, « Setlists du groupe » ouvre l'onglet Setlists sur ses
+setlists. Jamais une liste entière à retrier soi-même.
+
 ## 7.3 bis Qui gère le groupe — et comment le transmettre
 
 Les réglages du groupe (**⋯ → Modifier le groupe**) nomment son
