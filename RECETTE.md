@@ -59,7 +59,7 @@ groupe, direct). Marco est le second appareil.
 | M-12 | Menu « ⋯ » d'une ligne | Jouer / Modifier / Ajouter à… / Supprimer | 🟠 |
 | M-13 | Supprimer un morceau | Confirmation **non native** ; il quitte aussi les setlists | 🔴 |
 | M-14 | 📱📱 Supprimer un morceau sur A | Il ne réapparaît pas depuis B — ⚠️ cicatrice b132/b137 | 🔴 |
-| M-15 | Pastilles de groupe sur une ligne | Une pastille colorée par groupe qui a ce morceau | ⚪ |
+| M-15 | Groupe d'un morceau sur sa ligne | Le **nom du groupe** en toutes lettres dans le sous-titre (« 👥 Zakoustiks »), lisible sur un écran de 360 px ; pas répété quand on filtre déjà sur ce groupe | ⚪ |
 | M-16 | Écran large (≥ 1100 px, souris) | Vue maître-détail : liste à gauche, partition à droite | ⚪ |
 
 ---
@@ -72,7 +72,8 @@ groupe, direct). Marco est le second appareil.
 | P-2 | Re-transposer en sens inverse | On retombe exactement sur l'original | 🔴 |
 | P-3 | Poser un capo | Ce qui sonne change, les accords affichés non ; l'aide le dit | 🟠 |
 | P-4 | Basculer « tonalité réelle » | Les accords s'affichent capo compris | ⚪ |
-| P-5 | Changer de version (solo / groupe) | Le contenu change ; la version active du morceau **n'est pas détournée** | 🔴 |
+| P-5 | Changer de version (originale / groupe) | Le contenu change ; la version active du morceau **n'est pas détournée** | 🔴 |
+| P-5b | Chercher une « version Solo » | Elle n'existe plus (b211) : ni bouton, ni entrée de menu. Une version Solo créée AVANT est toujours là, sous son nom, en version perso | 🟠 |
 | P-6 | Créer une version de groupe | Elle apparaît ; l'originale reste intacte | 🟠 |
 | P-7 | « ⭐ En faire la référence » | Le contenu passe dans l'originale | 🟠 |
 | P-8 | Supprimer l'originale | La suivante monte en référence ; **jamais de morceau sans version perso en tête** — ⚠️ cicatrice b135 | 🔴 |
@@ -114,7 +115,9 @@ groupe, direct). Marco est le second appareil.
 
 | N° | Cas | Ce qu'on doit voir | Prio |
 |---|---|---|---|
-| S-1 | Créer une setlist | Nom + contexte (solo ou groupe) | 🔴 |
+| S-1 | Créer une setlist | Créée dans le contexte affiché ; sur « Toutes », l'app demande lequel | 🔴 |
+| S-1b | Sélecteur de contexte en haut | Une rangée qui défile (Toutes · mon nom · mes groupes · mes contextes) AU-DESSUS d'une seule liste — plus de capsules à déplier ; le choix est retrouvé au retour | 🟠 |
+| S-1c | Sur « Toutes » | Chaque ligne dit d'où elle vient (🎤 Solo, 👥 groupe, 🎉 contexte) | ⚪ |
 | S-2 | Ajouter des morceaux | Sélecteur plein écran, recherche + multi-sélection | 🔴 |
 | S-3 | Réordonner par glissement | L'ordre tient après rechargement | 🔴 |
 | S-4 | Retirer un morceau de la setlist | Il reste dans la bibliothèque | 🔴 |

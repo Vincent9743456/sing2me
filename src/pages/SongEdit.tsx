@@ -8,12 +8,9 @@ import { KEY_CHOICES } from '../lib/chords';
 import { importText } from '../lib/importer';
 import {
   activeVersion,
-  duplicateVersion,
   propagateMainKeyCapo,
-  SOLO_BAND_ID,
   switchVersion,
   syncActiveVersion,
-  versionForBand,
 } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -66,8 +63,6 @@ export function SongEdit({ id }: { id: string | null }) {
   ][Math.max(0, bands.findIndex((b) => b.id === versionBandId)) % 7];
   // La version en cours d'édition est-elle l'originale maîtresse ?
   const editingOriginal = draft.versions[0]?.id === draft.activeVersionId;
-  // Version Solo (contexte réservé) : éditable comme une version de groupe.
-  const editingSolo = versionBandId === SOLO_BAND_ID;
 
   function update(patch: Partial<Song>) {
     setDraft((d) => ({ ...d, ...patch }));
@@ -96,19 +91,6 @@ export function SongEdit({ id }: { id: string | null }) {
   function switchEditVersion(vid: string) {
     if (vid === draft.activeVersionId) return;
     const d = switchVersion(bakeDraft(draft), vid);
-    setDraft(d);
-    setVersionName(activeVersion(d).name);
-    setVersionBandId(activeVersion(d).bandId);
-  }
-
-  /** Bascule l'édition sur la version Solo — créée à la volée si besoin
-   *  (le contexte solo existe TOUJOURS, décision Vincent b115/b117). */
-  function editSoloVersion() {
-    const baked = bakeDraft(draft);
-    const already = versionForBand(baked, SOLO_BAND_ID);
-    const d = already
-      ? switchVersion(baked, already.id)
-      : duplicateVersion(baked, 'Solo', SOLO_BAND_ID);
     setDraft(d);
     setVersionName(activeVersion(d).name);
     setVersionBandId(activeVersion(d).bandId);
@@ -292,20 +274,16 @@ export function SongEdit({ id }: { id: string | null }) {
                 {t('Tu modifies :')}{' '}
                 {editingOriginal
                   ? t('la version de référence')
-                  : editingSolo
-                    ? t('la version Solo')
-                    : versionBandId
-                      ? t('version du groupe {band}', {
-                          band: editBand?.name || t('sans nom'),
-                        })
-                      : t('version « {name} »', {
-                          name: versionName.trim() || activeVersion(draft).name,
-                        })}
+                  : versionBandId
+                    ? t('version du groupe {band}', {
+                        band: editBand?.name || t('sans nom'),
+                      })
+                    : t('version « {name} »', {
+                        name: versionName.trim() || activeVersion(draft).name,
+                      })}
               </span>
               {editingOriginal ? (
                 <span className="vb-ref">{t('⭐ référence')}</span>
-              ) : editingSolo ? (
-                <span className="vb-solo">{t('solo')}</span>
               ) : versionBandId ? (
                 <span className="vb-shared">{t('partagée')}</span>
               ) : (
@@ -319,17 +297,13 @@ export function SongEdit({ id }: { id: string | null }) {
                       'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres versions (tonalité/capo se répercutent).',
                     )
                   : t('Version maîtresse, personnelle : la base de ce morceau.')
-                : editingSolo
+                : versionBandId
                   ? t(
-                      'Ta façon de le jouer en solo — l’originale et les versions de groupe ne bougent pas.',
+                      'À l’enregistrement, tes changements partent vers tous les membres du groupe.',
                     )
-                  : versionBandId
-                    ? t(
-                        'À l’enregistrement, tes changements partent vers tous les membres du groupe.',
-                      )
-                    : t(
-                        'Modifications privées à cette version — les autres versions gardent leurs réglages.',
-                      )}
+                  : t(
+                      'Modifications privées à cette version — les autres versions gardent leurs réglages.',
+                    )}
             </div>
           </div>
         </div>
@@ -359,37 +333,21 @@ export function SongEdit({ id }: { id: string | null }) {
           </Field>
         )}
         {editingOriginal && (
-          <>
-            <p className="help">
-              {t('🔒 L’originale est toujours ')}
-              <strong>{t('personnelle')}</strong>
-              {t(
-                ' : la modifier se répercute sur la version Solo et les versions de groupe qui la suivent. Pour une version dédiée à un groupe, utilise « Ajouter à… » depuis la partition.',
-              )}
-            </p>
-            {!isNew && (
-              <div style={{ marginBottom: 'var(--sp-3)' }}>
-                <button
-                  type="button"
-                  className="btn ghost small"
-                  title={t(
-                    'Ta version pour jouer seul — modifiable sans toucher l’originale (créée si besoin)',
-                  )}
-                  onClick={editSoloVersion}
-                >
-                  {t('🎙 Modifier plutôt la version Solo')}
-                </button>
-              </div>
+          <p className="help">
+            {t('🔒 L’originale est toujours ')}
+            <strong>{t('personnelle')}</strong>
+            {t(
+              ' : c’est ta façon de le jouer, et la modifier se répercute sur les versions de groupe qui la suivent. Pour une version dédiée à un groupe, utilise « Ajouter à… » depuis la partition.',
             )}
-          </>
+          </p>
         )}
-        {bands.length > 0 && !editingOriginal && !editingSolo && (
+        {bands.length > 0 && !editingOriginal && (
           <Field label={t('Cette version est pour')}>
             <select
               value={versionBandId}
               onChange={(e) => setVersionBandId(e.target.value)}
             >
-              <option value="">{t('Solo (ma version par défaut)')}</option>
+              <option value="">{t('Moi seul (version personnelle)')}</option>
               {bands.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name || t('Groupe sans nom')}

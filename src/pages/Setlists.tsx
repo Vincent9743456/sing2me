@@ -1,7 +1,8 @@
 /**
- * Onglet Setlists : les setlists rangées par contexte — un encart par
- * groupe, un encart Solo, et un encart « IA » qui compose une setlist en
- * un clic selon le type de soirée. Vue synthétique au clic.
+ * Onglet Setlists : un sélecteur de contexte en haut (solo, chaque groupe,
+ * les contextes libres) et UNE liste dessous — plus de capsules à déplier
+ * une par une (arbitrage Vincent, b211). En bas, l'encart « IA » qui
+ * compose une setlist en un clic selon le type de soirée.
  */
 import React, { useEffect, useState } from 'react';
 
@@ -65,8 +66,32 @@ export function Setlists() {
     [...concerts]
       .filter((c) => (c.setlistId ?? '') !== '' && c.date >= todayIso)
       .sort((a, b) => a.date.localeCompare(b.date))[0]?.setlistId ?? '';
-  // Capsules dépliées (par clé : id de groupe, '' pour Solo, 'ai' pour l'IA).
+  // Capsules dépliées (seule reste celle de l'IA, clé 'ai').
   const [open, setOpen] = useState<Set<string>>(new Set());
+  /**
+   * Sélecteur de contexte, en haut de l'écran (arbitrage Vincent, b211) —
+   * même geste que les répertoires de l'onglet Morceaux : une rangée qui
+   * défile, une seule liste dessous. Les capsules dépliables obligeaient à
+   * ouvrir chaque groupe pour retrouver une setlist ; avec quelques groupes,
+   * l'écran ne montrait plus que des en-têtes.
+   * Valeurs : null = toutes, '' = solo, un id de groupe, ou 'ctx:<label>'.
+   */
+  const [ctxFilter, setCtxFilter] = useState<string | null>(() => {
+    try {
+      const v = localStorage.getItem('sing2me/setlistCtx');
+      return v === null ? null : v;
+    } catch {
+      return null;
+    }
+  });
+  useEffect(() => {
+    try {
+      if (ctxFilter === null) localStorage.removeItem('sing2me/setlistCtx');
+      else localStorage.setItem('sing2me/setlistCtx', ctxFilter);
+    } catch {
+      /* stockage indisponible : le filtre sera simplement à re-choisir */
+    }
+  }, [ctxFilter]);
   const [createOpen, setCreateOpen] = useState(false);
   // Suppression : confirmée par une feuille (jamais confirm() natif).
   const [confirmDel, setConfirmDel] = useState<Setlist | null>(null);
@@ -116,10 +141,42 @@ export function Setlists() {
     return { count: played.length, sec, estimated, reserve };
   };
 
-  const byBand = (bandId: string) =>
-    [...setlists]
-      .filter((s) => (s.bandId ?? '') === bandId)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  /** Contextes libres existants (setlists solo portant un label). */
+  const contextes = [
+    ...new Set(
+      setlists
+        .filter((s) => (s.bandId ?? '') === '' && (s.context ?? '') !== '')
+        .map((s) => s.context as string),
+    ),
+  ].sort((a, b) => a.localeCompare(b, 'fr'));
+
+  /** Les setlists du contexte choisi, la plus récemment modifiée en tête. */
+  const visibles = [...setlists]
+    .filter((sl) => {
+      if (ctxFilter === null) return true;
+      if (ctxFilter === '')
+        return (sl.bandId ?? '') === '' && (sl.context ?? '') === '';
+      if (ctxFilter.startsWith('ctx:'))
+        return (sl.bandId ?? '') === '' && sl.context === ctxFilter.slice(4);
+      return (sl.bandId ?? '') === ctxFilter;
+    })
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+  /** À qui appartient cette setlist, en toutes lettres (b211). */
+  const contexteDe = (sl: Setlist): string =>
+    (sl.bandId ?? '') !== ''
+      ? `👥 ${bands.find((b) => b.id === sl.bandId)?.name || t('Groupe sans nom')}`
+      : (sl.context ?? '') !== ''
+        ? `🎉 ${sl.context}`
+        : `🎤 ${t('Solo')}`;
+
+  /** Le ＋ crée directement dans le contexte affiché ; sans contexte
+   *  choisi, il demande lequel (une action, un geste). */
+  const createHere = () => {
+    if (ctxFilter === null) setCreateOpen(true);
+    else if (ctxFilter.startsWith('ctx:')) createSetlist('', ctxFilter.slice(4));
+    else createSetlist(ctxFilter);
+  };
 
   const setlistRow = (sl: Setlist) => {
     const info = playedInfo(sl);
@@ -145,6 +202,9 @@ export function Setlists() {
             }}
           >
             {[
+              // Sans filtre, la liste mélange tous les contextes : chaque
+              // ligne dit d'où elle vient (b211).
+              ctxFilter === null ? contexteDe(sl) : '',
               // Auteur rappelé quand ce n'est pas moi (b147) : on sait à
               // qui appartient une setlist partagée.
               !canDelete(sl) && (sl.createdByName ?? '') !== ''
@@ -271,43 +331,6 @@ export function Setlists() {
       </span>
     );
 
-  /** Une capsule : repliée par défaut, dépliable au clic. */
-  const capsule = (
-    key: string,
-    name: string,
-    avatar: React.ReactNode,
-    list: Setlist[],
-    onCreate: () => void,
-  ) => {
-    const isOpen = open.has(key);
-    return (
-      <div className={`stgroup ${isOpen ? 'open' : ''}`} key={key || 'solo'}>
-        <button className="capsule-head" onClick={() => toggle(key)}>
-          {avatar}
-          <div className="grow" style={{ minWidth: 0 }}>
-            <div className="capsule-title">{name}</div>
-            <div className="capsule-count">
-              {list.length > 1
-                ? t('{n} setlists', { n: list.length })
-                : t('{n} setlist', { n: list.length })}
-            </div>
-          </div>
-          <span className={`capsule-chevron ${isOpen ? 'open' : ''}`}>
-            <Icon name="chevron-down" size={18} />
-          </span>
-        </button>
-        {isOpen && (
-          <div className="list capsule-body">
-            {list.map(setlistRow)}
-            <div className="row createcard" onClick={onCreate}>
-              <Icon name="plus" size={16} /> {t('Créer une setlist')}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <>
       {/* Plus de raccourci « satellite » manuel (décision Vincent) : quand le
@@ -332,51 +355,77 @@ export function Setlists() {
           </Empty>
         )}
 
-        {/* Solo toujours en premier (setlists solo, hors capsules de contexte). */}
-        {capsule(
-          '',
-          `${t('Solo')}${artist.name !== '' ? ` — ${artist.name}` : ''}`,
-          capAvatar(artist.photo ?? '', '🎤', 'var(--surface-high)'),
-          setlists.filter(
-            (s) => (s.bandId ?? '') === '' && (s.context ?? '') === '',
-          ),
-          () => createSetlist(''),
+        {/* Sélecteur de contexte, en haut (arbitrage Vincent, b211) : une
+            rangée qui défile, comme les répertoires de l'onglet Morceaux. */}
+        {setlists.length > 0 && (bands.length > 0 || contextes.length > 0) && (
+          <div
+            className="chips filterchips scrollrow"
+            style={{ alignItems: 'center' }}
+          >
+            <button
+              className={`chip ${ctxFilter === null ? '' : 'off'}`}
+              onClick={() => setCtxFilter(null)}
+            >
+              {t('Toutes')}
+            </button>
+            <button
+              className={`chip ${ctxFilter === '' ? '' : 'off'}`}
+              title={t('Mes setlists solo')}
+              onClick={() => setCtxFilter(ctxFilter === '' ? null : '')}
+            >
+              <Icon name="mic" size={12} />{' '}
+              {artist.name !== '' ? artist.name : t('Solo')}
+            </button>
+            {bands.map((b, i) => (
+              <button
+                key={b.id}
+                className={`chip ${ctxFilter === b.id ? '' : 'off'}`}
+                onClick={() => setCtxFilter(ctxFilter === b.id ? null : b.id)}
+              >
+                {/* La couleur du groupe = un point discret ; l'encadrement
+                    signale la sélection (même règle qu'en bibliothèque). */}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: 'inline-block',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: BAND_COLORS[i % BAND_COLORS.length],
+                    marginRight: 2,
+                  }}
+                />
+                {b.name || t('Groupe sans nom')}
+              </button>
+            ))}
+            {contextes.map((ctx) => (
+              <button
+                key={`ctx:${ctx}`}
+                className={`chip ${ctxFilter === `ctx:${ctx}` ? '' : 'off'}`}
+                onClick={() =>
+                  setCtxFilter(ctxFilter === `ctx:${ctx}` ? null : `ctx:${ctx}`)
+                }
+              >
+                🎉 {ctx}
+              </button>
+            ))}
+          </div>
         )}
 
-        {bands.map((b, i) =>
-          capsule(
-            b.id,
-            b.name || t('Groupe sans nom'),
-            capAvatar(
-              b.photo ?? '',
-              '👥',
-              BAND_COLORS[i % BAND_COLORS.length],
-            ),
-            byBand(b.id),
-            () => createSetlist(b.id),
-          ),
+        {/* Une seule liste : plus de capsules à déplier une par une. */}
+        {setlists.length > 0 && (
+          <div className="list" style={{ marginTop: 'var(--sp-2)' }}>
+            {visibles.length === 0 && (
+              <p className="help" style={{ margin: '6px 0' }}>
+                {t('Rien encore ici — la première setlist se crée juste en dessous.')}
+              </p>
+            )}
+            {visibles.map(setlistRow)}
+            <div className="row createcard" onClick={createHere}>
+              <Icon name="plus" size={16} /> {t('Créer une setlist')}
+            </div>
+          </div>
         )}
-
-        {/* Capsules contextuelles (ex. « Soirée entre amis ») : solo + label. */}
-        {[
-          ...new Set(
-            setlists
-              .filter((s) => (s.bandId ?? '') === '' && (s.context ?? '') !== '')
-              .map((s) => s.context as string),
-          ),
-        ]
-          .sort((a, b) => a.localeCompare(b, 'fr'))
-          .map((ctx) =>
-            capsule(
-              `ctx:${ctx}`,
-              ctx,
-              capAvatar('', '🎉', 'var(--surface-high)'),
-              setlists.filter(
-                (s) => (s.bandId ?? '') === '' && s.context === ctx,
-              ),
-              () => createSetlist('', ctx),
-            ),
-          )}
 
         {/* Capsule IA : dépliable comme les autres — même style (l'icône ✨
             suffit à la distinguer, sans bordure ni fond orange). */}
@@ -411,8 +460,9 @@ export function Setlists() {
       </div>
 
       {/* Action principale unique, au même endroit que « Nouveau morceau »
-          dans l'onglet Morceaux (bas droite). */}
-      <button className="btn libfab" onClick={() => setCreateOpen(true)}>
+          dans l'onglet Morceaux (bas droite). Elle crée dans le contexte
+          affiché — et ne demande lequel que si aucun n'est choisi (b211). */}
+      <button className="btn libfab" onClick={createHere}>
         <Icon name="plus" size={17} /> {t('Créer une setlist')}
       </button>
 

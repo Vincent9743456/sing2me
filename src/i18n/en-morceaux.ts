@@ -139,17 +139,13 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Pas en solo': 'Not solo',
   'Solo ✓': 'Solo ✓',
   'Version du groupe {band}': 'The {band} version',
-  'Version Solo': 'Solo version',
   'Version de référence': 'Reference version',
   'Version « {name} »': 'Version “{name}”',
   partagée: 'shared',
-  solo: 'solo',
   '⭐ référence': '⭐ reference',
   perso: 'personal',
   'Tes modifications de cette version arrivent chez tous les membres du groupe.':
     'Your changes to this version reach every member of the band.',
-  'Ta façon de le jouer en solo — modifiable à part, jamais partagée. Les évolutions de l’originale s’y répercutent.':
-    'Your own way to play it solo — editable on its own, never shared. Changes to the original carry over to it.',
   'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres (tonalité/capo se répercutent).':
     'Master, personal version: it stays in your library and is the base for the others (key/capo carry over).',
   'À toi seul — cette version n’est pas partagée.': "Just for you — this version isn't shared.",
@@ -168,9 +164,6 @@ export const EN_MORCEAUX: Record<string, string> = {
     "Show the chords as they should be played without a capo — handy for bass",
   '✓ Accords sans capo': '✓ Chords without capo',
   'Accords sans capo': 'Chords without capo',
-  'Ta façon de le jouer en solo — modifiable à part, comme une version de groupe':
-    'Your own way to play it solo — editable on its own, like a band version',
-  '🎙 Créer la version Solo': '🎙 Create the Solo version',
   'Notes de répétition': 'Rehearsal notes',
   ' · contexte {band}': ' · {band} context',
   ' · solo / tous': ' · solo / everyone',
@@ -230,15 +223,12 @@ export const EN_MORCEAUX: Record<string, string> = {
   'version unique': 'single version',
   'Tu modifies :': "You're editing:",
   'la version de référence': 'the reference version',
-  'la version Solo': 'the Solo version',
   'version du groupe {band}': 'the {band} version',
   'version « {name} »': 'version “{name}”',
   'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres versions (tonalité/capo se répercutent).':
     'Master, personal version: it stays in your library and is the base for the other versions (key/capo carry over).',
   'Version maîtresse, personnelle : la base de ce morceau.':
     "Master, personal version: this song's base.",
-  'Ta façon de le jouer en solo — l’originale et les versions de groupe ne bougent pas.':
-    "Your own way to play it solo — the original and the band versions don't move.",
   'À l’enregistrement, tes changements partent vers tous les membres du groupe.':
     'On save, your changes go out to every member of the band.',
   'Modifications privées à cette version — les autres versions gardent leurs réglages.':
@@ -248,13 +238,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Nom de cette version': 'This version’s name',
   '🔒 L’originale est toujours ': '🔒 The original is always ',
   personnelle: 'personal',
-  ' : la modifier se répercute sur la version Solo et les versions de groupe qui la suivent. Pour une version dédiée à un groupe, utilise « Ajouter à… » depuis la partition.':
-    ': editing it carries over to the Solo version and the band versions that follow it. For a version dedicated to a band, use “Add to…” from the chart.',
-  'Ta version pour jouer seul — modifiable sans toucher l’originale (créée si besoin)':
-    'Your version for playing solo — editable without touching the original (created if needed)',
-  '🎙 Modifier plutôt la version Solo': '🎙 Edit the Solo version instead',
+  ' : c’est ta façon de le jouer, et la modifier se répercute sur les versions de groupe qui la suivent. Pour une version dédiée à un groupe, utilise « Ajouter à… » depuis la partition.':
+    ': it is how you play it, and editing it carries over to the band versions that follow it. For a version dedicated to a band, use “Add to…” from the chart.',
   'Cette version est pour': 'This version is for',
-  'Solo (ma version par défaut)': 'Solo (my default version)',
+  'Moi seul (version personnelle)': 'Just me (personal version)',
   Tonalité: 'Key',
   'Tempo (BPM)': 'Tempo (BPM)',
   '⚑ Version principale : un changement de tonalité ou de capo est répercuté sur les versions qui la suivaient (celles sans réglage propre), et partagé avec le groupe à la synchronisation.':

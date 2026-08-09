@@ -204,6 +204,12 @@ nombre d'éléments.
 Ne PAS l'utiliser pour une rangée courte et fixe (deux ou trois puces
 connues d'avance) : le défilement cacherait une option sans raison.
 
+C'est aussi la forme retenue pour un **sélecteur de contexte en haut d'un
+écran** (répertoires de la bibliothèque, contextes des setlists depuis
+b211) : une rangée, une seule liste dessous. Un accordéon par contexte
+paraît rangé mais coûte un geste par contexte et remplit l'écran
+d'en-têtes ; ce qu'on cherche est alors caché derrière un pli.
+
 
 ## Un panneau plein écran se cale sur la zone VISIBLE (b210)
 
@@ -224,3 +230,19 @@ Tout panneau plein écran doit donc :
 
 Les valeurs de repli rendent exactement le comportement d'avant sur les
 navigateurs sans `visualViewport` : rien ne casse.
+
+
+## Un nom qu'on lit vaut mieux qu'un sigle qu'on décode (b211)
+
+Les pastilles à initiales (« LZ » pour Les Zamis) tenaient dans peu de
+place, mais demandaient d'apprendre une clé de lecture, et deux groupes sur
+trois partagent leur première lettre. Le nom du groupe s'écrit donc en
+toutes lettres, dans le sous-titre de la ligne, avec le reste de ce qu'on
+lit sans réfléchir (artiste, tonalité, tempo).
+
+Deux règles qui vont avec :
+
+- **placer ce qui compte AVANT la technique** : le sous-titre est coupé par
+  ellipse à 360 px, et ce qui est en bout de ligne est ce qui disparaît ;
+- **ne pas répéter le contexte courant** : dans le répertoire d'un groupe,
+  son nom sur chaque ligne n'apprend rien (même règle qu'en b203).
