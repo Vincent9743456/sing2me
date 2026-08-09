@@ -402,4 +402,27 @@ export const EN_ARTISTE: Record<string, string> = {
   'Continuer avec Apple': 'Continue with Apple',
   'Je veux recevoir les nouveautés de Sing2Me (facultatif).':
     'I want to receive Sing2Me news (optional).',
+  // b213 — propriété d'un groupe : qui le gère, et comment le transmettre.
+  Toi: 'You',
+  'un autre musicien': 'another musician',
+  'Créateur : {nom}': 'Created by {nom}',
+  'c’est lui qui invite, retire un musicien et supprime le groupe.':
+    'they are the one who invites, removes a musician and deletes the band.',
+  'Confier le groupe à un autre musicien : c’est lui qui le gérera':
+    'Hand the band over to another musician: they will run it',
+  '⭐ Transmettre le groupe…': '⭐ Hand over the band…',
+  '⭐ créateur': '⭐ creator',
+  'Transmettre le groupe': 'Hand over the band',
+  'À qui confies-tu ce groupe ? Il pourra inviter, retirer un musicien et supprimer le groupe. Tu resteras membre — mais seul lui pourra te le rendre.':
+    'Who are you handing this band to? They will be able to invite, remove a musician and delete the band. You stay a member — but only they can hand it back.',
+  'Aucun musicien avec un compte pour l’instant : invite-le d’abord.':
+    'No musician with an account yet — invite them first.',
+  'Confier « {groupe} » à {nom} ?': 'Hand “{groupe}” over to {nom}?',
+  'Il gérera le groupe : inviter, retirer un musicien, le supprimer. Tu y restes comme musicien, et tu gardes toutes tes partitions — mais tu ne pourras pas reprendre la main toi-même.':
+    'They will run the band: invite, remove a musician, delete it. You stay in it as a musician and keep all your charts — but you will not be able to take it back yourself.',
+  Transmettre: 'Hand over',
+  '{nom} gère désormais « {groupe} ».': '{nom} now runs “{groupe}”.',
+  'le groupe': 'the band',
+  'Impossible de transmettre le groupe pour le moment.':
+    'Cannot hand the band over right now.',
 };

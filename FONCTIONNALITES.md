@@ -371,7 +371,26 @@ Deux catégories, distinguées à l'écran :
 Actions : **Inviter par lien / email** · **Ajouter un musicien** à la main ·
 **Voir la fiche** d'un membre (elle s'ouvre **dans l'app**, avec un
 retour) · **Copier le lien de sa page** · **Retirer du groupe** ·
-**↻ Lui renvoyer la demande** si son invitation n'a pas abouti.
+**↻ Lui renvoyer la demande** si son invitation n'a pas abouti (avec
+**Ne plus afficher** si tu ne comptes pas la renvoyer).
+
+Dans la liste des musiciens, celui qui a créé le groupe porte la mention
+**⭐ créateur**.
+
+## 7.3 bis Qui gère le groupe — et comment le transmettre
+
+Les réglages du groupe (**⋯ → Modifier le groupe**) nomment son
+créateur : « Créateur : Toi », ou son nom. C'est lui — et lui seul — qui
+invite, retire un musicien et supprime le groupe.
+
+Le créateur peut **⭐ Transmettre le groupe…** à un membre qui a un compte.
+La confirmation dit ce que ça change : l'autre gérera le groupe, tu y
+restes comme musicien et tu gardes toutes tes partitions, mais **tu ne
+pourras pas reprendre la main toi-même** — seul le nouveau créateur peut
+te le rendre.
+
+Le nouveau créateur l'apprend en ouvrant la fiche du groupe : c'est le
+serveur qui fait foi, pas ton application.
 
 ## 7.4 Comment un morceau circule dans un groupe
 

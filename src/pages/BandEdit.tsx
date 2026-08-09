@@ -23,13 +23,16 @@ import {
   DirectoryPerson,
   ensureCloudBand,
   BandDeparture,
+  BandOwner,
   departuresToShow,
   fetchBandDepartures,
+  fetchBandOwner,
   fetchBandMembers,
   fetchBandMessages,
   inviteToBand,
   removeBandMember,
   searchProfiles,
+  transferBand,
 } from '../lib/bands';
 import {
   bandToProfile,
@@ -183,6 +186,16 @@ export function BandEdit({ id }: { id: string }) {
   const [reinvited, setReinvited] = useState<Set<string>>(new Set());
   // Musiciens partis de CE groupe, à réinviter (b142).
   const [departures, setDepartures] = useState<BandDeparture[]>([]);
+  // Créateur du groupe, tel que le SERVEUR le connaît (b213) : c'est lui
+  // qui fait autorité, le drapeau local n'en est qu'un reflet.
+  const [owner, setOwner] = useState<BandOwner | null>(null);
+  // Transmission du groupe : choix du musicien, puis confirmation.
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferTo, setTransferTo] = useState<{
+    userId: string;
+    name: string;
+  } | null>(null);
+  const [transferBusy, setTransferBusy] = useState(false);
   // Retrait d'un membre par le créateur (b143) — confirmé, jamais brutal.
   const [removeMember, setRemoveMember] = useState<{
     userId: string;
@@ -201,6 +214,23 @@ export function BandEdit({ id }: { id: string }) {
         if (!cancelled) setMyId(s.userId);
         const members = await fetchBandMembers(s, cid);
         if (!cancelled) setCloudMembers(members);
+        // Qui possède le groupe (b213). Le serveur fait autorité : après
+        // une transmission, c'est ainsi que le NOUVEAU créateur l'apprend,
+        // et que l'ancien voit son drapeau local retomber.
+        const own = await fetchBandOwner(s, cid);
+        if (own && !cancelled) {
+          setOwner(own);
+          const jeSuisLe = own.userId === s.userId;
+          if (jeSuisLe && band.owned !== true) {
+            saveBand({ ...band, owned: true, ownerName: '' });
+          } else if (!jeSuisLe) {
+            // Un annuaire muet ne doit pas EFFACER le nom qu'on connaît.
+            const nom = own.name !== '' ? own.name : (band.ownerName ?? '');
+            if (band.owned !== false || (band.ownerName ?? '') !== nom) {
+              saveBand({ ...band, owned: false, ownerName: nom });
+            }
+          }
+        }
         // Départs à traiter sur CE groupe (b142), moi excepté (b212 : la
         // réinitialisation fait « partir » le créateur de son propre
         // groupe — il n'a pas à se réinviter lui-même).
@@ -237,8 +267,11 @@ export function BandEdit({ id }: { id: string }) {
     if (!band) return;
     setInviteBusy(true);
     try {
-      // Connecté : publie le groupe dans le cloud pour l'adhésion en 1 clic
-      if (account?.email != null) {
+      // Connecté : publie le groupe dans le cloud pour l'adhésion en 1 clic.
+      // Jamais si le groupe ne m'appartient PLUS (b213) : je ne verrais pas
+      // sa ligne (RLS), et j'en créerais un DEUXIÈME, vide, avec le même
+      // identifiant local — le groupe se dédoublerait en silence.
+      if (account?.email != null && !groupeDUnAutre()) {
         const s = await getValidSession();
         if (s) {
           const ref = await ensureCloudBand(s, band.id, band.name);
@@ -264,7 +297,7 @@ export function BandEdit({ id }: { id: string }) {
     if (!band) return;
     setInviteBusy(true);
     try {
-      if (account?.email != null) {
+      if (account?.email != null && !groupeDUnAutre()) {
         const s = await getValidSession();
         if (s) {
           const ref = await ensureCloudBand(s, band.id, band.name);
@@ -486,7 +519,33 @@ export function BandEdit({ id }: { id: string }) {
     navigate(isOwner ? '/artist' : '/bands');
   }
 
+  /** Ce groupe est-il celui d'un AUTRE ? (déjà publié, et pas à moi) */
+  const groupeDUnAutre = (): boolean =>
+    (band?.cloudId ?? '') !== '' && band?.owned === false;
+
+  /** Le créateur, nommé : « Toi » quand c'est moi, sinon son nom (serveur
+   *  d'abord, puis ce que je sais en local). */
+  const nomDuCreateur = (): string => {
+    if (owner && myId !== '' && owner.userId === myId) return t('Toi');
+    if (owner && owner.name !== '') return owner.name;
+    if ((band?.ownerName ?? '') !== '') return band?.ownerName ?? '';
+    return band?.owned === false ? t('un autre musicien') : t('Toi');
+  };
+
   const meKey = (prefs.userName || artist.name || '').trim().toLowerCase();
+  /** Clé (nom normalisé) du créateur, pour le repérer dans la liste. */
+  const cleDuCreateur = ((): string => {
+    if (owner && myId !== '' && owner.userId === myId) return meKey;
+    if (owner) {
+      const c = cloudMembers.find((m) => m.user_id === owner.userId);
+      const n = (c?.name || owner.name || '').trim().toLowerCase();
+      if (n !== '') return n;
+    }
+    if ((band?.ownerName ?? '') !== '') {
+      return (band?.ownerName ?? '').trim().toLowerCase();
+    }
+    return band?.owned === false ? '' : meKey;
+  })();
   // Photo d'un membre : la sienne, ou — pour MOI (le créateur, absent des
   // membres cloud) — celle de mon profil artiste en secours.
   const photoOf = (m: { name: string; photo?: string }): string =>
@@ -875,6 +934,26 @@ export function BandEdit({ id }: { id: string }) {
         </button>
 
         <h2 className="pagetitle">{t('Musiciens')}</h2>
+        {/* Qui gère ce groupe — dit en clair, et transmissible (b213). */}
+        <p className="help">
+          {t('Créateur : {nom}', { nom: nomDuCreateur() })}
+          {' · '}
+          {t('c’est lui qui invite, retire un musicien et supprime le groupe.')}
+        </p>
+        {isOwner && cloudMembers.length > 0 && (
+          <div style={{ marginBottom: 'var(--sp-3)' }}>
+            <button
+              type="button"
+              className="btn ghost small"
+              title={t(
+                'Confier le groupe à un autre musicien : c’est lui qui le gérera',
+              )}
+              onClick={() => setTransferOpen(true)}
+            >
+              {t('⭐ Transmettre le groupe…')}
+            </button>
+          </div>
+        )}
         {cloudMembers.length > 0 && (
           <>
             <p className="help">{t('Membres avec compte Sing2Me :')}</p>
@@ -1342,7 +1421,14 @@ export function BandEdit({ id }: { id: string }) {
               >
                 <Avatar name={m.name} photo={photoOf(m)} />
                 <div className="grow" style={{ minWidth: 0 }}>
-                  <div className="title">{m.name || t('Musicien')}</div>
+                  <div className="title">
+                    {m.name || t('Musicien')}
+                    {/* Qui gère le groupe se lit sur la ligne (b213). */}
+                    {cleDuCreateur !== '' &&
+                      m.name.trim().toLowerCase() === cleDuCreateur && (
+                        <span className="badge-next">{t('⭐ créateur')}</span>
+                      )}
+                  </div>
                   {m.instrument !== '' && (
                     <div className="sub">{m.instrument}</div>
                   )}
@@ -1442,6 +1528,92 @@ export function BandEdit({ id }: { id: string }) {
             </>
           )}
         </Modal>
+      )}
+      {/* Transmettre le groupe (b213) : à un MEMBRE avec compte — on ne
+          confie pas la gestion d'un groupe à un nom saisi à la main. */}
+      {transferOpen && (
+        <Modal
+          title={t('Transmettre le groupe')}
+          onClose={() => setTransferOpen(false)}
+        >
+          <p className="help" style={{ marginTop: 0 }}>
+            {t(
+              'À qui confies-tu ce groupe ? Il pourra inviter, retirer un musicien et supprimer le groupe. Tu resteras membre — mais seul lui pourra te le rendre.',
+            )}
+          </p>
+          {cloudMembers.length === 0 && (
+            <p className="help">
+              {t(
+                'Aucun musicien avec un compte pour l’instant : invite-le d’abord.',
+              )}
+            </p>
+          )}
+          {cloudMembers.map((m) => (
+            <div
+              className="row"
+              key={m.user_id}
+              style={{ cursor: 'pointer' }}
+              onClick={() =>
+                setTransferTo({
+                  userId: m.user_id,
+                  name: m.name || t('ce musicien'),
+                })
+              }
+            >
+              <Avatar name={m.name} photo={m.photo} />
+              <div className="grow" style={{ minWidth: 0, marginLeft: 10 }}>
+                <div className="title">{m.name || t('Musicien')}</div>
+                {m.instrument !== '' && (
+                  <div className="sub">{m.instrument}</div>
+                )}
+              </div>
+              <span className="chevron" aria-hidden="true">
+                <Icon name="chevron-right" size={16} />
+              </span>
+            </div>
+          ))}
+        </Modal>
+      )}
+      {transferTo && (
+        <ConfirmSheet
+          title={t('Confier « {groupe} » à {nom} ?', {
+            groupe: band.name || t('ce groupe'),
+            nom: transferTo.name,
+          })}
+          message={t(
+            'Il gérera le groupe : inviter, retirer un musicien, le supprimer. Tu y restes comme musicien, et tu gardes toutes tes partitions — mais tu ne pourras pas reprendre la main toi-même.',
+          )}
+          confirmLabel={transferBusy ? '…' : t('Transmettre')}
+          onConfirm={() => {
+            const cid = band.cloudId;
+            const cible = transferTo;
+            if (!cid || !cible) return;
+            setTransferBusy(true);
+            void (async () => {
+              try {
+                const s = await getValidSession();
+                if (!s) throw new Error('hors ligne');
+                await transferBand(s, cid, cible.userId);
+                saveBand({ ...band, owned: false, ownerName: cible.name });
+                setOwner({ userId: cible.userId, name: cible.name, photo: '' });
+                setTransferOpen(false);
+                toast.show(
+                  t('{nom} gère désormais « {groupe} ».', {
+                    nom: cible.name,
+                    groupe: band.name || t('le groupe'),
+                  }),
+                );
+              } catch {
+                toast.show(
+                  t('Impossible de transmettre le groupe pour le moment.'),
+                );
+              } finally {
+                setTransferBusy(false);
+              }
+            })();
+          }}
+          onClose={() => setTransferTo(null)}
+        />
       )}
       {headerMenu && (
         <MenuSheet

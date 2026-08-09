@@ -130,6 +130,61 @@ export async function joinBand(
   return body.band ?? '';
 }
 
+/** Le créateur d'un groupe (b213). */
+export interface BandOwner {
+  userId: string;
+  name: string;
+  photo: string;
+}
+
+/**
+ * Qui possède ce groupe ? Visible de tous ses membres. Best-effort :
+ * `null` si le serveur est injoignable ou la fonction pas encore
+ * installée — l'écran retombe alors sur ce qu'il sait en local.
+ */
+export async function fetchBandOwner(
+  s: AuthSession,
+  cloudId: string,
+): Promise<BandOwner | null> {
+  try {
+    const res = await sbAuthed(s, '/rest/v1/rpc/band_owner', {
+      method: 'POST',
+      body: JSON.stringify({ p_band: cloudId }),
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as {
+      user_id: string;
+      name: string;
+      photo: string;
+    }[];
+    const r = Array.isArray(rows) ? rows[0] : undefined;
+    return r
+      ? { userId: r.user_id, name: r.name ?? '', photo: r.photo ?? '' }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Transmet le groupe à l'un de ses membres (b213). Le serveur vérifie que
+ * l'appelant en est bien le créateur et que la cible est membre ; l'ancien
+ * créateur reste dans le groupe comme musicien ordinaire.
+ */
+export async function transferBand(
+  s: AuthSession,
+  cloudId: string,
+  userId: string,
+): Promise<void> {
+  const res = await sbAuthed(s, '/rest/v1/rpc/transfer_band', {
+    method: 'POST',
+    body: JSON.stringify({ p_band: cloudId, p_user: userId }),
+  });
+  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+  const body = (await res.json()) as { ok?: boolean; error?: string };
+  if (body.error) throw new Error(body.error);
+}
+
 /** Membres réels du groupe (créateur ou membre uniquement). */
 export async function fetchBandMembers(
   s: AuthSession,

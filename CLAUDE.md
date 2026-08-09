@@ -175,6 +175,19 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     déjà présente mais détachée, et regarnir une setlist vide — sans quoi le
     groupe paraît n'avoir aucune setlist (constat de Marco). Le contenu
     qu'un membre a modifié lui-même n'est jamais écrasé ;
+  - **un groupe se TRANSMET** (b213, demande de Vincent) : les réglages du
+    groupe nomment son créateur (« Créateur : Toi » / le nom de l'autre), et
+    le créateur peut confier le groupe à un MEMBRE avec compte
+    (`transfer_band`). Le serveur fait autorité — `band_owner` ; le drapeau
+    local `owned` n'en est qu'un reflet, recalé à l'ouverture de la fiche,
+    c'est ainsi que le nouveau créateur l'apprend. L'ancien créateur RESTE
+    dans le groupe comme musicien (sans quoi il perdrait l'accès au
+    répertoire : les politiques RLS ne connaissent que le propriétaire et
+    les membres), et le nouveau GARDE sa ligne de membre (la retirer ferait
+    croire à son application qu'il a été exclu — elle effacerait le groupe).
+    Corollaire : ne jamais appeler `ensureCloudBand` pour un groupe déjà
+    publié qui ne m'appartient plus, sinon j'en crée un DEUXIÈME, vide, avec
+    le même identifiant local ;
   - **on ne QUITTE pas un groupe qu'on a créé** (b212) : on le supprime ou
     on le transmet. `leave_band` le refusait en commentaire mais pas en
     code : réinitialiser son application appelait `leaveBand` sur TOUS ses
