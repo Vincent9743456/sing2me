@@ -105,6 +105,13 @@ export function Settings() {
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 4000);
+      // On note la date : c'est ce qui fait TAIRE le rappel discret.
+      savePrefs({
+        ...store.prefs,
+        lastBackupAt: new Date().toISOString(),
+        lastBackupSongs: store.songs.filter((x) => x.idea !== true).length,
+        backupSnoozeUntil: undefined,
+      });
       toast.show(
         t('Sauvegarde enregistrée — {n} morceaux.', { n: store.songs.length }),
       );

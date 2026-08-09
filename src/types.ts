@@ -183,6 +183,15 @@ export interface Prefs {
    * les autres : c'est mon classement, pas une destruction.
    */
   hiddenLives?: string[];
+  /**
+   * Dernière sauvegarde enregistrée par l'utilisateur (fichier gardé chez
+   * lui). Sert au rappel discret de la bibliothèque — jamais à autre chose.
+   */
+  lastBackupAt?: string;
+  /** Nombre de morceaux au moment de cette sauvegarde. */
+  lastBackupSongs?: number;
+  /** « Plus tard » : date jusqu'à laquelle on ne repropose rien. */
+  backupSnoozeUntil?: string;
 }
 
 /** Membre d'un groupe (v1 locale : simple annuaire + invitations). */
