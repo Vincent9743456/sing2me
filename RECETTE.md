@@ -170,6 +170,7 @@ groupe, direct). Marco est le second appareil.
 | G-14 | Supprimer un groupe | Il disparaît aussi chez les membres | 🟠 |
 | G-15 | Matériel d'un musicien | Saisi, visible sur le plan de scène | ⚪ |
 | G-16 | Réinitialiser son app quand on a créé un groupe | **Aucune** bannière « à réinviter » ne me désigne MOI au retour, ni pastille sur l'onglet Groupes — ⚠️ cicatrice b212 | 🔴 |
+| G-21 | Fiche du groupe → « Setlists du groupe » | L'onglet Setlists s'ouvre **déjà filtré** sur ce groupe, comme « Répertoire du groupe » — ⚠️ cicatrice b214 | 🟠 |
 | G-18 | Réglages du groupe : qui l'a créé | « Créateur : Toi » chez le créateur, son nom chez les autres | 🟠 |
 | G-19 | Transmettre le groupe à un membre | Confirmation qui dit ce qu'on perd ; ensuite c'est LUI qui invite, retire et supprime — et je reste membre avec toutes mes partitions | 🔴 |
 | G-20 | 📱📱 Chez le nouveau créateur | En ouvrant la fiche du groupe, il se voit créateur (le serveur fait autorité) | 🟠 |

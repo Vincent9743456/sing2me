@@ -601,6 +601,20 @@ export function BandEdit({ id }: { id: string }) {
     navigate('/');
   }
 
+  /** Même règle pour les setlists (b214, signalement de Vincent) : depuis
+   *  la fiche d'un groupe, on arrive sur l'onglet Setlists DÉJÀ filtré sur
+   *  ce groupe. Sans ça, la porte « Setlists du groupe » ouvrait la liste
+   *  entière — à chercher soi-même ce qu'on venait de désigner. */
+  function openSetlists() {
+    if (!band) return;
+    try {
+      localStorage.setItem('sing2me/setlistCtx', band.id);
+    } catch {
+      // stockage indisponible : la liste s'ouvrira sans filtre
+    }
+    navigate('/setlists');
+  }
+
   return (
     <>
       <TopBar
@@ -778,10 +792,7 @@ export function BandEdit({ id }: { id: string }) {
               </span>
             </button>
 
-            <button
-              className="bigrow"
-              onClick={() => navigate('/setlists')}
-            >
+            <button className="bigrow" onClick={openSetlists}>
               <span className="i" aria-hidden="true">
                 📋
               </span>
