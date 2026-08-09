@@ -34,6 +34,11 @@
   --live-soft: #ffb4b4;
   --ok: #34d399;
   --ok-soft: rgba(52, 211, 153, 0.14);
+  /* Avertissement : ni une erreur (--danger, on a perdu quelque chose), ni
+     un succès. « L'import a douté, jette un œil. » Ambre chaud, lisible sur
+     fond sombre sans hurler comme le rouge. */
+  --warn: #f5c451;
+  --warn-soft: rgba(245, 196, 81, 0.14);
   --heart: #ffa3c0;
   /* Pastilles de groupe */
   --band-1: #fbbf24;

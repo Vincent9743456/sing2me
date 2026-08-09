@@ -267,6 +267,15 @@ export function Library() {
     };
   }, []);
   // Réserve d'« idées » : morceaux importés non encore validés
+  // « À vérifier » : morceaux dont l'import a douté (filet de sécurité du
+  // chantier « Reprise de répertoire »). Ils sont bien en bibliothèque —
+  // un mauvais import signalé vaut mieux qu'un import manquant — mais on
+  // les retrouve d'un geste, avec la raison du doute sur chaque ligne.
+  const [showCheck, setShowCheck] = useState(false);
+  const checkCount = useMemo(
+    () => songs.filter((s) => s.needsCheck !== undefined).length,
+    [songs],
+  );
   const [showIdeas, setShowIdeas] = useState(false);
   const ideaCount = useMemo(
     () => songs.filter((s) => s.idea === true).length,
@@ -381,7 +390,7 @@ export function Library() {
     // Les nouvelles importations restent épinglées EN TÊTE tant qu'elles
     // sont « nouvelles » (une semaine) — sauf en tri par artiste (qui
     // regroupe) ou dans une vue filtrée dédiée.
-    const pinTop = sort !== 'artist' && !showNew && !showIdeas;
+    const pinTop = sort !== 'artist' && !showNew && !showIdeas && !showCheck;
     const isProposal = (s: (typeof songs)[number]) =>
       (s.pendingBandId ?? '') !== '';
     const freshRank = (s: (typeof songs)[number]) =>
@@ -414,6 +423,7 @@ export function Library() {
         // Vue « Idées » : la réserve à travailler — y compris les morceaux
         // proposés par un groupe, qui arrivent désormais ici (b174).
         if (showIdeas) return s.idea === true;
+        if (showCheck) return s.needsCheck !== undefined;
         /*
          * Dans le RÉPERTOIRE D'UN GROUPE, ce que ce groupe vient de proposer
          * s'affiche (b203, constat de Vincent) : « je sais que Marco a
@@ -457,6 +467,7 @@ export function Library() {
     membership,
     showIdeas,
     showNew,
+    showCheck,
   ]);
 
   // Regroupement par artiste (tri « artiste » uniquement)
@@ -511,6 +522,13 @@ export function Library() {
                                   ?.name || t('ton groupe')
                               }`}
                           {song.artist !== '' ? ` · ${song.artist}` : ''}
+                        </div>
+                      ) : song.needsCheck ? (
+                        /* L'import a douté : on le dit sur la ligne, avec la
+                           raison. Le morceau est bien là — il est juste à
+                           relire. Modifier le morceau efface ce badge. */
+                        <div className="sub" style={{ color: 'var(--warn)' }}>
+                          🔎 {t('À vérifier')} · {song.needsCheck.reason}
                         </div>
                       ) : (
                         <div className="sub">
@@ -605,7 +623,7 @@ export function Library() {
   // Badge du bouton « Filtrer » : nombre de filtres actifs (une vue
   // particulière, un répertoire, un tag — le tri n'est pas un filtre).
   const activeFilters =
-    (showIdeas || showNew ? 1 : 0) +
+    (showIdeas || showNew || showCheck ? 1 : 0) +
     (bandFilter !== null ? 1 : 0) +
     (tag !== null ? 1 : 0);
 
@@ -724,6 +742,7 @@ export function Library() {
                   setBandFilter(null);
                   setShowIdeas(false);
                   setShowNew(false);
+                  setShowCheck(false);
                 }}
               >
                 {t('Tous les morceaux')}
@@ -744,6 +763,23 @@ export function Library() {
                   }}
                 >
                   {t('✨ Nouveautés ({n})', { n: newCount })}
+                </button>
+              )}
+              {checkCount > 0 && (
+                <button
+                  className={`chip ${showCheck ? '' : 'off'}`}
+                  title={t(
+                    'Morceaux dont l’import a douté — un coup d’œil suffit souvent',
+                  )}
+                  onClick={() => {
+                    setShowCheck(!showCheck);
+                    setBandFilter(null);
+                    setShowIdeas(false);
+                    setShowNew(false);
+                    setShowCheck(false);
+                  }}
+                >
+                  {t('🔎 À vérifier ({n})', { n: checkCount })}
                 </button>
               )}
               {ideaCount > 0 && (
@@ -782,6 +818,7 @@ export function Library() {
                     setBandFilter('');
                     setShowIdeas(false);
                     setShowNew(false);
+                    setShowCheck(false);
                   }}
                 >
                   <Icon name="mic" size={12} /> {t('Solo')}

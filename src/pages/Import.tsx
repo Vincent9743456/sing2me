@@ -3,13 +3,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TopBar } from '../components/ui';
 import { SongBody } from '../components/SongBody';
 import { extractDocxText } from '../lib/docx';
-import { extractPdfText } from '../lib/pdf';
+import { extractPdfPages } from '../lib/pdf';
+import { splitSongs, DetectedSong, SourceSignal } from '../lib/songsplit';
 import {
   analyzeImport,
   bandKeysMatch,
   findSameSong,
   importText,
   lyricsSimilarity,
+  raisonDeVerifier,
   songKey,
 } from '../lib/importer';
 import {
@@ -40,6 +42,8 @@ interface BulkItem {
   songId?: string;
   /** Texte d'origine (base du nettoyage IA) */
   raw?: string;
+  /** L'import a douté sur ce morceau : il est en bibliothèque, à relire. */
+  check?: boolean;
 }
 
 /**
@@ -129,6 +133,19 @@ export function Import() {
   const [artist, setArtist] = useState('');
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState<string | null>(null);
+  /**
+   * Plusieurs partitions repérées dans le fichier déposé. On PROPOSE le
+   * découpage, on ne l'impose jamais : couper une chanson en deux au milieu
+   * d'un couplet serait pire que laisser un recueil d'un bloc — lequel part
+   * de toute façon marqué « à vérifier ».
+   */
+  const [multi, setMulti] = useState<{
+    songs: DetectedSong[];
+    confident: boolean;
+    signal: SourceSignal;
+  } | null>(null);
+  /** L'utilisateur a préféré garder le recueil d'un bloc : on le note. */
+  const [recueilRefuse, setRecueilRefuse] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ugUrl, setUgUrl] = useState('');
   const [ugLoading, setUgLoading] = useState(false);
@@ -202,6 +219,7 @@ export function Import() {
     try {
       const lower = file.name.toLowerCase();
       let content: string;
+      let pages: string[] = [];
       if (lower.endsWith('.html') || lower.endsWith('.htm')) {
         const tab = parseUgTabHtml(await file.text());
         if (!tab) {
@@ -220,20 +238,43 @@ export function Import() {
         content = await extractDocxText(bytes);
       } else if (lower.endsWith('.pdf')) {
         const bytes = new Uint8Array(await file.arrayBuffer());
-        content = await extractPdfText(bytes);
+        // Page par page : c'est le meilleur indice d'un recueil.
+        pages = await extractPdfPages(bytes);
+        content = pages.join('\n\n');
       } else {
         content = await file.text();
       }
+      const decoupe = splitSongs(
+        pages.length > 0 ? { pages, text: content } : { text: content },
+      );
+      setMulti(decoupe.songs.length >= 2 ? decoupe : null);
+      setRecueilRefuse(false);
       setText(content);
       setFileName(file.name);
       if (title.trim() === '') {
         setTitle(file.name.replace(/\.[^.]+$/, ''));
       }
-    } catch {
+    } catch (err) {
+      /*
+       * LA CAUSE EXACTE NE SE PERD PLUS (chantier « Reprise de répertoire »).
+       *
+       * `extractPdfText` lève déjà le bon message — « ce PDF est un scan,
+       * il ne contient pas de texte » — et ce `catch` le jetait pour
+       * afficher un texte générique à sa place. La bonne explication
+       * existait, à trois lignes de son affichage.
+       *
+       * Un échec doit toujours nommer sa cause : c'est ce qui distingue
+       * « l'app est cassée » de « ce fichier-là ne peut pas être lu, voilà
+       * quoi faire ». Le repli générique ne sert plus que si l'erreur est
+       * muette.
+       */
+      const cause = err instanceof Error ? err.message.trim() : '';
       setError(
-        t(
-          "Ce fichier n'a pas pu être lu. Essaie un fichier texte (.txt, .cho, .pro, .onsong) ou Word (.docx), ou colle le texte.",
-        ),
+        cause !== ''
+          ? cause
+          : t(
+              "Ce fichier n'a pas pu être lu. Essaie un fichier texte (.txt, .cho, .pro, .onsong) ou Word (.docx), ou colle le texte.",
+            ),
       );
     } finally {
       if (fileRef.current) fileRef.current.value = '';
@@ -325,9 +366,56 @@ export function Import() {
     }
   }
 
+  /**
+   * Créer un morceau par partition détectée. Chacun repasse par le parseur
+   * normal, et hérite du filet de sécurité (raison du doute) comme
+   * n'importe quel import.
+   */
+  function onImportMulti(asIdea: boolean) {
+    if (!multi) return;
+    let crees = 0;
+    let doutes = 0;
+    for (const d of multi.songs) {
+      const outcome = importText(d.text, d.title || 'Morceau importé');
+      const song = outcome.song;
+      if (d.title !== '') song.title = d.title;
+      if (asIdea) song.idea = true;
+      const doute = raisonDeVerifier(d.text, outcome);
+      if (doute !== '') {
+        song.needsCheck = { reason: doute };
+        doutes++;
+      }
+      // Un jumeau déjà présent devient une version, comme partout ailleurs.
+      const twin = findSameSong(songs, song.title, song.lyrics, song.artist);
+      if (twin) {
+        saveSong(addSongAsVersion(twin, song, 'Version importée', false));
+      } else {
+        saveSong(song);
+        crees++;
+      }
+    }
+    setMulti(null);
+    setText('');
+    setFileName(null);
+    toast.show(
+      (crees > 1
+        ? t('{n} morceaux ajoutés à ta bibliothèque.', { n: crees })
+        : t('{n} morceau ajouté à ta bibliothèque.', { n: crees })) +
+        (doutes > 0 ? ' ' + t('{n} à vérifier.', { n: doutes }) : ''),
+    );
+    navigate('/');
+  }
+
   function onImport(asIdea: boolean) {
     if (text.trim() === '') return;
-    const { song } = importText(text, title || 'Morceau importé');
+    const outcome = importText(text, title || 'Morceau importé');
+    const { song } = outcome;
+    // L'import a-t-il douté ? La raison voyage avec le morceau (filet de
+    // sécurité) : il entre en bibliothèque, mais on saura qu'il est à relire.
+    const doute = raisonDeVerifier(text, outcome, {
+      plusieursPartitions: recueilRefuse,
+    });
+    if (doute !== '') song.needsCheck = { reason: doute };
     if (title.trim() !== '') song.title = title.trim();
     if (artist.trim() !== '') song.artist = artist.trim();
     if (asIdea) song.idea = true;
@@ -392,7 +480,13 @@ export function Import() {
           docs.push({ name: f.name, text: await extractDocxText(bytes) });
         } else if (lower.endsWith('.pdf')) {
           const bytes = new Uint8Array(await f.arrayBuffer());
-          docs.push({ name: f.name, text: await extractPdfText(bytes) });
+          // En masse, un fichier = un morceau par défaut ; le découpage
+          // d'un recueil se propose à l'unité, où l'utilisateur peut voir
+          // ce qu'on lui propose avant d'accepter.
+          docs.push({
+            name: f.name,
+            text: (await extractPdfPages(bytes)).join('\n\n'),
+          });
         } else {
           docs.push({ name: f.name, text: await f.text() });
         }
@@ -638,11 +732,16 @@ export function Import() {
           }
         } else {
           if (asIdea) song.idea = true;
+          // Filet : la raison du doute reste sur le morceau, pour qu'il se
+          // retrouve d'un geste dans « à vérifier ».
+          const doute = raisonDeVerifier(raw, res);
+          if (doute !== '') song.needsCheck = { reason: doute };
           saveSong(song);
           known.push(song);
           items[i] = {
             ...items[i],
             status: 'ok',
+            check: doute !== '',
             title: song.title,
             message: needsAi
               ? garbled
@@ -977,6 +1076,43 @@ export function Import() {
         </>
         )}
 
+        {method === 'doc' && multi && (
+          <div
+            className="card"
+            style={{ borderColor: 'var(--warn)', marginBottom: 'var(--sp-3)' }}
+          >
+            <strong>
+              {t('Ce fichier contient sans doute {n} partitions.', {
+                n: multi.songs.length,
+              })}
+            </strong>
+            <p className="help" style={{ marginTop: 4 }}>
+              {multi.songs
+                .map((d) => d.title)
+                .filter((x) => x !== '')
+                .slice(0, 8)
+                .join(' · ')}
+              {multi.songs.length > 8 ? ' …' : ''}
+            </p>
+            <div className="rowactions" style={{ flexWrap: 'wrap' }}>
+              <button className="btn" onClick={() => onImportMulti(false)}>
+                {t('Créer {n} morceaux', { n: multi.songs.length })}
+              </button>
+              <button
+                className="btn ghost"
+                onClick={() => {
+                  setMulti(null);
+                  setRecueilRefuse(true);
+                }}
+                title={t(
+                  'Le fichier restera un seul morceau, marqué à vérifier',
+                )}
+              >
+                {t('N’en faire qu’un seul')}
+              </button>
+            </div>
+          </div>
+        )}
         {method === 'doc' && (
           <>
             <div className="field">
@@ -1261,6 +1397,19 @@ export function Import() {
                       : t('{n} échec', {
                           n: bulkItems.filter((x) => x.status === 'error').length,
                         })}
+                    {/* Lucidité de l'import : combien sont à relire, et
+                        comment les retrouver. Sans ce chiffre, un import de
+                        quarante fichiers a l'air parfait. */}
+                    {bulkItems.some((x) => x.check) && (
+                      <>
+                        {' · '}
+                        <span style={{ color: 'var(--warn)' }}>
+                          {t('{n} à vérifier', {
+                            n: bulkItems.filter((x) => x.check).length,
+                          })}
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -1311,6 +1460,18 @@ export function Import() {
 
         {/* « Écrire à la main » vit dans « Autres façons d'importer » —
             plus de deuxième chemin en bas de page. */}
+
+        {/* RÉVERSIBILITÉ — discrète mais permanente, sur tous les chemins
+            d'import. On demande à quelqu'un de confier sa collection : il a
+            le droit de savoir qu'il peut la reprendre. */}
+        <p
+          className="help"
+          style={{ marginTop: 'var(--sp-5)', textAlign: 'center' }}
+        >
+          {t(
+            'Tes morceaux restent à toi : tu peux tout réexporter à tout moment (carnet PDF ou fichiers texte), et rien n’est jamais supprimé sans toi.',
+          )}
+        </p>
       </div>
     </>
   );
