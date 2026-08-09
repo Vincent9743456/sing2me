@@ -435,10 +435,23 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   seulement dans `api/*.js` (Vercel).
 - SQL : les fichiers `supabase/*.sql` restent idempotents
   (ré-exécutables sans risque).
-- Vérification avant livraison : `npm run typecheck` (ou, dans un
-  environnement sans node_modules, `npx tsc -p tsconfig.verify.json`
-  qui utilise les stubs du dossier `typestubs/`) + tests node sur la
-  logique pure. Si possible, `npm run build` avant de pousser.
+- **Vérification avant livraison : `npm run typecheck`, et RIEN D'AUTRE
+  comme garde-fou de types.** `tsconfig.verify.json` a `strict: false` :
+  il ne voit AUCUNE erreur de nullité. C'est par ce trou qu'est passé le
+  plantage de b201, qui a rendu la page du spectateur NOIRE pendant des
+  heures — un crochet lisait `state.id` avant le garde `state === null`,
+  et le tableau de dépendances d'un `useEffect` est évalué à chaque
+  rendu, donc dès le premier. Le typecheck strict le signalait en une
+  ligne ; le permissif, jamais. La config permissive ne sert que dans un
+  environnement SANS node_modules, et alors on le dit dans le lot.
+  Ensuite : tests node sur la logique pure, et `npm run build`.
+- **Un crochet vit AVANT les gardes** : tout `useEffect`/`useMemo` écrit
+  au-dessus d'un `if (x === null) return …` doit se lire comme si l'état
+  n'existait pas encore (`x?.id ?? ''`), dépendances comprises.
+- **Toute racine React a un filet** (b215) : `ErrorBoundary` au montage,
+  entrée publique comprise — elle en était dépourvue, d'où l'écran noir
+  au lieu d'un message. Un spectateur en plein concert n'a aucun moyen de
+  diagnostiquer quoi que ce soit.
 - Textes UI en français, ton chaleureux, tutoiement.
 - **Bilingue (b156) — le français reste la langue SOURCE du code.**
   Toute chaîne d'INTERFACE s'écrit en français dans le code et passe par

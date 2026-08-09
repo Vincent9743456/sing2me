@@ -310,7 +310,7 @@ export function Bands() {
                           {/* Créateur rappelé quand ce n'est pas moi (b147). */}
                           {band.owned === false &&
                           (band.ownerName ?? '') !== ''
-                            ? t('créé par {nom} · ', { nom: band.ownerName })
+                            ? t('créé par {nom} · ', { nom: band.ownerName ?? '' })
                             : ''}
                           {n > 1
                             ? t('{n} musiciens', { n })

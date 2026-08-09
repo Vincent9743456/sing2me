@@ -243,12 +243,18 @@ export function Live({
    * repartait n'était jamais compté. On signale donc dès que le direct est
    * identifié, puis toutes les 90 s.
    */
+  // ⚠️ `state` est NUL au premier rendu (b215) : lire `state.id` ici — y
+  // compris dans le tableau de dépendances, évalué à CHAQUE rendu — plantait
+  // la page du spectateur avant même le premier appel réseau. Un crochet
+  // vit AVANT le garde `if (state === null)` plus bas : il doit donc être
+  // écrit comme si l'état n'existait pas encore.
+  const liveId = state?.id ?? '';
   useEffect(() => {
-    if (state.id === '') return;
-    void pingAttendance(state.id);
-    const id = window.setInterval(() => void pingAttendance(state.id), 90000);
+    if (liveId === '') return;
+    void pingAttendance(liveId);
+    const id = window.setInterval(() => void pingAttendance(liveId), 90000);
     return () => window.clearInterval(id);
-  }, [state.id]);
+  }, [liveId]);
 
   // Setlist souvenir : chargée une fois (le dernier concert terminé).
   useEffect(() => {
