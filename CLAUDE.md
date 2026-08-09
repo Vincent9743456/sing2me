@@ -321,6 +321,19 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 
 - Local-first : localStorage est la source ; le cloud est une copie.
   Jamais de fonctionnalité qui exige le réseau pour jouer.
+- **Une liste de champs écrite à la main finit TOUJOURS par en oublier
+  un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
+  aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre
+  bien, puis il est effacé plus tard et ailleurs — donc invisible au
+  test. Vincent a renommé un live, la synchro a jeté le nom ; les lives
+  retirés revenaient ; la réinitialisation des concerts s'annulait toute
+  seule. La règle : **on ÉTALE (`{...cloud, ...local}`), on ne
+  RECONSTRUIT pas** ; on parcourt les clés réellement présentes, jamais
+  un tableau littéral. Une règle explicite ne se justifie que pour un
+  champ qui demande VRAIMENT un arbitrage. Trois endroits doivent rester
+  d'accord pour tout champ de `SyncState` : `mergeStates`
+  (`src/lib/sync.ts`), `fromCloud` et l'objet poussé au cloud (les deux
+  dans `src/components/Account.tsx`).
 - **Compte obligatoire (décision Vincent, b120)** : sans session locale,
   l'app musicien n'affiche qu'un portail de connexion épuré (Welcome).
   Le test est LOCAL (session en localStorage) — un compte déjà connecté
