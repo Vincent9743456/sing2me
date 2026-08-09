@@ -359,6 +359,13 @@ export function Settings() {
             // connaît encore les cloudId.
             if (parts.bands === true) {
               const cloudIds = bands
+                // …mais on ne QUITTE pas un groupe qu'on a créé (b212) :
+                // on n'en part pas, on le supprime ou on le transmet.
+                // Sans ce filtre, la réinitialisation inscrivait mon
+                // propre départ de mon propre groupe, et l'onglet Groupes
+                // me demandait ensuite de me réinviter moi-même
+                // (signalement de Marco).
+                .filter((b) => b.owned !== true)
                 .map((b) => b.cloudId)
                 .filter((id): id is string => !!id && id !== '');
               if (cloudIds.length > 0) {

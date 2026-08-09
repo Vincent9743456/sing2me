@@ -278,7 +278,12 @@ language sql security definer set search_path = public as $$
   from public.band_invites i
   join public.cloud_bands b on b.id = i.band_id
   left join public.musician_directory d on d.user_id = i.invited_user
-  where i.status = 'left' and b.owner = auth.uid()
+  -- Jamais MOI-MÊME (b212) : le créateur d'un groupe n'a pas à se
+  -- réinviter. Deuxième garde-fou, en plus de `leave_band` qui refuse
+  -- désormais d'inscrire le départ d'un propriétaire.
+  where i.status = 'left'
+    and b.owner = auth.uid()
+    and i.invited_user <> auth.uid()
   order by i.created_at desc;
 $$;
 grant execute on function public.my_band_departures to authenticated;

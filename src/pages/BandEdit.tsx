@@ -23,6 +23,7 @@ import {
   DirectoryPerson,
   ensureCloudBand,
   BandDeparture,
+  departuresToShow,
   fetchBandDepartures,
   fetchBandMembers,
   fetchBandMessages,
@@ -200,10 +201,18 @@ export function BandEdit({ id }: { id: string }) {
         if (!cancelled) setMyId(s.userId);
         const members = await fetchBandMembers(s, cid);
         if (!cancelled) setCloudMembers(members);
-        // Départs à traiter sur CE groupe (b142).
+        // Départs à traiter sur CE groupe (b142), moi excepté (b212 : la
+        // réinitialisation fait « partir » le créateur de son propre
+        // groupe — il n'a pas à se réinviter lui-même).
         const gone = await fetchBandDepartures(s);
         if (!cancelled) {
-          setDepartures(gone.filter((d) => d.bandId === cid));
+          setDepartures(
+            departuresToShow(gone, {
+              myUserId: s.userId,
+              myCloudIds: [cid],
+              hidden: prefs.hiddenDepartures,
+            }),
+          );
         }
         // Dernier message pour le sous-titre de la porte « Discussion ».
         try {

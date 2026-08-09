@@ -176,6 +176,14 @@ export function mergeStates(
         ...(local.prefs.hiddenLives ?? []),
       ]),
     ].slice(-500),
+    // Départs écartés (b212) : même raison — écarter sur un appareil vaut
+    // sur tous les miens, sinon la bannière revient au premier échange.
+    hiddenDepartures: [
+      ...new Set([
+        ...(cloud.prefs?.hiddenDepartures ?? []),
+        ...(local.prefs.hiddenDepartures ?? []),
+      ]),
+    ].slice(-500),
   };
   // Pierres tombales : une suppression sur UN appareil vaut partout.
   // (la clé — titre normalisé — est CONSERVÉE : anti-résurrection groupe)

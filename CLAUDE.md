@@ -22,6 +22,12 @@
    en cas de doute, on n'expédie pas le lot.
 10. Pas de `alert()/confirm()/prompt()` natifs : utiliser
     ConfirmSheet/PromptSheet/Toast (composants Feedback).
+11. **Toute bannière a une sortie** (b212) : un message qui réclame une
+    action doit pouvoir être écarté d'un geste, et ce choix se garde
+    (préférence locale, unie à la synchro). Marco est resté avec une
+    bannière « à réinviter » impossible à fermer. Corollaire : **une
+    pastille compte EXACTEMENT ce que l'écran montrera** — elle se calcule
+    au rendu, jamais au sondage, sinon elle appelle vers un écran vide.
 
 ## Déploiement & versions (pipeline actuel)
 
@@ -151,6 +157,17 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     déjà présente mais détachée, et regarnir une setlist vide — sans quoi le
     groupe paraît n'avoir aucune setlist (constat de Marco). Le contenu
     qu'un membre a modifié lui-même n'est jamais écrasé ;
+  - **on ne QUITTE pas un groupe qu'on a créé** (b212) : on le supprime ou
+    on le transmet. `leave_band` le refusait en commentaire mais pas en
+    code : réinitialiser son application appelait `leaveBand` sur TOUS ses
+    groupes, le créateur inscrivait donc son propre départ, et son onglet
+    Groupes lui demandait ensuite de **se réinviter lui-même**, sans
+    pouvoir fermer le message (signalement de Marco). Trois verrous, parce
+    qu'un seul aurait laissé les lignes déjà écrites : la réinitialisation
+    saute les groupes `owned`, `leave_band` ne fait rien pour le
+    propriétaire, `my_band_departures` n'en renvoie jamais un qui me
+    désigne, et le client filtre par `departuresToShow` (jamais moi, jamais
+    un groupe que je n'ai plus, jamais un départ écarté) ;
   - un morceau ajouté au répertoire d'un groupe arrive chez les autres
     membres **dans les Idées** de leur bibliothèque (décision Vincent,
     b174 — remplace les « limbes » séparées) : `idea: true` +

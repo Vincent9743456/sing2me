@@ -237,6 +237,19 @@ begin
   if auth.uid() is null then
     return json_build_object('error', 'Connexion requise');
   end if;
+  -- Le CRÉATEUR ne quitte pas son propre groupe (b212) : le commentaire
+  -- ci-dessus l'annonçait, le code ne l'appliquait pas. Réinitialiser son
+  -- application appelle `leave_band` sur TOUS ses groupes : le créateur
+  -- inscrivait donc son propre départ, et son onglet Groupes lui
+  -- demandait ensuite de se réinviter lui-même — sans pouvoir fermer le
+  -- message (signalement de Marco). On ne fait rien, sans erreur : la
+  -- réinitialisation locale ne doit jamais être bloquée.
+  if exists (
+    select 1 from public.cloud_bands b
+    where b.id = p_band and b.owner = auth.uid()
+  ) then
+    return json_build_object('ok', true, 'skipped', 'owner');
+  end if;
   delete from public.cloud_band_members
     where band_id = p_band and user_id = auth.uid();
   -- Trace du départ (b142) : le créateur en est informé dans son onglet
@@ -252,3 +265,12 @@ begin
   return json_build_object('ok', true);
 end $$;
 grant execute on function public.leave_band to authenticated;
+
+-- Réparation des lignes déjà écrites (b212) : un créateur inscrit comme
+-- « parti » de son propre groupe. Idempotent — rien à supprimer une fois
+-- la fonction ci-dessus en place.
+delete from public.band_invites i
+using public.cloud_bands b
+where i.band_id = b.id
+  and i.status = 'left'
+  and i.invited_user = b.owner;
