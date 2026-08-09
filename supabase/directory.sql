@@ -287,3 +287,72 @@ language sql security definer set search_path = public as $$
   order by i.created_at desc;
 $$;
 grant execute on function public.my_band_departures to authenticated;
+
+-- ------------------------------------------------------------
+-- b213 : QUI possède le groupe, et comment le TRANSMETTRE.
+-- « Le créateur ne quitte pas son groupe : il le supprime ou il le
+-- transmet » (b212) — encore fallait-il que transmettre existe.
+-- ------------------------------------------------------------
+-- Le créateur d'un groupe, visible de tous ses membres (nom et photo
+-- viennent de l'annuaire ; vide si le musicien n'y figure pas).
+drop function if exists public.band_owner(uuid);
+create function public.band_owner(p_band uuid)
+returns table (user_id uuid, name text, photo text)
+language sql security definer set search_path = public as $$
+  select b.owner,
+         coalesce(d.name, ''),
+         coalesce(d.photo, '')
+  from public.cloud_bands b
+  left join public.musician_directory d on d.user_id = b.owner
+  where b.id = p_band
+    and (
+      b.owner = auth.uid()
+      or exists (
+        select 1 from public.cloud_band_members me
+        where me.band_id = p_band and me.user_id = auth.uid()
+      )
+    );
+$$;
+grant execute on function public.band_owner to authenticated;
+
+-- Transmettre le groupe à un MEMBRE. L'ancien créateur ne perd pas le
+-- groupe : il y reste, comme musicien ordinaire (sans quoi il perdrait
+-- l'accès au répertoire commun — les politiques RLS ne connaissent que le
+-- propriétaire et les membres). Le nouveau créateur GARDE sa ligne de
+-- membre : la retirer ferait croire à son application qu'il a été exclu,
+-- et elle effacerait le groupe en local.
+drop function if exists public.transfer_band(uuid, uuid);
+create function public.transfer_band(p_band uuid, p_user uuid)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare
+  v_owner uuid;
+begin
+  if auth.uid() is null then
+    return json_build_object('error', 'Connexion requise');
+  end if;
+  select b.owner into v_owner from public.cloud_bands b where b.id = p_band;
+  if v_owner is null then
+    return json_build_object('error', 'Groupe introuvable');
+  end if;
+  if v_owner <> auth.uid() then
+    return json_build_object('error', 'Seul le créateur peut transmettre le groupe');
+  end if;
+  if p_user = auth.uid() then
+    return json_build_object('ok', true); -- déjà à lui : rien à faire
+  end if;
+  if not exists (
+    select 1 from public.cloud_band_members m
+    where m.band_id = p_band and m.user_id = p_user
+  ) then
+    return json_build_object('error', 'Ce musicien n''est pas membre du groupe');
+  end if;
+  update public.cloud_bands set owner = p_user where id = p_band;
+  insert into public.cloud_band_members (band_id, user_id, name, instrument)
+  select p_band, auth.uid(), coalesce(d.name, ''), ''
+  from (select 1) x
+  left join public.musician_directory d on d.user_id = auth.uid()
+  on conflict (band_id, user_id) do nothing;
+  return json_build_object('ok', true);
+end $$;
+grant execute on function public.transfer_band to authenticated;
