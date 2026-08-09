@@ -199,6 +199,7 @@ export function Library() {
   const {
     songs,
     deleteSong,
+    acceptSong,
     bands,
     setlists,
     saveSong,
@@ -351,6 +352,12 @@ export function Library() {
       s.versions.forEach((v) => {
         if (v.bandId !== '' && bandIndex.has(v.bandId)) set.add(v.bandId);
       });
+      // Une proposition appartient à la vue du groupe qui l'a faite, même si
+      // elle est arrivée sans version de contexte (b205). Sans cette ligne,
+      // les deux filtres se contredisaient : la vue disait « montre-la », le
+      // filtre par répertoire l'écartait.
+      const de = (s.pendingBandId ?? '').trim();
+      if (de !== '' && bandIndex.has(de)) set.add(de);
       bandsBySong.set(s.id, set);
     });
     setlists.forEach((sl) => {
@@ -570,7 +577,10 @@ export function Library() {
                         })}
                         onClick={(e) => {
                           e.stopPropagation();
-                          saveSong({ ...song, pendingBandId: undefined });
+                          // Accepter = entrer en bibliothèque ET dans le
+                          // répertoire du groupe (b205). La règle vit dans
+                          // le store, comme celle des setlists.
+                          acceptSong(song.id);
                         }}
                       >
                         {t('✓ Accepter')}

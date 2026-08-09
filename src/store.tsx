@@ -21,11 +21,13 @@ import {
 } from './lib/normalizeTitle';
 import { ResetMarks } from './lib/sync';
 import {
+  duplicateVersion,
   isAbandonedSetlist,
   migrateConcert,
   migrateSetlist,
   migrateSong,
   removeVersion,
+  versionForBand,
 } from './lib/model';
 import { exampleSetlist, exampleSongs, SEED_KEY, SEED_VERSION } from './seed';
 import {
@@ -76,6 +78,9 @@ interface StoreValue extends AppState {
   hydrate: (state: AppState) => void;
   saveSong: (song: Song) => void;
   deleteSong: (songId: string) => void;
+  /** Accepte une proposition de groupe : elle entre en bibliothèque ET dans
+   *  le répertoire du groupe qui l'a proposée (b205). */
+  acceptSong: (songId: string) => void;
   saveSetlist: (setlist: Setlist) => void;
   deleteSetlist: (setlistId: string) => void;
   saveConcert: (concert: Concert) => void;
@@ -281,6 +286,47 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       songs: prev.songs.some((s) => s.id === stamped.id)
         ? prev.songs.map((s) => (s.id === stamped.id ? stamped : s))
         : [...prev.songs, stamped],
+    }));
+  }, []);
+
+  /**
+   * ACCEPTER une proposition de groupe (b205, constat de Vincent : « j'ai
+   * accepté la chanson proposée par Marco, mais après l'acceptation je ne la
+   * vois pas dans le groupe »).
+   *
+   * Le bouton « ✓ Accepter » n'effaçait que la PROVENANCE
+   * (`pendingBandId`) et laissait le morceau à l'état d'idée. Il sortait
+   * donc de la vue du groupe (qui l'y montrait justement grâce à cette
+   * provenance) sans entrer nulle part ailleurs : accepter le faisait
+   * disparaître. Accepter, c'est exactement ce que fait déjà le fait de le
+   * programmer dans une setlist (règle b174) — l'inscrire en bibliothèque.
+   *
+   * Et puisqu'il vient d'un groupe, il ENTRE dans le répertoire de ce
+   * groupe : on garantit la version de contexte au lieu d'espérer qu'elle
+   * ait survécu au voyage. C'est la demande de Vincent, mot pour mot :
+   * « il faudrait qu'elle soit automatiquement rattachée à ce groupe ».
+   *
+   * Placé dans le store, comme la règle des setlists, pour que les deux
+   * chemins d'acceptation ne puissent plus diverger.
+   */
+  const acceptSong = useCallback((songId: string) => {
+    setState((prev) => ({
+      ...prev,
+      songs: prev.songs.map((s) => {
+        if (s.id !== songId) return s;
+        const from = (s.pendingBandId ?? '').trim();
+        const adopte: Song = {
+          ...s,
+          idea: false,
+          pendingBandId: undefined,
+          updatedAt: new Date().toISOString(),
+        };
+        if (from === '' || versionForBand(adopte, from) !== null) return adopte;
+        return {
+          ...duplicateVersion(adopte, 'Version groupe', from),
+          updatedAt: adopte.updatedAt,
+        };
+      }),
     }));
   }, []);
 
@@ -583,6 +629,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     hydrate,
     saveSong,
     deleteSong,
+    acceptSong,
     saveSetlist,
     deleteSetlist,
     saveConcert,
