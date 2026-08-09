@@ -352,8 +352,34 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         const merged = cloud
           ? mergeStates(local, fromCloud(cloud.data))
           : local;
-        hydrateRef.current(merged as AppState);
-        await pushCloud(valid, merged);
+        /*
+         * CEINTURE DE SÉCURITÉ : une synchronisation ne VIDE JAMAIS une
+         * bibliothèque déjà remplie.
+         *
+         * Par construction, la fusion ne peut pas perdre de morceau : une
+         * lecture en échec lève, une ligne absente rend `null`, un contenu
+         * vide laisse le local intact. Mais « par construction » est une
+         * promesse, pas une garantie — il suffirait d'une donnée corrompue
+         * qui ait l'air valide, ou d'une pierre tombale de trop, pour que
+         * l'utilisateur voie sa collection disparaître d'un coup.
+         *
+         * Ici, le doute profite toujours au contenu : si la fusion rend une
+         * bibliothèque vide alors que le téléphone en avait une, on la
+         * REFUSE et on garde le local. Un décalage se rattrape à la synchro
+         * suivante ; une collection effacée, non.
+         */
+        const videe =
+          (local.songs?.length ?? 0) > 0 && (merged.songs?.length ?? 0) === 0;
+        const sur = videe ? local : merged;
+        if (videe) {
+          setError(
+            t(
+              'Sauvegarde en ligne incohérente — ta bibliothèque locale a été conservée.',
+            ),
+          );
+        }
+        hydrateRef.current(sur as AppState);
+        await pushCloud(valid, sur);
         if (cancelled) return;
         readyRef.current = true;
         setLastSync(new Date().toISOString());
@@ -363,7 +389,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         // Groupes cloud orphelins (supprimés localement, y compris avant que
         // la propagation n'existe) → dissous pour de bon, les membres voient
         // le groupe disparaître à leur tour. `merged.bands` fait foi.
-        void cleanupOrphanCloudBands(valid, merged.bands);
+        void cleanupOrphanCloudBands(valid, sur.bands);
         // Annuaire : publie sa fiche (nom + photo) pour être trouvable.
         // À défaut de nom d'artiste, on publie le début de l'email (souvent
         // le prénom) pour qu'un compte tout neuf soit quand même trouvable.
