@@ -146,13 +146,19 @@ function loadState(): AppState {
         concerts: (Array.isArray(parsed.concerts) ? parsed.concerts : []).map(
           migrateConcert,
         ),
-        bands: (Array.isArray(parsed.bands) ? parsed.bands : []).map((b) => ({
-          bio: '',
-          photo: '',
-          links: [],
-          tipUrl: '',
-          ...b,
-        })),
+        // Valeurs par défaut d'un groupe lu du disque : un fichier ancien
+        // peut ne pas avoir ces champs. L'étalement passe APRÈS, donc ce
+        // qui existe gagne (une clé absente ne remplace rien).
+        bands: (Array.isArray(parsed.bands) ? parsed.bands : []).map(
+          (b: Partial<Band>) =>
+            ({
+              bio: '',
+              photo: '',
+              links: [],
+              tipUrl: '',
+              ...b,
+            }) as Band,
+        ),
         artist: { ...emptyArtist(), ...(parsed.artist ?? {}) },
         prefs: { ...defaultPrefs(), ...(parsed.prefs ?? {}) },
         deleted: Array.isArray(parsed.deleted) ? parsed.deleted : [],

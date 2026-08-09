@@ -12,6 +12,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { detectLang, registerTranslations, setLang } from './i18n';
 import { EN_PUBLIC } from './i18n/en-public';
 import { Live } from './pages/Live';
@@ -51,6 +52,12 @@ function pageFromPath(): React.ReactElement | null {
 const container = document.getElementById('root');
 if (container) {
   createRoot(container).render(
-    <React.StrictMode>{pageFromPath()}</React.StrictMode>,
+    // Filet de sécurité (b215) : sans lui, la moindre erreur de rendu
+    // laissait le spectateur devant un ÉCRAN NOIR, sans rien à faire — en
+    // plein concert. L'app musicien avait ce filet depuis toujours ; la
+    // page publique, non. Elle l'a maintenant.
+    <React.StrictMode>
+      <ErrorBoundary>{pageFromPath()}</ErrorBoundary>
+    </React.StrictMode>,
   );
 }

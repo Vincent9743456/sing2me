@@ -429,16 +429,10 @@ export function BandEdit({ id }: { id: string }) {
       <>
         <TopBar title={t('Groupe')} onBack={() => navigate('/bands')} />
         <div className="page">
-        <button
-          className="btn block"
-          onClick={() => navigate(`/band/${band.id}/chat`)}
-          title={t(
-            'Discussion du groupe : préparer les répéts et concerts, proposer des morceaux',
-          )}
-        >
-          💬 {t('Espace du groupe — discussion, répéts, concerts')}
-        </button>
-        <div className="spacer" />
+          {/* Un bouton « Discussion du groupe » traînait ici (b215) : il
+              lisait band.id sur un groupe qui n'existe justement PLUS —
+              l'ouvrir plantait l'écran. Un groupe disparu n'a rien à
+              proposer d'autre que le retour. */}
           <p className="help">{t("Ce groupe n'existe plus.")}</p>
         </div>
       </>
@@ -721,7 +715,7 @@ export function BandEdit({ id }: { id: string }) {
                 </span>
                 <span>
                   {band.owned === false && (band.ownerName ?? '') !== ''
-                    ? t('créé par {nom} · ', { nom: band.ownerName })
+                    ? t('créé par {nom} · ', { nom: band.ownerName ?? '' })
                     : ''}
                   {memberCount > 1
                     ? t('{n} musiciens', { n: memberCount })

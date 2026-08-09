@@ -219,6 +219,7 @@ groupe, direct). Marco est le second appareil.
 | H-8 | Le live supprimé après rechargement | Il ne revient pas — ⚠️ cicatrice b202 | 🟠 |
 | H-9 | Un direct de Marco en solo | **N'apparaît pas** chez moi — ⚠️ cicatrice b183 | 🔴 |
 | H-10 | Un direct du groupe lancé par Marco | Apparaît chez moi, « lancé par Marco » | 🟠 |
+| H-10bis | 📱📱 Page du spectateur pendant un direct | Elle affiche le concert — **jamais un écran noir** ; avec ou sans partition, en pause, sans réseau — ⚠️ cicatrice b215 | 🔴 |
 | H-11 | Fiche Artiste : les quatre chiffres | Cohérents avec l'historique, **jamais 0 spectateur avec des cœurs** — ⚠️ cicatrice b201/b203 | 🔴 |
 | H-12 | Concert passé rattaché à un live | Il affiche ses cœurs, mots et spectateurs — ⚠️ cicatrice b207 | 🟠 |
 | H-13 | Concert jamais joué | Aucun chiffre inventé | 🟠 |

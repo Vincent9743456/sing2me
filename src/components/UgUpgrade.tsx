@@ -230,7 +230,7 @@ export function UgUpgradeModal({
               {t('Voir cette version')}
             </button>
           </div>
-          {sorted.length > 1 && (
+          {(sorted?.length ?? 0) > 1 && (
             <>
               <div className="help" style={{ margin: '10px 0 6px' }}>
                 {t('AUTRES VERSIONS')}
@@ -239,7 +239,7 @@ export function UgUpgradeModal({
                 className="card"
                 style={{ maxHeight: 220, overflowY: 'auto', padding: 6 }}
               >
-                {sorted.slice(1, 12).map((r, i) => (
+                {(sorted ?? []).slice(1, 12).map((r, i) => (
                   <div className="row" key={i} onClick={() => void pick(r)}>
                     <div className="grow">
                       <div className="title">{r.title}</div>
