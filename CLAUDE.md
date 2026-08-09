@@ -274,6 +274,20 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     l'interface, l'aide, la landing ou le README public. Formulations
     neutres : « colle le lien d'une page de partition », « reprends ta
     collection ».
+    **Règle NUANCÉE** (arbitrage Vincent, août 2026) : l'interdiction vise
+    la plateforme D'OÙ NOUS RÉCUPÉRONS les partitions — la nommer
+    reviendrait à afficher « on pompe chez eux », et c'est là qu'est le
+    risque. Nommer une application de recueil que l'utilisateur a
+    lui-même achetée, pour lui expliquer comment exporter SES PROPRES
+    fichiers, est d'une autre nature : c'est de la portabilité, pas de la
+    captation — et c'est autorisé (le code le fait déjà : « ChordPro /
+    OnSong » dans l'aide de l'import, `.onsong` dans les formats admis).
+    Le test à appliquer : est-ce que je nomme une source de contenu, ou
+    l'outil dont l'utilisateur sort ses données ? Le premier, jamais ; le
+    second, oui quand c'est la seule façon de donner une consigne utile.
+    En pratique, on préfère quand même RECONNAÎTRE le format déposé
+    plutôt que de demander à l'utilisateur quelle application il utilise :
+    la procédure s'adapte sans qu'aucune liste de marques ne s'affiche.
 - **Modèle économique — « Licence Scène »** (arbitrage fondateurs, août
   2026 ; remplace TOUT modèle antérieur, dont le Premium individuel à
   2,99 € désormais abandonné ; pas encore implémenté) :
