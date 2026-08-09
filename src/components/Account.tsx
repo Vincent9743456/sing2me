@@ -152,6 +152,14 @@ function fromCloud(raw: unknown): Partial<SyncState> | null {
     deleted: Array.isArray(r.deleted)
       ? (r.deleted as SyncState['deleted'])
       : undefined,
+    // Retraits de répertoires de groupes (b202) : ils PARTAIENT dans le
+    // cloud mais n'en revenaient pas — cette liste les oubliait. Un morceau
+    // retiré du répertoire sur un téléphone pouvait donc revenir depuis un
+    // autre. Toute liste écrite à la main finit par oublier un champ : si
+    // tu en ajoutes un à SyncState, il se recopie ICI aussi.
+    bandRemovals: Array.isArray(r.bandRemovals)
+      ? (r.bandRemovals as SyncState['bandRemovals'])
+      : undefined,
     // Points zéro des réinitialisations (b137) : sans eux, un reset fait
     // sur un appareil se ferait annuler par le cloud d'un autre.
     resetAt:
@@ -210,6 +218,19 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   // Pas de push tant que la fusion initiale n'a pas eu lieu
   const readyRef = useRef(false);
 
+  /*
+   * Ce qui MONTE dans le cloud (b202). Cette liste oubliait deux choses, et
+   * les oubliait en silence : les retraits de répertoires de groupes
+   * (`bandRemovals`) et les points zéro des réinitialisations (`resetAt`).
+   * Elles n'arrivaient là-haut qu'une fois, à la fusion de connexion — le
+   * premier envoi suivant, trois secondes après n'importe quelle
+   * modification, les effaçait. Un morceau retiré du répertoire pouvait
+   * donc revenir, et une réinitialisation se faire annuler.
+   *
+   * Troisième endroit du même lot où une liste écrite à la main perdait des
+   * données. Si tu ajoutes un champ à SyncState, il se recopie ICI, dans
+   * `fromCloud` et dans `mergeStates` — les trois, sinon il fuit.
+   */
   const stateJson = JSON.stringify({
     songs: store.songs,
     setlists: store.setlists,
@@ -218,6 +239,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     artist: store.artist,
     prefs: store.prefs,
     deleted: store.deleted,
+    bandRemovals: store.bandRemovals,
+    resetAt: store.resetAt,
   });
   const stateRef = useRef(stateJson);
   stateRef.current = stateJson;

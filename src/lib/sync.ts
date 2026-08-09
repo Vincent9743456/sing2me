@@ -137,7 +137,24 @@ export function mergeStates(
       publicScreen: la.publicScreen ?? ca.publicScreen,
     };
   })();
+  /*
+   * PRÉFÉRENCES — on PART des deux objets, on ne les RECONSTRUIT pas (b202).
+   *
+   * Cette fusion listait ses champs un par un. Tout réglage ajouté depuis
+   * était donc silencieusement jeté à la première synchro : Vincent a
+   * renommé un live, le nom a disparu (`liveNames`) ; les lives retirés de
+   * l'historique revenaient (`hiddenLives`) ; la réinitialisation des
+   * concerts cessait de masquer les anciens directs (`resetAt.lives`).
+   *
+   * Rien de tout cela n'était visible à l'écriture : le réglage s'enregistre
+   * bien, il est effacé plus tard, ailleurs. C'est la même faute que le
+   * livre d'or (b197) — filtrer une donnée sur une liste de champs connus
+   * d'avance. On étale donc les deux objets ; les règles ci-dessous ne
+   * traitent que ce qui demande VRAIMENT un arbitrage.
+   */
   const prefs: Prefs = {
+    ...(cloud.prefs ?? {}),
+    ...local.prefs,
     defaultView: local.prefs.defaultView,
     userName: pick(local.prefs.userName, cloud.prefs?.userName),
     liveKey: pick(local.prefs.liveKey, cloud.prefs?.liveKey),
@@ -147,6 +164,18 @@ export function mergeStates(
     // Le local prime ; le cloud ne sert qu'à un appareil qui n'a pas
     // encore de choix (nouveau téléphone).
     lang: (local.prefs.lang ?? '') !== '' ? local.prefs.lang : cloud.prefs?.lang,
+    // Noms donnés aux lives : les deux appareils peuvent en avoir baptisé
+    // des différents. On UNIT ; en cas de conflit sur le même live, celui
+    // qu'on vient de taper ici gagne.
+    liveNames: { ...(cloud.prefs?.liveNames ?? {}), ...(local.prefs.liveNames ?? {}) },
+    // Lives retirés de l'historique : union, comme les pierres tombales —
+    // un retrait fait sur un appareil vaut sur tous les miens.
+    hiddenLives: [
+      ...new Set([
+        ...(cloud.prefs?.hiddenLives ?? []),
+        ...(local.prefs.hiddenLives ?? []),
+      ]),
+    ].slice(-500),
   };
   // Pierres tombales : une suppression sur UN appareil vaut partout.
   // (la clé — titre normalisé — est CONSERVÉE : anti-résurrection groupe)
@@ -168,8 +197,16 @@ export function mergeStates(
     items.filter((x) => !tombs.has(x.id));
   // Points zéro : le plus récent des deux côtés gagne (un reset fait sur un
   // appareil vaut pour tous).
+  // Même leçon qu'au-dessus : on parcourt les clés RÉELLEMENT présentes des
+  // deux côtés, jamais une liste écrite à la main. `lives` (b200) manquait à
+  // cette liste — réinitialiser les concerts cessait donc de masquer les
+  // anciens directs dès la synchro suivante.
   const resetAt: ResetMarks = {};
-  for (const k of ['songs', 'setlists', 'concerts', 'bands'] as const) {
+  const clesReset = new Set<keyof ResetMarks>([
+    ...(Object.keys(local.resetAt ?? {}) as (keyof ResetMarks)[]),
+    ...(Object.keys(cloud.resetAt ?? {}) as (keyof ResetMarks)[]),
+  ]);
+  for (const k of clesReset) {
     const l = local.resetAt?.[k] ?? '';
     const c = cloud.resetAt?.[k] ?? '';
     const best = l > c ? l : c;
