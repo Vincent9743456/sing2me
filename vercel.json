@@ -1,4 +1,10 @@
 {
+  "_comment_git": "Une poussée sur la branche de travail ne doit PLUS consommer un déploiement (b212) : le quota est de 100 par jour et les créneaux se libèrent au compte-gouttes. Le 9 août 2026, la prévisualisation d'une branche a mangé le seul créneau disponible — treize secondes plus tard, la mise en production de b212 était refusée. Seul `main` déploie ; la branche est nommée en toutes lettres (pas de motif générique : une branche non listée garde le comportement par défaut, et on ne veut surtout pas désactiver main par erreur).",
+  "git": {
+    "deploymentEnabled": {
+      "claude/sing2me-b15-complete-lru637": false
+    }
+  },
   "crons": [
     {
       "path": "/api/live",

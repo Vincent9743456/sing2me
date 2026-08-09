@@ -52,7 +52,19 @@
      en local suffit ; ce push de resynchronisation déclenchait une
      prévisualisation pour rien (3 déploiements par lot au lieu de 2) ;
   3. rien ne relance un déploiement refusé : il faut un NOUVEAU commit sur
-     `main` (un commit vide ne suffit pas — le merge en rebase l'écarte).
+     `main` (un commit vide ne suffit pas — le merge en rebase l'écarte ;
+     un merge COMMIT, lui, en crée un et relance le déploiement).
+- **Les créneaux se libèrent au compte-gouttes** (constat de Vincent,
+  confirmé le 9 août 2026) : un refus n'oblige pas à attendre minuit, il
+  suffit de réessayer. Mais un créneau qui se libère est pris par le
+  PREMIER déploiement venu : à 10:15:05 la prévisualisation d'une branche
+  a pris le seul disponible, et treize secondes plus tard la mise en
+  production de b212 était refusée. **Ne JAMAIS sonder le quota avec une
+  prévisualisation** — c'est prendre la place de sa propre livraison. La
+  branche de travail est donc désactivée dans `vercel.json`
+  (`git.deploymentEnabled`, nom de branche EXACT — jamais un motif
+  générique, qui risquerait de désactiver `main`), et les commits de la
+  branche portent `[skip ci]` par sécurité. Seul `main` déploie.
 - Après push : vérifier https://sing2me-three.vercel.app/version.txt.
 - Supabase : projet `zssnwjtfzbymtsiccvao` ; après modification d'un
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
