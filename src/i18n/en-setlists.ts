@@ -34,6 +34,10 @@ export const EN_SETLISTS: Record<string, string> = {
   'Crée ta première setlist pour ton prochain concert — tu glisseras tes morceaux dans l’ordre.':
     'Create your first setlist for your next show — you\'ll drag your songs into order.',
   Solo: 'Solo',
+  Toutes: 'All',
+  'Mes setlists solo': 'My solo setlists',
+  'Rien encore ici — la première setlist se crée juste en dessous.':
+    'Nothing here yet — the first setlist is created just below.',
   'Groupe sans nom': 'Unnamed band',
   "Setlist par l'IA": 'AI setlist',
   "Une setlist proposée selon l'ambiance": 'A setlist suggested to match the mood',

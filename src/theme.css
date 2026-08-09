@@ -2649,28 +2649,10 @@ h2.pagetitle {
   white-space: nowrap;
 }
 
-/* ---------- Pastilles de groupe & icône setlist (bibliothèque) ---------- */
-.bandtag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 5px;
-  border-radius: 999px;
-  border: 1.5px solid var(--accent);
-  color: var(--accent);
-  background: transparent;
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.bandtag:hover {
-  background: var(--accent-soft);
-}
+/* ---------- Icône setlist (bibliothèque) ----------
+   Les pastilles de groupe à initiales (.bandtag) ont été retirées en b211 :
+   le nom du groupe s'écrit en toutes lettres dans le sous-titre de la
+   ligne — on ne demande pas au musicien de décoder « LZ ». */
 .rowicon {
   font-size: 0.85rem;
   flex-shrink: 0;

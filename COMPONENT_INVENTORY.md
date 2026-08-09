@@ -42,7 +42,7 @@ Statuts : ✅ conserver · 🔧 corriger · 🔀 fusionner · ➕ créer · ❌ 
 | `.notesbox` | ✅ | |
 | `.transpose` | 🔧 | À intégrer dans la barre d'outils compacte (E3) |
 | `.stfold` | ✅ | |
-| `.dndhint`, `.bandtag`, `.rowicon` | ✅ | bandtag : étendre la cible tactile |
+| `.dndhint`, `.rowicon` | ✅ | `.bandtag` retiré en b211 : le nom du groupe s'écrit dans le sous-titre |
 | `.hstack/.vstack/.gap-*` | ➕ | Utilitaires pour remplacer les styles inline |
 
 ## Dialogues natifs à remplacer (23 occurrences)

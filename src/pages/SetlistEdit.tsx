@@ -17,7 +17,6 @@ import { songKey } from '../lib/importer';
 import {
   creatorMember,
   duplicateVersion,
-  SOLO_BAND_ID,
   notesForBand,
   notesForShare,
   resolveVersion,
@@ -309,10 +308,9 @@ export function SetlistEdit({ id }: { id: string | null }) {
    */
   function addSongToSetlist(song: Song) {
     const bandId = draft.bandId ?? '';
-    // Setlist de groupe → version du groupe ; setlist solo → version Solo
-    // dédiée si elle existe (sinon l'originale, comme avant).
-    let versionId =
-      versionForBand(song, bandId === '' ? SOLO_BAND_ID : bandId)?.id ?? '';
+    // Setlist de groupe → version du groupe ; setlist solo → l'originale
+    // (plus de « version Solo » depuis b211).
+    let versionId = versionForBand(song, bandId)?.id ?? '';
     if (bandId !== '' && versionId === '') {
       const b = bands.find((x) => x.id === bandId);
       const prev = song.activeVersionId;

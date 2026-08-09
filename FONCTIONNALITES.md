@@ -53,9 +53,11 @@ Rien d'autre : c'est volontaire.
   croix efface.
 - Chaque ligne montre le **titre**, puis en dessous l'artiste, la tonalité,
   le tempo et la durée quand ils sont renseignés.
-- À droite de la ligne : les **pastilles colorées** des groupes qui ont ce
-  morceau, le nombre de **cœurs** reçus en concert, le nombre de
-  **messages** du public, et un menu **⋯**.
+- Le ou les **groupes** qui ont ce morceau à leur répertoire sont écrits en
+  toutes lettres dans ce sous-titre (« 👥 Zakoustiks ») — sauf celui dont tu
+  affiches justement le répertoire, que répéter n'apprendrait rien.
+- À droite de la ligne : le nombre de **cœurs** reçus en concert, le nombre
+  de **messages** du public, et un menu **⋯**.
 - En bas à droite, le bouton **+ Nouveau morceau**.
 - Sur ordinateur en grand écran, la partition s'ouvre **à droite** de la
   liste au lieu de prendre tout l'écran.
@@ -138,8 +140,7 @@ règlent la tonalité **de ce concert-là** seulement. Le repli te le dit.
 
 Un bandeau montre la version affichée, avec un menu pour :
 
-- **changer de version** (ton originale, la version d'un groupe, Solo) ;
-- **créer** une version pour un contexte ;
+- **changer de version** (ton originale, ou la version d'un groupe) ;
 - **⭐ En faire la version de référence** — le contenu de cette version
   remplace celui de ton originale ;
 - **renommer** ;
@@ -148,6 +149,10 @@ Un bandeau montre la version affichée, avec un menu pour :
 La règle à retenir : ton **originale est toujours à toi**, toujours en
 tête. Si tu la supprimes, la suivante prend sa place — tu ne te retrouves
 jamais sans version personnelle.
+
+Un morceau n'a donc que **ton originale et, au plus, une version par
+groupe** qui l'a au répertoire. Il n'y a pas de « version Solo » séparée :
+ton originale EST ta façon de le jouer seul.
 
 ## 2.4 Notes de répétition
 
@@ -260,12 +265,17 @@ par ce chemin.
 
 ## 5.1 La liste
 
-Tes setlists, avec pour chacune le contexte (Solo ou le nom du groupe), le
-nombre de morceaux et la durée estimée. Un encart met en avant la setlist
-du **prochain concert**.
+En haut, un **sélecteur de contexte** qui défile latéralement : « Toutes »,
+ton nom (setlists solo), puis un bouton par groupe et par contexte libre
+(« Soirée entre amis »). Ton choix est mémorisé d'une fois sur l'autre.
 
-Bouton **Créer une setlist** : tu donnes un nom et tu choisis le contexte
-(solo, ou l'un de tes groupes).
+Dessous, **une seule liste**, la plus récemment modifiée en tête. Pour
+chaque setlist : le nombre de morceaux, la durée estimée, et — quand
+« Toutes » est choisi — d'où elle vient (🎤 Solo, 👥 le nom du groupe, ou
+🎉 le contexte). Un encart met en avant la setlist du **prochain concert**.
+
+Bouton **Créer une setlist** : elle est créée dans le contexte affiché. Si
+tu es sur « Toutes », l'application te demande lequel.
 
 Une **génération assistée** peut te proposer une setlist à partir de ton
 répertoire, selon un type de soirée.

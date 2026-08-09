@@ -127,15 +127,17 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     l'originale, et supprimer l'originale fait monter la version suivante
     en référence (une secondaire personnelle monte telle quelle ; sinon la
     première version de contexte est clonée en personnelle). Jamais de
-    morceau sans version personnelle en tête. **Modèle simplifié (b113, complété b115)** : un
-    morceau = l'originale + AU PLUS une version par groupe qui l'a au
-    répertoire + une version **Solo** optionnelle (« Solo » est un
-    contexte à part entière, `SOLO_BAND_ID = 'solo'`, modifiable à part
-    comme une version de groupe mais jamais partagée ni synchronisée) —
-    rien d'autre (plus de « versions setlist » ; les ajustements d'un
-    concert passent par la tonalité de l'item de setlist). Les setlists
-    et lectures en contexte solo utilisent la version Solo quand elle
-    existe, sinon l'originale. Garanti par `ensureOriginalVersion` +
+    morceau sans version personnelle en tête. **Modèle simplifié (b113,
+    ramené au minimum b211)** : un morceau = l'originale + AU PLUS une
+    version par groupe qui l'a au répertoire — rien d'autre (plus de
+    « versions setlist » ; les ajustements d'un concert passent par la
+    tonalité de l'item de setlist). La **« version Solo » de b115 est
+    SUPPRIMÉE** (arbitrage Vincent, b211) : elle faisait doublon avec
+    l'originale, qui EST ma façon de le jouer seul. Les setlists et
+    lectures en contexte solo utilisent donc l'originale. Ce qui avait
+    été écrit dans une version Solo n'est pas jeté : `retireVersionSolo`
+    (appelée au chargement) la rend PERSONNELLE (`bandId ''`), elle reste
+    dans la liste des versions du morceau. Garanti par `ensureOriginalVersion` +
     `dedupeBandVersions` (réparations au chargement), `duplicateVersion`
     idempotente par contexte, et la garde dans `removeVersion` ;
   - retirer un morceau du répertoire d'un groupe est un acte de niveau

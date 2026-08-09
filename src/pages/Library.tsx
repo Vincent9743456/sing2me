@@ -178,17 +178,6 @@ const BAND_COLORS = [
   'var(--band-7)',
 ];
 
-/** Initiales d'un nom de groupe : « Les Zamis » → LZ. */
-function bandInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter((w) => w !== '');
-  if (words.length === 0) return '?';
-  return words
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
-}
-
 /** Une partition « nouvelle » : ajoutée à la bibliothèque dans les 7 jours. */
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 function isRecent(createdAt: string): boolean {
@@ -493,6 +482,19 @@ export function Library() {
     if (vid !== song.activeVersionId) saveSong(switchVersion(song, vid));
   }
 
+  /**
+   * Groupes qui ont ce morceau au répertoire, en toutes lettres (b211,
+   * arbitrage Vincent) : les pastilles à initiales demandaient un décodage
+   * (« LZ », c'est qui ?) et prenaient la place du contenu. Le nom va dans
+   * le sous-titre, avec le reste de ce qu'on lit sans réfléchir.
+   * Le groupe filtré n'y figure pas : le répéter sur chaque ligne
+   * n'apprend rien (même raison qu'en b203).
+   */
+  const bandsOfSong = (songId: string): string[] =>
+    [...(membership.bandsBySong.get(songId) ?? [])]
+      .filter((bid) => bid !== bandFilter)
+      .map((bid) => bands[bandIndex.get(bid) ?? 0]?.name?.trim() || t('Groupe sans nom'));
+
   const renderRow = (song: (typeof filtered)[number]) => (
                   <div
                     className={`row ${selectedId === song.id ? 'selected' : ''} ${
@@ -532,12 +534,24 @@ export function Library() {
                           🔎 {t('À vérifier')} · {song.needsCheck.reason}
                         </div>
                       ) : (
-                        <div className="sub">
+                        <div
+                          className="sub"
+                          style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {[
                             (song.tags ?? []).includes(EXAMPLE_TAG)
                               ? t('Exemple')
                               : '',
                             song.artist,
+                            // Le nom du groupe, en clair, à la place des
+                            // pastilles à initiales (b211) — AVANT la
+                            // technique : sur un écran de 360 px, ce qui est
+                            // en bout de ligne est ce qui se fait couper.
+                            ...bandsOfSong(song.id).map((n) => `👥 ${n}`),
                             song.key,
                             song.tempo > 0 ? `${song.tempo} BPM` : '',
                             formatDuration(song.durationSec),
@@ -551,27 +565,6 @@ export function Library() {
                         « ✨ Nouveautés » (filtre actionnable) — plus de badge
                         par ligne : sur un import en masse, chaque ligne en
                         portait un (bruit signalé par l'audit UI). */}
-                    {[...(membership.bandsBySong.get(song.id) ?? [])].map((bid) => {
-                      const idx = bandIndex.get(bid) ?? 0;
-                      const b = bands[idx];
-                      const color = BAND_COLORS[idx % BAND_COLORS.length];
-                      return (
-                        <span
-                          key={bid}
-                          className="bandtag"
-                          style={{ borderColor: color, color }}
-                          title={t('Groupe : {name} — cliquer pour filtrer', {
-                            name: b?.name || t('sans nom'),
-                          })}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setBandFilter(bandFilter === bid ? null : bid);
-                          }}
-                        >
-                          {bandInitials(b?.name ?? '')}
-                        </span>
-                      );
-                    })}
                     {/* Plus d'icône presse-papier par ligne (bruit) : la
                         présence en setlist se voit dans « Ajouter à… ». */}
                     {song.hearts > 0 && (

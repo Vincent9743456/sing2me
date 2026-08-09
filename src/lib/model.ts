@@ -128,24 +128,37 @@ export function ensureOriginalVersion(song: Song): Song {
  * - depuis la bibliothèque / solo (bandId '') → la version originale.
  * Repli : version originale, sinon la première version.
  */
-/**
- * « Solo » est un contexte à part entière, comme un groupe (décision
- * Vincent, b115) : l'originale reste la maîtresse qui pilote tout, mais le
- * musicien peut créer UNE version Solo dédiée, modifiable séparément —
- * exactement comme une version de groupe. Identifiant réservé (jamais un
- * id de groupe réel : makeId() ne produit pas « solo ») ; ces versions ne
- * sortent jamais de l'appareil (bandSync ne regarde que les vrais groupes).
- */
-export const SOLO_BAND_ID = 'solo';
-
 export function contextVersionId(song: Song, bandId: string): string {
-  // Contexte solo ('') : la version Solo dédiée si elle existe, sinon
-  // l'originale. Contexte groupe : la version du groupe, sinon l'originale.
+  // Contexte groupe : la version du groupe, sinon l'originale.
+  // Contexte solo ('') : l'originale, tout simplement (b211).
   const v =
-    versionForBand(song, bandId === '' ? SOLO_BAND_ID : bandId) ??
-    versionForBand(song, '') ??
-    song.versions[0];
+    versionForBand(song, bandId) ?? versionForBand(song, '') ?? song.versions[0];
   return v?.id ?? song.activeVersionId;
+}
+
+/**
+ * « Version Solo » : notion SUPPRIMÉE (arbitrage Vincent, b211 — annule
+ * b115). Un morceau, c'est l'originale + au plus une version par groupe,
+ * rien d'autre : la version Solo faisait doublon avec l'originale, qui EST
+ * déjà ma façon de le jouer seul.
+ *
+ * Ce qui a été écrit ne se jette pas : les versions Solo déjà enregistrées
+ * redeviennent des versions PERSONNELLES ordinaires (bandId ''), gardées
+ * dans la liste des versions du morceau. Idempotente.
+ */
+const ANCIEN_CONTEXTE_SOLO = 'solo';
+
+export function retireVersionSolo(song: Song): Song {
+  if (!Array.isArray(song.versions)) return song;
+  if (!song.versions.some((v) => (v.bandId ?? '') === ANCIEN_CONTEXTE_SOLO)) {
+    return song;
+  }
+  return {
+    ...song,
+    versions: song.versions.map((v) =>
+      (v.bandId ?? '') === ANCIEN_CONTEXTE_SOLO ? { ...v, bandId: '' } : v,
+    ),
+  };
 }
 
 /** Notes visibles dans un contexte de groupe : générales + celles du groupe. */
@@ -517,7 +530,7 @@ export function removeVersion(song: Song, versionId: string): Song {
   // n'est pas bonne) : une autre version prend la place de référence.
   // L'invariant structurel demeure — versions[0] est TOUJOURS une version
   // personnelle (bandId '') : une secondaire personnelle monte en tête ;
-  // s'il ne reste que des versions de contexte (groupe, Solo), la première
+  // s'il ne reste que des versions de groupe, la première
   // est CLONÉE en personnelle (le contexte garde la sienne).
   if (song.versions[0]?.id === versionId) {
     const rest = song.versions.slice(1);
@@ -569,8 +582,8 @@ export function removeVersion(song: Song, versionId: string): Song {
  * contenu remplace celui de l'originale maîtresse — qui garde son identité
  * (id, bandId '', nom) pour respecter l'invariant « versions[0] jamais
  * supprimée ». Une version PERSONNELLE promue disparaît ensuite (c'était
- * une copie de travail devenue la référence) ; une version de groupe ou
- * Solo reste, elle appartient à son contexte. Les versions qui suivaient
+ * une copie de travail devenue la référence) ; une version de groupe
+ * reste, elle appartient à son groupe. Les versions qui suivaient
  * la tonalité/capo de l'ancienne originale suivent la nouvelle.
  */
 /** Noms « par défaut » d'une version de référence : remplaçables sans
@@ -984,6 +997,11 @@ export function migrateSong(raw: unknown): Song {
       .join('\n');
     base = { ...base, structureNotes: fromComments };
   }
+
+  // b211 : plus de « version Solo » — celles qui existent redeviennent des
+  // versions personnelles ordinaires (avant l'invariant ci-dessous, pour
+  // qu'une version Solo puisse au besoin reprendre la tête).
+  base = retireVersionSolo(base);
 
   // Invariant « originale maîtresse » : versions[0] doit être personnelle
   // (bandId ''). On répare les morceaux où l'originale a été absorbée par un
