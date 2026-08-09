@@ -184,6 +184,12 @@ export interface Prefs {
    */
   hiddenLives?: string[];
   /**
+   * Départs écartés à la main (b212), clé « cloudIdDuGroupe|userId ».
+   * Une bannière « à réinviter » qu'on ne peut pas fermer est une impasse :
+   * on ne réinvite pas toujours, et le message resterait à vie.
+   */
+  hiddenDepartures?: string[];
+  /**
    * Dernière sauvegarde enregistrée par l'utilisateur (fichier gardé chez
    * lui). Sert au rappel discret de la bibliothèque — jamais à autre chose.
    */

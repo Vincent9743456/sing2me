@@ -169,6 +169,8 @@ groupe, direct). Marco est le second appareil.
 | G-13 | Ouvrir la fiche d'un membre | Elle s'affiche **dans l'app**, avec un retour — ⚠️ cicatrice b187 | 🟠 |
 | G-14 | Supprimer un groupe | Il disparaît aussi chez les membres | 🟠 |
 | G-15 | Matériel d'un musicien | Saisi, visible sur le plan de scène | ⚪ |
+| G-16 | Réinitialiser son app quand on a créé un groupe | **Aucune** bannière « à réinviter » ne me désigne MOI au retour, ni pastille sur l'onglet Groupes — ⚠️ cicatrice b212 | 🔴 |
+| G-17 | Bannière « à réinviter » d'un vrai départ | Elle s'affiche, propose de renvoyer la demande **et** de « Ne plus afficher » ; écartée, elle ne revient pas et la pastille s'éteint | 🟠 |
 
 ---
 

@@ -13,6 +13,8 @@ import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import {
   BandDeparture,
+  departureKey,
+  departuresToShow,
   fetchBandDepartures,
   fetchMyInvites,
   inviteToBand,
@@ -26,7 +28,7 @@ import { useStore } from '../store';
 import { emptyBand } from '../types';
 
 export function Bands() {
-  const { bands, artist, prefs, saveBand } = useStore();
+  const { bands, artist, prefs, saveBand, savePrefs } = useStore();
   const account = useAccount();
   const notifications = useNotifications();
   const [creating, setCreating] = useState(false);
@@ -36,6 +38,25 @@ export function Bands() {
   const [departures, setDepartures] = useState<BandDeparture[]>([]);
   const [reinviteBusy, setReinviteBusy] = useState('');
   const [inviteBusy, setInviteBusy] = useState('');
+  // Mon identifiant de compte : un départ qui me désigne MOI n'appelle
+  // aucune action (b212).
+  const [myId, setMyId] = useState('');
+  const aTraiter = departuresToShow(departures, {
+    myUserId: myId,
+    myCloudIds: bands.map((b) => b.cloudId ?? ''),
+    hidden: prefs.hiddenDepartures,
+  });
+
+  /** Écarte un départ : local, définitif, et jamais destructeur côté
+   *  serveur (le musicien peut toujours être réinvité depuis la fiche). */
+  function ecarter(d: BandDeparture) {
+    savePrefs({
+      ...prefs,
+      hiddenDepartures: [
+        ...new Set([...(prefs.hiddenDepartures ?? []), departureKey(d)]),
+      ].slice(-500),
+    });
+  }
 
   // Ouvrir l'onglet Groupes = « j'ai vu les arrivées » : on efface cette
   // partie de la pastille (les invitations restent tant qu'on n'a pas répondu).
@@ -59,7 +80,10 @@ export function Bands() {
       // réinitialisé son application n'a plus le groupe — il faut le
       // réinviter, et ça ne se devine pas.
       const gone = await fetchBandDepartures(s);
-      if (!cancelled) setDepartures(gone);
+      if (!cancelled) {
+        setDepartures(gone);
+        setMyId(s.userId);
+      }
     })();
     return () => {
       cancelled = true;
@@ -159,12 +183,12 @@ export function Bands() {
         {/* Un musicien a quitté un de mes groupes (b142) : le plus
             souvent parce qu'il a réinitialisé son application. Il ne
             reviendra pas tout seul — la demande doit être renvoyée. */}
-        {departures.length > 0 && (
+        {aTraiter.length > 0 && (
           <>
             <h2 className="pagetitle" style={{ marginTop: 0 }}>
               {t('À réinviter')}
             </h2>
-            {departures.map((d) => (
+            {aTraiter.map((d) => (
               <div
                 className="card"
                 key={`${d.bandId}|${d.userId}`}
@@ -189,6 +213,12 @@ export function Bands() {
                     {reinviteBusy === d.userId
                       ? '…'
                       : t('↻ Lui renvoyer la demande')}
+                  </button>
+                  {/* Une bannière doit toujours avoir une sortie (b212) :
+                      on ne réinvite pas forcément, et le message resterait
+                      là à vie. Écarter ne retire rien à personne. */}
+                  <button className="btn ghost" onClick={() => ecarter(d)}>
+                    {t('Ne plus afficher')}
                   </button>
                 </div>
               </div>

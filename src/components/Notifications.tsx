@@ -16,9 +16,11 @@ import React, {
 
 import { getValidSession } from '../lib/auth';
 import {
+  BandDeparture,
   CloudMember,
   fetchBandMembers,
   fetchBandMessages,
+  departuresToShow,
   fetchBandDepartures,
   fetchMyInvites,
 } from '../lib/bands';
@@ -203,8 +205,12 @@ export function NotificationsProvider({
   children: React.ReactNode;
 }) {
   const account = useAccount();
-  const [departureCount, setDepartureCount] = useState(0);
-  const { bands, saveBand, deleteBand } = useStore();
+  // Départs bruts renvoyés par le serveur (b212) : le COMPTE est calculé
+  // au rendu, avec mes groupes et mes choix du moment — sinon écarter une
+  // bannière laissait la pastille allumée jusqu'au sondage suivant.
+  const [departures, setDepartures] = useState<BandDeparture[]>([]);
+  const [myUserId, setMyUserId] = useState('');
+  const { bands, prefs, saveBand, deleteBand } = useStore();
   const toast = useToast();
   const [inviteCount, setInviteCount] = useState(0);
   const [memberNews, setMemberNews] = useState<MemberNews[]>(() => loadNews());
@@ -237,9 +243,12 @@ export function NotificationsProvider({
         setInviteCount(invites.length);
         // Musiciens partis de MES groupes, à réinviter (b142) : compte
         // dans la pastille de l'onglet Groupes — sans quoi personne ne
-        // sait qu'une action est attendue.
+        // sait qu'une action est attendue. La pastille compte EXACTEMENT
+        // ce que l'écran montre (b212) : sinon elle appelle vers un écran
+        // où il n'y a rien à faire.
         const gone = await fetchBandDepartures(s);
-        setDepartureCount(gone.length);
+        setMyUserId(s.userId);
+        setDepartures(gone);
       } catch {
         // annuaire indisponible : on garde la valeur précédente
       }
@@ -385,6 +394,12 @@ export function NotificationsProvider({
   }, []);
 
   const messageUnread = Object.values(unreadByBand).reduce((a, b) => a + b, 0);
+  // La pastille compte EXACTEMENT ce que l'écran Groupes montrera (b212).
+  const departureCount = departuresToShow(departures, {
+    myUserId,
+    myCloudIds: bands.map((b) => b.cloudId ?? ''),
+    hidden: prefs.hiddenDepartures,
+  }).length;
   const value: NotificationsValue = {
     inviteCount,
     memberNews,

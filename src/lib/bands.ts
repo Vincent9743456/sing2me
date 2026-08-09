@@ -358,11 +358,46 @@ export interface BandDeparture {
   at: string;
 }
 
+/** Clé locale d'un départ (pour l'écarter d'un geste). */
+export function departureKey(d: { bandId: string; userId: string }): string {
+  return `${d.bandId}|${d.userId}`;
+}
+
+/**
+ * Les départs qu'on MONTRE vraiment (b212 — signalement de Marco). Trois
+ * conditions, et un départ qui n'en remplit pas une n'appelle aucune
+ * action de ma part :
+ *
+ *  1. **jamais moi-même.** Réinitialiser son application appelle
+ *     `leaveBand` sur TOUS ses groupes, y compris ceux qu'on a créés :
+ *     Marco s'est retrouvé invité à se réinviter lui-même ;
+ *  2. **jamais un groupe que je n'ai plus.** La réinitialisation efface
+ *     aussi mes groupes en local ; proposer de réinviter quelqu'un dans un
+ *     groupe absent de mon application n'a aucun sens ;
+ *  3. **jamais un départ que j'ai écarté** (`prefs.hiddenDepartures`) —
+ *     une bannière sans sortie est une impasse.
+ */
+export function departuresToShow(
+  list: BandDeparture[],
+  opts: { myUserId: string; myCloudIds: string[]; hidden?: string[] },
+): BandDeparture[] {
+  const miens = new Set(opts.myCloudIds.filter((x) => x !== ''));
+  const ecartes = new Set(opts.hidden ?? []);
+  return list.filter(
+    (d) =>
+      d.userId !== '' &&
+      d.userId !== opts.myUserId &&
+      miens.has(d.bandId) &&
+      !ecartes.has(departureKey(d)),
+  );
+}
+
 /**
  * Départs à traiter dans mes groupes (b142) : le plus souvent un
  * musicien qui a réinitialisé son application et n'a donc plus le
  * groupe. Le réinviter fait disparaître la ligne. Best-effort : [] si
  * le serveur est injoignable ou la fonction pas encore installée.
+ * À filtrer par `departuresToShow` avant tout affichage.
  */
 export async function fetchBandDepartures(
   s: AuthSession,
