@@ -38,7 +38,11 @@ const RESET_CHOICES: {
     label: 'Setlists',
     detail: 'Toutes les setlists (solo et groupes), avec leur sono & scène.',
   },
-  { key: 'concerts', label: 'Concerts', detail: 'Dates passées et à venir.' },
+  {
+    key: 'concerts',
+    label: 'Concerts et lives',
+    detail: 'Dates passées et à venir, et l’historique de tes directs.',
+  },
   {
     key: 'bands',
     label: 'Groupes',

@@ -47,7 +47,7 @@ function jourHeure(iso: string): string {
 }
 
 export function LiveStats() {
-  const { prefs, artist, bands, songs, saveSong } = useStore();
+  const { prefs, artist, bands, songs, saveSong, resetAt } = useStore();
   const toast = useToast();
   const [stats, setStats] = useState<LiveStat[] | null>(null);
   const [messages, setMessages] = useState<LiveMessage[] | null>(null);
@@ -138,6 +138,7 @@ export function LiveStats() {
     bands: bands.map((b) => ({ cloudId: b.cloudId ?? '', name: b.name })),
     me: [artist.name, prefs.userName],
     artistName: artist.name,
+    depuis: resetAt?.lives,
   }).length;
   const totalPublic = (sessions ?? []).reduce((n, s) => n + s.uniques, 0);
   const nbMessages = messages?.length ?? 0;

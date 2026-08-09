@@ -51,7 +51,7 @@ function heure(iso: string): string {
 }
 
 export function LiveHistory() {
-  const { prefs, artist, bands, savePrefs } = useStore();
+  const { prefs, artist, bands, savePrefs, resetAt } = useStore();
   const [sessions, setSessions] = useState<LiveSession[] | null>(null);
   const [rows, setRows] = useState<PastLiveRow[]>([]);
   const [stats, setStats] = useState<LiveStat[]>([]);
@@ -140,9 +140,11 @@ export function LiveHistory() {
         bands: bands.map((b) => ({ cloudId: b.cloudId ?? '', name: b.name })),
         me: meKey === '' ? [] : meKey.split(','),
         artistName: artist.name,
+        depuis: resetAt?.lives,
       }).filter((l) => !caches.includes(l.id)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, sessions, stats, messages, namesKey, cloudKey, meKey, cachesKey],
+    [rows, sessions, stats, messages, namesKey, cloudKey, meKey, cachesKey,
+     resetAt?.lives],
   );
 
   function nomDe(live: PastLive): string {
