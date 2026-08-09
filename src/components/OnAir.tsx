@@ -456,10 +456,31 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         // les ❤ de la dernière chanson viennent d'être archivés côté serveur
         window.setTimeout(() => void syncHearts(), 1200);
       } else if (next === 'on') {
-        // Passage en direct → mode scène « selon le contexte » : le panneau est
-        // une modale par-dessus la page courante ; on ouvre la scène de la
-        // setlist ou du morceau sous-jacent (rien ailleurs).
-        const target = stageTargetFromHash(location.hash);
+        /*
+         * Passage en direct → mode scène « selon le contexte » : le panneau
+         * est une modale par-dessus la page courante ; on ouvre la scène de
+         * la setlist ou du morceau sous-jacent.
+         *
+         * À DÉFAUT, la setlist du concert confirmé (b208, décision Vincent :
+         * « ok pour préchargement si une setlist est définie dans le
+         * concert »). Deux garde-fous :
+         *  — la page courante GAGNE. Si je regarde déjà une setlist ou un
+         *    morceau, c'est mon intention immédiate ; on ne m'arrache pas à
+         *    ce que j'ai sous les yeux pour ouvrir autre chose ;
+         *  — la setlist doit exister encore (le concert peut pointer une
+         *    setlist supprimée depuis) — sinon on n'ouvre rien.
+         *
+         * Après quoi, fonctionnement classique : le mode scène se quitte
+         * comme d'habitude, et le direct continue sans rien exiger. Ce
+         * préchargement ouvre une porte, il ne ferme aucune.
+         */
+        const duConcert =
+          todayConcert &&
+          (todayConcert.setlistId ?? '') !== '' &&
+          setlists.some((sl) => sl.id === todayConcert.setlistId)
+            ? `/stage/${todayConcert.setlistId}`
+            : null;
+        const target = stageTargetFromHash(location.hash) ?? duConcert;
         if (target) {
           setPanel(false);
           navigate(target);
