@@ -96,8 +96,18 @@ export function fragmentsToText(frags: PdfFragment[]): string {
   return out.join('\n');
 }
 
-/** Extrait le texte d'un PDF (toutes pages), lignes reconstruites. */
-export async function extractPdfText(bytes: Uint8Array): Promise<string> {
+/**
+ * Extrait le texte d'un PDF PAGE PAR PAGE, lignes reconstruites.
+ *
+ * La pagination est le meilleur indice qu'un fichier contient plusieurs
+ * partitions : dans un recueil, la règle est « une chanson par page ».
+ * Cette information existait déjà ici et était détruite juste avant de
+ * servir — les pages étaient recollées en un seul texte. Un recueil de
+ * quarante chansons devenait donc un morceau de mille lignes.
+ *
+ * Les pages vides (illustrations, séparateurs) sont écartées.
+ */
+export async function extractPdfPages(bytes: Uint8Array): Promise<string[]> {
   let pdfjs: any;
   try {
     pdfjs = await loadPdfJs();
@@ -127,15 +137,20 @@ export async function extractPdfText(bytes: Uint8Array): Promise<string> {
   } finally {
     void doc.destroy?.();
   }
-  const text = repairPdfText(
-    pages.filter((p) => p.trim() !== '').join('\n\n'),
-  );
-  if (text.trim() === '') {
+  const utiles = pages
+    .map((p) => repairPdfText(p))
+    .filter((p) => p.trim() !== '');
+  if (utiles.length === 0) {
     throw new Error(
       'Ce PDF ne contient pas de texte lisible — il s’agit sans doute d’un ' +
         'scan (image). Piste : ouvre-le et copie le texte s’il est ' +
         'sélectionnable, sinon il faudra le ressaisir.',
     );
   }
-  return text;
+  return utiles;
+}
+
+/** Le texte du PDF d'un seul tenant (pages recollées). */
+export async function extractPdfText(bytes: Uint8Array): Promise<string> {
+  return (await extractPdfPages(bytes)).join('\n\n');
 }

@@ -190,6 +190,11 @@ export function SongEdit({ id }: { id: string | null }) {
     ) {
       song = switchVersion(song, existing.activeVersionId);
     }
+    // RELIRE, C'EST VÉRIFIER. Un morceau que l'import avait marqué
+    // « à vérifier » sort de cette liste dès qu'on l'a modifié à la main :
+    // c'est le geste qui prouve qu'on l'a regardé. Sans cela le badge
+    // resterait à vie et il faudrait un bouton de plus pour l'enlever.
+    if (song.needsCheck) song = { ...song, needsCheck: undefined };
     saveSong(song);
     // On quitte l'édition et on revient EN HAUT de la partition.
     navigate(`/song/${song.id}`);

@@ -297,6 +297,23 @@ export const EN_MORCEAUX: Record<string, string> = {
   ' — idée validée ✓': ' — idea confirmed ✓',
   '{name} (ni partition ni lien de page de partition)': '{name} (neither a chart nor a chart-page link)',
   'Non retenus : {list}': 'Not kept: {list}',
+  // Chantier « Reprise de répertoire » : découpage d'un recueil et filet.
+  '{n} morceaux ajoutés à ta bibliothèque.': '{n} songs added to your library.',
+  '{n} morceau ajouté à ta bibliothèque.': '{n} song added to your library.',
+  '{n} à vérifier.': '{n} to check.',
+  '{n} à vérifier': '{n} to check',
+  'Ce fichier contient sans doute {n} partitions.':
+    'This file probably holds {n} charts.',
+  'Créer {n} morceaux': 'Create {n} songs',
+  'Le fichier restera un seul morceau, marqué à vérifier':
+    'The file stays one song, flagged to check',
+  'N’en faire qu’un seul': 'Keep it as one',
+  'Tes morceaux restent à toi : tu peux tout réexporter à tout moment (carnet PDF ou fichiers texte), et rien n’est jamais supprimé sans toi.':
+    'Your songs stay yours: you can export everything at any time (PDF songbook or text files), and nothing is ever deleted without you.',
+  'À vérifier': 'To check',
+  'Morceaux dont l’import a douté — un coup d’œil suffit souvent':
+    'Songs the import wasn’t sure about — a quick look is usually enough',
+  '🔎 À vérifier ({n})': '🔎 To check ({n})',
   Annulé: 'Cancelled',
   'Le service limite le débit — relance l’import dans quelques minutes, les morceaux déjà importés seront ignorés':
     'The service is rate-limiting — retry the import in a few minutes, songs already imported will be skipped',

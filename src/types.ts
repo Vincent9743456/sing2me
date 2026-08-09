@@ -117,6 +117,23 @@ export interface Song {
    * le jouer seul). Personnel — jamais inclus dans les partages.
    */
   noSolo?: boolean;
+  /**
+   * L'IMPORT A DOUTÉ (chantier « Reprise de répertoire »).
+   *
+   * Un morceau dont l'analyse est douteuse entre quand même en
+   * bibliothèque — un mauvais import signalé vaut mieux qu'un import
+   * manquant — mais il porte la raison du doute, en clair, et se retrouve
+   * d'un geste par le filtre « à vérifier ».
+   *
+   * Le diagnostic existe depuis longtemps (`analyzeImport` : accords non
+   * reconnus, accords non alignés, encodage abîmé, tablatures) ; il était
+   * montré à l'écran d'aperçu puis jeté. Il est désormais conservé sur le
+   * morceau, jusqu'à ce que l'utilisateur le relise.
+   *
+   * Effacé dès que le morceau est modifié à la main : relire, c'est
+   * vérifier. Personnel — jamais partagé.
+   */
+  needsCheck?: { reason: string };
   /** Total des ❤ reçus en concert (synchronisé depuis les stats) */
   hearts: number;
   /** Messages du public rattachés à ce morceau */

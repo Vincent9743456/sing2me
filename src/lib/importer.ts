@@ -462,6 +462,40 @@ export function analyzeImport(
   return issues;
 }
 
+/**
+ * FAUT-IL RELIRE CE MORCEAU ? — renvoie la raison, ou '' si tout va bien.
+ *
+ * Le diagnostic ci-dessus était calculé, affiché à l'écran d'aperçu, puis
+ * jeté. On le conserve maintenant sur le morceau importé : il entre en
+ * bibliothèque même douteux — un mauvais import signalé vaut mieux qu'un
+ * import manquant — mais il dit ce qui cloche et se retrouve d'un geste.
+ *
+ * Seuls les `warn` comptent : un artiste non détecté ou une structure
+ * absente n'empêchent pas de jouer, et transformer chaque import en
+ * corvée de relecture ferait fuir tout le monde.
+ *
+ * Une seule fonction, appelée par TOUS les chemins d'import (unitaire,
+ * masse, découpage d'un recueil) : c'est ce qui empêche les trois de
+ * diverger.
+ */
+export function raisonDeVerifier(
+  raw: string,
+  outcome: ImportOutcome,
+  extra?: { plusieursPartitions?: boolean },
+): string {
+  if (extra?.plusieursPartitions) {
+    return 'ce morceau contient peut-être plusieurs partitions';
+  }
+  const warn = analyzeImport(raw, outcome).find((x) => x.severity === 'warn');
+  if (warn) return warn.text;
+  // Contenu anormalement court : deux lignes ne font pas une partition.
+  const utiles = outcome.song.lyrics
+    .split('\n')
+    .filter((l) => l.trim() !== '').length;
+  if (utiles > 0 && utiles < 3) return 'contenu très court — rien d’autre n’a été lu';
+  return '';
+}
+
 /** Normalisation pour la détection de doublons. */
 import { bandKeysMatch, normalizeTitle, songKey } from './normalizeTitle';
 export { bandKeysMatch, normalizeTitle, songKey };
