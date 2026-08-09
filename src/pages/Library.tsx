@@ -286,7 +286,9 @@ export function Library() {
   );
   // Propositions de groupe en attente d'acceptation (non importées tant
   // qu'on ne les a pas acceptées d'un clic).
-  const [showPending, setShowPending] = useState(false);
+  // La vue « Propositions » a disparu avec sa puce (b203). Les propositions
+  // vivent dans les Idées et dans le répertoire du groupe qui les propose ;
+  // `pendingCount` sert encore à savoir s'il y a matière à filtrer.
   const pendingCount = useMemo(
     () => songs.filter((s) => (s.pendingBandId ?? '') !== '').length,
     [songs],
@@ -372,7 +374,7 @@ export function Library() {
     // Les nouvelles importations restent épinglées EN TÊTE tant qu'elles
     // sont « nouvelles » (une semaine) — sauf en tri par artiste (qui
     // regroupe) ou dans une vue filtrée dédiée.
-    const pinTop = sort !== 'artist' && !showNew && !showIdeas && !showPending;
+    const pinTop = sort !== 'artist' && !showNew && !showIdeas;
     const isProposal = (s: (typeof songs)[number]) =>
       (s.pendingBandId ?? '') !== '';
     const freshRank = (s: (typeof songs)[number]) =>
@@ -402,11 +404,23 @@ export function Library() {
         return byTitle(a, b);
       })
       .filter((s) => {
-        // Vue « Propositions » : uniquement les propositions en attente.
-        if (showPending) return (s.pendingBandId ?? '') !== '';
         // Vue « Idées » : la réserve à travailler — y compris les morceaux
         // proposés par un groupe, qui arrivent désormais ici (b174).
         if (showIdeas) return s.idea === true;
+        /*
+         * Dans le RÉPERTOIRE D'UN GROUPE, ce que ce groupe vient de proposer
+         * s'affiche (b203, constat de Vincent) : « je sais que Marco a
+         * proposé un morceau, mais quand je vais dans la bibliothèque du
+         * groupe je ne le vois pas ». Il attendait dans les Idées — sa
+         * maison, décidée en b174 — mais le répertoire du groupe est
+         * l'endroit où on le CHERCHE. La ligne porte « À valider » : rien
+         * n'entre dans ma bibliothèque sans mon accord, la règle de b174
+         * tient toujours. Ailleurs (« Tous les morceaux »), les idées
+         * attendent leur tour comme avant.
+         */
+        if (bandFilter !== null && bandFilter !== '' && s.idea === true) {
+          return (s.pendingBandId ?? '') === bandFilter;
+        }
         // Vue par défaut « Tous les morceaux » : ce qu'on joue vraiment. Les
         // idées (et donc les propositions) attendent dans leur vue ; les
         // programmer dans une setlist les fait entrer ici pour de bon.
@@ -436,7 +450,6 @@ export function Library() {
     membership,
     showIdeas,
     showNew,
-    showPending,
   ]);
 
   // Regroupement par artiste (tri « artiste » uniquement)
@@ -480,9 +493,16 @@ export function Library() {
                           className="sub"
                           style={{ color: 'var(--accent)', fontWeight: 600 }}
                         >
-                          {t('📥 Proposé par')}{' '}
-                          {bands.find((b) => b.id === song.pendingBandId)?.name ||
-                            t('ton groupe')}
+                          {/* Dans le répertoire du groupe qui propose, répéter
+                              son nom n'apprend rien : ce qu'il faut lire,
+                              c'est qu'il reste un geste à faire (b203). */}
+                          {bandFilter !== null &&
+                          bandFilter === (song.pendingBandId ?? '')
+                            ? t('📥 À valider')
+                            : `${t('📥 Proposé par')} ${
+                                bands.find((b) => b.id === song.pendingBandId)
+                                  ?.name || t('ton groupe')
+                              }`}
                           {song.artist !== '' ? ` · ${song.artist}` : ''}
                         </div>
                       ) : (
@@ -551,7 +571,6 @@ export function Library() {
                         onClick={(e) => {
                           e.stopPropagation();
                           saveSong({ ...song, pendingBandId: undefined });
-                          if (pendingCount <= 1) setShowPending(false);
                         }}
                       >
                         {t('✓ Accepter')}
@@ -576,7 +595,7 @@ export function Library() {
   // Badge du bouton « Filtrer » : nombre de filtres actifs (une vue
   // particulière, un répertoire, un tag — le tri n'est pas un filtre).
   const activeFilters =
-    (showIdeas || showNew || showPending ? 1 : 0) +
+    (showIdeas || showNew ? 1 : 0) +
     (bandFilter !== null ? 1 : 0) +
     (tag !== null ? 1 : 0);
 
@@ -683,42 +702,27 @@ export function Library() {
           </>
         )}
         {filtersOpen &&
-          (bands.length > 0 ||
-          ideaCount > 0 ||
-          newCount > 0 ||
-          pendingCount > 0) && (
+          (bands.length > 0 || ideaCount > 0 || newCount > 0) && (
           <>
             <div className="spacer" />
             {/* Rangée 1 — VUES particulières (état des morceaux) :
                 tout / propositions / nouveautés / idées. */}
-            <div className="chips filterchips">
+            <div className="chips filterchips scrollrow">
               <button
-                className={`chip ${bandFilter === null && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
+                className={`chip ${bandFilter === null && !showIdeas && !showNew ? '' : 'off'}`}
                 onClick={() => {
                   setBandFilter(null);
                   setShowIdeas(false);
                   setShowNew(false);
-                  setShowPending(false);
                 }}
               >
                 {t('Tous les morceaux')}
               </button>
-              {pendingCount > 0 && (
-                <button
-                  className={`chip ${showPending ? '' : 'off'}`}
-                  title={t(
-                    "Morceaux proposés par un groupe — à accepter avant qu'ils rejoignent ta bibliothèque",
-                  )}
-                  onClick={() => {
-                    setShowPending(!showPending);
-                    setBandFilter(null);
-                    setShowIdeas(false);
-                    setShowNew(false);
-                  }}
-                >
-                  {t('📥 Propositions ({n})', { n: pendingCount })}
-                </button>
-              )}
+              {/* La puce « 📥 Propositions » a été retirée (b203, décision
+                  Vincent : « Proposition n'est pas utile »). Elle doublait
+                  les Idées, où les propositions vivent depuis b174 — et
+                  elles apparaissent maintenant dans le répertoire du groupe
+                  qui les a proposées, là où on les cherche vraiment. */}
               {newCount > 0 && (
                 <button
                   className={`chip ${showNew ? '' : 'off'}`}
@@ -727,7 +731,6 @@ export function Library() {
                     setShowNew(!showNew);
                     setBandFilter(null);
                     setShowIdeas(false);
-                    setShowPending(false);
                   }}
                 >
                   {t('✨ Nouveautés ({n})', { n: newCount })}
@@ -743,7 +746,6 @@ export function Library() {
                     setShowIdeas(!showIdeas);
                     setBandFilter(null);
                     setShowNew(false);
-                    setShowPending(false);
                   }}
                 >
                   {t('💡 Idées ({n})', { n: ideaCount })}
@@ -755,14 +757,14 @@ export function Library() {
                 rangée séparée. */}
             {bands.length > 0 && (
               <div
-                className="chips filterchips"
+                className="chips filterchips scrollrow"
                 style={{ marginTop: 'var(--sp-2)', alignItems: 'center' }}
               >
                 <span className="help" style={{ margin: 0 }}>
                   {t('Répertoires :')}
                 </span>
                 <button
-                  className={`chip ${bandFilter === '' && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
+                  className={`chip ${bandFilter === '' && !showIdeas && !showNew ? '' : 'off'}`}
                   title={t(
                     'Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)',
                   )}
@@ -770,7 +772,6 @@ export function Library() {
                     setBandFilter('');
                     setShowIdeas(false);
                     setShowNew(false);
-                    setShowPending(false);
                   }}
                 >
                   <Icon name="mic" size={12} /> {t('Solo')}
@@ -778,13 +779,12 @@ export function Library() {
                 {bands.map((b, i) => (
                   <button
                     key={b.id}
-                    className={`chip ${bandFilter === b.id && !showIdeas && !showNew && !showPending ? '' : 'off'}`}
+                    className={`chip ${bandFilter === b.id && !showIdeas && !showNew ? '' : 'off'}`}
                     onClick={() => {
                       setBandFilter(bandFilter === b.id ? null : b.id);
                       setShowIdeas(false);
                       setShowNew(false);
-                      setShowPending(false);
-                    }}
+                      }}
                   >
                     {/* La couleur du groupe = un point discret, pas une
                         bordure (l'encadrement signale la sélection). */}
@@ -808,19 +808,12 @@ export function Library() {
         )}
         {/* Résumé du filtre actif : TOUJOURS visible (même panneau fermé),
             pour que la liste réduite s'explique d'elle-même. */}
-        {(showIdeas || showPending || showNew || bandFilter !== null) && (
+        {(showIdeas || showNew || bandFilter !== null) && (
           <>
             {showIdeas && (
               <p className="help" style={{ margin: '6px 0 0' }}>
                 {t(
                   'Réserve à travailler : jouables partout, mais pas encore validées dans la bibliothèque — ouvre un morceau pour le valider ✓ ou le supprimer.',
-                )}
-              </p>
-            )}
-            {showPending && (
-              <p className="help" style={{ margin: '6px 0 0' }}>
-                {t(
-                  "Morceaux proposés par tes groupes : ils n'entreront dans ta bibliothèque qu'une fois acceptés. Accepte d'un clic ✓ ceux que tu veux garder — les autres restent ici sans t'encombrer.",
                 )}
               </p>
             )}

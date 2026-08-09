@@ -189,3 +189,17 @@ color: var(--text-dim); text-transform: uppercase;`
 - « 🎸 Tu es musicien ? » : discret mais premier élément.
 - Invitation à télécharger : pause et fin de live uniquement.
 - CGU en pied, `--text-faint`.
+
+## Rangées de puces qui défilent (`.chips.scrollrow`, b203)
+
+Une rangée de puces dont le nombre dépend des DONNÉES de l'utilisateur
+(ses groupes, ses tags) ne doit pas s'empiler sur plusieurs lignes : avec
+six groupes, les répertoires de la bibliothèque occupaient quatre lignes
+et repoussaient les morceaux hors de l'écran — « tout ça prend beaucoup
+de place, la partition est illisible » (Vincent). Ajouter `scrollrow` à
+côté de `chips` : une seule ligne, défilement latéral, accroche par puce,
+barre de défilement masquée. La hauteur cesse alors de dépendre du
+nombre d'éléments.
+
+Ne PAS l'utiliser pour une rangée courte et fixe (deux ou trois puces
+connues d'avance) : le défilement cacherait une option sans raison.

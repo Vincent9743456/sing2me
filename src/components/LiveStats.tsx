@@ -126,10 +126,22 @@ export function LiveStats() {
   // expliquer ici — le réglage vit dans « Modifier ».
   if (!liveReady(prefs.liveKey)) return null;
 
-  const totalHearts = (stats ?? []).reduce((n, s) => n + s.hearts, 0);
-  // Nombre de lives : EXACTEMENT ceux de l'historique de l'onglet Live —
-  // même fonction, donc jamais deux chiffres qui se contredisent (b182).
-  const nbLives = buildPastLives({
+  /*
+   * TOUS les chiffres de cette carte viennent de MES lives — la même liste
+   * que l'onglet Live, à la ligne près (b182, complété b203).
+   *
+   * Seul le nombre de lives passait par là. Les ❤ étaient la somme de TOUTES
+   * les lignes rendues par le serveur, et les spectateurs celle de TOUTES les
+   * séances — y compris celles des lives que j'ai retirés de mon historique,
+   * ceux d'avant une réinitialisation, et celles qui ne m'appartiennent pas.
+   * Le compteur de spectateurs ignorait au passage le plancher de b201 :
+   * l'onglet Live annonçait « 👥 1 » sur six lignes pendant que la fiche
+   * artiste affichait « 0 spectateurs » (constat de Vincent).
+   *
+   * Un seul calcul, quatre cartes qui ne peuvent plus se contredire.
+   */
+  const caches = prefs.hiddenLives ?? [];
+  const lives = buildPastLives({
     rows,
     sessions,
     stats: stats ?? [],
@@ -139,9 +151,12 @@ export function LiveStats() {
     me: [artist.name, prefs.userName],
     artistName: artist.name,
     depuis: resetAt?.lives,
-  }).length;
-  const totalPublic = (sessions ?? []).reduce((n, s) => n + s.uniques, 0);
-  const nbMessages = messages?.length ?? 0;
+  }).filter((l) => !caches.includes(l.id));
+  const nbLives = lives.length;
+  const totalHearts = lives.reduce((n, l) => n + l.hearts, 0);
+  const totalPublic = lives.reduce((n, l) => n + l.uniques, 0);
+  // Même règle : les mots comptés sont ceux de MES lives.
+  const nbMessages = lives.reduce((n, l) => n + l.messages.length, 0);
   const nbFollowers = followers?.count ?? 0;
   const rien =
     !loading &&
