@@ -25,6 +25,16 @@ export const EN_COMMUN: Record<string, string> = {
   '📄 Exporter la bibliothèque en PDF': '📄 Export the library as PDF',
   // Sauvegarde et restauration : le filet qui ne dépend d'aucun serveur.
   '💾 Enregistrer une sauvegarde': '💾 Save a backup',
+  // Rappel discret : on parle de GARDER, jamais de perdre.
+  '💾 Garde une copie de ta bibliothèque': '💾 Keep a copy of your library',
+  '💾 Ta copie a un peu vieilli': '💾 Your copy has aged a little',
+  '{n} morceaux. Un fichier que tu gardes chez toi, sur ton téléphone — deux secondes.':
+    '{n} songs. A file you keep, on your own phone — two seconds.',
+  'La dernière date d’il y a {mois} mois, et tu as ajouté {n} morceaux depuis.':
+    'The last one is {mois} months old, and you have added {n} songs since.',
+  'Enregistrer une sauvegarde': 'Save a backup',
+  'Mettre à jour': 'Update it',
+  'Plus tard': 'Later',
   'Un fichier que tu gardes chez toi — il se relit même sans nous':
     'A file you keep — it reads back even without us',
   '↩︎ Restaurer une sauvegarde': '↩︎ Restore a backup',

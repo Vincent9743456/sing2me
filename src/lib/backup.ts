@@ -118,3 +118,68 @@ export function decrireRestauration(
   }
   return { nouveaux, connus: backup.state.songs.length - nouveaux };
 }
+
+/**
+ * FAUT-IL PROPOSER UNE SAUVEGARDE ? — et surtout : quand se taire.
+ *
+ * Consigne de Vincent : « pourquoi pas, mais il ne faut pas que ce soit
+ * anxiogène ». Un rappel qui fait peur pousse à fermer, pas à agir. Quatre
+ * règles en découlent, et elles sont toutes des règles de SILENCE :
+ *
+ *  1. On ne parle qu'à qui a quelque chose à protéger — en dessous d'une
+ *     douzaine de morceaux, il n'y a rien à sauver qu'on ne puisse refaire.
+ *  2. On laisse le temps de s'installer : jamais dans les premiers jours.
+ *  3. On ne redemande pas. « Plus tard » vaut trois mois de silence.
+ *  4. Une fois la sauvegarde faite, on se tait pour de bon — et on ne
+ *     revient que si la bibliothèque a VRAIMENT changé depuis.
+ *
+ * Ce que la formulation ne fera jamais, côté écran : parler de perte, de
+ * panne ou de risque. On propose de GARDER une copie, on n'agite pas la
+ * menace de tout perdre.
+ */
+export type RappelSauvegarde =
+  | { quoi: 'jamais'; morceaux: number }
+  | { quoi: 'ancienne'; morceaux: number; depuis: number; ajoutes: number }
+  | null;
+
+/** En dessous, il n'y a rien à protéger qu'on ne puisse refaire en un soir. */
+const ASSEZ_DE_MORCEAUX = 12;
+/** On laisse une semaine avant de parler de quoi que ce soit. */
+const DELAI_INSTALLATION_MS = 7 * 24 * 3600 * 1000;
+/** Une sauvegarde reste bonne longtemps : six mois avant d'y repenser. */
+const SAUVEGARDE_AGEE_MS = 180 * 24 * 3600 * 1000;
+/** Et encore : seulement si la bibliothèque a réellement bougé. */
+const ASSEZ_DE_NOUVEAUX = 10;
+
+export function rappelSauvegarde(
+  state: AppState,
+  maintenant = Date.now(),
+): RappelSauvegarde {
+  const morceaux = state.songs.filter((s) => s.idea !== true).length;
+  if (morceaux < ASSEZ_DE_MORCEAUX) return null;
+
+  const snooze = Date.parse(state.prefs.backupSnoozeUntil ?? '');
+  if (Number.isFinite(snooze) && snooze > maintenant) return null;
+
+  const dernier = Date.parse(state.prefs.lastBackupAt ?? '');
+  if (!Number.isFinite(dernier)) {
+    // Jamais sauvegardé : on attend que le compte ait vécu un peu.
+    const plusAncien = state.songs
+      .map((s) => Date.parse(s.createdAt))
+      .filter((n) => Number.isFinite(n))
+      .sort((a, b) => a - b)[0];
+    if (plusAncien === undefined) return null;
+    if (maintenant - plusAncien < DELAI_INSTALLATION_MS) return null;
+    return { quoi: 'jamais', morceaux };
+  }
+
+  const ajoutes = morceaux - (state.prefs.lastBackupSongs ?? 0);
+  if (maintenant - dernier < SAUVEGARDE_AGEE_MS) return null;
+  if (ajoutes < ASSEZ_DE_NOUVEAUX) return null;
+  return {
+    quoi: 'ancienne',
+    morceaux,
+    depuis: Math.floor((maintenant - dernier) / (30 * 24 * 3600 * 1000)),
+    ajoutes,
+  };
+}

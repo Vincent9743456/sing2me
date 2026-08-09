@@ -7,6 +7,7 @@ import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { ConfirmSheet, MenuSheet } from '../components/Feedback';
 import { Onboarding } from '../components/Onboarding';
+import { BackupNudge } from '../components/BackupNudge';
 import { EXAMPLE_TAG } from '../seed';
 import { Empty, TopBar } from '../components/ui';
 import { t } from '../i18n';
@@ -924,6 +925,7 @@ export function Library() {
         )}
         </div>
         <Onboarding />
+        <BackupNudge />
         <div className={`libsplit${selectedId ? ' hasdetail' : ''}`}>
           <div>
             {filtered.length === 0 ? (
