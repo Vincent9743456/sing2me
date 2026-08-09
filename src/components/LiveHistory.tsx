@@ -59,6 +59,18 @@ export function LiveHistory() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  /**
+   * Historique replié (b204, demande de Vincent) : « ne présenter que les 3
+   * derniers lives avec un petit bouton afficher plus ». Une soirée par
+   * ligne, l'écran se remplit vite — et les concerts à venir, qui sont
+   * au-dessus, se retrouvaient noyés. Les lives sont TOUS déjà chargés (une
+   * seule requête) : c'est de la lisibilité, et le rendu cesse de croître
+   * avec l'ancienneté du compte. Le jour où l'historique se comptera en
+   * centaines, c'est ici qu'on classera par année ou par mois.
+   */
+  const PREMIERS = 3;
+  const PAS = 10;
+  const [montre, setMontre] = useState(PREMIERS);
   const [renaming, setRenaming] = useState<PastLive | null>(null);
   const [deleting, setDeleting] = useState<PastLive | null>(null);
   const toast = useToast();
@@ -204,12 +216,14 @@ export function LiveHistory() {
   }
 
   const ouvert = lives.find((l) => l.id === open) ?? null;
+  const visibles = lives.slice(0, montre);
+  const restants = lives.length - visibles.length;
 
   return (
     <>
       <h2 className="pagetitle">{t('Tes derniers lives')}</h2>
       <div className="list">
-        {lives.map((l) => (
+        {visibles.map((l) => (
           <div
             className="row"
             key={l.id}
@@ -242,6 +256,18 @@ export function LiveHistory() {
           </div>
         ))}
       </div>
+      {restants > 0 && (
+        <div style={{ textAlign: 'center', marginTop: 'var(--sp-2)' }}>
+          <button
+            className="btn ghost small"
+            onClick={() => setMontre((n) => n + PAS)}
+          >
+            {restants > 1
+              ? t('Afficher plus ({n} lives plus anciens)', { n: restants })
+              : t('Afficher le live précédent')}
+          </button>
+        </div>
+      )}
 
       {ouvert && (
         <StageList onClose={() => setOpen(null)}>
