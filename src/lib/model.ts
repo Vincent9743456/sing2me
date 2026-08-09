@@ -526,6 +526,11 @@ export function addSongAsVersion(
  *  personnelle. Bascule sur la référence restante si besoin. */
 export function removeVersion(song: Song, versionId: string): Song {
   if (song.versions.length <= 1) return song;
+  // Le doute de l'import (b209) portait sur le contenu ORIGINAL : le
+  // supprimer, c'est s'en être occupé (b218).
+  if (song.versions[0]?.id === versionId && song.needsCheck) {
+    song = { ...song, needsCheck: undefined };
+  }
   // Supprimer l'ORIGINALE (décision Vincent, b135 : possible quand elle
   // n'est pas bonne) : une autre version prend la place de référence.
   // L'invariant structurel demeure — versions[0] est TOUJOURS une version
@@ -605,6 +610,8 @@ export function promoteVersionToOriginal(
   const main = song.versions[0];
   const source = song.versions.find((v) => v.id === versionId);
   if (!main || !source || source.id === main.id) return song;
+  // Le contenu douteux de l'import cède sa place : le doute tombe (b218).
+  if (song.needsCheck) song = { ...song, needsCheck: undefined };
   const now = new Date().toISOString();
   const prevKey = main.key;
   const prevCapo = main.capo;

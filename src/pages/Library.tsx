@@ -1050,6 +1050,22 @@ export function Library() {
               icon: 'plus',
               onClick: () => setRowAssign(rowMenu.id),
             },
+            // Toute mention qui réclame une action doit pouvoir être levée
+            // d'un geste (règle 11, b212) : « À vérifier » n'avait aucune
+            // sortie — elle survivait même au remplacement de la partition
+            // (signalement de Vincent, b218). C'est le musicien qui juge.
+            ...(songs.find((s) => s.id === rowMenu.id)?.needsCheck
+              ? [
+                  {
+                    label: t('✓ Partition vérifiée'),
+                    icon: 'eye' as const,
+                    onClick: () => {
+                      const s = songs.find((x) => x.id === rowMenu.id);
+                      if (s) saveSong({ ...s, needsCheck: undefined });
+                    },
+                  },
+                ]
+              : []),
             {
               label: t('Supprimer'),
               icon: 'trash',

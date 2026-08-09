@@ -59,6 +59,7 @@ groupe, direct). Marco est le second appareil.
 | M-12 | Menu « ⋯ » d'une ligne | Jouer / Modifier / Ajouter à… / Supprimer | 🟠 |
 | M-13 | Supprimer un morceau | Confirmation **non native** ; il quitte aussi les setlists | 🔴 |
 | M-14 | 📱📱 Supprimer un morceau sur A | Il ne réapparaît pas depuis B — ⚠️ cicatrice b132/b137 | 🔴 |
+| M-10bis | Lever le « 🔎 À vérifier » | Il disparaît quand on remplace la partition (version trouvée), quand on supprime l'originale ou qu'on promeut une autre version en référence — et « ✓ Partition vérifiée » (menu ⋯) le lève à la main — ⚠️ cicatrice b218 | 🟠 |
 | M-15 | Groupe d'un morceau sur sa ligne | Le **nom du groupe** en toutes lettres dans le sous-titre (« 👥 Zakoustiks »), lisible sur un écran de 360 px ; pas répété quand on filtre déjà sur ce groupe | ⚪ |
 | M-16 | Écran large (≥ 1100 px, souris) | Vue maître-détail : liste à gauche, partition à droite | ⚪ |
 

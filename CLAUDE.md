@@ -22,12 +22,15 @@
    en cas de doute, on n'expédie pas le lot.
 10. Pas de `alert()/confirm()/prompt()` natifs : utiliser
     ConfirmSheet/PromptSheet/Toast (composants Feedback).
-11. **Toute bannière a une sortie** (b212) : un message qui réclame une
-    action doit pouvoir être écarté d'un geste, et ce choix se garde
-    (préférence locale, unie à la synchro). Marco est resté avec une
-    bannière « à réinviter » impossible à fermer. Corollaire : **une
-    pastille compte EXACTEMENT ce que l'écran montrera** — elle se calcule
-    au rendu, jamais au sondage, sinon elle appelle vers un écran vide.
+11. **Toute bannière a une sortie** (b212, étendu b218) : un message qui
+    réclame une action doit pouvoir être écarté d'un geste, et ce choix se
+    garde (préférence locale, unie à la synchro). Marco est resté avec une
+    bannière « à réinviter » impossible à fermer ; Vincent avec un
+    « 🔎 À vérifier » qui survivait au remplacement de la partition. Une
+    mention de ce genre se lève donc AUTOMATIQUEMENT quand son motif
+    disparaît, et À LA MAIN dans tous les cas. Corollaire : **une pastille
+    compte EXACTEMENT ce que l'écran montrera** — elle se calcule au rendu,
+    jamais au sondage, sinon elle appelle vers un écran vide.
 
 ## Déploiement & versions (pipeline actuel)
 
