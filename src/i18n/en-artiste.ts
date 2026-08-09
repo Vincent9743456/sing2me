@@ -103,6 +103,8 @@ export const EN_ARTISTE: Record<string, string> = {
   Live: 'Live',
   'Concerts passés': 'Past gigs',
   'Tes derniers lives': 'Your recent lives',
+  'Afficher plus ({n} lives plus anciens)': 'Show more ({n} older lives)',
+  'Afficher le live précédent': 'Show the previous live',
   'Tes lives': 'Your lives',
   'lives joués': 'lives played',
   'Pourquoi c’est vide ?': 'Why is this empty?',
