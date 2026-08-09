@@ -1,6 +1,6 @@
 # Sing2Me — Périmètre fonctionnel et plan de recette
 
-*Établi à partir du code, pas de mémoire — version b208, 9 août 2026.*
+*Établi à partir du code, pas de mémoire — version b209, 9 août 2026.*
 
 ## Comment s'en servir
 
@@ -233,7 +233,7 @@ groupe, direct). Marco est le second appareil.
 
 ---
 
-## K. Réglages, export, données
+## J bis. Réglages, export, données
 
 | N° | Cas | Ce qu'on doit voir | Prio |
 |---|---|---|---|
@@ -241,6 +241,29 @@ groupe, direct). Marco est le second appareil.
 | R-2 | Réinitialiser une partie des données | Confirmation explicite ; seule la partie choisie part | 🟠 |
 | R-3 | 📱📱 Réinitialiser sur A | Le cloud de B ne ressuscite pas ce qui a été effacé — ⚠️ cicatrice b137/b202 | 🔴 |
 | R-4 | Tableau de bord fondateur | Réservé aux e-mails autorisés ; chiffres et coûts IA | ⚪ |
+
+---
+
+## K. Sauvegarde et récupération
+
+*Nouveau en b209. C'est le filet : ce qui protège l'utilisateur si nos
+serveurs disparaissent, ou s'il change de téléphone.*
+
+| N° | Cas | Ce qu'on doit voir | Prio |
+|---|---|---|---|
+| B-1 | Réglages → Exporter → **💾 Enregistrer une sauvegarde** | Un fichier `sing2me-AAAA-MM-JJ.json` est proposé au téléchargement | 🔴 |
+| B-2 | Ouvrir ce fichier dans un éditeur de texte | On y **lit ses titres, ses paroles et ses accords** — c'est la promesse : il se relit sans Sing2Me | 🟠 |
+| B-3 | Supprimer un morceau, puis **↩︎ Restaurer** cette sauvegarde | Le morceau revient | 🔴 |
+| B-4 | Modifier un morceau, puis restaurer une sauvegarde **plus ancienne** | La modification récente **n'est pas écrasée** — la restauration ajoute, elle ne remplace pas | 🔴 |
+| B-5 | Restaurer un fichier qui n'est pas une sauvegarde (un PDF, un texte) | Message clair nommant la raison, **et rien ne change** dans la bibliothèque | 🟠 |
+| B-6 | En tête de l'onglet Morceaux, avec ≥ 12 morceaux et aucune sauvegarde | Un encart discret propose d'en garder une — **aucune alarme, aucun rouge** | ⚪ |
+| B-7 | Toucher **Plus tard** sur cet encart | Il disparaît, et **ne revient pas** au rechargement | 🟠 |
+| B-8 | Enregistrer une sauvegarde | L'encart disparaît définitivement | ⚪ |
+| B-9 | Bibliothèque de moins de 12 morceaux | **Aucun encart** — on ne dérange pas qui n'a rien à protéger | ⚪ |
+
+*Non testable à la main : la ceinture qui empêche une synchronisation de
+vider une bibliothèque remplie. Elle demande de simuler une panne serveur —
+c'est couvert par les tests automatiques (suite `backup`).*
 
 ---
 
@@ -289,9 +312,10 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 | H. Concerts et direct | 20 | 10 |
 | I. Historique et chiffres | 15 | 5 |
 | J. Profil et page publique | 8 | 1 |
-| K. Réglages et données | 4 | 1 |
+| J bis. Réglages et données | 4 | 1 |
+| K. Sauvegarde et récupération | 9 | 3 |
 | L. Transversal | 8 | 2 |
-| **Total** | **152** | **55** |
+| **Total** | **161** | **58** |
 
 **Suggestion d'ordre** : commence par les 🔴 de H (concerts et direct) et
 de G (groupes) — c'est là que sont la plupart des cicatrices récentes et

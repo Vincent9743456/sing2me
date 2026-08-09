@@ -1,7 +1,7 @@
 # Sing2Me — Tout ce que fait l'application
 
 *Visite guidée, écran par écran. Établi en lisant le code — chaque bouton
-cité existe vraiment. Version b208, 9 août 2026.*
+cité existe vraiment. Version b209, 9 août 2026.*
 
 Ce document décrit **ce qu'on peut faire et où c'est**. Le plan de test
 (`RECETTE.md`) dit **comment vérifier que ça marche**. Les deux se tiennent
@@ -518,9 +518,27 @@ bas la **version de l'application** — utile pour savoir si tu es à jour.
 | Réglage | Ce que ça fait |
 |---|---|
 | **Langue** | Automatique (celle du téléphone), français ou anglais |
-| **📄 Exporter la bibliothèque en PDF** | Un carnet complet de toutes tes partitions |
+| **📄 Exporter la bibliothèque en PDF** | Un carnet complet de toutes tes partitions, imprimable |
+| **💾 Enregistrer une sauvegarde** | Un fichier que tu gardes chez toi. Il se relit **même sans Sing2Me** : c'est du texte, tes paroles et tes accords sont dedans |
+| **↩︎ Restaurer une sauvegarde** | Ajoute ce qui manque et garde la version la plus récente de ce qui existe des deux côtés. Restaurer une vieille sauvegarde **ne peut pas effacer** le travail d'hier |
 | **Réinitialiser** | Efface au choix : profil, groupes, morceaux, setlists, concerts. Confirmation explicite |
 | **📊 Tableau de bord** | Réservé aux fondateurs : comptes, usage, coût des IA |
+
+---
+
+### Où vivent tes partitions, et ce qui se passe si ça casse
+
+Sur **ton téléphone** d'abord — c'est la source, et c'est pour ça que
+l'app marche en mode avion. Une **copie complète** vit aussi sur nos
+serveurs : c'est elle qui te retrouve sur un autre appareil.
+
+Si nos serveurs perdaient tout, ta bibliothèque ne bougerait pas : la
+synchronisation ne peut rien retirer, elle ne fait qu'ajouter — et elle
+refuse désormais toute fusion qui viderait une bibliothèque remplie.
+
+La sauvegarde couvre le seul cas qui reste : perdre **les deux à la fois**,
+le téléphone et le serveur. C'est pour ça qu'elle existe, et c'est pour ça
+que le fichier est lisible sans nous.
 
 ---
 
