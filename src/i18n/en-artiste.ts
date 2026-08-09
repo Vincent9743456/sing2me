@@ -160,6 +160,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'Instrument': 'Instrument',
   'Instruments, micros, amplis, effets, câbles… Ton inventaire personnel (privé) — les setlists peuvent ensuite y piocher pour préparer la scène et vérifier que rien ne manque.': 'Instruments, mics, amps, effects, cables… Your personal inventory (private) — setlists can then draw from it to prep the stage and check nothing\'s missing.',
   'Interactions du public': 'Audience interactions',
+  'Rien pour ce concert : il n’a pas encore été joué, ou le direct n’a pas été rattaché à ce concert au lancement.':
+    'Nothing for this gig yet: it has not been played, or the live was not linked to it at launch.',
   'Invitation impossible.': 'Couldn\'t send the invitation.',
   'Invitations reçues': 'Invitations received',
   'Inviter': 'Invite',

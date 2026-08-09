@@ -1,17 +1,12 @@
 import { LiveBanner } from '../components/LiveBanner';
 import { LiveHistory } from '../components/LiveHistory';
+import { usePastLives } from '../components/usePastLives';
 import React, { useMemo, useState } from 'react';
 
 import { ShareModal } from '../components/ShareModal';
 import { Icon } from '../components/Icon';
 import { Empty, Field, TopBar } from '../components/ui';
 import { t } from '../i18n';
-import {
-  fetchLiveStats,
-  fetchMessages,
-  LiveMessage,
-  LiveStat,
-} from '../lib/live';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { Concert, emptyConcert, SharePayload } from '../types';
@@ -36,6 +31,28 @@ export function isUpcoming(c: Concert): boolean {
 
 export function Concerts() {
   const { concerts } = useStore();
+  /*
+   * CE QUE LE CONCERT A PRODUIT (b207). Un concert préparé puis joué doit
+   * rendre compte : c'est le bénéfice qui donne envie de préparer ses dates
+   * ici plutôt qu'ailleurs. Le calcul ne bouge pas — même crochet, mêmes
+   * chiffres que l'historique et que la fiche Artiste.
+   */
+  const { lives } = usePastLives();
+  const bilanParConcert = useMemo(() => {
+    const m = new Map<string, { uniques: number; hearts: number; mots: number }>();
+    for (const l of lives) {
+      if (l.concertId === '') continue;
+      const cur = m.get(l.concertId) ?? { uniques: 0, hearts: 0, mots: 0 };
+      // Deux membres peuvent avoir lancé chacun leur direct pour le même
+      // concert (b207) : ce n'est pas une erreur, les chiffres s'ajoutent.
+      m.set(l.concertId, {
+        uniques: cur.uniques + l.uniques,
+        hearts: cur.hearts + l.hearts,
+        mots: cur.mots + l.messages.length,
+      });
+    }
+    return m;
+  }, [lives]);
   const sorted = useMemo(
     () =>
       [...concerts].sort((a, b) =>
@@ -83,7 +100,7 @@ export function Concerts() {
         )}
         <div className="list">
           {past.map((c) => (
-            <ConcertRow key={c.id} concert={c} />
+            <ConcertRow key={c.id} concert={c} bilan={bilanParConcert.get(c.id)} />
           ))}
         </div>
         <div className="spacer" />
@@ -96,7 +113,13 @@ export function Concerts() {
   );
 }
 
-function ConcertRow({ concert }: { concert: Concert }) {
+function ConcertRow({
+  concert,
+  bilan,
+}: {
+  concert: Concert;
+  bilan?: { uniques: number; hearts: number; mots: number };
+}) {
   const { bands, artist, prefs } = useStore();
   const who =
     (concert.bandId ?? '') !== ''
@@ -123,6 +146,15 @@ function ConcertRow({ concert }: { concert: Concert }) {
             .filter((x) => x !== '')
             .join(' · ')}
         </div>
+        {bilan && (
+          <div className="sub" style={{ color: 'var(--accent)' }}>
+            {t('❤ {h} · 💬 {m} · 👥 {u}', {
+              h: bilan.hearts,
+              m: bilan.mots,
+              u: bilan.uniques,
+            })}
+          </div>
+        )}
       </div>
       {concert.venueUrl !== '' && (
         <button
@@ -166,12 +198,21 @@ export function ConcertEdit({ id }: { id: string | null }) {
     deleteConcert,
     prefs,
   } = useStore();
-  const [inter, setInter] = useState<{
-    stats: LiveStat[];
-    messages: LiveMessage[];
-  } | null>(null);
-  const [interError, setInterError] = useState<string | null>(null);
   const existing = id ? concerts.find((c) => c.id === id) : undefined;
+  // Ce que ce concert a produit — même calcul que partout ailleurs (b207).
+  // Plusieurs directs peuvent le porter (deux membres qui lancent chacun) :
+  // on les additionne, ce n'est pas une anomalie.
+  const { lives } = usePastLives();
+  const bilan = useMemo(() => {
+    const mes = lives.filter((l) => l.concertId === (existing?.id ?? ''));
+    if (mes.length === 0) return null;
+    return {
+      uniques: mes.reduce((n, l) => n + l.uniques, 0),
+      hearts: mes.reduce((n, l) => n + l.hearts, 0),
+      songs: mes.flatMap((l) => l.songs),
+      messages: mes.flatMap((l) => l.messages),
+    };
+  }, [lives, existing?.id]);
   const [draft, setDraft] = useState<Concert>(() =>
     existing ? { ...existing } : emptyConcert(),
   );
@@ -442,53 +483,32 @@ export function ConcertEdit({ id }: { id: string | null }) {
         {!isNew && (
           <>
             <h2 className="pagetitle">{t('Interactions du public')}</h2>
-            <p className="help">
-              {t(
-                "Les ❤ et messages reçus pendant ce concert (le direct doit avoir été lancé le jour du concert pour qu'ils lui soient rattachés).",
-              )}
-            </p>
-            <button
-              className="btn ghost small"
-              onClick={async () => {
-                setInterError(null);
-                try {
-                  const [stats, messages] = await Promise.all([
-                    fetchLiveStats(prefs.liveKey, artist.name),
-                    fetchMessages(prefs.liveKey, artist.name),
-                  ]);
-                  setInter({
-                    stats: stats.filter((s) => s.concert_id === draft.id),
-                    messages: messages.filter((m) => m.concert_id === draft.id),
-                  });
-                } catch (e) {
-                  setInterError(
-                    e instanceof Error ? e.message : t('Chargement impossible.'),
-                  );
-                }
-              }}
-            >
-              {t('Voir les interactions')}
-            </button>
-            {interError && (
-              <p style={{ color: 'var(--danger)' }}>{interError}</p>
-            )}
-            {inter !== null && (
-              <div className="card" style={{ marginTop: 10 }}>
-                {inter.stats.length === 0 && inter.messages.length === 0 && (
-                  <p className="help">
-                    {t(
-                      'Rien pour ce concert (pas encore joué, ou direct lancé sans concert planifié ce jour-là).',
-                    )}
-                  </p>
+            {/* Plus de bouton « Voir les interactions » ni de récupération à
+                part (b207) : les chiffres viennent du crochet commun, comme
+                l'historique et la fiche Artiste. Le rattachement se fait par
+                le CONCERT confirmé au lancement — l'ancienne phrase promettait
+                un rattachement à la journée, ce qui n'est plus vrai. */}
+            {bilan === null ? (
+              <p className="help">
+                {t(
+                  'Rien pour ce concert : il n’a pas encore été joué, ou le direct n’a pas été rattaché à ce concert au lancement.',
                 )}
-                {inter.stats.length > 0 && (
+              </p>
+            ) : (
+              <div className="card" style={{ marginTop: 10 }}>
+                <div className="help" style={{ marginBottom: 6 }}>
+                  {t('❤ {h} · 💬 {m} · 👥 {u}', {
+                    h: bilan.hearts,
+                    m: bilan.messages.length,
+                    u: bilan.uniques,
+                  })}
+                </div>
+                {bilan.songs.length > 0 && (
                   <>
-                    <div className="help" style={{ marginBottom: 6 }}>
-                      {t('❤ PAR CHANSON — {n} au total', {
-                        n: inter.stats.reduce((sum, s) => sum + s.hearts, 0),
-                      })}
+                    <div className="help" style={{ margin: '12px 0 6px' }}>
+                      {t('❤ PAR CHANSON — {n} au total', { n: bilan.hearts })}
                     </div>
-                    {inter.stats.map((st, i) => (
+                    {bilan.songs.map((st, i) => (
                       <div className="strow" key={i}>
                         <span style={{ flex: 1 }}>{st.song_title}</span>
                         <span style={{ color: 'var(--live)', fontWeight: 700 }}>
@@ -498,12 +518,12 @@ export function ConcertEdit({ id }: { id: string | null }) {
                     ))}
                   </>
                 )}
-                {inter.messages.length > 0 && (
+                {bilan.messages.length > 0 && (
                   <>
                     <div className="help" style={{ margin: '12px 0 6px' }}>
-                      {t('💬 MESSAGES ({n})', { n: inter.messages.length })}
+                      {t('💬 MESSAGES ({n})', { n: bilan.messages.length })}
                     </div>
-                    {inter.messages.map((m, i) => (
+                    {bilan.messages.map((m, i) => (
                       <div key={i} style={{ marginBottom: 8 }}>
                         « {m.body} »
                         <span className="stauthor">

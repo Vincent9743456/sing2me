@@ -353,6 +353,11 @@ export interface PastLiveRow {
   /** Qui a appuyé sur GO LIVE (le live d'un groupe porte le nom du groupe). */
   started_by?: string;
   setlist_name: string;
+  /**
+   * Concert planifié auquel ce direct est rattaché (b207). Posé au
+   * lancement, sur CONFIRMATION de l'artiste — jamais deviné.
+   */
+  concert?: { id?: string; title?: string; date?: string } | null;
   started_at: string | null;
   updated_at: string | null;
   status: string;
