@@ -203,3 +203,24 @@ nombre d'éléments.
 
 Ne PAS l'utiliser pour une rangée courte et fixe (deux ou trois puces
 connues d'avance) : le défilement cacherait une option sans raison.
+
+
+## Un panneau plein écran se cale sur la zone VISIBLE (b210)
+
+`position: fixed; inset: 0` se règle sur la fenêtre de mise en page, qui ne
+rétrécit pas quand le clavier s'ouvre. Le panneau garde alors sa hauteur
+pleine, sa moitié basse passe sous le clavier, et la zone défilante — qui
+contient tout son contenu sans déborder — n'a plus rien à faire défiler.
+Le sélecteur de morceaux paraissait figé, clavier ouvert.
+
+Tout panneau plein écran doit donc :
+
+- appeler `useScrollLock()` — sinon iOS donne le geste à la page derrière ;
+- appeler `useVisualViewport()` et se caler en
+  `top: var(--vv-t, 0px); height: var(--vv-h, 100%)` ;
+- porter `overscroll-behavior: contain` sur sa zone défilante, et
+  `min-height: 0` si elle est en `flex: 1` (sans quoi elle refuse de
+  rétrécir sous son contenu).
+
+Les valeurs de repli rendent exactement le comportement d'avant sur les
+navigateurs sans `visualViewport` : rien ne casse.

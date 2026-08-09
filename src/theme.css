@@ -837,7 +837,13 @@ textarea.mono {
 /* Sens 2 — plein écran : recherche + multi-sélection + bouton collant. */
 .pickerfull {
   position: fixed;
-  inset: 0;
+  left: 0;
+  right: 0;
+  /* Zone RÉELLEMENT visible (b210) : clavier ouvert, `inset: 0` gardait la
+     hauteur pleine et la liste n'avait plus rien à faire défiler. Les
+     valeurs de repli rendent le comportement d'avant. */
+  top: var(--vv-t, 0px);
+  height: var(--vv-h, 100%);
   z-index: 400;
   background: var(--bg);
   display: flex;
@@ -854,7 +860,11 @@ textarea.mono {
 }
 .pickerfull-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Le geste appartient à la liste, jamais à la page derrière (iOS). */
+  overscroll-behavior: contain;
   padding: 4px 12px 12px;
 }
 .pickrow {
@@ -3114,7 +3124,10 @@ h2.pagetitle {
 /* Mode scène : choix libre d'un morceau (l'ordre de la setlist reste) */
 .stagelist {
   position: fixed;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: var(--vv-t, 0px);
+  height: var(--vv-h, 100%);
   /* Fond OPAQUE (b184) : à 0.94 on lisait la page du dessous au travers, et
      ses titres se superposaient au panneau. */
   background: var(--bg);
