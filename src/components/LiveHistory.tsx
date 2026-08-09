@@ -11,26 +11,15 @@
  * côté serveur un direct n'a qu'une date, l'artiste seul sait que c'était
  * « la soirée chez Marco ».
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 
 import { ConfirmSheet, PromptSheet, useToast } from './Feedback';
 import { Icon } from './Icon';
 import { StageList } from './StageList';
+import { usePastLives } from './usePastLives';
 import { t } from '../i18n';
-import {
-  fetchAudienceSessions,
-  fetchDiag,
-  fetchLiveStats,
-  fetchMessages,
-  fetchPastLives,
-  LiveMessage,
-  LiveSession,
-  LiveStat,
-  PastLiveRow,
-  triMots,
-} from '../lib/live';
-import { liveReady } from '../lib/liveAuth';
-import { buildPastLives, PastLive } from '../lib/pastlives';
+import { fetchDiag, triMots } from '../lib/live';
+import { PastLive } from '../lib/pastlives';
 import { useStore } from '../store';
 
 function jourLong(iso: string): string {
@@ -51,13 +40,10 @@ function heure(iso: string): string {
 }
 
 export function LiveHistory() {
-  const { prefs, artist, bands, savePrefs, resetAt } = useStore();
-  const [sessions, setSessions] = useState<LiveSession[] | null>(null);
-  const [rows, setRows] = useState<PastLiveRow[]>([]);
-  const [stats, setStats] = useState<LiveStat[]>([]);
-  const [messages, setMessages] = useState<LiveMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
+  const { prefs, savePrefs } = useStore();
+  // Récupération et calcul mis en commun (b207) : le même crochet sert à la
+  // fiche Artiste et au retour affiché sur un concert joué.
+  const { lives, messages, loading, failed, ready } = usePastLives();
   const [open, setOpen] = useState<string | null>(null);
   /**
    * Historique replié (b204, demande de Vincent) : « ne présenter que les 3
@@ -77,90 +63,10 @@ export function LiveHistory() {
   // Lives retirés de MON historique : un simple classement personnel, jamais
   // propagé aux autres membres du groupe (b183).
   const caches = prefs.hiddenLives ?? [];
-  const cachesKey = caches.join(',');
-
-  const names = [artist.name, ...bands.map((b) => b.name)]
-    .map((n) => n.trim())
-    .filter((n) => n !== '');
-  const namesKey = names.join(',');
-  // Un live de groupe porte le NOM DU GROUPE, pas le mien : sans ces deux
-  // repères (qui a lancé, quel groupe), mon propre concert disparaissait de
-  // mon historique dès que le groupe n'était pas encore dans ma bibliothèque.
-  const cloudKey = bands
-    .map((b) => (b.cloudId ?? '').trim())
-    .filter((c) => c !== '')
-    .join(',');
-  const meKey = [artist.name, prefs.userName]
-    .map((n) => n.trim().toLowerCase())
-    .filter((n) => n !== '')
-    .join(',');
-
-  useEffect(() => {
-    if (!liveReady(prefs.liveKey)) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const [se, st, ms, lv] = await Promise.all([
-          fetchAudienceSessions(prefs.liveKey),
-          fetchLiveStats(
-            prefs.liveKey,
-            namesKey === '' ? [] : namesKey.split(','),
-            cloudKey === '' ? [] : cloudKey.split(','),
-          ),
-          fetchMessages(
-            prefs.liveKey,
-            namesKey === '' ? [] : namesKey.split(','),
-            cloudKey === '' ? [] : cloudKey.split(','),
-          ),
-          fetchPastLives(
-            prefs.liveKey,
-            namesKey === '' ? [] : namesKey.split(','),
-            cloudKey === '' ? [] : cloudKey.split(','),
-          ),
-        ]);
-        if (cancelled) return;
-        setRows(lv);
-        setSessions(se);
-        setStats(st);
-        setMessages(ms);
-        setFailed(false);
-      } catch {
-        if (!cancelled) setFailed(true);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefs.liveKey, namesKey, cloudKey]);
-
-  // La définition d'« un live » vit dans src/lib/pastlives.ts : l'onglet Live
-  // et le compteur de la fiche Artiste doivent compter la MÊME chose.
-  const lives = useMemo<PastLive[]>(
-    () =>
-      buildPastLives({
-        rows,
-        sessions,
-        stats,
-        messages,
-        names,
-        bands: bands.map((b) => ({ cloudId: b.cloudId ?? '', name: b.name })),
-        me: meKey === '' ? [] : meKey.split(','),
-        artistName: artist.name,
-        depuis: resetAt?.lives,
-      }).filter((l) => !caches.includes(l.id)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, sessions, stats, messages, namesKey, cloudKey, meKey, cachesKey,
-     resetAt?.lives],
-  );
 
   function nomDe(live: PastLive): string {
-    return (prefs.liveNames ?? {})[live.id] ?? '';
+    const donne = (prefs.liveNames ?? {})[live.id] ?? '';
+    return donne !== '' ? donne : live.concertTitle;
   }
   /**
    * Retirer un live de MON historique. Rien n'est effacé côté serveur : si
@@ -180,7 +86,7 @@ export function LiveHistory() {
     savePrefs({ ...prefs, liveNames: next });
   }
 
-  if (!liveReady(prefs.liveKey)) return null;
+  if (!ready) return null;
   if (loading) {
     return (
       <>
@@ -208,7 +114,7 @@ export function LiveHistory() {
         </p>
         <Diagnostic
           liveKey={prefs.liveKey}
-          recus={messages.length}
+          recus={messages?.length ?? 0}
           rattaches={0}
         />
       </>
@@ -371,7 +277,7 @@ export function LiveHistory() {
 
       <Diagnostic
         liveKey={prefs.liveKey}
-        recus={messages.length}
+        recus={messages?.length ?? 0}
         rattaches={lives.reduce((n, l) => n + l.messages.length, 0)}
       />
 

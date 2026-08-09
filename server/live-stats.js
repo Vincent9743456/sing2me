@@ -72,13 +72,13 @@ export default async function handler(req, res) {
     let lives = [];
     try {
       let l = await fetch(
-        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id,setlist_name,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
+        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id,setlist_name,concert,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
         { headers: sbHeaders() },
       );
       if (!l.ok) {
         // Colonne b192 pas encore créée (SQL non rejoué) : sans elle.
         l = await fetch(
-          `${base}/rest/v1/lives?select=id,artist,band_id,started_by,setlist_name,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
+          `${base}/rest/v1/lives?select=id,artist,band_id,started_by,setlist_name,concert,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
           { headers: sbHeaders() },
         );
       }

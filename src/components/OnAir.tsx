@@ -95,12 +95,8 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     saveSetlist,
   } = useStore();
 
-  // Concert du jour (planifié dans l'onglet Concerts) → tague les interactions
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const todayConcert = concerts
-    .filter((c) => c.date === todayStr)
-    .sort((a, b) => a.time.localeCompare(b.time))[0];
   const [hearts, setHearts] = useState(0);
   const [who, setWho] = useState<string>(
     () => localStorage.getItem('sing2me/onairWho') ?? 'solo',
@@ -116,6 +112,40 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('sing2me/onairWho', who);
   }, [who]);
+
+  /*
+   * CONCERT DU JOUR → LIVE (b207, décision Vincent).
+   *
+   * Le concert préparé (lieu, groupe, setlist) et le direct décrivaient la
+   * même soirée en s'ignorant : il fallait renommer le live après coup.
+   * Ils se rejoignent ici — mais par une CONFIRMATION, jamais par une
+   * déduction. L'ancien code prenait en silence le premier concert de la
+   * journée, sans regarder qui jouait : deviner un rattachement à l'heure
+   * nous a déjà coûté b138, b186 et b188. Le temps SUGGÈRE (on ne propose
+   * que les concerts du jour), il ne conclut pas.
+   *
+   * Le filtre d'identité reprend la règle des lives (b183/b188) : un live
+   * solo ne peut porter qu'un concert solo, un live de groupe qu'un concert
+   * de CE groupe. Qui a CRÉÉ le concert n'entre pas en compte — c'est
+   * l'appartenance qui décide, sinon le concert créé par Marco empêcherait
+   * de rattacher le live que je lance pour le même groupe.
+   */
+  const concertsDuJour = concerts
+    .filter((c) => c.date === todayStr)
+    .filter((c) => (who === 'solo' ? (c.bandId ?? '') === '' : c.bandId === who))
+    .sort((a, b) => a.time.localeCompare(b.time));
+  const [concertId, setConcertId] = useState('');
+  // Proposition : le premier concert du jour qui correspond à l'identité
+  // choisie. Si on change de groupe, un choix devenu impossible retombe.
+  useEffect(() => {
+    setConcertId((cur) =>
+      concertsDuJour.some((c) => c.id === cur)
+        ? cur
+        : (concertsDuJour[0]?.id ?? ''),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [who, concertsDuJour.map((c) => c.id).join(',')]);
+  const todayConcert = concertsDuJour.find((c) => c.id === concertId) ?? null;
 
   const performerBase =
     who === 'solo'
@@ -486,13 +516,6 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
               {status === 'off' &&
                 t('Hors session — le QR ne montre que ta page artiste.')}
             </p>
-            {status === 'off' && todayConcert && (
-              <p className="help" style={{ textAlign: 'center' }}>
-                {t('🎪 Concert détecté : ')}
-                <strong>{todayConcert.title}</strong>
-                {t(' — les ❤ et messages lui seront rattachés.')}
-              </p>
-            )}
             {status === 'off' && (
               <div className="field" style={{ maxWidth: 320, margin: '0 auto 6px' }}>
                 <label>{t('Type de session')}</label>
@@ -523,6 +546,26 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                       {b.name || t('Groupe sans nom')}
                     </option>
                   ))}
+                </select>
+              </div>
+            )}
+            {/* Le rattachement au concert se CONFIRME ici, il ne se devine
+                pas (b207). Rangé après « qui joue », dont il dépend. */}
+            {status === 'off' && concertsDuJour.length > 0 && (
+              <div className="field" style={{ maxWidth: 320, margin: '0 auto 6px' }}>
+                <label>{t('C’est pour quel concert ?')}</label>
+                <select
+                  value={concertId}
+                  onChange={(e) => setConcertId(e.target.value)}
+                >
+                  {concertsDuJour.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {[c.title || t('Concert'), c.venue, c.time]
+                        .filter((x) => x !== '')
+                        .join(' · ')}
+                    </option>
+                  ))}
+                  <option value="">{t('Aucun — c’est autre chose')}</option>
                 </select>
               </div>
             )}

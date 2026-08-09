@@ -235,6 +235,22 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     navigateur : elle n'a jamais rien protégé. Le PUBLIC reste ouvert —
     un spectateur n'a pas de compte, cœurs, mots et présence passent sans
     identité, par construction.
+  - **le concert préparé et le direct se rejoignent par CONFIRMATION**
+    (b207, décision Vincent) : au GO LIVE, les concerts du JOUR sont
+    proposés, jamais imposés — l'ancien code prenait en silence le premier
+    de la journée. Le temps SUGGÈRE, il ne conclut jamais (b138 → b188 :
+    trois lots perdus à deviner un rattachement à l'heure). Le filtre reprend
+    la règle des lives : un live solo ne porte qu'un concert solo, un live
+    de groupe qu'un concert de CE groupe. Qui a CRÉÉ le concert n'entre pas
+    en compte — c'est l'APPARTENANCE qui décide, sinon le concert créé par
+    Marco empêcherait de rattacher le live que je lance pour le même groupe.
+    Deux membres qui lancent chacun un direct pour le même concert : ce
+    n'est PAS une erreur, les chiffres s'additionnent (refuser le second
+    couperait un direct en pleine soirée). Le live prend alors le nom du
+    concert dans l'historique, et le concert affiche en retour ce qu'il a
+    produit. Récupération et calcul mis en commun dans
+    `src/components/usePastLives.ts` : trois écrans allaient chercher les
+    mêmes chiffres chacun de leur côté, d'où le « 0 spectateurs » de b203.
   - **à qui appartient un live** (b183) : je l'ai lancé → il est à moi ; il
     est tagué d'un groupe → il appartient aux MEMBRES de ce groupe (un
     concert de groupe est un acte collectif) ; lancé en solo par quelqu'un

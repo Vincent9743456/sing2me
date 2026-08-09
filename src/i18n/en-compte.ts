@@ -56,6 +56,8 @@ export const EN_COMPTE: Record<string, string> = {
   'QR code de partage': 'Sharing QR code',
   'QR unique de tes sessions': 'Your unique session QR',
   'Qui joue ce soir ?': 'Who\'s playing tonight?',
+  'C’est pour quel concert ?': 'Which gig is this for?',
+  'Aucun — c’est autre chose': 'None — this is something else',
   'Recevoir mon lien': 'Get my link',
   'Recherche de la meilleure version…': 'Searching for the best version…',
   'Rejoindre 📡': 'Join 📡',

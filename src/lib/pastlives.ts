@@ -33,6 +33,9 @@ export interface PastLive {
   startedBy: string;
   /** Setlist tournée, '' si aucune (ou SQL pas encore rejoué). */
   setlist: string;
+  /** Concert planifié auquel ce direct a été rattaché au lancement (b207). */
+  concertId: string;
+  concertTitle: string;
 }
 
 export interface PastLivesInput {
@@ -135,6 +138,8 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
       setlist: string;
       ouvert: boolean;
       uniques: number;
+      concertId?: string;
+      concertTitle?: string;
       /** Séance ON AIR de ce live : rattachement EXACT des morceaux. */
       sessionId?: string | null;
       /** Identifiant du live : rattachement EXACT des mots du public. */
@@ -199,6 +204,8 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
       band: opts.band,
       startedBy: opts.startedBy,
       setlist: opts.setlist,
+      concertId: opts.concertId ?? '',
+      concertTitle: opts.concertTitle ?? '',
     };
   };
 
@@ -229,6 +236,8 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
         setlist: r.setlist_name ?? '',
         ouvert,
         uniques: seance?.uniques ?? 0,
+        concertId: String(r.concert?.id ?? ''),
+        concertTitle: String(r.concert?.title ?? ''),
         sessionId: r.session_id,
         liveId: r.id,
       }),
@@ -279,6 +288,10 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
           liste.find((x) => (x.setlist_name ?? '') !== '')?.setlist_name ?? '',
         ouvert: false,
         uniques: seance?.uniques ?? 0,
+        // Archives : le concert voyageait déjà sur chaque morceau joué.
+        concertId: liste.find((x) => (x.concert_id ?? '') !== '')?.concert_id ?? '',
+        concertTitle:
+          liste.find((x) => (x.concert_title ?? '') !== '')?.concert_title ?? '',
         sessionId: sid,
       }),
     );
@@ -327,6 +340,9 @@ export function buildPastLives(input: PastLivesInput): PastLive[] {
           paquet.find((x) => (x.setlist_name ?? '') !== '')?.setlist_name ?? '',
         ouvert: false,
         uniques: seancePour(debut, fin),
+        concertId: paquet.find((x) => (x.concert_id ?? '') !== '')?.concert_id ?? '',
+        concertTitle:
+          paquet.find((x) => (x.concert_title ?? '') !== '')?.concert_title ?? '',
       }),
     );
     paquet = [];
