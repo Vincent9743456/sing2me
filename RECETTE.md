@@ -219,6 +219,7 @@ groupe, direct). Marco est le second appareil.
 | H-8 | Le live supprimé après rechargement | Il ne revient pas — ⚠️ cicatrice b202 | 🟠 |
 | H-9 | Un direct de Marco en solo | **N'apparaît pas** chez moi — ⚠️ cicatrice b183 | 🔴 |
 | H-10 | Un direct du groupe lancé par Marco | Apparaît chez moi, « lancé par Marco » | 🟠 |
+| H-9ter | Relancer un direct après un arrêt qui n'a pas abouti | Le direct part et RESTE actif — le bouton ne repasse pas au vert une seconde après ; un nouveau live est ouvert, l'ancien reste clos — ⚠️ cicatrice b217 | 🔴 |
 | H-9bis | Arrêter le direct quand le réseau lâche | Le bouton ne reste JAMAIS sur « ⏳ Arrêt… » : au bout de 12 s il dit pourquoi et propose « ⏹ Arrêter quand même » ; l'app reprévient le serveur toute seule — ⚠️ cicatrice b216 | 🔴 |
 | H-10bis | 📱📱 Page du spectateur pendant un direct | Elle affiche le concert — **jamais un écran noir** ; avec ou sans partition, en pause, sans réseau — ⚠️ cicatrice b215 | 🔴 |
 | H-11 | Fiche Artiste : les quatre chiffres | Cohérents avec l'historique, **jamais 0 spectateur avec des cœurs** — ⚠️ cicatrice b201/b203 | 🔴 |

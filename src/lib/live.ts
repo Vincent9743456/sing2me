@@ -184,6 +184,34 @@ export async function fetchLive(code = '', artist = ''): Promise<LiveState> {
 }
 
 /** Live actif d'un de MES groupes (bannière des membres) — best-effort. */
+/**
+ * MON direct, par son identifiant (b217). Le lanceur sondait le sien par le
+ * code de salon — or la clôture efface ce code : une référence restée en
+ * mémoire après un arrêt qui n'a pas abouti ne retrouvait plus rien, et
+ * l'application croyait le direct éteint. L'identifiant, lui, ne change
+ * jamais.
+ */
+export async function fetchLiveById(id: string): Promise<LiveState> {
+  if (id.trim() === '') return fetchLive('');
+  const res = await fetch(`/api/live?id=${encodeURIComponent(id.trim())}`);
+  const body = await readJson(res);
+  if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
+  return {
+    id: typeof body.id === 'string' ? body.id : '',
+    joinCode: typeof body.joinCode === 'string' ? body.joinCode : '',
+    status: body.status === 'on' || body.status === 'pause' ? body.status : 'off',
+    mode: body.mode === 'repet' ? 'repet' : 'concert',
+    song: body.song ?? null,
+    artist: body.artist ?? null,
+    hearts: typeof body.hearts === 'number' ? body.hearts : 0,
+    bandSong: body.bandSong ?? null,
+    setlistCount: typeof body.setlistCount === 'number' ? body.setlistCount : 0,
+    updatedAt: body.updatedAt ?? null,
+    bandId: typeof body.bandId === 'string' ? body.bandId : '',
+    startedBy: typeof body.startedBy === 'string' ? body.startedBy : '',
+  };
+}
+
 export async function fetchLiveForBands(
   cloudIds: string[],
 ): Promise<LiveState | null> {
@@ -710,20 +738,50 @@ export async function pushLive(
  * plus personne ne pourrait clore ce direct.
  */
 const CLOTURE_KEY = 'sing2me/clotureEnAttente';
+/** Au-delà, la clôture en attente n'a plus de sens : on l'oublie (b217). */
+const CLOTURE_PEREMPTION_MS = 6 * 60 * 60 * 1000;
 
 export function noterClotureEnAttente(): void {
   try {
-    localStorage.setItem(CLOTURE_KEY, '1');
+    localStorage.setItem(CLOTURE_KEY, String(Date.now()));
   } catch {
     /* stockage indisponible */
   }
 }
 
+/**
+ * Une clôture en attente est DATÉE (b217) : un drapeau éternel finissait
+ * par hanter les directs suivants. Passé le délai, on l'oublie — le
+ * serveur ferme de toute façon un direct oublié au bout d'une heure sans
+ * partition.
+ */
 export function clotureEnAttente(): boolean {
   try {
-    return localStorage.getItem(CLOTURE_KEY) === '1';
+    const brut = localStorage.getItem(CLOTURE_KEY);
+    if (brut === null) return false;
+    // '1' : forme d'avant la date (b216) — on la traite comme récente.
+    const pose = brut === '1' ? Date.now() : Number(brut);
+    if (!Number.isFinite(pose) || Date.now() - pose > CLOTURE_PEREMPTION_MS) {
+      oublierCloture();
+      return false;
+    }
+    return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Abandonne la clôture en attente. Appelé quand elle aboutit — et SURTOUT
+ * quand l'artiste relance un direct : il vient de dire le contraire, et
+ * fermer derrière lui serait absurde. C'est ce qui manquait à b216, où le
+ * rattrapage coupait le direct une seconde après son lancement.
+ */
+export function oublierCloture(): void {
+  try {
+    localStorage.removeItem(CLOTURE_KEY);
+  } catch {
+    /* stockage indisponible */
   }
 }
 
@@ -735,11 +793,7 @@ export async function rejouerCloture(key: string): Promise<boolean> {
   } catch {
     return false; // on réessaiera au prochain tour
   }
-  try {
-    localStorage.removeItem(CLOTURE_KEY);
-  } catch {
-    /* stockage indisponible */
-  }
+  oublierCloture();
   return true;
 }
 

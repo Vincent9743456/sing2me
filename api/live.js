@@ -424,6 +424,18 @@ export default async function handler(req, res) {
             res.status(400).json({ error: 'Statut invalide' });
             return;
           }
+          // Un live CLOS ne se rallume pas (b217). La clôture efface son
+          // code de salon (`join_code`) : rallumer la même ligne donnait un
+          // direct que plus personne ne pouvait retrouver — le lanceur
+          // lui-même le sondait par ce code et lisait « éteint ». Son
+          // application voyait donc le bouton passer au rouge, puis revenir
+          // au vert une seconde plus tard (signalement de Vincent).
+          // On refuse : le client oublie sa référence périmée et ouvre un
+          // NOUVEAU live — un live = un appui sur GO LIVE (b182).
+          if (row.status === 'off' && status !== 'off') {
+            res.status(403).json({ error: 'Ce direct est terminé.' });
+            return;
+          }
           if (status === 'off') {
             await closeLive(base, row);
             res.status(200).json({ ok: true });

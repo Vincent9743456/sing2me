@@ -448,6 +448,13 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **Un crochet vit AVANT les gardes** : tout `useEffect`/`useMemo` écrit
   au-dessus d'un `if (x === null) return …` doit se lire comme si l'état
   n'existait pas encore (`x?.id ?? ''`), dépendances comprises.
+- **Un live CLOS ne se rallume pas** (b217) : la clôture efface son code de
+  salon, donc rallumer la même ligne donne un direct que plus personne ne
+  retrouve — le lanceur le premier, qui le sondait par ce code et lisait
+  « éteint » (bouton rouge une seconde, puis vert). Le serveur refuse
+  désormais (403), le client oublie sa référence périmée et ouvre un
+  NOUVEAU live — un live = un appui sur GO LIVE (b182). Et le lanceur sonde
+  le sien par son IDENTIFIANT, qui ne change jamais, jamais par le code.
 - **Une action doit toujours pouvoir se terminer** (b216) : tout appel
   réseau déclenché par un bouton porte un délai maximum (`fetchAvecDelai`,
   12 s). Sans lui, `fetch` peut attendre indéfiniment sur un réseau qui

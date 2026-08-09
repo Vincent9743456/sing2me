@@ -15,6 +15,7 @@ import React, {
 
 import {
   fetchLive,
+  fetchLiveById,
   fetchLiveStats,
   fetchMessages,
   heartTotals,
@@ -30,6 +31,7 @@ import {
   pushLive,
   clotureEnAttente,
   noterClotureEnAttente,
+  oublierCloture,
   rejouerCloture,
   pushSetlist,
 } from '../lib/live';
@@ -225,8 +227,12 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     const tick = async () => {
       try {
-        // Multi-live : le leader sonde SON direct (référence interne).
-        const s = await fetchLive(currentLiveRef()?.joinCode ?? '');
+        // Multi-live : le leader sonde SON direct par son IDENTIFIANT
+        // (b217) — pas par le code de salon, que la clôture efface.
+        const ref = currentLiveRef();
+        const s = ref?.liveId
+          ? await fetchLiveById(ref.liveId)
+          : await fetchLive(ref?.joinCode ?? '');
         if (cancelled) return;
         setHearts(s.hearts);
         // Le serveur peut couper un direct oublié (4 h, ou 1 h sans
@@ -244,11 +250,16 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     };
     void tick();
     const id = window.setInterval(() => void tick(), 5000);
-    // Clôture restée en travers : on rappelle le serveur tant qu'il le faut.
-    const rattrapage = window.setInterval(() => {
+    // Clôture restée en travers : on rappelle le serveur tant qu'il le faut
+    // — mais JAMAIS pendant un direct (b217). Sinon le rattrapage fermait le
+    // direct qu'on venait de lancer, une seconde après : le bouton passait
+    // au rouge puis revenait au vert (signalement de Vincent).
+    const rattraper = () => {
+      if (statusRef.current !== 'off') return;
       if (clotureEnAttente()) void rejouerCloture(prefs.liveKey);
-    }, 15000);
-    if (clotureEnAttente()) void rejouerCloture(prefs.liveKey);
+    };
+    const rattrapage = window.setInterval(rattraper, 15000);
+    rattraper();
     return () => {
       cancelled = true;
       window.clearInterval(id);
@@ -413,6 +424,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   async function act(next: LiveStatus) {
     setBusy(true);
     setError(null);
+    // Relancer un direct ANNULE une clôture restée en attente (b217) :
+    // l'artiste vient de dire l'inverse, on ne ferme pas derrière lui.
+    if (next !== 'off') oublierCloture();
     try {
       // Passage en direct : la fiche publique est publiée/rafraîchie et le
       // nom dictable réservé automatiquement s'il manquait (b136) — le QR
