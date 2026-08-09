@@ -60,11 +60,17 @@
   PREMIER déploiement venu : à 10:15:05 la prévisualisation d'une branche
   a pris le seul disponible, et treize secondes plus tard la mise en
   production de b212 était refusée. **Ne JAMAIS sonder le quota avec une
-  prévisualisation** — c'est prendre la place de sa propre livraison. La
-  branche de travail est donc désactivée dans `vercel.json`
-  (`git.deploymentEnabled`, nom de branche EXACT — jamais un motif
-  générique, qui risquerait de désactiver `main`), et les commits de la
-  branche portent `[skip ci]` par sécurité. Seul `main` déploie.
+  prévisualisation** — c'est prendre la place de sa propre livraison. Les
+  commits de la branche de travail portent donc `[skip ci]`, que Vercel
+  honore : la branche ne déploie plus, seul `main` déploie, un lot coûte
+  UN déploiement au lieu de deux.
+  **`vercel.json` ne se bricole PAS pour ça** (9 août 2026) : y ajouter
+  `git.deploymentEnabled` a fait échouer la mise en production — un
+  déploiement gâché et la correction de Marco retardée d'autant. Ce
+  fichier est validé strictement par Vercel (une clé inconnue, même un
+  commentaire `_comment`, casse le déploiement) et il n'y a aucun moyen de
+  l'essayer sans dépenser un créneau. On n'y touche que pour une raison
+  qui le vaut, jamais en pleine livraison urgente.
 - Après push : vérifier https://sing2me-three.vercel.app/version.txt.
 - Supabase : projet `zssnwjtfzbymtsiccvao` ; après modification d'un
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
