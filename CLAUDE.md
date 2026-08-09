@@ -448,6 +448,13 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **Un crochet vit AVANT les gardes** : tout `useEffect`/`useMemo` écrit
   au-dessus d'un `if (x === null) return …` doit se lire comme si l'état
   n'existait pas encore (`x?.id ?? ''`), dépendances comprises.
+- **Une action doit toujours pouvoir se terminer** (b216) : tout appel
+  réseau déclenché par un bouton porte un délai maximum (`fetchAvecDelai`,
+  12 s). Sans lui, `fetch` peut attendre indéfiniment sur un réseau qui
+  traîne : Vincent est resté avec un « ⏳ Arrêt… » qui ne revenait jamais,
+  incapable de fermer son direct. Et quand l'action rate quand même, on
+  offre une SORTIE locale (« Arrêter quand même ») en disant la vérité :
+  le téléphone sort du direct, l'app rappellera le serveur ensuite.
 - **Toute racine React a un filet** (b215) : `ErrorBoundary` au montage,
   entrée publique comprise — elle en était dépourvue, d'où l'écran noir
   au lieu d'un message. Un spectateur en plein concert n'a aucun moyen de
