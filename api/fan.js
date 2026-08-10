@@ -13,8 +13,12 @@ import follow from '../server/follow.js';
 import souvenir from '../server/souvenir.js';
 import report from '../server/report.js';
 import stats from '../server/admin-stats.js';
+import account from '../server/account.js';
 
-const handlers = { follow, souvenir, report, stats };
+// `account` n'a PAS de réécriture dans vercel.json (b261) : le client
+// appelle directement /api/fan?fn=account. Ce fichier est validé
+// strictement par Vercel — on n'y touche pas sans raison qui le vaille.
+const handlers = { follow, souvenir, report, stats, account };
 
 // Compat : si la réécriture Vercel ne transmet pas ?fn= (anciens bundles
 // appelant l'URL d'origine, ex. /api/follow), on route par le chemin.

@@ -13,6 +13,30 @@ import { appliquerTheme, themeMemorise } from './lib/theme';
  */
 appliquerTheme(themeMemorise());
 
+/**
+ * COMPTE SUPPRIMÉ : ON REPART DE RIEN (b261).
+ *
+ * Effacer les clés puis recharger dans la même foulée ne suffit PAS : entre
+ * les deux, les composants encore montés continuent d'écrire (le store
+ * enregistre en différé, le panneau du direct pose ses réglages…). On pose
+ * donc un drapeau en `sessionStorage` — qui survit au rechargement mais pas
+ * à la fermeture de l'onglet — et le nettoyage se fait ICI, avant que la
+ * moindre ligne de l'app ne s'exécute. Rien ne peut plus le contredire.
+ */
+try {
+  if (sessionStorage.getItem('dodosongs:compteSupprime') === '1') {
+    sessionStorage.removeItem('dodosongs:compteSupprime');
+    const aJeter: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('sing2me/')) aJeter.push(k);
+    }
+    for (const k of aJeter) localStorage.removeItem(k);
+  }
+} catch {
+  // stockage indisponible : le compte est effacé côté serveur de toute façon
+}
+
 // Capture l'invite d'installation (Android/Chrome) le plus tôt possible :
 // l'événement peut se déclencher avant le montage de React. On le stocke pour
 // que la bannière « Ajouter à l'écran d'accueil » puisse le rejouer.
