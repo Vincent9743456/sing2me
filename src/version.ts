@@ -1,1 +1,1 @@
-export const APP_BUILD = '10 août 2026 · b252';
+export const APP_BUILD = '10 août 2026 · b253';

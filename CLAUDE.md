@@ -807,6 +807,16 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   donc aucun doublon possible à l'adhésion. Les membres déjà dans le groupe
   n'y apparaissent jamais (`memeMusicien`). Le lien nominatif ne sert plus
   qu'à qui n'a pas encore de compte — ce pour quoi il est fait.
+- **L'ANNUAIRE MONTRE D'ABORD CEUX AVEC QUI JE JOUE DÉJÀ** (b253, demande de
+  Vincent : « quand il y aura 126 Vincent, ce sera plus pratique pour Marco
+  de créer un nouveau groupe avec moi »). Une recherche qui rend cent
+  homonymes ne sert à rien : on invite presque toujours quelqu'un qu'on
+  connaît d'un autre groupe. On le sait SANS RIEN DEMANDER AU RÉSEAU —
+  `musiciensConnus` lit les identifiants de compte posés sur mes groupes
+  (b249). `connusEnTete` remonte ces musiciens, en tri STABLE : l'ordre du
+  serveur départage tout le reste, et aucun résultat n'est retiré. Et la
+  raison est ÉCRITE sous le nom (« déjà avec toi dans Zakoustiks ») : un
+  classement qu'on n'explique pas passe pour du hasard.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre

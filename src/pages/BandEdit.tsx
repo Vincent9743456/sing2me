@@ -39,9 +39,11 @@ import {
 } from '../lib/bands';
 import {
   bandToProfile,
+  connusEnTete,
   dedupeMusicians,
   duplicateVersion,
   memeMusicien,
+  musiciensConnus,
   memePersonne,
   stampMemberIds,
   removeVersion,
@@ -201,6 +203,25 @@ export function BandEdit({ id }: { id: string }) {
     null,
   );
   const [myId, setMyId] = useState('');
+  /**
+   * CEUX AVEC QUI JE JOUE DÉJÀ (b253, demande de Vincent : « quand il y aura
+   * 126 Vincent, ce sera plus pratique pour Marco de créer un nouveau groupe
+   * avec moi »). Calculé depuis MES groupes, sans aucun appel réseau : les
+   * identifiants de compte y sont posés depuis b249.
+   *
+   * Déclaré ICI, au-dessus de toutes les gardes (`if (!band) return`) et des
+   * fonctions qui s'en servent — un calcul d'écran posé après une garde ne
+   * s'exécute pas quand l'écran renonce (cicatrice b201).
+   */
+  const connus = musiciensConnus(bands, myId);
+  /** « déjà avec toi dans X » — la raison du classement, écrite. */
+  const dejaAvecMoi = (userId: string): string => {
+    const g = connus.get(userId) ?? [];
+    if (g.length === 0) return '';
+    return g.length === 1
+      ? t('déjà avec toi dans {groupe}', { groupe: g[0] })
+      : t('déjà avec toi dans {groupes}', { groupes: g.join(', ') });
+  };
   // Ajout d'un membre : recherche dans l'annuaire ou repli lien/email.
   const [addOpen, setAddOpen] = useState(false);
   const [dirQuery, setDirQuery] = useState('');
@@ -405,11 +426,14 @@ export function BandEdit({ id }: { id: string }) {
           // Les membres déjà dans le groupe n'ont pas à être réinvités.
           if (!annule) {
             setDejaInscrits(
-              rows.filter(
-                (p) =>
-                  !(band?.members ?? []).some((m) =>
-                    memeMusicien(m, { name: p.name, userId: p.user_id }),
-                  ),
+              connusEnTete(
+                rows.filter(
+                  (p) =>
+                    !(band?.members ?? []).some((m) =>
+                      memeMusicien(m, { name: p.name, userId: p.user_id }),
+                    ),
+                ),
+                connus,
               ),
             );
           }
@@ -464,7 +488,9 @@ export function BandEdit({ id }: { id: string }) {
         return;
       }
       const rows = await searchProfiles(s, dirQuery.trim());
-      setDirResults(rows);
+      // Ceux avec qui je joue déjà en premier (b253) : sur cent homonymes,
+      // c'est presque toujours l'un d'eux qu'on cherche.
+      setDirResults(connusEnTete(rows, connus));
       if (rows.length === 0)
         setDirMsg(t('Aucun musicien trouvé pour ce nom.'));
     } catch {
@@ -1436,8 +1462,14 @@ export function BandEdit({ id }: { id: string }) {
                     <div className="title">
                       {person.name || t('(sans nom)')}
                     </div>
-                    {person.instrument !== '' && (
-                      <div className="sub">{person.instrument}</div>
+                    {dejaAvecMoi(person.user_id) !== '' ? (
+                      <div className="sub" style={{ color: 'var(--accent)' }}>
+                        {dejaAvecMoi(person.user_id)}
+                      </div>
+                    ) : (
+                      person.instrument !== '' && (
+                        <div className="sub">{person.instrument}</div>
+                      )
                     )}
                   </div>
                   {invited.has(person.user_id) ? (
@@ -1504,8 +1536,14 @@ export function BandEdit({ id }: { id: string }) {
                   <Avatar name={p.name} photo={p.photo} />
                   <div className="grow" style={{ minWidth: 0 }}>
                     <div className="title">{p.name}</div>
-                    {p.instrument !== '' && (
-                      <div className="sub">{p.instrument}</div>
+                    {dejaAvecMoi(p.user_id) !== '' ? (
+                      <div className="sub" style={{ color: 'var(--accent)' }}>
+                        {dejaAvecMoi(p.user_id)}
+                      </div>
+                    ) : (
+                      p.instrument !== '' && (
+                        <div className="sub">{p.instrument}</div>
+                      )
                     )}
                   </div>
                   <button
