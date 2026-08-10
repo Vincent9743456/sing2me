@@ -527,10 +527,8 @@ export const EN_MORCEAUX: Record<string, string> = {
 
   // b223 — ce que verra le public, sur la fiche d'un morceau
   'Vue du public': 'Audience view',
-  '☀ Clair': '☀ Light',
-  '☾ Sombre': '☾ Dark',
-  'Passer en clair (toute l’app)': 'Switch to light (whole app)',
-  'Repasser en sombre (toute l’app)': 'Back to dark (whole app)',
+  'Passer toute l’app en clair': 'Switch the whole app to light',
+  'Repasser toute l’app en sombre': 'Switch the whole app back to dark',
   'Lire le morceau comme le liront tes spectateurs':
     'Read the song the way your audience will read it',
   'Ma partition': 'My chart',
