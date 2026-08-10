@@ -3502,9 +3502,11 @@ h2.pagetitle {
   border-style: dashed;
 }
 
-/* Les groupes de l'artiste sur sa page publique (b231). Sobre : le public
-   vient pour l'artiste, les groupes le situent — ils ne prennent pas la
-   vedette. Les groupes masqués n'arrivent jamais jusqu'ici. */
+/* LES DEUX LISTES RÉCIPROQUES DE LA PAGE PUBLIQUE (b231, refondu b232) :
+   les groupes d'un artiste, les musiciens d'un groupe. Même grammaire pour
+   les deux — une vignette, un nom, un lien quand la page existe. Sobre : le
+   public vient pour le concert, ces listes situent. Les groupes masqués
+   n'arrivent jamais jusqu'ici. */
 .pubgroupes {
   margin: var(--sp-5) 0 0;
 }
@@ -3517,15 +3519,59 @@ h2.pagetitle {
   margin: 0 0 var(--sp-3);
   text-align: center;
 }
-.pubgroupe {
-  text-align: center;
-  padding: var(--sp-2) 0;
+/* « Groupe » sous le nom, sur une fiche de groupe : le visiteur doit savoir
+   d'un coup d'œil qu'il n'est pas sur la page d'une personne. */
+.pubsorte {
+  margin: 0 0 var(--sp-2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--text-faint);
 }
+/* Vignette ronde commune : photo d'annuaire ou initiales. */
+.pg-photo {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-high);
+}
+.pg-initiales {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--text-dim);
+  border: 1px solid var(--border-soft);
+}
+
+/* Un groupe : vignette à gauche, nom + adresse + composition à droite. */
 .pubgroupe + .pubgroupe {
   border-top: 1px solid var(--border-soft);
 }
+.pg-tete {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2);
+  min-height: 48px;
+  text-align: left;
+  color: inherit;
+  text-decoration: none;
+}
+a.pg-tete:hover .pg-nom,
+a.pg-tete:focus-visible .pg-nom {
+  text-decoration: underline;
+}
+.pg-textes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
 .pg-nom {
   font-weight: 650;
+  overflow-wrap: anywhere;
 }
 .pg-membres {
   color: var(--text-dim);
@@ -3535,5 +3581,32 @@ h2.pagetitle {
   color: var(--text-faint);
   font-size: 0.76rem;
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+/* Les musiciens d'un groupe : une rangée de visages qui passe à la ligne. */
+.pg-musiciens {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+.pg-musicien {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 88px;
+  padding: var(--sp-2) 0;
+  text-align: center;
+  color: inherit;
+  text-decoration: none;
+}
+.pg-musicien .pg-nom {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+a.pg-musicien:hover .pg-nom,
+a.pg-musicien:focus-visible .pg-nom {
+  text-decoration: underline;
 }

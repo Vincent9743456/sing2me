@@ -12,6 +12,7 @@ import { t } from '../i18n';
 import { fetchLiveForPage } from '../lib/live';
 import { Live } from './Live';
 import { fetchPublicPage } from '../lib/publicPages';
+import { PublicBands, PublicMembers } from '../components/PublicBands';
 import { ArtistProfile } from '../types';
 
 /** Rythme de veille du concert : assez vif pour qu'un spectateur arrivé en
@@ -59,6 +60,10 @@ export function PublicArtist({ name }: { name: string }) {
     undefined,
   );
   const [liveNow, setLiveNow] = useState(false);
+  // Fiche d'artiste ou fiche de GROUPE (b232) ? Les deux s'affichent de la
+  // même façon — un groupe se présente comme un musicien — seuls le mot qui
+  // les annonce et la liste réciproque changent.
+  const [sorte, setSorte] = useState<'artiste' | 'groupe'>('artiste');
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +71,7 @@ export function PublicArtist({ name }: { name: string }) {
       const page = await fetchPublicPage(name);
       if (cancelled) return;
       setProfile(page ? page.profile : null);
+      setSorte(page?.sorte === 'groupe' ? 'groupe' : 'artiste');
     })();
     return () => {
       cancelled = true;
@@ -126,7 +132,7 @@ export function PublicArtist({ name }: { name: string }) {
           <LogoMark size={40} />
           <h1 style={{ margin: '10px 0 4px' }}>{t('Page introuvable')}</h1>
           <p className="help">
-            {t('Aucun artiste ne correspond à « {name} ».', { name })}
+            {t('Aucun artiste ni groupe ne correspond à « {name} ».', { name })}
           </p>
           <a
             className="btn block"
@@ -146,11 +152,12 @@ export function PublicArtist({ name }: { name: string }) {
     <div className="public">
       <RetourSiPossible />
       <div className="artisthead">
-        {profile.photo !== '' && (
+        {(profile.photo ?? '') !== '' && (
           <img src={profile.photo} alt={shownName} />
         )}
         <h1 style={{ margin: '10px 0 4px' }}>{shownName}</h1>
-        {profile.bio !== '' && (
+        {sorte === 'groupe' && <p className="pubsorte">{t('Groupe')}</p>}
+        {(profile.bio ?? '') !== '' && (
           <p className="help" style={{ whiteSpace: 'pre-wrap' }}>
             {profile.bio}
           </p>
@@ -166,30 +173,12 @@ export function PublicArtist({ name }: { name: string }) {
         )}
       </div>
 
-      {/* LES GROUPES DE L'ARTISTE (b231, demande de Vincent). Ceux qu'il a
-          masqués n'y sont pas : la liste est construite au moment où il
-          publie sa fiche, donc c'est son choix par construction.
-          Réciprocité : l'adresse d'un groupe étant un miroir vers la page de
-          son détenteur, taper « /legroupe » amène ici, où le groupe est
-          nommé avec ses musiciens. */}
-      {(profile.publicBands ?? []).length > 0 && (
-        <div className="pubgroupes">
-          <h2>{t('Ses groupes')}</h2>
-          {(profile.publicBands ?? []).map((g, i) => (
-            <div className="pubgroupe" key={i}>
-              <div className="pg-nom">{g.name}</div>
-              {g.members.length > 0 && (
-                <div className="pg-membres">{g.members.join(' · ')}</div>
-              )}
-              {g.address ? (
-                <div className="pg-adresse">
-                  {location.host}/{g.address}
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Réciproque exacte : la page de l'artiste nomme ses groupes, celle du
+          groupe nomme ses musiciens, et chaque nom mène à la page de l'autre
+          quand elle existe (b231, enrichi b232). Un seul des deux blocs
+          s'affiche — une fiche est d'un artiste OU d'un groupe. */}
+      <PublicMembers members={profile.publicMembers} />
+      <PublicBands bands={profile.publicBands} />
 
       <TipBox artist={profile} />
 

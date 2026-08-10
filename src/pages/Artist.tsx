@@ -17,7 +17,11 @@ import { PublicLyrics } from '../components/PublicLyrics';
 import { PublicNameCard } from '../components/PublicNameCard';
 import { cachedPublicName } from '../lib/publicPages';
 import { getValidSession } from '../lib/auth';
-import { ensurePublicPage, profilAPublier } from '../lib/publicPages';
+import {
+  ensurePublicPage,
+  profilAPublier,
+  publierFichesGroupes,
+} from '../lib/publicPages';
 import { bandToProfile, creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -1024,8 +1028,12 @@ export function Artist() {
               // est réservé automatiquement. Best-effort, jamais bloquant.
               void (async () => {
                 const s = await getValidSession();
-                // La fiche part avec les groupes NON masqués (b231).
-                if (s) await ensurePublicPage(s, await profilAPublier(draft, bands));
+                if (!s) return;
+                // La fiche part avec les groupes NON masqués (b231)…
+                await ensurePublicPage(s, await profilAPublier(draft, bands));
+                // …et les fiches de mes groupes se rafraîchissent (b232) :
+                // ma photo y figure comme musicien, elle vient de changer.
+                await publierFichesGroupes(s, bands, draft);
               })();
             }}
           >

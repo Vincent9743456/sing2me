@@ -484,13 +484,35 @@ export function defaultPublicScreen(): PublicScreen {
 /* Champ libre « Structure » d'un morceau : des notes générales, sans
  * découpage imposé par sections ni suites d'accords par partie. */
 
-/** Un groupe tel qu'il apparaît sur une page publique (b231). */
+/** Un musicien tel qu'il apparaît sur une page publique (b232). */
+export interface PublicMember {
+  name: string;
+  /**
+   * Sa photo d'annuaire, réduite en vignette (`miniature`). Absente s'il n'en
+   * a pas : on n'invente jamais d'avatar, on retombe sur ses initiales.
+   */
+  photo?: string;
+  /**
+   * Son adresse publique, si son nom en désigne UNE SEULE sans ambiguïté
+   * (`findPublicPageByArtist`). Deux musiciens du même nom : aucun lien —
+   * mieux vaut pas de lien qu'un lien vers quelqu'un d'autre.
+   */
+  address?: string;
+}
+
+/** Un groupe tel qu'il apparaît sur une page publique (b231, enrichi b232). */
 export interface PublicBand {
   name: string;
-  /** Noms des musiciens — rien d'autre ne sort de l'app. */
-  members: string[];
+  /**
+   * Les musiciens du groupe. `string[]` sur les fiches publiées avant b232 :
+   * toute lecture doit accepter les deux formes (le serveur garde le JSON
+   * qu'on lui a donné, il ne le migre pas).
+   */
+  members: (PublicMember | string)[];
   /** Adresse publique du groupe, si elle existe (« zakoustiks »). */
   address?: string;
+  /** Photo de la fiche du groupe, réduite en vignette (b232). */
+  photo?: string;
 }
 
 export interface ArtistProfile {
@@ -515,10 +537,25 @@ export interface ArtistProfile {
    * étant un MIROIR vers la page de son détenteur (b227), y lire le groupe
    * ET ses musiciens suffit aux deux sens de la demande.
    *
-   * On ne publie que des NOMS — jamais une photo de musicien, jamais un
-   * e-mail, jamais un identifiant.
+   * b232 (« le mieux est de mettre la photo présente sur la fiche du Groupe ou
+   * du musicien, et un lien cliquable ») : on publie AUSSI les photos de
+   * l'annuaire, en vignettes, et les adresses publiques qui existent déjà —
+   * jamais un e-mail, jamais un identifiant de compte, jamais un musicien
+   * seulement INVITÉ (tant qu'il n'a pas accepté, il n'est pas du groupe).
+   * La sortie reste le masquage du groupe, qui le retire d'un geste.
    */
   publicBands?: PublicBand[];
+  /**
+   * LES MUSICIENS — rempli UNIQUEMENT sur la fiche publique d'un GROUPE
+   * (b232). Un groupe se présente au public exactement comme un artiste
+   * (photo, présentation, liens, pourboire) : sa fiche a donc la même forme,
+   * avec en plus sa composition. C'est la réciproque de `publicBands` : la
+   * page de l'artiste nomme ses groupes, celle du groupe nomme ses musiciens,
+   * et chaque nom mène à la page de l'autre quand elle existe.
+   *
+   * Sur une fiche d'artiste, ce champ reste absent.
+   */
+  publicMembers?: PublicMember[];
   /**
    * Licence Scène (annuelle, attachée au compte artiste). PRÉVU mais SANS
    * AUCUN EFFET pour l'instant (chantier 2 — mesure seulement) : aucun seuil,

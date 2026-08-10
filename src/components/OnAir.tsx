@@ -41,7 +41,10 @@ import { bandToProfile } from '../lib/model';
 import {
   cachedPublicName,
   ensurePublicPage,
+  ficheGroupe,
+  groupesPublics,
   profilAPublier,
+  publierFichesGroupes,
   fetchMyPublicName,
   rememberPublicName,
 } from '../lib/publicPages';
@@ -159,7 +162,12 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         ? artist
         : null
       : (() => {
-          const b = bands.find((x) => x.id === who);
+          // Un groupe masqué ne porte pas de direct (b227) : s'il l'est
+          // devenu depuis le choix, on se présente en solo plutôt que de
+          // l'exposer — même garde que plus bas sur `liveBand`.
+          const b = bands.find(
+            (x) => x.id === who && x.hiddenFromPublic !== true,
+          );
           return b ? bandToProfile(b) : artist.name !== '' ? artist : null;
         })();
   // L'écran public suit TES réglages, même en groupe ; le matériel
@@ -449,6 +457,10 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
               await profilAPublier(artist, bands),
             );
             if (name) setPublicName(name);
+            // Les fiches de mes groupes se rafraîchissent en même temps
+            // (b232) : leur adresse doit ouvrir une page à jour, avec ou
+            // sans direct en cours.
+            await publierFichesGroupes(s, bands, artist);
           } catch {
             /* best-effort */
           }
@@ -462,13 +474,39 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
       // plutôt que de l'exposer.
       const choisi = who === 'solo' ? null : bands.find((x) => x.id === who);
       const liveBand = choisi?.hiddenFromPublic === true ? null : choisi;
+      /**
+       * CE QUE LE PUBLIC POURRA CONSULTER PENDANT LE DIRECT (b232).
+       *
+       * « Vincent lance un live en solo. Un spectateur flashe, atterrit sur
+       * la page de Vincent, et veut consulter le profil du Groupe Zakoustiks
+       * auquel Vincent appartient : il faudrait qu'il puisse le faire. »
+       * Pendant un concert, la fiche ouverte par l'avatar EST la page de
+       * l'artiste : sans ces listes, elle est un cul-de-sac.
+       *
+       * Solo → mes groupes. Groupe → ses musiciens. Best-effort : si la
+       * préparation échoue, le direct part quand même, sans les liens.
+       */
+      let vitrine = performer;
+      if (next !== 'off' && performer) {
+        try {
+          vitrine = liveBand
+            ? {
+                ...performer,
+                publicMembers: (await ficheGroupe(liveBand, artist))
+                  .publicMembers,
+              }
+            : { ...performer, publicBands: await groupesPublics(bands, artist) };
+        } catch {
+          /* la fiche part sans ses liens plutôt que pas de concert */
+        }
+      }
       await pushLive(prefs.liveKey, {
         status: next,
         mode,
         song: next === 'off' ? null : currentRef.current,
         bandSong: next === 'off' ? null : lastMetaRef.current,
         setlist: next === 'off' ? null : setlistRef.current,
-        artist: performer,
+        artist: vitrine,
         bandId: next === 'off' ? '' : (liveBand?.cloudId ?? ''),
         startedBy: next === 'off' ? '' : artist.name,
         concert:
