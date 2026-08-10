@@ -300,13 +300,22 @@ export function activeVersion(song: Song): SongVersion {
  *  champs actifs d'un morceau ? (paroles, accords, structure, tonalité). */
 function versionContentDiffers(
   v: SongVersion,
-  song: Pick<Song, 'key' | 'tempo' | 'capo' | 'structure' | 'lyrics'>,
+  song: Pick<
+    Song,
+    'key' | 'tempo' | 'capo' | 'structure' | 'lyrics' | 'publicLyrics'
+  >,
 ): boolean {
   return (
     v.key !== song.key ||
     v.tempo !== song.tempo ||
     v.capo !== song.capo ||
     v.lyrics !== song.lyrics ||
+    // Le texte du public compte comme un contenu de version (b224) : sans
+    // lui, corriger CE SEUL texte ne tamponnait pas la version, donc rien
+    // ne partait aux autres membres du groupe. C'est la cicatrice b202 —
+    // une liste de champs écrite à la main finit toujours par en oublier un.
+    JSON.stringify(v.publicLyrics ?? null) !==
+      JSON.stringify(song.publicLyrics ?? null) ||
     JSON.stringify(v.structure) !== JSON.stringify(song.structure)
   );
 }
@@ -327,6 +336,9 @@ export function syncActiveVersion(song: Song): Song {
             capo: song.capo,
             structure: song.structure,
             lyrics: song.lyrics,
+            // Le texte du public suit sa version (b224) : sans cette ligne,
+            // il resterait collé au morceau et ne partirait jamais au groupe.
+            publicLyrics: song.publicLyrics,
             updatedAt: versionContentDiffers(v, song)
               ? new Date().toISOString()
               : v.updatedAt,
@@ -349,6 +361,7 @@ export function switchVersion(song: Song, versionId: string): Song {
     capo: target.capo,
     structure: target.structure,
     lyrics: target.lyrics,
+    publicLyrics: target.publicLyrics,
   };
 }
 
@@ -365,6 +378,7 @@ export function resolveVersion(song: Song, versionId: string): Song {
     capo: target.capo,
     structure: target.structure,
     lyrics: target.lyrics,
+    publicLyrics: target.publicLyrics,
   };
 }
 
@@ -541,6 +555,7 @@ export function duplicateVersion(
     capo: copy.capo,
     structure: copy.structure,
     lyrics: copy.lyrics,
+    publicLyrics: copy.publicLyrics,
   };
 }
 
@@ -957,6 +972,23 @@ export function migrateSong(raw: unknown): Song {
   }
   if (!Array.isArray(base.fanMessages)) {
     base = { ...base, fanMessages: [] };
+  }
+  // b224 — le texte du public a déménagé du MORCEAU vers la VERSION (pour
+  // suivre les versions et voyager jusqu'au groupe). Les morceaux enregistrés
+  // par b223 le portent encore sur le morceau : on le sème sur la version
+  // active, sinon changer de version l'effacerait. Idempotent.
+  if (base.publicLyrics) {
+    const active = base.versions.find((v) => v.id === base.activeVersionId);
+    if (active && !active.publicLyrics) {
+      base = {
+        ...base,
+        versions: base.versions.map((v) =>
+          v.id === base.activeVersionId
+            ? { ...v, publicLyrics: base.publicLyrics }
+            : v,
+        ),
+      };
+    }
   }
   // bandId sur versions et notes (ajouté après coup)
   if (base.versions.some((v) => typeof v.bandId !== 'string')) {

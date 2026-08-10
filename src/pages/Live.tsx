@@ -565,7 +565,7 @@ export function Live({
             <button
               className="heart"
               onClick={onHeart}
-              aria-label={t('Envoyer un cœur')}
+              aria-label={t('Envoyer un j’aime')}
             >
               <span className="ico" aria-hidden="true">
                 ❤
@@ -574,7 +574,10 @@ export function Live({
                   et il n'inclut mes cœurs qu'au tour de suivi suivant. Un
                   chiffre qui ne bouge pas au tap serait un faux retour — le
                   cœur qui s'envole, lui, est immédiat. */}
-              <span>{t('Un cœur')}</span>
+              {/* « J'aime » plutôt que « Un cœur » (retour de Marco) : le
+                  geste est universel, le mot n'a pas à être appris. Le
+                  symbole ❤ reste — c'est lui qui s'envole au tap. */}
+              <span>{t('J’aime')}</span>
               {floats.map((f) => (
                 <span
                   key={f.id}

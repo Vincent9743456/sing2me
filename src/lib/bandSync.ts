@@ -31,6 +31,13 @@ export interface SharedVersion {
   structure: StructureRow[];
   lyrics: string;
   /**
+   * Le texte que lit le public pour cette version (b224). Il VOYAGE avec la
+   * version, sinon chaque membre diffuserait un texte différent pour le même
+   * morceau du répertoire — et celui qui a pris la peine de le corriger
+   * serait le seul à en profiter.
+   */
+  publicLyrics?: { text: string; from: string; updatedAt: string };
+  /**
    * Dernière modification du contenu de CETTE version. C'est ce timestamp
    * (et non `SharedSong.updatedAt`, qui reflète tout le morceau côté
    * expéditeur) qui décide si l'édition d'une version de groupe se propage
@@ -140,6 +147,7 @@ export function exportBandData(
         capo: v.capo,
         structure: v.structure,
         lyrics: v.lyrics,
+        publicLyrics: v.publicLyrics,
         // Repli sur le timestamp du morceau pour les versions héritées
         // d'avant le suivi par version.
         updatedAt: v.updatedAt ?? s.updatedAt,
@@ -183,6 +191,11 @@ function versionEqual(a: SharedVersion, b: SharedVersion): boolean {
     a.tempo === b.tempo &&
     a.capo === b.capo &&
     a.lyrics === b.lyrics &&
+    // Même cicatrice b202 côté groupe : sans cette ligne, une version qui ne
+    // diffère QUE par le texte du public passait pour identique, et la
+    // correction d'un membre n'atteignait jamais les autres.
+    JSON.stringify(a.publicLyrics ?? null) ===
+      JSON.stringify(b.publicLyrics ?? null) &&
     JSON.stringify(a.structure.map((r) => [r.label, r.chords, r.comment])) ===
       JSON.stringify(b.structure.map((r) => [r.label, r.chords, r.comment]))
   );
@@ -430,6 +443,7 @@ export function applyBandData(
         tags: [...e.tags],
         structure: e.version.structure,
         lyrics: e.version.lyrics,
+        publicLyrics: e.version.publicLyrics,
         pendingBandId: localBandId,
         idea: true,
         versions: [
@@ -442,6 +456,7 @@ export function applyBandData(
             capo: e.version.capo,
             structure: e.version.structure,
             lyrics: e.version.lyrics,
+            publicLyrics: e.version.publicLyrics,
             updatedAt: e.version.updatedAt,
           },
         ],
@@ -475,6 +490,7 @@ export function applyBandData(
             capo: e.version.capo,
             structure: e.version.structure,
             lyrics: e.version.lyrics,
+            publicLyrics: e.version.publicLyrics,
             updatedAt: e.version.updatedAt,
           },
         ],
@@ -494,6 +510,7 @@ export function applyBandData(
           capo: bandV.capo,
           structure: bandV.structure,
           lyrics: bandV.lyrics,
+          publicLyrics: bandV.publicLyrics,
           updatedAt: bandV.updatedAt ?? '',
         },
         e.version,
@@ -511,6 +528,7 @@ export function applyBandData(
                 capo: e.version.capo,
                 structure: e.version.structure,
                 lyrics: e.version.lyrics,
+                publicLyrics: e.version.publicLyrics,
                 updatedAt: e.version.updatedAt,
               }
             : v,
@@ -523,6 +541,7 @@ export function applyBandData(
               capo: e.version.capo,
               structure: e.version.structure,
               lyrics: e.version.lyrics,
+              publicLyrics: e.version.publicLyrics,
             }
           : {}),
         updatedAt: e.updatedAt > song.updatedAt ? e.updatedAt : song.updatedAt,

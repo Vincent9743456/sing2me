@@ -581,6 +581,23 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   Corollaire : corriger le texte du public ne touche JAMAIS aux paroles ni aux
   accords du musicien, et un texte vide n'ouvre pas un écran blanc au public —
   il ramène à l'automatique.
+- **Le texte du public appartient à la VERSION, pas au morceau** (b224,
+  question de Vincent : « ça suit les versions ? et les morceaux partagés avec
+  le groupe ? »). Posé sur le morceau (b223), il ne bougeait pas d'une version
+  à l'autre et ne partait JAMAIS aux autres membres — celui qui prenait la
+  peine de corriger était le seul à en profiter, et Marco diffusait autre
+  chose que lui pour le même morceau du répertoire. Une version, c'est « comme
+  on le joue dans ce contexte » : si la version du groupe raccourcit un
+  couplet, le public doit lire le couplet raccourci. `SongVersion.publicLyrics`
+  est donc la source ; `Song.publicLyrics` n'en est que le REFLET de la version
+  active, exactement comme `Song.lyrics` (`syncActiveVersion` /
+  `switchVersion` / `resolveVersion` le portent dans les deux sens), et le
+  champ voyage dans le blob du groupe (`SharedVersion`).
+  **Deux comparaisons devaient suivre**, sans quoi la correction ne serait
+  jamais partie — cicatrice b202, quatrième récidive : `versionContentDiffers`
+  (`model.ts`, qui retamponne la version) et `versionEqual` (`bandSync.ts`,
+  qui décide qu'une version est inchangée). Toute nouvelle donnée de version
+  doit être ajoutée à CES DEUX endroits en plus du type.
 - **Une migration de contenu se PROUVE avant de s'appliquer** (b219) : pour
   reposer les sections sur la bibliothèque déjà importée, on ne se contente
   pas de compter les blocs — on recalcule la suite d'accords de chaque bloc
