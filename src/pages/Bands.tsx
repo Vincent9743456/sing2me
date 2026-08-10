@@ -6,7 +6,9 @@ import { LiveBanner } from '../components/LiveBanner';
 import React, { useEffect, useState } from 'react';
 
 import { useAccount } from '../components/Account';
+import { ConfirmSheet } from '../components/Feedback';
 import { Icon } from '../components/Icon';
+import { SwipeRow } from '../components/SwipeRow';
 import { useNotifications } from '../components/Notifications';
 import { Empty, Field, TopBar } from '../components/ui';
 import { t } from '../i18n';
@@ -21,17 +23,20 @@ import {
   PendingInvite,
   respondInvite,
 } from '../lib/bands';
+import { detacherDuCloud, texteSuppression } from '../lib/deleteband';
 import { dedupeMusicians } from '../lib/model';
 import { creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { emptyBand } from '../types';
+import { Band, emptyBand } from '../types';
 
 export function Bands() {
-  const { bands, artist, prefs, saveBand, savePrefs } = useStore();
+  const { bands, artist, prefs, saveBand, savePrefs, deleteBand } = useStore();
   const account = useAccount();
   const notifications = useNotifications();
   const [creating, setCreating] = useState(false);
+  /** Groupe dont la suppression est demandée, en attente de confirmation. */
+  const [aSupprimer, setASupprimer] = useState<Band | null>(null);
   const [newName, setNewName] = useState('');
   const [invites, setInvites] = useState<PendingInvite[]>([]);
   // Musiciens partis de MES groupes, à réinviter (b142).
@@ -272,7 +277,16 @@ export function Bands() {
         ) : (
           <div className="list">
             {bands.map((band) => (
-              <div className="row" key={band.id}>
+              /* SUPPRIMER DEPUIS LA LISTE (b254, demande de Vincent) : la
+                 corbeille se révèle d'un glissement vers la gauche ou d'un
+                 appui long — elle ne traîne pas sur la ligne, où elle se
+                 toucherait par erreur. La décision (dissoudre / quitter) est
+                 celle de la fiche du groupe, prise au même endroit. */
+              <SwipeRow
+                key={band.id}
+                label={band.name || t('ce groupe')}
+                onDelete={() => setASupprimer(band)}
+              >
                 <div
                   className="hstack grow"
                   style={{ cursor: 'pointer', gap: 10 }}
@@ -383,7 +397,7 @@ export function Bands() {
                 >
                   ›
                 </span>
-              </div>
+              </SwipeRow>
             ))}
           </div>
         )}
@@ -421,6 +435,25 @@ export function Bands() {
           {t('Tu invites les autres ensuite, depuis la fiche du groupe.')}
         </p>
       </div>
+      {/* Jamais de suppression sur un seul geste (b254) : la corbeille ouvre
+          une confirmation, avec le mot juste — « dissoudre » quand le groupe
+          est à moi, « quitter » quand je l'ai rejoint. Même décision et mêmes
+          textes que la fiche du groupe (`lib/deleteband.ts`). */}
+      {aSupprimer !== null && (
+        <ConfirmSheet
+          title={texteSuppression(aSupprimer).titre}
+          message={texteSuppression(aSupprimer).message}
+          confirmLabel={texteSuppression(aSupprimer).libelle}
+          danger
+          onConfirm={() => {
+            const groupe = aSupprimer;
+            setASupprimer(null);
+            void detacherDuCloud(groupe);
+            deleteBand(groupe.id);
+          }}
+          onClose={() => setASupprimer(null)}
+        />
+      )}
     </>
   );
 }

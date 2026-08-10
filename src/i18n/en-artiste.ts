@@ -166,6 +166,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Invitation impossible : {raison}': 'Invitation failed: {raison}',
   'Cette personne est déjà sur DodoSongs :': 'This person is already on DodoSongs:',
   'déjà avec toi dans {groupe}': 'already with you in {groupe}',
+  'Supprimer {nom}': 'Delete {nom}',
   'déjà avec toi dans {groupes}': 'already with you in {groupes}',
   'Ces musiciens sont déjà sur DodoSongs :': 'These musicians are already on DodoSongs:',
   'Elle recevra l’invitation dans son application : rien à envoyer.':

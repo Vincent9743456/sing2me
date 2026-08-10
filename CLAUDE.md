@@ -817,6 +817,17 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   serveur départage tout le reste, et aucun résultat n'est retiré. Et la
   raison est ÉCRITE sous le nom (« déjà avec toi dans Zakoustiks ») : un
   classement qu'on n'explique pas passe pour du hasard.
+- **UNE ACTION DESTRUCTIVE SE RÉVÈLE, ELLE NE TRAÎNE PAS SUR LA LIGNE**
+  (b254, demande de Vincent : « supprimer un groupe depuis ce menu, par un
+  glisser vers la gauche qui montre une corbeille ou un appui long avec le
+  même effet »). `SwipeRow` est le SEUL chemin pour ça. Trois règles à ne
+  pas défaire : un balayage n'est pas un défilement (on ne prend la main que
+  si le doigt part sur le côté, sinon la liste se bloque), un seul volet
+  ouvert à la fois, et **l'appui long n'agit pas — il OUVRE** : la
+  suppression demande un second geste, délibéré, plus la confirmation.
+  Corollaire : la DÉCISION (dissoudre un groupe à moi / quitter un groupe
+  rejoint) vit à UN endroit (`src/lib/deleteband.ts`), textes compris — la
+  liste et la fiche du groupe l'appliquent, elles ne la réécrivent pas.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre
