@@ -40,6 +40,7 @@ import {
   bandToProfile,
   dedupeMusicians,
   duplicateVersion,
+  memeMusicien,
   memePersonne,
   stampMemberIds,
   removeVersion,
@@ -378,9 +379,15 @@ export function BandEdit({ id }: { id: string }) {
       // On matérialise l'invitation par un profil « en attente d'acceptation »
       // dans le groupe : le musicien apparaît tout de suite, marqué comme
       // pas encore accepté (il deviendra un membre normal à son adhésion).
-      const already = band?.members.some(
-        (m) =>
-          m.name.trim().toLowerCase() === person.name.trim().toLowerCase(),
+      //
+      // INVITÉ DEPUIS L'ANNUAIRE = COMPTE DÉJÀ CONNU (b250, remarque de
+      // Vincent : un musicien invité n'a de toute façon accès à rien tant
+      // qu'il n'est pas inscrit). On pose donc son identifiant TOUT DE
+      // SUITE : sa ligne n'aura jamais besoin d'être rapprochée par le nom,
+      // même s'il rejoint sous un nom d'artiste différent — c'est ainsi
+      // qu'était né le doublon de Marco.
+      const already = band?.members.some((m) =>
+        memeMusicien(m, { name: person.name, userId: person.user_id }),
       );
       if (band && !already && person.name.trim() !== '') {
         saveBand({
@@ -389,6 +396,7 @@ export function BandEdit({ id }: { id: string }) {
             ...band.members,
             {
               id: makeId(),
+              userId: person.user_id,
               name: person.name.trim(),
               instrument: '',
               pending: true,
@@ -1366,11 +1374,13 @@ export function BandEdit({ id }: { id: string }) {
             className="btn block"
             onClick={() => {
               const nm = pendingName.trim();
+              // Invitation par LIEN : on ne sait pas encore qui viendra, la
+              // ligne n'a donc pas d'identifiant — elle en recevra un à
+              // l'adhésion. Même rapprochement que partout ailleurs, pour ne
+              // pas créer un deuxième « Marco » à côté du premier.
               if (
                 nm !== '' &&
-                !band.members.some(
-                  (m) => m.name.trim().toLowerCase() === nm.toLowerCase(),
-                )
+                !band.members.some((m) => memeMusicien(m, { name: nm }))
               ) {
                 saveBand({
                   ...band,
