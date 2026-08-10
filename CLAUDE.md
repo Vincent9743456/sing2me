@@ -752,6 +752,20 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   aucun rapprochement par le nom n'aura jamais à être tenté dessus. Le
   créateur n'étant jamais dans `cloud_band_members`, sa propre ligne est le
   seul cas qui demande encore un dernier rapprochement par le nom.
+  **Une ligne de musicien n'est pas un accès** (b250, précision de Vincent :
+  « un musicien que j'invite n'a pas accès à l'app tant qu'il n'est pas
+  inscrit »). Elle sert d'abord à MOI — décompte, plan de scène, matériel —
+  et elle peut donc exister sans compte, par trois chemins : « ＋ Ajouter un
+  musicien », une invitation pas encore acceptée, une carte de musicien
+  reçue. Le nom n'est donc pas l'identité d'un utilisateur, c'est l'étiquette
+  d'une ligne EN ATTENTE de son compte. Corollaire : quand on connaît le
+  compte dès l'invitation (annuaire, `DirectoryPerson.user_id`), on pose
+  l'identifiant TOUT DE SUITE sur la ligne « en attente » — l'adhésion la
+  retrouve alors même sous un nom d'artiste sans aucun rapport, et le
+  doublon de b248 ne peut plus naître. Il ne reste que l'invitation par LIEN
+  (on ne sait pas qui viendra) et la saisie à la main. Un musicien de BŒUF,
+  lui, n'entre jamais dans `band.members` : il repart avec une copie
+  personnelle du morceau (b110), pas avec une adhésion.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre
