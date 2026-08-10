@@ -476,6 +476,13 @@ export const EN_ARTISTE: Record<string, string> = {
   'CE QUE VOIT LE PUBLIC': 'WHAT THE AUDIENCE SEES',
   'Ta page publique n’est pas encore réservée. Enregistre ton profil : l’adresse se crée toute seule, à partir de ton nom d’artiste.':
     'Your public page isn’t reserved yet. Save your profile: the address is created automatically, from your artist name.',
+  'ta photo': 'your photo',
+  'ta présentation': 'your bio',
+  'tes liens': 'your links',
+  'ton lien de pourboire': 'your tip link',
+  'ton nom d’artiste': 'your artist name',
+  '↩ Ta page publique contient encore {quoi}. Ce profil ne les a plus.':
+    '↩ Your public page still has {quoi}. This profile no longer does.',
   'Masquer ce groupe au public': 'Hide this band from the audience',
   'il n’apparaît pas sur ta fiche publique, et tu ne peux pas lancer de direct à son nom': 'it does not appear on your public page, and you cannot start a live under its name',
   'Masquer « {nom} » au public ?': 'Hide “{nom}” from the audience?',
