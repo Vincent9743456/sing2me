@@ -766,6 +766,23 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   (on ne sait pas qui viendra) et la saisie à la main. Un musicien de BŒUF,
   lui, n'entre jamais dans `band.members` : il repart avec une copie
   personnelle du morceau (b110), pas avec une adhésion.
+- **UNE INVITATION PAR LIEN EST NOMINATIVE ET À USAGE UNIQUE** (b251, demande
+  de Vincent). Ce qui existait était l'inverse : le lien portait
+  `cloud_bands.invite_token` — UN SEUL jeton par groupe, permanent,
+  réutilisable à l'infini, rattaché à personne. Un message transféré, une
+  capture d'écran, et un inconnu entrait dans le répertoire partagé, pour
+  toujours. Une ligne PAR INVITATION (`band_invite_links`) porte désormais le
+  nom de la personne visée, expire à 30 jours, et se referme sur le PREMIER
+  compte qui l'utilise — celui-là peut y revenir (réinstallation, deuxième
+  appareil), personne d'autre ne le peut. Réinviter la même personne révoque
+  le lien précédent, sinon deux liens vivraient en parallèle et en révoquer
+  un laisserait l'autre ouvert. Trois règles à ne pas défaire : le jeton ne
+  se LIT jamais en table (RLS : seul le créateur voit ses invitations, la
+  vérification passe par `join_band` en `security definer`) ; les jetons de
+  groupe déjà distribués sont NEUTRALISÉS par le SQL, parce qu'un lien qui
+  paraît valable est pire qu'un lien mort ; et si le serveur ne sait pas
+  créer l'invitation, le client REFUSE — produire un lien ouvert de secours
+  reviendrait à contourner la règle en silence.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre

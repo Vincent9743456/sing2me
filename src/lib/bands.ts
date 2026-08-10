@@ -103,6 +103,35 @@ export async function ensureCloudBand(
   return { cloudId: row.id, token };
 }
 
+/**
+ * UNE INVITATION PAR LIEN EST NOMINATIVE ET À USAGE UNIQUE (b251, demande de
+ * Vincent : « il faut que cette invitation soit nominative et que personne
+ * d'autre ne puisse utiliser ce lien »).
+ *
+ * Le lien portait jusqu'ici le jeton DU GROUPE — un seul, permanent,
+ * réutilisable à l'infini par quiconque le recevait. On crée maintenant une
+ * invitation par personne : elle porte son nom, expire, et se referme sur le
+ * premier compte qui l'utilise.
+ *
+ * Pas de repli si l'appel échoue : produire quand même un lien ouvert
+ * reviendrait à contourner en silence la règle demandée.
+ */
+export async function createBandInvite(
+  s: AuthSession,
+  cloudId: string,
+  name: string,
+): Promise<string> {
+  const res = await sbAuthed(s, '/rest/v1/rpc/create_band_invite', {
+    method: 'POST',
+    body: JSON.stringify({ p_band: cloudId, p_name: name }),
+  });
+  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+  const body = (await res.json()) as { token?: string; error?: string };
+  if (body.error) throw new Error(body.error);
+  if (!body.token) throw new Error('Invitation non créée');
+  return body.token;
+}
+
 /** Rejoint un groupe via le jeton de l'invitation. */
 export async function joinBand(
   s: AuthSession,
