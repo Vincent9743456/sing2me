@@ -249,7 +249,20 @@ h3 {
 .topbar .side {
   min-width: 64px;
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+/* La marque dans la barre du haut (b238) : elle n'apparaît QUE sur les
+   écrans étroits. À partir de 900 px, la barre latérale porte déjà le nom
+   complet — l'afficher deux fois ferait doublon. */
+.topbrand {
+  display: inline-flex;
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .topbrand {
+    display: none;
+  }
 }
 .topbar .side.right {
   justify-content: flex-end;

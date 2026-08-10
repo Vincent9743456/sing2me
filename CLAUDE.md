@@ -96,6 +96,17 @@
   Le préfixe du cache du service worker, lui, a bien changé
   (`dodosongs-…`) — mais le nettoyage continue de reconnaître les anciens
   `sing2me-…`, sinon ils resteraient sur les téléphones pour toujours.
+- **La marque se VOIT sur un téléphone** (b238, constat de Vincent : « le
+  logo n'apparaît pas sur le téléphone »). Elle ne vivait que dans la barre
+  latérale, qui n'existe qu'à partir de 900 px : une fois connecté, sur un
+  téléphone, le dodo n'était affiché nulle part — ni bogue ni asset
+  manquant, simplement aucun endroit pour le montrer. Il occupe désormais la
+  gouttière gauche de la barre du haut, celle déjà réservée au bouton
+  Retour : rien ne bouge, il s'efface dès qu'on entre dans un écran d'où
+  l'on revient, et il disparaît à partir de 900 px pour ne pas doubler la
+  barre latérale. Décoratif et NON cliquable — l'onglet Morceaux mène déjà à
+  l'accueil, et on n'ouvre pas un deuxième chemin vers une action existante
+  (règle 3).
 - **Reste à faire un jour** : l'adresse de déploiement est encore
   `sing2me-three.vercel.app` (c'est celle de Vercel, elle se change dans
   leur console, pas dans le code).
