@@ -167,4 +167,10 @@ export const EN_COMPTE: Record<string, string> = {
   'L’application est retéléchargée dans sa dernière version. Tes morceaux, tes setlists, tes groupes et tes réglages restent exactement où ils sont. Il te faut du réseau le temps du rechargement.':
     'The app is downloaded again in its latest version. Your songs, setlists, bands and settings stay exactly where they are. You need a network connection while it reloads.',
   'Recharger': 'Reload',
+
+  // Account.tsx — modifications en attente (b222)
+  '{n} modifications en attente — elles partiront au retour du réseau.':
+    '{n} changes waiting — they will go out when the network is back.',
+  '{n} modification en attente — elle partira au retour du réseau.':
+    '{n} change waiting — it will go out when the network is back.',
 };

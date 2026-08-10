@@ -267,3 +267,35 @@ export function mergeStates(
       .slice(-500),
   };
 }
+
+/**
+ * COMBIEN DE MODIFICATIONS ATTENDENT D'ÊTRE ENVOYÉES (b222).
+ *
+ * Le hors-ligne de b221 a rendu le travail sans réseau normal : on corrige
+ * trois morceaux dans l'avion, et rien ne part avant l'atterrissage. Sans
+ * repère, on ne sait pas si c'est parti — et l'inquiétude porte sur ce qu'on
+ * a de plus précieux, son répertoire.
+ *
+ * On compte ce qui a bougé DEPUIS le dernier envoi réussi, objet par objet,
+ * sur le même `updatedAt` qui sert déjà à la fusion. Pas de file d'attente à
+ * tenir, pas de nouvel état à synchroniser : le chiffre se recalcule au
+ * rendu, donc il ne peut pas mentir (règle 11 — une pastille compte
+ * exactement ce que l'écran montrera).
+ *
+ * `depuis` vaut null quand aucun envoi n'a encore réussi sur cet appareil :
+ * on ne prétend alors rien compter, ce serait annoncer toute la bibliothèque.
+ */
+export function compterEnAttente(
+  state: Pick<SyncState, 'songs' | 'setlists' | 'concerts' | 'artist'>,
+  depuis: string | null,
+): number {
+  if (depuis === null || depuis === '') return 0;
+  const apres = (x: { updatedAt?: string }) =>
+    typeof x.updatedAt === 'string' && x.updatedAt > depuis;
+  let n = 0;
+  for (const s of state.songs ?? []) if (apres(s)) n++;
+  for (const s of state.setlists ?? []) if (apres(s)) n++;
+  for (const c of state.concerts ?? []) if (apres(c)) n++;
+  if (state.artist && apres(state.artist)) n++;
+  return n;
+}

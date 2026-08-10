@@ -23,7 +23,8 @@ import {
   transposeSong,
   versionForBand,
 } from '../lib/model';
-import { stripChords } from '../lib/chordpro';
+import { parolesPubliques } from '../lib/publiclyrics';
+import { PublicEye, PublicPreview } from '../components/PublicPreview';
 import { songKey } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet } from '../components/SongPicker';
@@ -136,6 +137,9 @@ export function SongView({
   const [renameOpen, setRenameOpen] = useState(false);
   const toast = useToast();
   const [delSongOpen, setDelSongOpen] = useState(false);
+  // 👁 Vue du public : la partition bascule sur ce que liront les
+  // spectateurs. Un geste, au même endroit que ce qu'il change (b223).
+  const [vuePublic, setVuePublic] = useState(false);
   const scroll = useAutoScroll(undefined, song?.id);
 
   // En lecture de setlist : bascule sur la version de l'item, puis
@@ -186,7 +190,7 @@ export function SongView({
       ? {
           title: song.title,
           artist: song.artist,
-          lyrics: stripChords(song.lyrics),
+          lyrics: parolesPubliques(song),
           chords: song.lyrics,
           chordKey: song.key,
           // Formes affichées (le musicien voit ça) ; la tonalité réelle se
@@ -209,7 +213,7 @@ export function SongView({
             .map((s) => ({
               title: s.title,
               artist: s.artist,
-              lyrics: stripChords(s.lyrics),
+              lyrics: parolesPubliques(s),
             }))
         : null,
     [ctxSetlist, songs],
@@ -234,7 +238,10 @@ export function SongView({
     BAND_COLORS[
       Math.max(0, bands.findIndex((x) => x.id === bid)) % BAND_COLORS.length
     ];
-  const showTranspose = view === 'complete' || view === 'accords';
+  // Transposer n'a aucun sens dans la vue du public : elle ne montre pas un
+  // seul accord. Un écran, une mission (règle 3).
+  const showTranspose =
+    !vuePublic && (view === 'complete' || view === 'accords');
   // Notes du contexte courant : solo/tous + celles du groupe de la version
   const contextNotes = notesForBand(song.rehearsalNotes, current.bandId);
   // Journal : la note la plus récente en premier
@@ -440,6 +447,14 @@ export function SongView({
               ❤ {song.hearts}
             </span>
           )}
+          {/* 👁 L'œil doit être VISIBLE sur la partition (correction de
+              Vincent, b223) : rangé sous les notes de répétition, il
+              n'existait pas. */}
+          <PublicEye
+            song={song}
+            actif={vuePublic}
+            onToggle={() => setVuePublic((v) => !v)}
+          />
           {/* En haut de page (demande Vincent) : proposer une meilleure
               partition dès l'arrivée sur le morceau. */}
           {!isBandVersion && song.versions.length < 2 && (
@@ -631,14 +646,22 @@ export function SongView({
           </details>
         )}
 
-        <SongBody
-          song={{ ...song, rehearsalNotes: contextNotes }}
-          view={view}
-          semitones={displayShift}
-          capo={0}
-          preferFlat={preferFlat}
-          fontSize={1}
-        />
+        {vuePublic ? (
+          <PublicPreview
+            song={song}
+            onSave={saveSong}
+            onClose={() => setVuePublic(false)}
+          />
+        ) : (
+          <SongBody
+            song={{ ...song, rehearsalNotes: contextNotes }}
+            view={view}
+            semitones={displayShift}
+            capo={0}
+            preferFlat={preferFlat}
+            fontSize={1}
+          />
+        )}
 
         {/* Pas de rangée Scène / A− / A+ ici (décision Vincent) : « Scène »
             est déjà dans l'en-tête, et la taille du texte se règle en mode

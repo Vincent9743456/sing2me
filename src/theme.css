@@ -2148,6 +2148,22 @@ textarea.mono {
   margin-top: 0;
 }
 
+/* Aperçu du texte du public sur la fiche d'un morceau (b223) — l'artiste doit
+   pouvoir vérifier d'un coup d'œil ce que lisent ses spectateurs. Encadré,
+   parce que c'est un AUTRE écran que le sien ; et défilant, pour qu'un long
+   morceau ne repousse pas le reste de la fiche hors de portée. */
+.pubframe {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: var(--sp-4) var(--sp-3);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.pubframe .publyrics {
+  font-size: 1rem;
+}
+
 /* ---------- Barre d'interaction du public (b172) ----------
    Les gestes vers l'artiste (❤, pourboire, mot) étaient sous les paroles :
    il fallait défiler tout le morceau pour les atteindre. Ils vivent
@@ -3383,4 +3399,24 @@ h2.pagetitle {
 }
 .progressbar.done > div {
   background: var(--ok);
+}
+
+/* ---------- 👁 Vue du public sur la fiche d'un morceau (b223) ----------
+   La partition bascule sur ce que liront les spectateurs. Le bandeau dit
+   toujours où l'on est : sans lui, on croit lire une partition amputée de ses
+   accords. La sortie est dans le bandeau, jamais à chercher plus bas. */
+.pubview {
+  margin-bottom: var(--sp-4);
+}
+.pubview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--sp-2);
 }

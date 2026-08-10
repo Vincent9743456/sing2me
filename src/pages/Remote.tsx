@@ -9,7 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useOnAirSong } from '../components/OnAir';
 import { DndHint, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
-import { stripChords } from '../lib/chordpro';
+import { parolesPubliques } from '../lib/publiclyrics';
 import { t } from '../i18n';
 import { resolveVersion } from '../lib/model';
 import { navigate } from '../router';
@@ -46,7 +46,7 @@ export function Remote({ setlistId }: { setlistId: string }) {
       ? {
           title: current.song.title,
           artist: current.song.artist,
-          lyrics: stripChords(current.song.lyrics),
+          lyrics: parolesPubliques(current.song),
           chords: current.song.lyrics,
           chordKey: current.song.key,
           playedKey: current.key,

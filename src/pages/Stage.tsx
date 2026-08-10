@@ -22,7 +22,7 @@ import {
   semitonesBetween,
   transposeKeyName,
 } from '../lib/chords';
-import { stripChords } from '../lib/chordpro';
+import { parolesPubliques } from '../lib/publiclyrics';
 import { t } from '../i18n';
 import { notesForBand, resolveVersion } from '../lib/model';
 import { useStore } from '../store';
@@ -121,7 +121,7 @@ export function Stage({
       ? {
           title: item.song.title,
           artist: item.song.artist,
-          lyrics: stripChords(item.song.lyrics),
+          lyrics: parolesPubliques(item.song),
           chords: item.song.lyrics,
           chordKey: item.song.key,
           playedKey: item.keyOverride !== '' ? item.keyOverride : item.song.key,
@@ -143,7 +143,7 @@ export function Stage({
         ? items.map((it) => ({
             title: it.song.title,
             artist: it.song.artist,
-            lyrics: stripChords(it.song.lyrics),
+            lyrics: parolesPubliques(it.song),
           }))
         : null,
     [setlistId, items],

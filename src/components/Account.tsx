@@ -13,6 +13,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -54,7 +55,7 @@ import {
   mergeBandData,
 } from '../lib/bandSync';
 import { migrateSong } from '../lib/model';
-import { mergeStates, SyncState } from '../lib/sync';
+import { compterEnAttente, mergeStates, SyncState } from '../lib/sync';
 import { navigate } from '../router';
 import { AppState, useStore } from '../store';
 import { emptyBand, makeId } from '../types';
@@ -100,6 +101,12 @@ interface AccountValue {
   email: string | null;
   status: SyncStatus;
   lastSync: string | null;
+  /**
+   * Modifications faites depuis le dernier envoi réussi (b222). 0 quand tout
+   * est parti — et 0 aussi quand aucun envoi n'a encore réussi sur cet
+   * appareil : on n'annonce pas un chiffre qu'on ne sait pas établir.
+   */
+  enAttente: number;
   error: string | null;
   sendMagicLink: (email: string) => Promise<void>;
   loginWith: (p: OAuthProvider) => void;
@@ -177,7 +184,26 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<SyncStatus>(
     session ? 'sync' : 'anon',
   );
-  const [lastSync, setLastSync] = useState<string | null>(null);
+  /**
+   * Dernier envoi réussi, gardé sur l'appareil : sans ça, le compteur de
+   * modifications en attente repartirait de zéro à chaque lancement et
+   * annoncerait toute la bibliothèque.
+   */
+  const [lastSync, setLastSync] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('sing2me/dernierEnvoi');
+    } catch {
+      return null;
+    }
+  });
+  const noterEnvoi = useCallback((at: string) => {
+    setLastSync(at);
+    try {
+      localStorage.setItem('sing2me/dernierEnvoi', at);
+    } catch {
+      /* stockage indisponible */
+    }
+  }, []);
   const [error, setError] = useState<string | null>(() => takeAuthError());
   /**
    * Nom donné par le fournisseur social (b165). Apple ne le transmet
@@ -536,7 +562,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       if (!valid) return;
       await pushCloud(valid, JSON.parse(stateRef.current));
       aEnvoyer.current = false;
-      setLastSync(new Date().toISOString());
+      noterEnvoi(new Date().toISOString());
       setStatus('ok');
       void syncBands(valid);
     } catch {
@@ -545,7 +571,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       setStatus('error');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncBands]);
+  }, [syncBands, noterEnvoi]);
 
   // À chaque modification : pousser (debounce 3 s), best-effort.
   useEffect(() => {
@@ -601,11 +627,23 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [syncBands]);
 
+  // Recalculé au rendu, à partir de l'état réel : le chiffre ne peut pas
+  // se désynchroniser de ce que l'écran montre.
+  const enAttente = useMemo(() => {
+    if (!session) return 0;
+    try {
+      return compterEnAttente(JSON.parse(stateJson) as SyncState, lastSync);
+    } catch {
+      return 0;
+    }
+  }, [stateJson, lastSync, session?.userId]);
+
   const value: AccountValue = {
     available: authAvailable(),
     email: session?.email ?? null,
     status,
     lastSync,
+    enAttente,
     error,
     sendMagicLink: (email: string) => signInWithEmail(email),
     loginWith: (p) => signInWithProvider(p),
@@ -691,6 +729,28 @@ export function AccountSection() {
         className="hstack"
         style={{ gap: 8, flexWrap: 'wrap', padding: '2px 0' }}
       >
+        {/* Ce qui attend d'être envoyé (b222). Travailler sans réseau est
+            devenu normal depuis b221 : ce repère dit que rien n'est perdu,
+            sans réclamer d'action. Il disparaît dès qu'il n'a plus rien à
+            dire — jamais de mention qui reste là à vie (règle 11). */}
+        {account.enAttente > 0 && (
+          <span
+            className="help"
+            style={{ color: 'var(--warn)', width: '100%' }}
+            aria-live="polite"
+          >
+            ↑{' '}
+            {account.enAttente > 1
+              ? t(
+                  '{n} modifications en attente — elles partiront au retour du réseau.',
+                  { n: account.enAttente },
+                )
+              : t(
+                  '{n} modification en attente — elle partira au retour du réseau.',
+                  { n: account.enAttente },
+                )}
+          </span>
+        )}
         <span
           style={{
             color: 'var(--accent)',

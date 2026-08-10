@@ -240,6 +240,10 @@ groupe, direct). Marco est le second appareil.
 | H-9bis | Arrêter le direct quand le réseau lâche | Le bouton ne reste JAMAIS sur « ⏳ Arrêt… » : au bout de 12 s il dit pourquoi et propose « ⏹ Arrêter quand même » ; l'app reprévient le serveur toute seule — ⚠️ cicatrice b216 | 🔴 |
 | H-10bis | 📱📱 Page du spectateur pendant un direct | Elle affiche le concert — **jamais un écran noir** ; avec ou sans partition, en pause, sans réseau — ⚠️ cicatrice b215 | 🔴 |
 | H-10ter | 📱📱 Paroles côté public | Un vers par ligne, centré, **sans grille d'accords ni ligne vide en trop** ; les sections sont rappelées en petit ; une section sans paroles (l'intro) ne s'affiche pas | 🟠 |
+| H-10quater | Fiche d'un morceau : l'œil « 👁 Vue du public » | Il est **visible tout en haut, sans rien dérouler** ; un clic bascule la partition sur le texte du direct — sans accords ni grille, sections rappelées ; « ✕ Ma partition » revient, accords compris | 🔴 |
+| H-10quinquies | « ✏️ Modifier ce texte », enregistrer, puis diffuser | Le public lit le texte réécrit — sur le direct, la setlist qu'il parcourt et le mode scène ; **la partition n'a pas bougé d'une ligne** | 🔴 |
+| H-10sexies | Modifier la partition APRÈS avoir retouché le texte public | L'œil dit « à revoir » **sans qu'on l'ouvre** ; le public lit toujours mon texte (rien n'est écrasé) ; « ↻ Reprendre ma partition » et « Garder mon texte » éteignent le repère tous les deux, et la vue **ne se referme pas** au nez de celui qui vient de trancher | 🟠 |
+| H-10septies | « ↩ Revenir au texte automatique », puis corriger la partition | Le public suit la correction tout seul, sans rien à régler | 🟠 |
 | H-11 | Fiche Artiste : les quatre chiffres | Cohérents avec l'historique, **jamais 0 spectateur avec des cœurs** — ⚠️ cicatrice b201/b203 | 🔴 |
 | H-12 | Concert passé rattaché à un live | Il affiche ses cœurs, mots et spectateurs — ⚠️ cicatrice b207 | 🟠 |
 | H-13 | Concert jamais joué | Aucun chiffre inventé | 🟠 |
@@ -309,6 +313,7 @@ c'est couvert par les tests automatiques (suite `backup`).*
 | T-6 | Coupure réseau en pleine utilisation | Aucun écran mort ; message sans jargon | 🔴 |
 | T-6bis | **Mode avion, app lancée depuis l'écran d'accueil** | Elle s'ouvre : bibliothèque, setlists, mode scène. Seuls le direct et la synchro sont indisponibles — ⚠️ cicatrice b221 | 🔴 |
 | T-6ter | Modifier un morceau hors ligne, puis retrouver du réseau | La modification part toute seule au retour du réseau, sans avoir à retoucher quoi que ce soit | 🔴 |
+| T-6quinquies | Modifier trois morceaux hors ligne | « ↑ 3 modifications en attente » sur le bloc du compte ; le chiffre retombe à zéro dès l'envoi, et ne réapparaît pas au relancement | 🟠 |
 | T-6quater | Réglages → « ↻ Recharger l'application » | L'app revient à neuf ; morceaux, setlists et réglages intacts | 🟠 |
 | T-7 | Version affichée en bas de l'onglet Artiste | Correspond à la dernière livraison | ⚪ |
 | T-8 | `/version.txt` en ligne | Même numéro | ⚪ |
@@ -347,8 +352,8 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 | J. Profil et page publique | 8 | 1 |
 | J bis. Réglages et données | 4 | 1 |
 | K. Sauvegarde et récupération | 9 | 3 |
-| L. Transversal | 11 | 4 |
-| **Total** | **181** | **67** |
+| L. Transversal | 12 | 4 |
+| **Total** | **182** | **67** |
 
 **Suggestion d'ordre** : commence par les 🔴 de H (concerts et direct) et
 de G (groupes) — c'est là que sont la plupart des cicatrices récentes et

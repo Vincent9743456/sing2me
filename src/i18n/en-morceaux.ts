@@ -508,4 +508,31 @@ export const EN_MORCEAUX: Record<string, string> = {
   '↩ Revenir à ma partition d’origine': '↩ Back to my original chart',
   ' · ✨ mis en forme': ' · ✨ formatted',
   'Revenir à la version d’origine': 'Back to the original version',
+
+  // b223 — ce que verra le public, sur la fiche d'un morceau
+  'Vue du public': 'Audience view',
+  'Lire le morceau comme le liront tes spectateurs':
+    'Read the song the way your audience will read it',
+  'Ma partition': 'My chart',
+  'Ce que verra le public': 'What the audience will see',
+  'à revoir': 'needs a look',
+  'texte retouché': 'edited text',
+  'Tu as modifié la partition depuis que tu as écrit ce texte : le public lit toujours ta version, elle n’a pas suivi.':
+    'You have changed the chart since you wrote this text: the audience still reads your version, it has not followed along.',
+  'Aucune parole à afficher — le public verra l’écran de concert sans texte.':
+    'No lyrics to show — the audience will see the concert screen with no text.',
+  'Texte écrit par toi. Le public lit ceci, et pas ta partition.':
+    'Text written by you. The audience reads this, not your chart.',
+  'Préparé depuis ta partition : les accords sont retirés, les sections rappelées. Il suit tes corrections tout seul.':
+    'Prepared from your chart: chords removed, sections kept. It follows your edits on its own.',
+  'Modifier ce texte': 'Edit this text',
+  'Reprendre ma partition': 'Take my chart again',
+  'Garder mon texte': 'Keep my text',
+  'Revenir au texte automatique': 'Back to the automatic text',
+  'Texte lu par le public': 'Text read by the audience',
+  'Ta partition et tes accords ne bougent pas : tu ne modifies ici que ce que lisent tes spectateurs. Écris « Refrain : » en début de ligne pour marquer une section.':
+    'Your chart and your chords do not move: here you only change what your audience reads. Write “Chorus:” at the start of a line to mark a section.',
+  'Remet le texte préparé automatiquement depuis ta partition':
+    'Puts back the text prepared automatically from your chart',
+  'Repartir de ma partition': 'Start again from my chart',
 };

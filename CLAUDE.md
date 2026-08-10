@@ -476,6 +476,11 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   gagne, PAR OBJET, sur `updatedAt` (`mergeById`) — à égalité le local gagne.
   Ne pas construire de résolution de conflit : il faudrait le MÊME objet
   modifié sur DEUX appareils pendant la même fenêtre hors ligne.
+  **Ce qui attend se DIT** (b222) : « ↑ N modifications en attente » sur le
+  bloc du compte, compté au rendu depuis le dernier envoi réussi (gardé dans
+  `sing2me/dernierEnvoi`, sinon le compteur repartirait de zéro à chaque
+  lancement et annoncerait toute la bibliothèque). Sans envoi réussi connu,
+  on n'annonce RIEN plutôt qu'un chiffre faux.
 - **L'IA met en forme CHAQUE import** (b220, décision Vincent) : ce qui
   était un bouton, à la main et seulement sur un import déjà cassé, est
   devenu automatique — à l'unité comme en masse. **Jamais bloquant** :
@@ -546,6 +551,36 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   disparaît au lieu de laisser un blanc ; les espaces de fin de ligne partent
   (dans un texte centré, ils décalent le vers) ; un en-tête sans une seule
   parole en dessous ne s'affiche pas.
+- **Ce que lit le public se REGARDE avant le concert, et se CORRIGE** (b223,
+  demande de Vincent). La préparation de b219 ne s'exécutait qu'au moment de
+  la diffusion : son résultat n'apparaissait nulle part dans l'app, l'artiste
+  découvrait l'écran de ses spectateurs par-dessus une épaule, en plein
+  concert, sans aucun moyen de corriger une ligne sans abîmer sa partition —
+  celle qui porte ses accords. Un œil « 👁 Vue du public » vit dans la rangée
+  d'actions de la fiche morceau — **visible sur la partition, jamais rangé
+  dans un pli** (correction de Vincent : un aperçu qu'il faut dérouler sous
+  les notes de répétition n'existe pas) — et il BASCULE la partition sur le
+  rendu EXACT (même composant `PublicLyrics`), qu'on peut alors réécrire.
+  L'œil porte lui-même l'état : ✏️ quand le texte est retouché, « à revoir »
+  quand il a pris du retard. Hors mode scène et hors direct (arbitrage
+  Vincent) : sur scène, l'écran ne sert qu'à jouer. Trois règles :
+  1. **l'automatique reste la règle** — sans retouche, le public suit la
+     partition tout seul, il n'y a rien à entretenir ;
+  2. **une retouche fait autorité PARTOUT** (`song.publicLyrics`) et n'est
+     jamais écrasée en silence — toute diffusion passe par l'unique
+     `parolesPubliques` (`src/lib/publiclyrics.ts`) : direct, setlist
+     parcourue par le spectateur, mode scène, télécommande, vue « paroles
+     seules ». Un point de diffusion oublié montrerait autre chose que les
+     autres, et c'est précisément ce qu'on ne peut pas vérifier depuis la
+     scène ;
+  3. **un texte retouché VIEILLIT et le dit** : `publicLyrics.from` garde le
+     texte automatique du moment, donc l'écart se CONSTATE (comparaison
+     exacte), jamais ne se devine à une date. Le repère se lève tout seul dès
+     qu'il n'y a plus d'écart — « ↻ Reprendre ma partition » ou « Garder mon
+     texte » (règle 11 : une mention se lève quand son motif disparaît).
+  Corollaire : corriger le texte du public ne touche JAMAIS aux paroles ni aux
+  accords du musicien, et un texte vide n'ouvre pas un écran blanc au public —
+  il ramène à l'automatique.
 - **Une migration de contenu se PROUVE avant de s'appliquer** (b219) : pour
   reposer les sections sur la bibliothèque déjà importée, on ne se contente
   pas de compter les blocs — on recalcule la suite d'accords de chaque bloc
