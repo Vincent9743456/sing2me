@@ -318,13 +318,53 @@ export function Bands() {
                           {n > 0
                             ? ` · ${people.map((m) => m.name).join(', ')}`
                             : ''}
+                          {band.hiddenFromPublic === true
+                            ? ` · ${t('masqué au public')}`
+                            : ''}
                         </div>
                       );
                     })()}
                   </div>
                 </div>
+                {/* MASQUER / DÉMASQUER SUR LA LIGNE (b228, demande de
+                    Vincent : « facile à identifier et à modifier, sans avoir
+                    à entrer en modification »). Un appui, ici même, dans les
+                    deux sens. L'état se LIT sans rien ouvrir : l'œil est
+                    barré quand le groupe est masqué. */}
                 <button
                   className="btn ghost small"
+                  aria-pressed={band.hiddenFromPublic === true}
+                  aria-label={
+                    band.hiddenFromPublic === true
+                      ? t('Masqué au public — aucun direct possible à son nom. Toucher pour le rendre visible.')
+                      : t('Visible du public. Toucher pour le masquer.')
+                  }
+                  title={
+                    band.hiddenFromPublic === true
+                      ? t('Masqué au public — aucun direct possible à son nom. Toucher pour le rendre visible.')
+                      : t('Visible du public. Toucher pour le masquer.')
+                  }
+                  // Cible confortable au doigt : ce bouton décide de ce que
+                  // voit le public, il ne se touche pas par erreur.
+                  style={{
+                    minHeight: 36,
+                    ...(band.hiddenFromPublic === true
+                      ? { color: 'var(--text-faint)' }
+                      : {}),
+                  }}
+                  onClick={() =>
+                    saveBand(
+                      band.hiddenFromPublic === true
+                        ? { ...band, hiddenFromPublic: undefined }
+                        : { ...band, hiddenFromPublic: true },
+                    )
+                  }
+                >
+                  {band.hiddenFromPublic === true ? '🙈' : '👁'}
+                </button>
+                <button
+                  className="btn ghost small"
+                  style={{ minHeight: 36 }}
                   title={t('Espace du groupe : discussion, répéts, concerts')}
                   onClick={() => navigate(`/band/${band.id}/chat`)}
                 >

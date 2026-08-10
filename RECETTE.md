@@ -75,6 +75,7 @@ groupe, direct). Marco est le second appareil.
 | P-1bis | Taper sur un accord de la partition | Une **petite** pastille s'ouvre sous l'accord — la partition reste lisible autour, aucun voile ; un toucher n'importe où la fait disparaître. Un accord exotique n'ouvre **rien** plutôt qu'un doigté inventé | 🟠 |
 | P-1ter | Taper un accord tout en BAS de l'écran | La pastille se pose au-dessus, jamais hors de l'écran | 🟠 |
 | P-1quater | Taper un accord avec basse (`A/C#`, `C/G`, `D/F#`) | La basse demandée est la note la plus GRAVE du doigté — ce n'est pas l'accord de base — ⚠️ cicatrice b226 | 🔴 |
+| P-1quinquies | Taper un accord rare (`G6`, `Bdim7`, `Caug`) | Il n'ouvre **rien** : aucun doigté proposé n'exige plus de quatre doigts, barré compris — ⚠️ cicatrice b228 | 🔴 |
 | P-2 | Re-transposer en sens inverse | On retombe exactement sur l'original | 🔴 |
 | P-3 | Poser un capo | Ce qui sonne change, les accords affichés non ; l'aide le dit | 🟠 |
 | P-4 | Basculer « tonalité réelle » | Les accords s'affichent capo compris | ⚪ |
@@ -178,6 +179,7 @@ groupe, direct). Marco est le second appareil.
 | N° | Cas | Ce qu'on doit voir | Prio |
 |---|---|---|---|
 | G-1 | Créer un groupe | Bouton de validation visible ; le groupe apparaît | 🔴 |
+| G-1quater | Onglet Groupes : l'œil sur la ligne d'un groupe | Un appui masque, un appui démasque — **sans entrer en modification** ; « masqué au public » se lit sous le nom — ⚠️ cicatrice b228 | 🔴 |
 | G-1bis | Groupe → Modifier → « Masquer ce groupe au public » | Il disparaît des identités publiques (onglet Artiste ET panneau ON AIR) : **impossible de lancer un direct à son nom** ; son adresse est retirée | 🔴 |
 | G-1ter | Groupe visible → adresse publique | Le créateur peut la réserver et la changer ; un membre la voit sans pouvoir la modifier | 🟠 |
 | G-2 | Inviter par lien / e-mail | Lien copiable, envoyable | 🔴 |

@@ -21,6 +21,17 @@
  *     au musicien EXACTEMENT ce qu'il cherche : « et plus haut sur le
  *     manche, ça donne quoi ? ».
  *
+ *  4. **RIEN QUI NE SE JOUE** (b228, signalement de Vincent : « l'index en
+ *     barré, le pouce derrière le manche, il ne reste que trois doigts »).
+ *     b225 vérifiait l'HARMONIE et jamais l'ERGONOMIE : le G6 sorti du
+ *     gabarit de Mi donnait 3-5-5-4-5-3, juste sur le papier, impossible à
+ *     la main. Deux mesures, cumulées : les gabarits déplaçables sont
+ *     RAMENÉS aux familles que tout le monde joue en barré (majeur, mineur,
+ *     7, m7, maj7, sus4, sus2), et TOUT ce qui sort d'ici passe par
+ *     `estJouable`. Les familles rares (6, m6, 9, dim, aug…) n'ont plus que
+ *     leur position ouverte, quand la table en a une — sinon l'accord ne
+ *     s'ouvre pas. On préfère un accord muet à un accord faux.
+ *
  * Cordes indexées de la 6ᵉ (mi grave) à la 1ʳᵉ (mi aigu). Une case vaut
  * `MUET` (corde non jouée), 0 (à vide) ou le numéro de case ABSOLU.
  *
@@ -133,11 +144,6 @@ const FORME_MI: Partial<Record<Qualite, (number | null)[]>> = {
   m7: [0, 2, 0, 0, 0, 0],
   maj7: [0, 2, 1, 1, 0, 0],
   sus4: [0, 2, 2, 2, 0, 0],
-  '6': [0, 2, 2, 1, 2, 0],
-  m6: [0, 2, 2, 0, 2, 0],
-  '9': [0, 2, 0, 1, 0, 2],
-  aug: [0, 3, 2, 1, 1, 0],
-  '5': [0, 2, 2, null, null, null],
 };
 
 const FORME_LA: Partial<Record<Qualite, (number | null)[]>> = {
@@ -148,14 +154,6 @@ const FORME_LA: Partial<Record<Qualite, (number | null)[]>> = {
   maj7: [null, 0, 2, 1, 2, 0],
   sus4: [null, 0, 2, 2, 3, 0],
   sus2: [null, 0, 2, 2, 0, 0],
-  '6': [null, 0, 2, 2, 2, 2],
-  m6: [null, 0, 2, 2, 1, 2],
-  '9': [null, 0, 2, 4, 2, 3],
-  add9: [null, 0, 2, 4, 2, 0],
-  dim: [null, 0, 1, 2, 1, null],
-  dim7: [null, 0, 1, 2, 1, 2],
-  aug: [null, 0, 3, 2, 2, 1],
-  '5': [null, 0, 2, 2, null, null],
 };
 
 /** Note à vide de chaque corde, de la 6ᵉ à la 1ʳᵉ. */
@@ -231,6 +229,54 @@ function empan(cases: number[]): number {
 }
 
 const EMPAN_MAX = 4;
+
+/**
+ * COMBIEN DE DOIGTS CETTE POSITION DEMANDE-T-ELLE ? (b228, signalement de
+ * Vincent : « l'index en barré, le pouce derrière le manche, il ne reste que
+ * trois doigts ».)
+ *
+ * C'est LE contrôle qui manquait. b225 vérifiait l'HARMONIE — les bonnes
+ * notes — et jamais l'ERGONOMIE. Un G6 sorti du gabarit de Mi donnait
+ * 3-5-5-4-5-3 : harmonieusement juste, humainement impossible. Un doigté
+ * injouable est aussi faux qu'un doigté faux ; il est même pire, parce qu'il
+ * a l'air sérieux.
+ *
+ * On compte des GROUPES, pas des cordes : un doigt couvre plusieurs cordes
+ * CONTIGUËS à la MÊME case (petit barré). Une corde tenue plus bas au milieu
+ * casse la contiguïté, donc le regroupement — c'est ce qui disqualifiait le
+ * G6, dont les trois cases 5 sont séparées par une case 4.
+ */
+export function doigtsNecessaires(
+  cases: number[],
+  barre?: { case_: number; de: number; a: number },
+): number {
+  // Règle STRICTE, et volontairement pessimiste : SEUL l'index couvre
+  // plusieurs cordes (le barré). Tout le reste coûte un doigt par corde.
+  //
+  // On pourrait raffiner — l'annulaire barre vraiment trois cordes dans un
+  // Sib — mais chaque raffinement rouvre la porte à une position que
+  // personne ne joue. Compter au plus juste ne sert à rien ici : ce module
+  // n'a pas à trouver le maximum de positions, il a à n'en montrer aucune
+  // qui soit fausse.
+  const doigts = cases.filter(
+    (c) => c > 0 && !(barre && c === barre.case_),
+  ).length;
+  return doigts + (barre ? 1 : 0);
+}
+
+/**
+ * Cette position est-elle TENABLE par une main humaine ?
+ *
+ * Quatre doigts, pas cinq — le pouce passe derrière le manche. Et l'empan
+ * reste dans ce que la main couvre. Au moindre doute, on refuse : ne rien
+ * montrer est toujours mieux que montrer l'impossible.
+ */
+export function estJouable(p: Position): boolean {
+  const doigtees = p.cases.filter((c) => c > 0);
+  if (p.cases.filter((c) => c !== MUET).length < 3) return false;
+  if (doigtees.length > 0 && empan(p.cases) > EMPAN_MAX) return false;
+  return doigtsNecessaires(p.cases, p.barre) <= 4;
+}
 
 /**
  * REPOSER LA BASSE D'UN ACCORD BARRE-OBLIQUE (b226, signalement de Marco :
@@ -339,8 +385,16 @@ export function positionsPour(symbole: string): Position[] {
     const p = poser(gLa, 12, 1);
     if (p) out.push(p);
   }
-  // Les positions les plus basses d'abord : c'est là que la main se pose.
-  const triees = out.slice(0, 3).sort((a, b) => hauteur(a) - hauteur(b));
+  /**
+   * FILTRE FINAL DE JOUABILITÉ (b228). Il s'applique à TOUT ce qui sort d'ici
+   * — table écrite à la main comprise. Un gabarit qui demande quatre doigts
+   * au-dessus d'un barré ne passe pas, quelle que soit la justesse de ses
+   * notes : c'est la leçon du G6 signalé par Vincent.
+   */
+  const triees = out
+    .filter(estJouable)
+    .slice(0, 3)
+    .sort((a, b) => hauteur(a) - hauteur(b));
 
   // Accord barre-oblique : la basse doit sonner, sinon ce n'est pas l'accord
   // demandé (b226). Une forme qui ne peut pas la porter est écartée — pas
@@ -349,7 +403,9 @@ export function positionsPour(symbole: string): Position[] {
   if (basse !== '' && noteIndex(basse) !== null) {
     const avecBasse = triees
       .map((p) => poserLaBasse(p, basse))
-      .filter((p): p is Position => p !== null);
+      .filter((p): p is Position => p !== null)
+      // Reposer la basse change le doigté : on revérifie qu'il tient.
+      .filter(estJouable);
     return avecBasse.slice(0, 2);
   }
   return triees;
