@@ -112,6 +112,14 @@ groupe, direct). Marco est le second appareil.
 | I-16 | Nettoyage IA sur un import mal formaté | Proposé **seulement** si l'analyse a vu un vrai défaut | ⚪ |
 | I-18 | Import d'un fichier plein de sections | Aucun « ⚠ » ni badge « à vérifier » à cause des seules sections — ⚠️ cicatrice b219 | 🟠 |
 | I-19 | Partition où une PAROLE dit « Solo » (ou « Final », « Coda ») sous une ligne d'accords | Elle reste une parole : ni titre de section, ni mot effacé — ⚠️ cicatrice b219 | 🟠 |
+| I-20 | Coller une partition | L'aperçu est là **tout de suite**, « ✨ Mise en forme… » s'affiche à côté, puis l'aperçu se met à jour. Le bouton « Ajouter » n'est JAMAIS désactivé | 🔴 |
+| I-21 | Ajouter pendant que la mise en forme tourne | Le morceau est ajouté tel qu'il est à l'écran ; la réponse tardive est ignorée | 🔴 |
+| I-22 | Import sans réseau (ou IA en panne) | « La mise en forme automatique n'a pas abouti — ta partition est reprise telle quelle. » Rien d'alarmant, rien de bloqué | 🔴 |
+| I-23 | Mise en forme qui laisse un gros doute | Le doute est dit en clair, avec le choix « Version mise en forme » / « Ma version d'origine » | 🟠 |
+| I-24 | Import en masse | Les morceaux entrent d'abord en bibliothèque, PUIS la mise en forme les reprend un par un (barre de progression). Aucune question posée au milieu du lot | 🔴 |
+| I-25 | Morceau douteux issu d'un import en masse | Dans la bibliothèque : badge « 🔎 À vérifier », et dans son menu ⋯ « ↩ Revenir à ma partition d'origine » | 🟠 |
+| I-26 | Revenir à la partition d'origine | Les paroles ET la version active reviennent ; le badge disparaît | 🟠 |
+| I-27 | Enchaîner beaucoup d'imports | Au-delà du plafond, un message calme (« reprends dans un moment ») — jamais une erreur technique, et les morceaux déjà importés restent | 🟠 |
 | I-17 | Pied de tous les écrans d'import | Mention « tes morceaux restent à toi, tu peux tout réexporter » | ⚪ |
 
 ---
@@ -324,7 +332,7 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 | A. Arrivée et compte | 11 | 6 |
 | B. Bibliothèque | 16 | 6 |
 | C. Partition et versions | 17 | 6 |
-| D. Import | 19 | 6 |
+| D. Import | 27 | 10 |
 | E. Setlists | 15 | 5 |
 | F. Mode scène | 9 | 3 |
 | G. Groupes | 15 | 5 |
@@ -334,7 +342,7 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 | J bis. Réglages et données | 4 | 1 |
 | K. Sauvegarde et récupération | 9 | 3 |
 | L. Transversal | 8 | 2 |
-| **Total** | **167** | **59** |
+| **Total** | **175** | **63** |
 
 **Suggestion d'ordre** : commence par les 🔴 de H (concerts et direct) et
 de G (groupes) — c'est là que sont la plupart des cicatrices récentes et

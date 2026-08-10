@@ -13,6 +13,8 @@ import clean from '../server/ai-clean.js';
 import note from '../server/ai-note.js';
 import setlist from '../server/setlist-ai.js';
 import transcribe from '../server/ai-transcribe.js';
+import { identifie } from '../server/identity.js';
+import { autorise, refuseTrop } from '../server/ratelimit.js';
 
 const handlers = { clean, note, setlist, transcribe };
 
@@ -38,6 +40,17 @@ export default async function handler(req, res) {
   const h = handlers[fn];
   if (!h) {
     res.status(404).json({ error: 'Fonction inconnue' });
+    return;
+  }
+  // Garde-fou d'usage (b220) : ces appels coûtent de l'argent réel, et
+  // depuis b220 la mise en forme est automatique — donc bouclable. On
+  // compte AVANT d'appeler le modèle ; qui ne s'identifie pas a droit à
+  // beaucoup moins. Un plafond atteint ne casse rien : le client garde son
+  // analyse locale.
+  const qui = await identifie(req);
+  const verdict = await autorise(fn, req, qui.user?.id ?? '');
+  if (!verdict.ok) {
+    refuseTrop(res, verdict);
     return;
   }
   return h(req, res);

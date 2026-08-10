@@ -7,6 +7,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { Modal } from './ui';
+import { douteApresIA, meritteUneMiseEnForme } from '../lib/aiFormat';
 import { analyzeImport, importText } from '../lib/importer';
 import { duplicateVersion, propagateMainKeyCapo } from '../lib/model';
 import {
@@ -104,8 +105,11 @@ export function UgUpgradeModal({
   const [picked, setPicked] = useState<UgSearchResult | null>(null);
   const [text, setText] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Mise en forme automatique (b220) : une version choisie ici arrive
+  // aussi brute qu'un import — elle passe donc par le même traitement.
   const [aiBusy, setAiBusy] = useState(false);
   const [aiDone, setAiDone] = useState(false);
+  const [avantIA, setAvantIA] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -141,21 +145,41 @@ export function UgUpgradeModal({
     setPicked(r);
     setText(null);
     setAiDone(false);
+    setAvantIA(null);
     setBusy(true);
+    let brut = '';
     try {
       const tab = await fetchUgTab(r.url);
-      setText(ugTabToImportText(tab));
+      brut = ugTabToImportText(tab);
+      setText(brut);
     } catch (e) {
       setError(
         e instanceof Error ? e.message : t('La récupération a échoué.'),
       );
       setPicked(null);
+      return;
     } finally {
       setBusy(false);
     }
+    // La mise en forme s'enchaîne, sans rien bloquer : l'aperçu est déjà
+    // affiché et les boutons d'application restent utilisables.
+    if (!meritteUneMiseEnForme(brut)) return;
+    setAiBusy(true);
+    try {
+      const hint = [song.title, song.artist]
+        .filter((x) => x.trim() !== '')
+        .join(' — ');
+      const propre = await aiCleanText(brut, hint || undefined);
+      setAvantIA(brut);
+      setText(propre);
+      setAiDone(true);
+    } catch {
+      // Sans réponse, la version brute reste : elle est utilisable.
+    } finally {
+      setAiBusy(false);
+    }
   }
 
-  // Même analyse que la page d'import : l'IA n'est proposée que si utile
   const issues = useMemo(() => {
     if (text === null) return [];
     try {
@@ -167,26 +191,21 @@ export function UgUpgradeModal({
       return [];
     }
   }, [text, song.title]);
-  const needsAi = !aiDone && issues.some((i) => i.severity === 'warn');
 
-  async function onAiClean() {
-    if (text === null || aiBusy) return;
-    setError(null);
-    setAiBusy(true);
+  /** Gros doute après la mise en forme — un constat de forme, rien d'autre. */
+  const doute = useMemo(() => {
+    if (text === null || avantIA === null) return '';
     try {
-      const hint = [song.title, song.artist]
-        .filter((x) => x.trim() !== '')
-        .join(' — ');
-      setText(await aiCleanText(text, hint || undefined));
-      setAiDone(true);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : t('Le nettoyage IA a échoué.'),
+      const titre = song.title || t('Morceau');
+      return douteApresIA(
+        importText(avantIA, titre),
+        importText(text, titre),
+        text,
       );
-    } finally {
-      setAiBusy(false);
+    } catch {
+      return '';
     }
-  }
+  }, [text, avantIA, song.title]);
 
   function line(r: UgSearchResult): string {
     return [
@@ -271,7 +290,7 @@ export function UgUpgradeModal({
               title: picked.title,
               info: line(picked),
             })}
-            {aiDone ? t(' · ✨ nettoyé à l’IA') : ''}
+            {aiDone ? t(' · ✨ mis en forme') : ''}
           </div>
           <div
             className="card mono"
@@ -302,21 +321,34 @@ export function UgUpgradeModal({
               ))}
             </div>
           )}
-          {needsAi && (
-            <>
-              <div className="spacer" />
-              <button
-                className="btn ghost block"
-                onClick={() => void onAiClean()}
-                disabled={aiBusy}
-              >
-                {aiBusy
-                  ? t('✨ Nettoyage en cours…')
-                  : t(
-                      "✨ L'analyse suggère un nettoyage IA — corriger avant d'appliquer",
-                    )}
-              </button>
-            </>
+          {aiBusy && (
+            <p className="help">{t('✨ Mise en forme de la partition…')}</p>
+          )}
+          {/* Gros doute : on le dit, et on laisse le choix de la version
+              brute — appliquée telle quelle, elle reste utilisable. */}
+          {doute !== '' && avantIA !== null && (
+            <div
+              className="card"
+              style={{ borderColor: 'var(--warn)', marginTop: 8 }}
+            >
+              <div style={{ color: 'var(--warn)' }}>
+                🔎 {t('La mise en forme laisse un doute : {raison}.', {
+                  raison: doute,
+                })}
+              </div>
+              <div className="rowactions">
+                <button
+                  className="btn ghost small"
+                  onClick={() => {
+                    setText(avantIA);
+                    setAvantIA(null);
+                    setAiDone(false);
+                  }}
+                >
+                  {t('Revenir à la version d’origine')}
+                </button>
+              </div>
+            </div>
           )}
           <div className="spacer" />
           <button

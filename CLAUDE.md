@@ -451,6 +451,32 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **Un crochet vit AVANT les gardes** : tout `useEffect`/`useMemo` écrit
   au-dessus d'un `if (x === null) return …` doit se lire comme si l'état
   n'existait pas encore (`x?.id ?? ''`), dépendances comprises.
+- **L'IA met en forme CHAQUE import** (b220, décision Vincent) : ce qui
+  était un bouton, à la main et seulement sur un import déjà cassé, est
+  devenu automatique — à l'unité comme en masse. **Jamais bloquant** :
+  l'aperçu s'affiche avec l'analyse LOCALE, le bouton d'ajout reste actif, et
+  si l'IA n'aboutit pas on garde simplement ce qu'on avait. Le texte collé
+  n'est jamais remplacé : il faut pouvoir y revenir.
+  **Pas de vérification de JUSTESSE à l'import** (arbitrage Vincent — refus
+  explicite de la comparaison mot à mot que je proposais) : savoir si la
+  partition dit vrai est le métier de « Chercher une meilleure version ».
+  Le **gros doute** est donc un constat de FORME et rien d'autre — du texte
+  perdu, des accords disparus, une partition que `analyzeImport` juge encore
+  bancale APRÈS le passage. Dans ce cas seulement, l'utilisateur choisit ; à
+  l'unité tout de suite, en masse **plus tard depuis la bibliothèque** (un lot
+  de trois cents fichiers ne s'arrête pas pour poser une question).
+  Corollaire : la partition d'AVANT l'IA (`song.beforeAi`) n'est conservée
+  QUE sur les morceaux marqués « à vérifier » — la garder partout doublerait
+  le poids de la bibliothèque en localStorage.
+- **Tout appel payant a un plafond** (b220, demande de Vincent) : un geste
+  délibéré devenu automatique est un geste bouclable. `server/ratelimit.js`
+  compte par appelant, par heure ET par jour, sur `/api/ai` comme sur
+  `/api/tabs` ; l'appelant est son COMPTE quand il en a un (plafonds larges),
+  sinon son adresse, HACHÉE — on n'enregistre ni identifiant ni IP en clair.
+  Même règle que la mesure (`meter.js`) : ce garde-fou ne doit JAMAIS faire
+  échouer une fonctionnalité — base injoignable ou RPC absente, on laisse
+  passer. Après `supabase/admin.sql`, la table `ai_rate` et la fonction
+  `bump_rate` doivent exister.
 - **Ce qui est RECONNU doit être GARDÉ** (b219) : l'import repérait les
   sections (« Refrain », « [Couplet 2] »), s'en servait pour bâtir le résumé
   de structure… puis effaçait le mot des paroles. Comme « Structure » est

@@ -11,6 +11,8 @@
 import fetchTab from '../server/fetch-tab.js';
 import searchTabs from '../server/search-tabs.js';
 import socialImport from '../server/social-import.js';
+import { identifie } from '../server/identity.js';
+import { autorise, refuseTrop } from '../server/ratelimit.js';
 
 const handlers = { fetch: fetchTab, search: searchTabs, social: socialImport };
 
@@ -35,6 +37,14 @@ export default async function handler(req, res) {
   const h = handlers[fn];
   if (!h) {
     res.status(404).json({ error: 'Fonction inconnue' });
+    return;
+  }
+  // Garde-fou d'usage (b220) : pas d'IA ici, mais du trafic sortant qu'on
+  // ne veut pas voir transformé en aspirateur de catalogue.
+  const qui = await identifie(req);
+  const verdict = await autorise('tabs', req, qui.user?.id ?? '');
+  if (!verdict.ok) {
+    refuseTrop(res, verdict);
     return;
   }
   return h(req, res);
