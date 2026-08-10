@@ -1,63 +1,50 @@
 /**
- * POSITIONS D'ACCORDS À LA GUITARE (b225, demande de Vincent : « permettre
- * l'affichage d'une position d'accords guitare en cliquant sur l'accord »).
+ * POSITIONS D'ACCORDS À LA GUITARE — LUES, JAMAIS INVENTÉES (b229).
  *
- * Trois principes, dans cet ordre :
+ * b225 CALCULAIT les positions à partir de gabarits déplaçables. L'idée
+ * paraissait élégante ; elle était fausse. Elle vérifiait l'harmonie — les
+ * bonnes notes — et jamais l'ergonomie, et elle a produit un G6 barré case 3
+ * qui demande quatre doigts au-dessus du barré alors qu'il n'en reste que
+ * trois (signalement de Vincent). b228 avait colmaté en refusant tout ce qui
+ * n'était pas tenable ; c'était un pansement sur une méthode, pas une
+ * méthode.
  *
- *  1. **HORS LIGNE, TOUJOURS.** Pas de service, pas de base distante, pas de
- *     dépendance : un musicien qui déchiffre un accord est souvent dans une
- *     cave de répétition sans réseau. Tout est calculé ici, en quelques
- *     centaines d'octets.
+ * Vincent a tranché : « trop dangereux de les inventer ». Donc on ne les
+ * invente plus. `src/lib/chorddb.ts` contient des positions RELEVÉES par des
+ * guitaristes — avec le numéro de chaque doigt et l'emplacement du barré —
+ * tirées de `chords-db` (David Rubert, licence MIT) et figées dans le dépôt.
  *
- *  2. **LA POSITION OUVERTE D'ABORD.** C'est celle que le monde entier joue
- *     et celle qu'on veut voir quand on demande « c'est quoi, ce Bm7 ? ».
- *     Elle vient d'une table écrite à la main, parce qu'aucune règle ne la
- *     génère : un C ouvert n'est pas « un barré à la case 0 ».
+ * Ce que ça garde du cahier des charges :
+ *   - HORS LIGNE : la table est commitée, aucune dépendance, aucun réseau ;
+ *   - RIEN D'INVENTÉ : un accord absent de la table n'ouvre pas ;
+ *   - LÉGER : 32 Ko, encodés (« x32010/032010@3 »).
  *
- *  3. **LE BARRÉ ENSUITE, CALCULÉ.** Toute la logique du manche tient dans
- *     deux gabarits — la forme de E (fondamentale sur la 6ᵉ corde) et la
- *     forme de A (sur la 5ᵉ) — qu'on déplace. Ça couvre les douze
- *     fondamentales sans écrire cent quarante-quatre tableaux, et ça donne
- *     au musicien EXACTEMENT ce qu'il cherche : « et plus haut sur le
- *     manche, ça donne quoi ? ».
- *
- * Cordes indexées de la 6ᵉ (mi grave) à la 1ʳᵉ (mi aigu). Une case vaut
- * `MUET` (corde non jouée), 0 (à vide) ou le numéro de case ABSOLU.
- *
- * On ne prétend PAS être exhaustif : un accord inconnu ne renvoie rien, et
- * l'interface le dit plutôt que d'inventer une position fausse — un doigté
- * faux est pire que pas de doigté.
+ * `estJouable` reste, en filet : si la table venait un jour à contenir une
+ * position hors de portée, elle ne passerait pas.
  */
 import { noteIndex } from './chords';
+import { ACCORDS } from './chorddb';
 
 export const MUET = -1;
 
 export interface Position {
   /** 6 cases, de la 6ᵉ corde à la 1ʳᵉ. MUET, 0 (à vide) ou case absolue. */
   cases: number[];
+  /** Doigt par corde (0 = aucun, 1 = index … 4 = auriculaire). */
+  doigts: number[];
   /** Barré éventuel : une case, de la corde `de` à la corde `a` (indices). */
   barre?: { case_: number; de: number; a: number };
   /** Position ouverte (au sillet) — celle qu'on joue par défaut. */
   ouverte: boolean;
-  /** Corde qui porte la fondamentale : 6 ou 5 (0 quand on ne sait pas). */
+  /** Corde qui porte la fondamentale : 6 ou 5 (0 quand elle est ailleurs). */
   cordeRacine: number;
-  /** Basse imposée par un accord barre-oblique (« A/C# ») — '' sinon. */
+  /** Basse imposée par un accord barre-oblique (« A/C# ») — absent sinon. */
   basse?: string;
-  /**
-   * Le LIBELLÉ n'est pas ici : ce module ne parle aucune langue. C'est
-   * l'interface qui l'écrit (`ChordDiagram`), avec `t()` — un module de
-   * calcul qui fabrique du texte finit par le fabriquer en français dans
-   * l'app anglaise.
-   */
 }
 
 /** Symbole d'accord découpé : fondamentale, qualité, basse éventuelle. */
 const SYMBOLE = /^([A-G](?:#|b)?)([^/]*)(?:\/([A-G](?:#|b)?))?$/;
 
-/**
- * Familles reconnues. La clé est la qualité NORMALISÉE ; les variantes
- * d'écriture (« min », « -", « M7 »…) y sont ramenées par `normalise`.
- */
 type Qualite =
   | 'maj' | 'm' | '7' | 'm7' | 'maj7' | 'sus4' | 'sus2'
   | '6' | 'm6' | '9' | 'add9' | 'dim' | 'dim7' | 'aug' | '5';
@@ -83,121 +70,20 @@ export function normalise(qualite: string): Qualite | null {
   return null;
 }
 
-/**
- * POSITIONS OUVERTES — écrites à la main, parce qu'elles ne se déduisent de
- * rien. Clé : `fondamentale|qualité`. Ce sont celles qu'on joue vraiment ;
- * la liste s'arrête volontairement là où l'usage s'arrête.
- */
-const OUVERTES: Record<string, number[]> = {
-  'C|maj': [MUET, 3, 2, 0, 1, 0],
-  'C|7': [MUET, 3, 2, 3, 1, 0],
-  'C|maj7': [MUET, 3, 2, 0, 0, 0],
-  'C|add9': [MUET, 3, 2, 0, 3, 0],
-  'D|maj': [MUET, MUET, 0, 2, 3, 2],
-  'D|m': [MUET, MUET, 0, 2, 3, 1],
-  'D|7': [MUET, MUET, 0, 2, 1, 2],
-  'D|m7': [MUET, MUET, 0, 2, 1, 1],
-  'D|maj7': [MUET, MUET, 0, 2, 2, 2],
-  'D|sus4': [MUET, MUET, 0, 2, 3, 3],
-  'D|sus2': [MUET, MUET, 0, 2, 3, 0],
-  'E|maj': [0, 2, 2, 1, 0, 0],
-  'E|m': [0, 2, 2, 0, 0, 0],
-  'E|7': [0, 2, 0, 1, 0, 0],
-  'E|m7': [0, 2, 0, 0, 0, 0],
-  'E|maj7': [0, 2, 1, 1, 0, 0],
-  'E|sus4': [0, 2, 2, 2, 0, 0],
-  'F|maj7': [MUET, MUET, 3, 2, 1, 0],
-  'G|maj': [3, 2, 0, 0, 0, 3],
-  'G|7': [3, 2, 0, 0, 0, 1],
-  'G|maj7': [3, 2, 0, 0, 0, 2],
-  'G|sus4': [3, 3, 0, 0, 1, 3],
-  'A|maj': [MUET, 0, 2, 2, 2, 0],
-  'A|m': [MUET, 0, 2, 2, 1, 0],
-  'A|7': [MUET, 0, 2, 0, 2, 0],
-  'A|m7': [MUET, 0, 2, 0, 1, 0],
-  'A|maj7': [MUET, 0, 2, 1, 2, 0],
-  'A|sus4': [MUET, 0, 2, 2, 3, 0],
-  'A|sus2': [MUET, 0, 2, 2, 0, 0],
-  'B|7': [MUET, 2, 1, 2, 0, 2],
-  'B|m7': [MUET, 2, 0, 2, 0, 2],
-};
-
-/**
- * GABARITS DÉPLAÇABLES. Écarts en cases par rapport à la fondamentale, la
- * corde qui la porte étant à 0. `null` = corde non jouée.
- */
-const FORME_MI: Partial<Record<Qualite, (number | null)[]>> = {
-  maj: [0, 2, 2, 1, 0, 0],
-  m: [0, 2, 2, 0, 0, 0],
-  '7': [0, 2, 0, 1, 0, 0],
-  m7: [0, 2, 0, 0, 0, 0],
-  maj7: [0, 2, 1, 1, 0, 0],
-  sus4: [0, 2, 2, 2, 0, 0],
-  '6': [0, 2, 2, 1, 2, 0],
-  m6: [0, 2, 2, 0, 2, 0],
-  '9': [0, 2, 0, 1, 0, 2],
-  aug: [0, 3, 2, 1, 1, 0],
-  '5': [0, 2, 2, null, null, null],
-};
-
-const FORME_LA: Partial<Record<Qualite, (number | null)[]>> = {
-  maj: [null, 0, 2, 2, 2, 0],
-  m: [null, 0, 2, 2, 1, 0],
-  '7': [null, 0, 2, 0, 2, 0],
-  m7: [null, 0, 2, 0, 1, 0],
-  maj7: [null, 0, 2, 1, 2, 0],
-  sus4: [null, 0, 2, 2, 3, 0],
-  sus2: [null, 0, 2, 2, 0, 0],
-  '6': [null, 0, 2, 2, 2, 2],
-  m6: [null, 0, 2, 2, 1, 2],
-  '9': [null, 0, 2, 4, 2, 3],
-  add9: [null, 0, 2, 4, 2, 0],
-  dim: [null, 0, 1, 2, 1, null],
-  dim7: [null, 0, 1, 2, 1, 2],
-  aug: [null, 0, 3, 2, 2, 1],
-  '5': [null, 0, 2, 2, null, null],
-};
-
 /** Note à vide de chaque corde, de la 6ᵉ à la 1ʳᵉ. */
 const CORDES = ['E', 'A', 'D', 'G', 'B', 'E'];
 
-/** Écart en demi-tons de `note` au-dessus de la corde à vide `corde`. */
-function ecart(corde: string, note: string): number | null {
-  const a = noteIndex(corde);
-  const b = noteIndex(note);
-  if (a === null || b === null) return null;
-  return ((b - a) % 12 + 12) % 12;
-}
+const CHIFFRES = '0123456789abcdefghijklmnopqrstuvwxyz';
 
-/** Applique un gabarit à une case de barré. */
-function poser(
-  gabarit: (number | null)[],
-  caseBarre: number,
-  cordeRacine: number,
-): Position | null {
-  const cases = gabarit.map((d) => (d === null ? MUET : d + caseBarre));
-  // Un gabarit posé à la case 0 n'est pas un barré : c'est la position
-  // ouverte, déjà dans la table (et jouée autrement).
-  const jouees = cases
-    .map((c, i) => ({ c, i }))
-    .filter((x) => x.c !== MUET);
-  if (jouees.length === 0) return null;
-  // Les cordes tenues à la case du barré, de la plus grave à la plus aiguë.
-  const surLeBarre = jouees.filter((x) => x.c === caseBarre).map((x) => x.i);
-  const barre =
-    caseBarre > 0 && surLeBarre.length >= 2
-      ? {
-          case_: caseBarre,
-          de: Math.min(...surLeBarre),
-          a: Math.max(...surLeBarre),
-        }
-      : undefined;
-  return {
-    cases,
-    barre,
-    ouverte: caseBarre === 0,
-    cordeRacine: cordeRacine === 0 ? 6 : 5,
-  };
+/** Les deux écritures possibles d'une hauteur (dièse et bémol). */
+const DIESES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const BEMOLS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+/** Écritures équivalentes d'une note (« C# » et « Db » désignent la même). */
+function ecritures(note: string): string[] {
+  const i = noteIndex(note);
+  if (i === null) return [note];
+  return [...new Set([DIESES[i], BEMOLS[i]])];
 }
 
 /** Note produite par une corde à une case donnée (0..11). */
@@ -207,158 +93,105 @@ function noteDe(corde: number, caseF: number): number {
 }
 
 /**
- * Étendue réelle d'un barré après modification : les cordes encore tenues à
- * cette case, de la plus grave à la plus aiguë. `undefined` s'il n'en reste
- * pas au moins deux — un « barré » d'une corde, c'est un doigt.
+ * COMBIEN DE DOIGTS CETTE POSITION DEMANDE-T-ELLE ?
+ *
+ * La table donne le numéro de chaque doigt : on compte donc des doigts
+ * DISTINCTS, sans rien supposer. Un doigt qui revient sur plusieurs cordes,
+ * c'est un barré — celui que le relevé a noté.
  */
-function recalculeBarre(
+export function doigtsNecessaires(
   cases: number[],
-  caseBarre: number,
-): { case_: number; de: number; a: number } | undefined {
-  const sur = cases
-    .map((c, i) => ({ c, i }))
-    .filter((x) => x.c === caseBarre)
-    .map((x) => x.i);
-  if (sur.length < 2) return undefined;
-  return { case_: caseBarre, de: Math.min(...sur), a: Math.max(...sur) };
+  _barre?: { case_: number; de: number; a: number },
+  doigts?: number[],
+): number {
+  if (doigts && doigts.some((d) => d > 0)) {
+    return new Set(doigts.filter((d) => d > 0)).size;
+  }
+  return cases.filter((c) => c > 0).length;
 }
 
-/** Écart entre la case la plus basse et la plus haute réellement doigtées. */
-function empan(cases: number[]): number {
-  const doigtees = cases.filter((c) => c > 0);
-  if (doigtees.length === 0) return 0;
-  return Math.max(...doigtees) - Math.min(...doigtees);
-}
-
-const EMPAN_MAX = 4;
+const EMPAN_MAX = 5;
 
 /**
- * REPOSER LA BASSE D'UN ACCORD BARRE-OBLIQUE (b226, signalement de Marco :
- * « il fait un la normal et il a pas mis la basse en do# »).
- *
- * Un « A/C# » n'est PAS un A. Ignorer la basse, c'était afficher un doigté
- * faux sous une étiquette juste — exactement ce que ce module s'interdit.
- *
- * Principe : on garde la forme, et on descend chercher la basse sur la corde
- * la plus grave qui peut la produire à portée de main. Tout ce qui est
- * EN DESSOUS est étouffé — sinon la vraie basse resterait la plus grave et
- * l'accord sonnerait comme avant.
- *
- * Renvoie null quand la main ne peut pas : on n'invente pas.
+ * Cette position est-elle tenable ? La table est relevée par des
+ * guitaristes, donc ce contrôle ne devrait jamais rien rejeter — il est là
+ * pour que ça reste vrai si la table change un jour.
  */
-function poserLaBasse(base: Position, basse: string): Position | null {
-  const cible = noteIndex(basse);
-  if (cible === null) return null;
-
-  // Corde la plus grave actuellement jouée.
-  const graveActuelle = base.cases.findIndex((c) => c !== MUET);
-  if (graveActuelle === -1) return null;
-  // La basse est déjà en place : rien à faire.
-  if (noteDe(graveActuelle, base.cases[graveActuelle]) === cible) {
-    return { ...base, basse };
+export function estJouable(p: Position): boolean {
+  // Deux cordes suffisent : un accord de puissance (« C5 ») n'en a que deux,
+  // et c'est un accord.
+  if (p.cases.filter((c) => c !== MUET).length < 2) return false;
+  const doigtees = p.cases.filter((c) => c > 0);
+  if (doigtees.length > 0 && Math.max(...doigtees) - Math.min(...doigtees) > EMPAN_MAX) {
+    return false;
   }
+  return doigtsNecessaires(p.cases, p.barre, p.doigts) <= 4;
+}
 
-  let meilleure: Position | null = null;
-  let empanMeilleur = Infinity;
-  // De la 6ᵉ corde vers la 4ᵉ : on veut la basse la plus GRAVE possible.
-  for (let corde = 0; corde <= 2; corde++) {
-    for (let caseF = 0; caseF <= 12; caseF++) {
-      if (noteDe(corde, caseF) !== cible) continue;
-      const cases = base.cases.map((c, i) =>
-        i < corde ? MUET : i === corde ? caseF : c,
-      );
-      // Il doit rester autre chose que la basse — sinon ce n'est plus un
-      // accord, c'est une note.
-      if (cases.filter((c) => c !== MUET).length < 3) continue;
-      if (empan(cases) > EMPAN_MAX) continue;
-      // Le barré a pu perdre une corde (la basse a déplacé la plus grave) :
-      // on RECALCULE son étendue au lieu de garder l'ancienne, qui
-      // dessinerait un trait là où plus rien n'est tenu.
-      const barre = base.barre
-        ? recalculeBarre(cases, base.barre.case_)
-        : undefined;
-      const doigtees = cases.filter((c) => c > 0);
-      const candidat: Position = {
-        cases,
-        barre,
-        ouverte: doigtees.length === 0 || Math.max(...doigtees) <= 3,
-        cordeRacine: base.cordeRacine,
-        basse,
-      };
-      if (empan(cases) < empanMeilleur) {
-        empanMeilleur = empan(cases);
-        meilleure = candidat;
-      }
-      break; // la case la plus basse de cette corde suffit
+/** Décode une position encodée (« x32010/032010@3 »). */
+function decode(code: string, fondamentale: string, basse: string): Position | null {
+  const m = /^([x0-9a-z]{6})\/([0-4]{6})(?:@([0-9a-z]))?$/.exec(code);
+  if (!m) return null;
+  const cases = [...m[1]].map((c) => (c === 'x' ? MUET : CHIFFRES.indexOf(c)));
+  const doigts = [...m[2]].map((d) => Number(d));
+  if (cases.some((c) => c !== MUET && c < 0)) return null;
+  let barre: Position['barre'];
+  if (m[3] !== undefined) {
+    const caseB = CHIFFRES.indexOf(m[3]);
+    const sur = cases
+      .map((c, i) => ({ c, i }))
+      .filter((x) => x.c === caseB)
+      .map((x) => x.i);
+    if (sur.length >= 2) {
+      barre = { case_: caseB, de: Math.min(...sur), a: Math.max(...sur) };
     }
-    if (meilleure !== null) break; // corde la plus grave trouvée : on s'arrête
   }
-  return meilleure;
+  const doigtees = cases.filter((c) => c > 0);
+  const idxRacine = noteIndex(fondamentale);
+  const grave = cases.findIndex((c) => c !== MUET);
+  const cordeRacine =
+    idxRacine !== null && grave >= 0 && noteDe(grave, cases[grave]) === idxRacine
+      ? 6 - grave
+      : 0;
+  return {
+    cases,
+    doigts,
+    barre,
+    ouverte: doigtees.length === 0 || Math.max(...doigtees) <= 4,
+    cordeRacine: cordeRacine === 6 || cordeRacine === 5 ? cordeRacine : 0,
+    ...(basse !== '' ? { basse } : {}),
+  };
 }
 
 /**
- * Positions proposées pour un symbole d'accord, la plus courante d'abord.
- * Tableau VIDE quand on ne sait pas : mieux vaut ne rien montrer qu'un
- * doigté faux.
+ * Positions proposées pour un symbole d'accord, la plus basse d'abord.
+ * Tableau VIDE quand la table ne connaît pas l'accord : on n'invente pas.
  */
 export function positionsPour(symbole: string): Position[] {
   const m = SYMBOLE.exec((symbole ?? '').trim());
   if (!m) return [];
-  const fondamentale = m[1];
   const qualite = normalise(m[2] ?? '');
   if (qualite === null) return [];
-  if (noteIndex(fondamentale) === null) return [];
-
-  const out: Position[] = [];
-  const ouverte = OUVERTES[`${fondamentale}|${qualite}`];
-  if (ouverte) {
-    out.push({ cases: [...ouverte], ouverte: true, cordeRacine: 0 });
-  }
-
-  // Barrés : forme de Mi (fondamentale sur la 6ᵉ corde), puis forme de La.
-  const gMi = FORME_MI[qualite];
-  const eMi = ecart(CORDES[0], fondamentale);
-  if (gMi && eMi !== null) {
-    const p = poser(gMi, eMi, 0);
-    if (p && eMi > 0) out.push(p);
-  }
-  const gLa = FORME_LA[qualite];
-  const eLa = ecart(CORDES[1], fondamentale);
-  if (gLa && eLa !== null) {
-    const p = poser(gLa, eLa, 1);
-    if (p && eLa > 0) out.push(p);
-  }
-  // Une fondamentale à vide (E, A) n'a pas de barré à la case 0 : sa position
-  // ouverte est déjà là. Mais on veut quand même une deuxième option plus
-  // haut sur le manche — la même forme une octave au-dessus.
-  if (out.length === 1 && gMi && eMi === 0) {
-    const p = poser(gMi, 12, 0);
-    if (p) out.push(p);
-  }
-  if (out.length === 1 && gLa && eLa === 0) {
-    const p = poser(gLa, 12, 1);
-    if (p) out.push(p);
-  }
-  // Les positions les plus basses d'abord : c'est là que la main se pose.
-  const triees = out.slice(0, 3).sort((a, b) => hauteur(a) - hauteur(b));
-
-  // Accord barre-oblique : la basse doit sonner, sinon ce n'est pas l'accord
-  // demandé (b226). Une forme qui ne peut pas la porter est écartée — pas
-  // ramenée à l'accord de base.
   const basse = m[3] ?? '';
-  if (basse !== '' && noteIndex(basse) !== null) {
-    const avecBasse = triees
-      .map((p) => poserLaBasse(p, basse))
-      .filter((p): p is Position => p !== null);
-    return avecBasse.slice(0, 2);
-  }
-  return triees;
-}
+  if (noteIndex(m[1]) === null) return [];
+  if (basse !== '' && noteIndex(basse) === null) return [];
 
-/** Case la plus basse réellement jouée (0 pour une position ouverte). */
-function hauteur(p: Position): number {
-  const jouees = p.cases.filter((c) => c > 0);
-  return jouees.length === 0 ? 0 : Math.min(...jouees);
+  // La table connaît les deux écritures (« C# » et « Db ») : on essaie
+  // l'une puis l'autre plutôt que d'imposer la nôtre.
+  for (const racine of ecritures(m[1])) {
+    const bassesPossibles = basse === '' ? [''] : ecritures(basse);
+    for (const b of bassesPossibles) {
+      const cle = b === '' ? `${racine}|${qualite}` : `${racine}|${qualite}|${b}`;
+      const codes = ACCORDS[cle];
+      if (!codes) continue;
+      const out = codes
+        .map((c) => decode(c, m[1], basse))
+        .filter((p): p is Position => p !== null)
+        .filter(estJouable);
+      if (out.length > 0) return out.slice(0, 2);
+    }
+  }
+  return [];
 }
 
 /** Y a-t-il quelque chose à montrer pour ce symbole ? */

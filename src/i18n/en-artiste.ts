@@ -430,6 +430,13 @@ export const EN_ARTISTE: Record<string, string> = {
   'Le serveur n’a pas répondu. Tu peux couper ici : ton téléphone sort du direct, et l’application préviendra le serveur dès qu’elle y arrive.':
     'The server did not answer. You can stop here: your phone leaves the live, and the app will tell the server as soon as it can.',
 
+  // b228 — masquer / démasquer depuis la liste des groupes
+  'masqué au public': 'hidden from the audience',
+  'Masqué au public — aucun direct possible à son nom. Toucher pour le rendre visible.':
+    'Hidden from the audience — no live can run under its name. Tap to make it visible.',
+  'Visible du public. Toucher pour le masquer.':
+    'Visible to the audience. Tap to hide it.',
+
   // b227 — le groupe face au public (masquage + adresse miroir)
   'Connecte-toi d’abord (onglet Artiste).': 'Sign in first (Artist tab).',
   'Ce groupe et le public': 'This band and the audience',
