@@ -42,6 +42,7 @@ import {
   bandToProfile,
   connusEnTete,
   dedupeMusicians,
+  musiciensDuGroupe,
   duplicateVersion,
   memeMusicien,
   musiciensConnus,
@@ -751,19 +752,21 @@ export function BandEdit({ id }: { id: string }) {
   const manualMembers = shown.members.filter(
     (m) => m.pending !== true && !nameMatchesCloud(m.name.trim().toLowerCase()),
   );
-  // Invités pas encore acceptés. Dès que le vrai compte a rejoint (nom cloud
-  // qui contient le prénom, ou l'inverse), l'invité n'est plus « en attente ».
-  const pendingMembers = shown.members.filter(
-    (m) => m.pending === true && !nameMatchesCloud(m.name.trim().toLowerCase()),
-  );
 
-  // Données des 3 portes. Les lignes cloud sont ramenées à la forme commune
-  // (`userId`) pour que l'identité de compte serve partout (b249).
-  const allMembers = dedupeMusicians([
-    ...cloudMembers.map((m) => ({ ...m, userId: m.user_id })),
-    ...manualMembers,
-  ]);
-  const memberCount = allMembers.length;
+  /**
+   * LES MUSICIENS DU GROUPE (b255). Le créateur n'étant jamais dans
+   * `cloud_band_members`, il faut l'ajouter explicitement — sans quoi un
+   * membre qui a rejoint compte un musicien de moins que la réalité
+   * (« 1 musicien » chez Damien pour un groupe qui en a trois).
+   */
+  const tousLesMusiciens = musiciensDuGroupe(
+    band,
+    cloudMembers,
+    owner ?? (band.ownerName ? { name: band.ownerName } : undefined),
+  );
+  const allMembers = tousLesMusiciens.filter((m) => m.pending !== true);
+  const enAttente = tousLesMusiciens.filter((m) => m.pending === true);
+  const memberCount = tousLesMusiciens.length;
   const fewMembers = memberCount < 2;
   const repCount = songs.filter(
     (s) => versionForBand(s, band.id) !== null,
@@ -894,7 +897,7 @@ export function BandEdit({ id }: { id: string }) {
                       )}
                     </span>
                   ))}
-                  {pendingMembers.slice(0, 2).map((m, i) => (
+                  {enAttente.slice(0, 2).map((m, i) => (
                     <span
                       className="av pending"
                       key={`p${i}`}
@@ -908,11 +911,15 @@ export function BandEdit({ id }: { id: string }) {
                   {band.owned === false && (band.ownerName ?? '') !== ''
                     ? t('créé par {nom} · ', { nom: band.ownerName ?? '' })
                     : ''}
+                  {/* Le total inclut les invités en attente, et le dit
+                      (b255) : « le groupe c'est 3 musiciens dont un en
+                      attente d'acceptation » (Vincent). Annoncer 2 quand on
+                      en a invité 3, c'est faire douter du compte. */}
                   {memberCount > 1
                     ? t('{n} musiciens', { n: memberCount })
                     : t('{n} musicien', { n: memberCount })}
-                  {pendingMembers.length > 0
-                    ? t(' · {n} en attente', { n: pendingMembers.length })
+                  {enAttente.length > 0
+                    ? t(', dont {n} en attente', { n: enAttente.length })
                     : ''}
                 </span>
               </button>
@@ -1637,16 +1644,19 @@ export function BandEdit({ id }: { id: string }) {
           title={t('Musiciens du groupe')}
           onClose={() => setMembersOpen(false)}
         >
-          {allMembers.length === 0 && pendingMembers.length === 0 && (
+          {tousLesMusiciens.length === 0 && (
             <p className="help">{t("Aucun musicien pour l'instant.")}</p>
           )}
-          {allMembers.map((m, i) => {
+          {tousLesMusiciens.map((m, i) => {
             const isMe = estMoi(m);
             // Membre avec compte : le créateur peut le retirer du groupe
             // (b143). Les musiciens saisis à la main n'ont pas de compte.
             const cloud = cloudMembers.find((c) => sameMusician(c.name, m.name));
             const canRemove =
-              band.owned === true && !isMe && cloud !== undefined;
+              band.owned === true &&
+              !isMe &&
+              m.pending !== true &&
+              cloud !== undefined;
             // Ligne CLIQUABLE avec ses actions dedans (b145) — un <button>
             // dans un <button> est invalide en HTML : la corbeille passait
             // à la ligne, décalée sous le musicien.
@@ -1681,8 +1691,15 @@ export function BandEdit({ id }: { id: string }) {
                     {estLeCreateur(m) && (
                       <span className="badge-next">{t('⭐ créateur')}</span>
                     )}
+                    {/* Un invité compte dans le total (b255) : il doit donc
+                        figurer dans la liste, et se distinguer d'un membre. */}
+                    {m.pending === true && (
+                      <span className="badge-next">
+                        {t("En attente d'acceptation")}
+                      </span>
+                    )}
                   </div>
-                  {m.instrument !== '' && (
+                  {(m.instrument ?? '') !== '' && (
                     <div className="sub">{m.instrument}</div>
                   )}
                 </div>

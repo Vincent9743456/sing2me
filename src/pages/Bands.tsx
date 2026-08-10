@@ -24,7 +24,7 @@ import {
   respondInvite,
 } from '../lib/bands';
 import { detacherDuCloud, texteSuppression } from '../lib/deleteband';
-import { dedupeMusicians } from '../lib/model';
+import { musiciensDuGroupe } from '../lib/model';
 import { creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -315,10 +315,21 @@ export function Bands() {
                         (« Marco ») et identifiant de son compte
                         (« marco.bosio »). */}
                     {(() => {
-                      const people = dedupeMusicians(
-                        band.members.filter((m) => m.name.trim() !== ''),
-                      );
+                      /* LE MÊME COMPTE QUE LA FICHE DU GROUPE (b255) : le
+                         créateur n'est jamais dans la liste des membres du
+                         serveur, il faut l'ajouter — sinon un groupe qu'on a
+                         REJOINT annonce un musicien de moins qu'il n'en a. */
+                      const people = musiciensDuGroupe(
+                        band,
+                        [],
+                        band.owned === false && (band.ownerName ?? '') !== ''
+                          ? { name: band.ownerName ?? '' }
+                          : undefined,
+                      ).filter((m) => m.name.trim() !== '');
                       const n = people.length;
+                      const attente = people.filter(
+                        (m) => m.pending === true,
+                      ).length;
                       return (
                         <div className="sub">
                           {/* Créateur rappelé quand ce n'est pas moi (b147). */}
@@ -329,6 +340,9 @@ export function Bands() {
                           {n > 1
                             ? t('{n} musiciens', { n })
                             : t('{n} musicien', { n })}
+                          {attente > 0
+                            ? t(', dont {n} en attente', { n: attente })
+                            : ''}
                           {n > 0
                             ? ` · ${people.map((m) => m.name).join(', ')}`
                             : ''}
