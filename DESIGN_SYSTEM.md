@@ -79,8 +79,11 @@ Règles :
   un composant qui a une couleur en dur : c'est elle qu'on corrige, jamais
   une exception qu'on ajoute. Le sombre reste le défaut et n'écrit aucun
   attribut : si le module de thème ne s'exécutait pas, l'app serait sombre.
-  Le réglage vit sur la PARTITION (seul écran qu'on regarde longtemps) et
-  s'applique à toute l'app ; il est dans `prefs.theme`, donc il suit le
+  Le réglage vit dans la BIBLIOTHÈQUE, à côté de « Filtrer » (arbitrage de
+  Vincent, b234 : pas sur la partition — cet écran est au morceau, un
+  réglage global n'y a rien à faire). Sans libellé, pour ne pas voler la
+  place de la recherche à 360 px : c'est l'`aria-label` qui le nomme. Il
+  s'applique à toute l'app et vit dans `prefs.theme`, donc il suit le
   compte comme la langue. Les pages publiques ne le suivent pas.
 - Tokens ajoutés avec lui, parce qu'ils étaient écrits en dur :
   `--stage-text`, `--stage-bar` (le mode scène a sa propre paire — c'est un
