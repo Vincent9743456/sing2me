@@ -510,6 +510,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Revenir à la version d’origine': 'Back to the original version',
 
   // b223 — ce que verra le public, sur la fiche d'un morceau
+  'Vue du public': 'Audience view',
+  'Lire le morceau comme le liront tes spectateurs':
+    'Read the song the way your audience will read it',
+  'Ma partition': 'My chart',
   'Ce que verra le public': 'What the audience will see',
   'à revoir': 'needs a look',
   'texte retouché': 'edited text',

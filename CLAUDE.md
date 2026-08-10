@@ -556,9 +556,14 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   la diffusion : son résultat n'apparaissait nulle part dans l'app, l'artiste
   découvrait l'écran de ses spectateurs par-dessus une épaule, en plein
   concert, sans aucun moyen de corriger une ligne sans abîmer sa partition —
-  celle qui porte ses accords. Le pli « 👁 Ce que verra le public » de la
-  fiche morceau montre le rendu EXACT (même composant `PublicLyrics`) et
-  permet de le réécrire. Trois règles :
+  celle qui porte ses accords. Un œil « 👁 Vue du public » vit dans la rangée
+  d'actions de la fiche morceau — **visible sur la partition, jamais rangé
+  dans un pli** (correction de Vincent : un aperçu qu'il faut dérouler sous
+  les notes de répétition n'existe pas) — et il BASCULE la partition sur le
+  rendu EXACT (même composant `PublicLyrics`), qu'on peut alors réécrire.
+  L'œil porte lui-même l'état : ✏️ quand le texte est retouché, « à revoir »
+  quand il a pris du retard. Hors mode scène et hors direct (arbitrage
+  Vincent) : sur scène, l'écran ne sert qu'à jouer. Trois règles :
   1. **l'automatique reste la règle** — sans retouche, le public suit la
      partition tout seul, il n'y a rien à entretenir ;
   2. **une retouche fait autorité PARTOUT** (`song.publicLyrics`) et n'est

@@ -15,7 +15,7 @@ Statuts : ✅ conserver · 🔧 corriger · 🔀 fusionner · ➕ créer · ❌ 
 | DndHint | ui.tsx | ✅ | |
 | SongBody / ChordLine / StructureBlock | SongBody.tsx | 🔧 | En-têtes métier par vue (phase 2) ; sinon conserver |
 | PublicLyrics | PublicLyrics.tsx | ✅ | **Seule façon d'afficher des paroles à quelqu'un qui LIT** (b219) : direct, setlist parcourue par le spectateur, aperçus. Ne jamais réécrire un bloc `pre-wrap` centré à la main |
-| PublicPreview | PublicPreview.tsx | ✅ | Pli « 👁 Ce que verra le public » de la fiche morceau (b223) : voir et corriger le texte lu par les spectateurs, sans toucher à la partition. Un seul chemin — ne pas en ouvrir un deuxième depuis le panneau ON AIR |
+| PublicEye / PublicPreview | PublicPreview.tsx | ✅ | « 👁 Vue du public » (b223) : l'œil vit dans la rangée d'actions de la fiche morceau — **visible sur la partition, jamais dans un pli** — et bascule la partition sur ce que liront les spectateurs, avec de quoi le corriger. Un seul chemin — ne pas en ouvrir un deuxième depuis le panneau ON AIR ; absent du mode scène et du direct |
 | OnAirButton / OnAirProvider | OnAir.tsx | 🔧 | CSS consolidé (3 couches → 1) ; panneau : sections |
 | AutoScroll (hook) | AutoScroll.tsx | ✅ | |
 | AutoScrollFab | AutoScroll.tsx | 🔀 | Fusionner avec les commandes ⇣ du mode scène (un composant, deux rendus) |

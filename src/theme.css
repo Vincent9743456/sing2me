@@ -3400,3 +3400,23 @@ h2.pagetitle {
 .progressbar.done > div {
   background: var(--ok);
 }
+
+/* ---------- 👁 Vue du public sur la fiche d'un morceau (b223) ----------
+   La partition bascule sur ce que liront les spectateurs. Le bandeau dit
+   toujours où l'on est : sans lui, on croit lire une partition amputée de ses
+   accords. La sortie est dans le bandeau, jamais à chercher plus bas. */
+.pubview {
+  margin-bottom: var(--sp-4);
+}
+.pubview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--sp-2);
+}

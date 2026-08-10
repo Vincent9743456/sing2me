@@ -11,13 +11,20 @@
  * (`PublicLyrics`) et rien d'autre autour : pas de simulation de concert, pas
  * de décor.
  *
- * Un pli (règle 3 : l'avancé ne coûte rien à qui ne le cherche pas), sauf
- * quand il y a quelque chose à dire — un texte retouché, ou une partition qui
- * a bougé depuis : le résumé le porte alors, pli fermé.
+ * CE N'EST PAS UN PLI (correction de Vincent, b223 : « le petit œil doit être
+ * visible sur la partition »). Un aperçu rangé sous les notes de répétition
+ * n'existe pas : personne ne déroule une fiche entière pour vérifier quelque
+ * chose dont il ignore l'existence. L'œil vit donc dans la rangée d'actions du
+ * morceau, en haut, et il BASCULE la partition elle-même — un seul geste, au
+ * même endroit que ce qu'il change.
+ *
+ * Hors mode scène et hors direct (arbitrage Vincent) : sur scène, l'écran ne
+ * sert qu'à jouer.
  */
 import React, { useState } from 'react';
 
 import { PublicLyrics } from './PublicLyrics';
+import { Icon } from './Icon';
 import {
   garderMonTexte,
   parolesAutomatiques,
@@ -30,19 +37,50 @@ import {
 import { t } from '../i18n';
 import { Song } from '../types';
 
+/**
+ * L'œil, dans la rangée d'actions du morceau. Il dit aussi ce qu'il y a à
+ * savoir sans l'ouvrir : un texte retouché qui a pris du retard sur la
+ * partition se signale ici, sinon personne ne le verrait jamais.
+ */
+export function PublicEye({
+  song,
+  actif,
+  onToggle,
+}: {
+  song: Song;
+  actif: boolean;
+  onToggle: () => void;
+}) {
+  const aRevoir = partitionAChange(song);
+  return (
+    <button
+      className={`chip ${actif ? '' : 'off'}`}
+      style={aRevoir ? { color: 'var(--warn)' } : undefined}
+      aria-pressed={actif}
+      title={t('Lire le morceau comme le liront tes spectateurs')}
+      onClick={onToggle}
+    >
+      👁 {t('Vue du public')}
+      {aRevoir ? ` — ${t('à revoir')}` : parolesRetouchees(song) ? ' ✏️' : ''}
+    </button>
+  );
+}
+
+/**
+ * Le panneau qui remplace la partition quand l'œil est actif : ce que lisent
+ * les spectateurs, et de quoi le corriger.
+ */
 export function PublicPreview({
   song,
   onSave,
+  onClose,
 }: {
   song: Song;
   onSave: (song: Song) => void;
+  onClose: () => void;
 }) {
   // null = lecture · sinon le texte en cours de modification
   const [brouillon, setBrouillon] = useState<string | null>(null);
-  // Le pli s'ouvre de lui-même quand il y a un écart à trancher — mais son
-  // ouverture reste ENSUITE entre les mains du musicien. Piloter `open` par
-  // l'écart le refermait au nez de celui qui venait de le résoudre.
-  const [ouvert, setOuvert] = useState(() => partitionAChange(song));
 
   const retouche = parolesRetouchees(song);
   const aChange = partitionAChange(song);
@@ -50,19 +88,13 @@ export function PublicPreview({
   const vide = texte.trim() === '';
 
   return (
-    <details
-      className="stfold"
-      open={ouvert}
-      onToggle={(e) => setOuvert(e.currentTarget.open)}
-    >
-      <summary>
-        👁 {t('Ce que verra le public')}
-        {aChange
-          ? ` — ${t('à revoir')}`
-          : retouche
-            ? ` — ${t('texte retouché')}`
-            : ''}
-      </summary>
+    <div className="pubview">
+      <div className="pubview-head">
+        <span>👁 {t('Ce que verra le public')}</span>
+        <button className="btn ghost small" onClick={onClose}>
+          <Icon name="x" size={12} /> {t('Ma partition')}
+        </button>
+      </div>
 
       {aChange && (
         <p className="help" style={{ color: 'var(--warn)', marginTop: 0 }}>
@@ -77,7 +109,9 @@ export function PublicPreview({
           <div className="pubframe">
             {vide ? (
               <p className="help" style={{ textAlign: 'center', margin: 0 }}>
-                {t('Aucune parole à afficher — le public verra l’écran de concert sans texte.')}
+                {t(
+                  'Aucune parole à afficher — le public verra l’écran de concert sans texte.',
+                )}
               </p>
             ) : (
               <PublicLyrics text={texte} style={{ marginTop: 0 }} />
@@ -86,7 +120,9 @@ export function PublicPreview({
           <p className="help">
             {retouche
               ? t('Texte écrit par toi. Le public lit ceci, et pas ta partition.')
-              : t('Préparé depuis ta partition : les accords sont retirés, les sections rappelées. Il suit tes corrections tout seul.')}
+              : t(
+                  'Préparé depuis ta partition : les accords sont retirés, les sections rappelées. Il suit tes corrections tout seul.',
+                )}
           </p>
           <div className="hstack" style={{ gap: 8, flexWrap: 'wrap' }}>
             <button
@@ -152,7 +188,9 @@ export function PublicPreview({
             </button>
             <button
               className="btn ghost small"
-              title={t('Remet le texte préparé automatiquement depuis ta partition')}
+              title={t(
+                'Remet le texte préparé automatiquement depuis ta partition',
+              )}
               onClick={() => setBrouillon(parolesAutomatiques(song))}
             >
               ↻ {t('Repartir de ma partition')}
@@ -160,6 +198,6 @@ export function PublicPreview({
           </div>
         </>
       )}
-    </details>
+    </div>
   );
 }
