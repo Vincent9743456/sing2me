@@ -50,41 +50,13 @@ export function useScrollLock(): void {
 }
 
 /**
- * Cale un panneau plein écran sur la zone RÉELLEMENT visible (b210).
- *
- * `position: fixed; inset: 0` se règle sur la fenêtre de MISE EN PAGE, qui
- * ne rétrécit pas quand le clavier s'ouvre : le panneau garde sa hauteur
- * pleine, sa moitié basse passe sous le clavier, et la zone défilante — qui
- * contient alors tout son contenu sans déborder — n'a plus rien à faire
- * défiler. Le sélecteur de morceaux paraissait figé, clavier ouvert
- * (constat de Vincent). iOS pousse en plus la page pour montrer le champ
- * actif, ce qui décale le panneau sous l'heure et le réseau.
- *
- * On publie donc la hauteur et le décalage de la fenêtre VISUELLE en
- * variables CSS, et les panneaux s'y calent. Sans `visualViewport`
- * (navigateurs anciens), les valeurs de repli laissent le comportement
- * d'avant — rien ne casse.
+ * b210 vivait ici : `useVisualViewport` publiait `--vv-h` / `--vv-t` pour les
+ * panneaux plein écran. La mesure est REMONTÉE dans `src/lib/clavier.ts`
+ * (b264) — une seule maison, démarrée avant React, valable pour la page
+ * comme pour les panneaux. Le CSS de `.pickerfull` et `.stagelist` lit
+ * toujours les mêmes variables : rien n'a changé pour eux, sinon qu'elles
+ * sont désormais posées même quand aucun panneau n'est ouvert.
  */
-export function useVisualViewport(): void {
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const racine = document.documentElement.style;
-    const poser = () => {
-      racine.setProperty('--vv-h', `${Math.round(vv.height)}px`);
-      racine.setProperty('--vv-t', `${Math.round(vv.offsetTop)}px`);
-    };
-    poser();
-    vv.addEventListener('resize', poser);
-    vv.addEventListener('scroll', poser);
-    return () => {
-      vv.removeEventListener('resize', poser);
-      vv.removeEventListener('scroll', poser);
-      racine.removeProperty('--vv-h');
-      racine.removeProperty('--vv-t');
-    };
-  }, []);
-}
 
 export function StageList({
   children,
@@ -97,7 +69,6 @@ export function StageList({
   closeOnAnyClick?: boolean;
 }) {
   useScrollLock();
-  useVisualViewport();
   return (
     <div
       className="stagelist"

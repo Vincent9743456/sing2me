@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './theme.css';
 import { appliquerTheme, themeMemorise } from './lib/theme';
+import { suivreLeClavier } from './lib/clavier';
 
 /**
  * Le thème AVANT tout (b233) : posé depuis la copie locale, avant que React
@@ -12,6 +13,14 @@ import { appliquerTheme, themeMemorise } from './lib/theme';
  * puis basculerait en clair sous les yeux, à chaque lancement.
  */
 appliquerTheme(themeMemorise());
+
+/**
+ * Le clavier aussi est un fait global (b264) : la page, les feuilles et les
+ * panneaux s'y calent par le CSS. Démarré ici, une fois pour toute l'app —
+ * un écran qui l'oublierait redeviendrait impossible à faire défiler, clavier
+ * ouvert.
+ */
+suivreLeClavier();
 
 /**
  * COMPTE SUPPRIMÉ : ON REPART DE RIEN (b261).

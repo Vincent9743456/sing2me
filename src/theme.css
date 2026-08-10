@@ -24,6 +24,9 @@
      dessine toujours son texte en NOIR par défaut, en clair comme en
      sombre. Voir `.embedbox iframe`. */
   --embed-canvas: #f4f0e9;
+  /* Ce que le clavier recouvre en bas (b264), publié par `lib/clavier.ts`.
+     0 par défaut : sans la mesure, l'app se comporte comme avant. */
+  --clavier: 0px;
   /* Mode scène : « tout disparaît sauf ce qui se joue », sur le fond nuit
      pur (charte §6). Sa propre paire, parce qu'il ne suit pas les surfaces
      de l'app — c'est un écran de pupitre, pas une page. */
@@ -222,8 +225,15 @@ h3 {
   margin: 0 auto;
   /* Réserve la hauteur RÉELLE de la barre du bas (b181) : 72 px fixes
      laissaient les dernières lignes sous la barre sur un iPhone, où
-     s'ajoute la zone du trait tactile. */
-  padding-bottom: calc(78px + env(safe-area-inset-bottom));
+     s'ajoute la zone du trait tactile.
+     …PLUS ce que le clavier recouvre (b264). Sur iOS, ouvrir le clavier ne
+     rétrécit pas la page : arrivé en bas, il ne restait plus rien à
+     dérouler et le champ actif était coincé dessous — « l'apparition du
+     clavier empêche de scroller ». Cette réserve rend la course qui
+     manquait ; elle vaut 0 clavier fermé, donc rien ne change autrement. */
+  padding-bottom: calc(
+    78px + env(safe-area-inset-bottom) + var(--clavier, 0px)
+  );
 }
 
 /* ---------- En-tête ---------- */
@@ -297,6 +307,13 @@ h3 {
   border-top: 1px solid var(--border-soft);
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
   z-index: 10;
+}
+/* Clavier ouvert : la barre d'onglets s'efface (b264). Elle est ancrée au bas
+   de la fenêtre de MISE EN PAGE, que le clavier ne rétrécit pas — elle finit
+   donc derrière lui, ou pire, flottant au milieu de l'écran sur certaines
+   versions d'iOS. Et pendant qu'on écrit, on ne change pas d'onglet. */
+:root.clavier-ouvert .tabbar {
+  display: none;
 }
 .tabbar button {
   flex: 1;
@@ -487,6 +504,11 @@ textarea {
   transition:
     border-color var(--transition),
     box-shadow var(--transition);
+  /* Quand le navigateur amène le champ actif à l'écran, qu'il le pose SOUS la
+     barre du haut, qui est collante (b264) — sinon on tape dans un champ à
+     moitié caché par le titre de l'écran. */
+  scroll-margin-top: 96px;
+  scroll-margin-bottom: 24px;
 }
 input:focus,
 select:focus,
@@ -830,9 +852,15 @@ textarea.mono {
 }
 
 /* ---------- Feedback : feuilles du bas, toast ---------- */
+/* Les VOILES s'arrêtent au-dessus du clavier (b264) : c'est eux qui portent
+   l'ancrage en bas, donc une feuille ou une modale naît au bon endroit sans
+   qu'aucun composant n'ait à s'en occuper. Remplace la translation posée
+   élément par élément (b152), qui bornait la hauteur sans donner de quoi
+   faire défiler. */
 .sheet-backdrop {
   position: fixed;
   inset: 0;
+  bottom: var(--clavier, 0px);
   z-index: 500;
   background: var(--scrim-soft);
   display: flex;
@@ -849,6 +877,15 @@ textarea.mono {
   border-radius: 18px 18px 0 0;
   padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
   animation: slideup 0.2s ease;
+  /* Une feuille plus haute que la place disponible se fait défiler (b264) :
+     sans ça, son bas — donc son bouton de validation — était hors d'atteinte
+     dès que le clavier montait. `100%` = la hauteur du voile, déjà amputée
+     du clavier. */
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Le geste appartient à la feuille, jamais à la page derrière (iOS). */
+  overscroll-behavior: contain;
 }
 @media (min-width: 640px) {
   .sheet-backdrop {
@@ -1993,6 +2030,8 @@ textarea.mono {
 .modal-backdrop {
   position: fixed;
   inset: 0;
+  /* Au-dessus du clavier, comme les feuilles (b264). */
+  bottom: var(--clavier, 0px);
   background: var(--scrim);
   backdrop-filter: blur(3px);
   display: flex;
@@ -2011,8 +2050,10 @@ textarea.mono {
   padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
   width: 100%;
   max-width: 560px;
-  max-height: 84dvh;
+  /* 84 % de l'écran… mais jamais plus que ce que le clavier laisse (b264). */
+  max-height: min(84dvh, calc(100% - 24px));
   overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow: var(--shadow);
   animation: slideup 0.2s ease;
 }

@@ -16,7 +16,6 @@ import React, {
 
 import { t } from '../i18n';
 import { Icon, IconName } from './Icon';
-import { useKeyboardLift } from './ui';
 
 export function Sheet({
   title,
@@ -27,8 +26,6 @@ export function Sheet({
   children: React.ReactNode;
   onClose: () => void;
 }) {
-  // Clavier iOS : la feuille reste collée au bas VISIBLE (b152).
-  const ref = useKeyboardLift();
   return (
     <div
       className="sheet-backdrop"
@@ -36,7 +33,7 @@ export function Sheet({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="sheet" role="dialog" aria-modal="true" ref={ref}>
+      <div className="sheet" role="dialog" aria-modal="true">
         <div className="sheet-grab" aria-hidden="true" />
         {title && <h3 className="sheet-title">{title}</h3>}
         {children}

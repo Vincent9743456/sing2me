@@ -24,7 +24,7 @@ import {
 import { useStore } from '../store';
 import { makeId, Setlist, Song } from '../types';
 import { Icon } from './Icon';
-import { useScrollLock, useVisualViewport } from './StageList';
+import { useScrollLock } from './StageList';
 import { Modal } from './ui';
 import { t } from '../i18n';
 
@@ -315,7 +315,6 @@ export function SongCollector({
   // fige la page derrière, et on se cale sur la zone réellement visible
   // pour que la liste garde de quoi défiler quand le clavier s'ouvre.
   useScrollLock();
-  useVisualViewport();
 
   const count = picked.size;
   const label = confirmLabel

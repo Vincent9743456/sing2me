@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { t } from '../i18n';
 import { navigate, Route } from '../router';
@@ -258,37 +258,14 @@ export function Empty({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * iOS : le clavier recouvre les éléments `position: fixed` SANS les
- * déplacer — une feuille ancrée en bas de l'écran naît alors DERRIÈRE le
- * clavier (bug b152 : modale de note invisible, dictée introuvable). Ce
- * hook recolle l'élément au bas du viewport VISUEL quand le clavier
- * mange le bas du viewport de mise en page, et borne sa hauteur à la
- * zone restée visible. Sans clavier (décalage nul), il ne touche à rien.
+ * b152 vivait ici : `useKeyboardLift` remontait feuilles et modales au-dessus
+ * du clavier en posant une translation SUR l'élément. Supprimé en b264 — la
+ * mesure est globale (`src/lib/clavier.ts`) et c'est le VOILE qui s'arrête
+ * au-dessus du clavier (`bottom: var(--clavier)`), donc la feuille naît au
+ * bon endroit sans que personne n'ait à y penser. La translation, elle,
+ * bornait la hauteur sans donner de quoi faire défiler : une feuille trop
+ * longue restait illisible par le bas.
  */
-export function useKeyboardLift(): React.RefObject<HTMLDivElement | null> {
-  const ref = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const vv = window.visualViewport;
-    const el = ref.current;
-    if (!vv || !el) return;
-    const place = () => {
-      const lift = Math.max(
-        0,
-        Math.round(window.innerHeight - (vv.offsetTop + vv.height)),
-      );
-      el.style.transform = lift > 0 ? `translateY(-${lift}px)` : '';
-      el.style.maxHeight = lift > 0 ? `${Math.round(vv.height * 0.92)}px` : '';
-    };
-    place();
-    vv.addEventListener('resize', place);
-    vv.addEventListener('scroll', place);
-    return () => {
-      vv.removeEventListener('resize', place);
-      vv.removeEventListener('scroll', place);
-    };
-  }, []);
-  return ref;
-}
 
 export function Modal({
   title,
@@ -299,7 +276,6 @@ export function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  const ref = useKeyboardLift();
   return (
     <div
       className="modal-backdrop"
@@ -307,7 +283,7 @@ export function Modal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="modal" ref={ref}>
+      <div className="modal">
         <h2>{title}</h2>
         {children}
       </div>
