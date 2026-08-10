@@ -3,6 +3,9 @@
  * Une mission : les actions « de maintenance » du compte, hors du chemin
  * musical quotidien.
  *
+ * - Reprendre mes partitions (b220) : appliquer aux morceaux DÉJÀ importés
+ *   ce que l'import fait maintenant tout seul — le recalage des accords
+ *   (gratuit, hors ligne) puis, au choix, la mise en forme par l'IA.
  * - Export PDF : ouvre le carnet imprimable de la bibliothèque
  *   (#/export-pdf) — « Enregistrer en PDF » du navigateur.
  * - Réinitialisation : l'utilisateur choisit QUOI effacer (profil,
@@ -13,8 +16,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ConfirmSheet, useToast } from '../components/Feedback';
+import { fusionMiseEnForme, meritteUneMiseEnForme } from '../lib/aiFormat';
+import { importText } from '../lib/importer';
+import { bilanRecalage, recalerMorceau } from '../lib/reprise';
+import { aiCleanText } from '../lib/ug';
 import { Icon } from '../components/Icon';
-import { AccordionNav, TopBar } from '../components/ui';
+import { AccordionNav, ProgressBar, TopBar } from '../components/ui';
 import { rememberLang, storedLang, t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import { leaveBand } from '../lib/bands';
@@ -70,6 +77,129 @@ export function Settings() {
     store;
   const toast = useToast();
   const fichierRef = useRef<HTMLInputElement | null>(null);
+
+  // Sortie de secours du cache hors ligne (b221).
+  const [demandeCache, setDemandeCache] = useState(false);
+
+  /**
+   * Efface le cache de l'application et recharge. C'est l'assurance-vie du
+   * hors-ligne : si une version mise en cache tournait mal, ce bouton la
+   * remplace sans avoir à désinstaller quoi que ce soit. Les morceaux, les
+   * setlists et les réglages ne sont PAS touchés — ils vivent ailleurs.
+   */
+  async function viderLeCache() {
+    setDemandeCache(false);
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if ('caches' in window) {
+        const noms = await caches.keys();
+        await Promise.all(noms.map((n) => caches.delete(n)));
+      }
+    } catch {
+      // Rien de grave : le rechargement suffit souvent.
+    }
+    location.reload();
+  }
+
+  // Reprise de la bibliothèque déjà importée (b220).
+  const [repriseIA, setRepriseIA] = useState<{
+    done: number;
+    total: number;
+    doutes: number;
+  } | null>(null);
+  const [repriseEnCours, setRepriseEnCours] = useState(false);
+  const [demandeIA, setDemandeIA] = useState(false);
+  const arretReprise = useRef(false);
+  const bilan = bilanRecalage(songs);
+
+  /**
+   * Passe 1 — le recalage. Du calcul pur : instantané, hors ligne, sans un
+   * centime. Un morceau sans rien à corriger n'est pas réenregistré.
+   */
+  function recalerTout() {
+    let n = 0;
+    for (const s of songs) {
+      const corrige = recalerMorceau(s);
+      if (corrige !== s) {
+        store.saveSong(corrige);
+        n++;
+      }
+    }
+    toast.show(
+      n > 1
+        ? t('{n} partitions corrigées.', { n })
+        : t('{n} partition corrigée.', { n }),
+    );
+  }
+
+  /**
+   * Passe 2 — la mise en forme par l'IA, morceau par morceau, avec les
+   * mêmes garde-fous qu'à l'import : en cas de gros doute, la partition
+   * d'avant est conservée et le morceau est marqué « à vérifier ».
+   *
+   * Interruptible : ce qui est déjà repris reste repris.
+   */
+  async function reprendreALIA() {
+    if (repriseEnCours) return;
+    setDemandeIA(false);
+    arretReprise.current = false;
+    setRepriseEnCours(true);
+    const liste = songs.filter((s) => meritteUneMiseEnForme(s.lyrics));
+    let done = 0;
+    let doutes = 0;
+    setRepriseIA({ done, total: liste.length, doutes });
+    for (const vieux of liste) {
+      if (arretReprise.current) break;
+      try {
+        const hint = [vieux.title, vieux.artist]
+          .filter((x) => x.trim() !== '')
+          .join(' — ');
+        const local = importText(vieux.lyrics, vieux.title || t('Morceau'));
+        const propre = await aiCleanText(vieux.lyrics, hint || undefined);
+        const apres = importText(propre, vieux.title || t('Morceau'));
+        const mef = fusionMiseEnForme(vieux.lyrics, local, propre, apres);
+        if (mef.doute !== '') doutes++;
+        // On ne remplace QUE la partition : titre, artiste, notes, cœurs,
+        // setlists et statut restent ceux du morceau qu'on avait.
+        store.saveSong({
+          ...vieux,
+          lyrics: mef.song.lyrics,
+          structure: mef.song.structure,
+          key: mef.song.key !== '' ? mef.song.key : vieux.key,
+          capo: mef.song.capo,
+          needsCheck: mef.song.needsCheck,
+          beforeAi: mef.song.beforeAi,
+          versions: vieux.versions.map((v) =>
+            v.id === vieux.activeVersionId
+              ? {
+                  ...v,
+                  lyrics: mef.song.lyrics,
+                  structure: mef.song.structure,
+                  key: mef.song.key !== '' ? mef.song.key : v.key,
+                  capo: mef.song.capo,
+                }
+              : v,
+          ),
+          updatedAt: new Date().toISOString(),
+        });
+      } catch {
+        // Un échec ne casse rien : le morceau reste tel qu'il était.
+      }
+      done++;
+      setRepriseIA({ done, total: liste.length, doutes });
+    }
+    setRepriseEnCours(false);
+    toast.show(
+      doutes > 0
+        ? t('{n} partitions reprises · {d} à vérifier.', { n: done, d: doutes })
+        : done === 1
+          ? t('{n} partition reprise.', { n: done })
+          : t('{n} partitions reprises.', { n: done }),
+    );
+  }
 
   /** Compose l'état complet, dans la forme attendue par la restauration. */
   function etatComplet(): AppState {
@@ -259,6 +389,89 @@ export function Settings() {
           </>
         )}
 
+        {/* REPRENDRE MES PARTITIONS (b220, demande de Vincent) —
+            appliquer aux morceaux DÉJÀ importés ce que l'import fait
+            maintenant tout seul. Deux passes séparées : elles n'ont ni le
+            même coût, ni le même risque. */}
+        <div className="spacer" />
+        <h2 className="pagetitle">{t('Application')}</h2>
+        <AccordionNav
+          title={t('↻ Recharger l’application')}
+          sub={t(
+            'Récupère la dernière version. Tes morceaux, setlists et réglages ne sont pas touchés',
+          )}
+          onClick={() => setDemandeCache(true)}
+        />
+        <p className="help">
+          {t(
+            'Ton répertoire s’ouvre sans réseau : l’application est gardée sur ton téléphone. Si elle se comporte bizarrement après une mise à jour, ce bouton la remet à neuf.',
+          )}
+        </p>
+
+        <div className="spacer" />
+        <h2 className="pagetitle">{t('Reprendre mes partitions')}</h2>
+        <p className="help" style={{ marginTop: 0 }}>
+          {t(
+            'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs, setlists et idées restent tels quels.',
+          )}
+        </p>
+        <AccordionNav
+          title={t('🎯 Recaler les accords sur les mots')}
+          sub={
+            bilan.accords === 0
+              ? t('Rien à corriger — tes accords sont déjà bien posés')
+              : bilan.accords === 1
+                ? t('1 accord tombe au milieu d’un mot — gratuit et hors ligne')
+                : bilan.morceaux === 1
+                  ? t(
+                      '{a} accords tombent au milieu d’un mot, dans 1 morceau — gratuit et hors ligne',
+                      { a: bilan.accords },
+                    )
+                  : t(
+                      '{a} accords tombent au milieu d’un mot, dans {m} morceaux — gratuit et hors ligne',
+                      { a: bilan.accords, m: bilan.morceaux },
+                    )
+          }
+          onClick={() => {
+            if (bilan.accords > 0) recalerTout();
+          }}
+        />
+        <AccordionNav
+          title={t('✨ Remettre en forme à l’IA')}
+          sub={t(
+            'Comme si tu réimportais chaque morceau : sections nommées, mise en page reprise',
+          )}
+          onClick={() => setDemandeIA(true)}
+        />
+        {repriseIA && (
+          <ProgressBar
+            done={repriseIA.done}
+            total={repriseIA.total}
+            label={
+              repriseEnCours ? t('Reprise en cours') : t('Reprise terminée')
+            }
+          />
+        )}
+        {repriseEnCours && (
+          <button
+            className="btn ghost block"
+            onClick={() => {
+              arretReprise.current = true;
+            }}
+          >
+            {t('Arrêter la reprise')}
+          </button>
+        )}
+        {repriseIA !== null && !repriseEnCours && repriseIA.doutes > 0 && (
+          <p className="help" style={{ color: 'var(--warn)' }}>
+            🔎{' '}
+            {t(
+              '{n} partitions sont marquées « à vérifier » : retrouve-les dans tes morceaux, avec le choix de revenir à la version d’origine.',
+              { n: repriseIA.doutes },
+            )}
+          </p>
+        )}
+
         <div className="spacer" />
         <h2 className="pagetitle">{t('Exporter')}</h2>
         <AccordionNav
@@ -399,6 +612,28 @@ export function Settings() {
             toast.show(t('Réinitialisation faite ✓'));
           }}
           onClose={() => setConfirming(false)}
+        />
+      )}
+      {demandeCache && (
+        <ConfirmSheet
+          title={t('Recharger l’application ?')}
+          message={t(
+            'L’application est retéléchargée dans sa dernière version. Tes morceaux, tes setlists, tes groupes et tes réglages restent exactement où ils sont. Il te faut du réseau le temps du rechargement.',
+          )}
+          confirmLabel={t('Recharger')}
+          onConfirm={() => void viderLeCache()}
+          onClose={() => setDemandeCache(false)}
+        />
+      )}
+      {demandeIA && (
+        <ConfirmSheet
+          title={t('Remettre en forme toute la bibliothèque ?')}
+          message={t(
+            'Chaque morceau repasse par l’IA, un par un. Tu peux arrêter en cours de route : ce qui est repris reste repris. Quand la mise en forme laisse un doute, le morceau est marqué « à vérifier » et tu pourras revenir à sa version d’origine.',
+          )}
+          confirmLabel={t('Reprendre les {n} morceaux', { n: songs.length })}
+          onConfirm={() => void reprendreALIA()}
+          onClose={() => setDemandeIA(false)}
         />
       )}
     </>

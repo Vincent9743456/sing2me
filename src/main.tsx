@@ -18,6 +18,26 @@ window.addEventListener('beforeinstallprompt', (e) => {
   window.dispatchEvent(new Event('s2m-installable'));
 });
 
+/**
+ * HORS LIGNE (b221) — l'app se disait « local-first » et ne l'était qu'à
+ * moitié : les DONNÉES vivaient bien sur le téléphone, mais le CODE était
+ * retéléchargé à chaque lancement. En mode avion, rien ne s'ouvrait.
+ *
+ * Le service worker met la coquille de l'app en cache. Il est enregistré
+ * APRÈS le premier rendu : jamais au prix de l'affichage. Et il n'est
+ * enregistré que depuis l'app musicien — la page du spectateur, elle, doit
+ * toujours voir le direct tel qu'il est à l'instant.
+ */
+function garderLAppHorsLigne() {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // En développement le fichier n'existe pas : ce n'est pas une erreur.
+    });
+  });
+}
+garderLAppHorsLigne();
+
 const container = document.getElementById('root');
 if (container) {
   createRoot(container).render(

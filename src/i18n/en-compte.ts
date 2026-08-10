@@ -124,4 +124,47 @@ export const EN_COMPTE: Record<string, string> = {
   '🔴 Concert en cours': '🔴 Gig in progress',
   '🔴 Démarrer le direct': '🔴 Start the live session',
   '🔴 En direct — le public voit les paroles, les musiciens leur partition.': '🔴 Live — the audience sees the lyrics, musicians see their sheet.',
+
+  // Settings.tsx — reprendre mes partitions (b220)
+  'Reprendre mes partitions': 'Redo my charts',
+  'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs, setlists et idées restent tels quels.':
+    'Apply to your library what importing now does on its own. Nothing else is touched: titles, artists, notes, hearts, setlists and ideas stay as they are.',
+  '🎯 Recaler les accords sur les mots': '🎯 Snap chords back onto words',
+  'Rien à corriger — tes accords sont déjà bien posés':
+    'Nothing to fix — your chords already sit right',
+  '1 accord tombe au milieu d’un mot — gratuit et hors ligne':
+    '1 chord lands inside a word — free and offline',
+  '{a} accords tombent au milieu d’un mot, dans 1 morceau — gratuit et hors ligne':
+    '{a} chords land inside a word, in 1 song — free and offline',
+  '{n} partition reprise.': '{n} chart redone.',
+  '{a} accords tombent au milieu d’un mot, dans {m} morceaux — gratuit et hors ligne':
+    '{a} chords land inside a word, across {m} songs — free and offline',
+  '✨ Remettre en forme à l’IA': '✨ Reformat with AI',
+  'Comme si tu réimportais chaque morceau : sections nommées, mise en page reprise':
+    'As if you re-imported every song: sections named, layout redone',
+  'Reprise en cours': 'Redoing',
+  'Reprise terminée': 'Redo done',
+  'Arrêter la reprise': 'Stop',
+  '{n} partitions sont marquées « à vérifier » : retrouve-les dans tes morceaux, avec le choix de revenir à la version d’origine.':
+    '{n} charts are flagged “needs a check”: find them in your songs, with the option to go back to the original version.',
+  'Remettre en forme toute la bibliothèque ?': 'Reformat the whole library?',
+  'Chaque morceau repasse par l’IA, un par un. Tu peux arrêter en cours de route : ce qui est repris reste repris. Quand la mise en forme laisse un doute, le morceau est marqué « à vérifier » et tu pourras revenir à sa version d’origine.':
+    'Every song goes through the AI, one by one. You can stop along the way: what is done stays done. When the formatting leaves a doubt, the song is flagged “needs a check” and you can go back to its original version.',
+  'Reprendre les {n} morceaux': 'Redo all {n} songs',
+  '{n} partitions corrigées.': '{n} charts fixed.',
+  '{n} partition corrigée.': '{n} chart fixed.',
+  '{n} partitions reprises · {d} à vérifier.': '{n} charts redone · {d} need a check.',
+  '{n} partitions reprises.': '{n} charts redone.',
+
+  // Settings.tsx — hors ligne et rechargement (b221)
+  'Application': 'App',
+  '↻ Recharger l’application': '↻ Reload the app',
+  'Récupère la dernière version. Tes morceaux, setlists et réglages ne sont pas touchés':
+    'Fetches the latest version. Your songs, setlists and settings are untouched',
+  'Ton répertoire s’ouvre sans réseau : l’application est gardée sur ton téléphone. Si elle se comporte bizarrement après une mise à jour, ce bouton la remet à neuf.':
+    'Your repertoire opens with no network: the app is kept on your phone. If it behaves oddly after an update, this button gives you a clean copy.',
+  'Recharger l’application ?': 'Reload the app?',
+  'L’application est retéléchargée dans sa dernière version. Tes morceaux, tes setlists, tes groupes et tes réglages restent exactement où ils sont. Il te faut du réseau le temps du rechargement.':
+    'The app is downloaded again in its latest version. Your songs, setlists, bands and settings stay exactly where they are. You need a network connection while it reloads.',
+  'Recharger': 'Reload',
 };

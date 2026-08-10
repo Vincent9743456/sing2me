@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { TopBar } from '../components/ui';
+import { ProgressBar, TopBar } from '../components/ui';
 import { SongBody } from '../components/SongBody';
 import { extractDocxText } from '../lib/docx';
 import { extractPdfPages } from '../lib/pdf';
@@ -14,6 +14,11 @@ import {
   raisonDeVerifier,
   songKey,
 } from '../lib/importer';
+import {
+  douteApresIA,
+  fusionMiseEnForme,
+  meritteUneMiseEnForme,
+} from '../lib/aiFormat';
 import {
   aiCleanText,
   fetchUgTab,
@@ -94,33 +99,6 @@ export function extractUgLinks(input: string): string[] {
 }
 
 /** Barre de progression du traitement en masse. */
-function ProgressBar({
-  done,
-  total,
-  label,
-}: {
-  done: number;
-  total: number;
-  label: string;
-}) {
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  return (
-    <div aria-live="polite">
-      <div
-        className={`progressbar ${done >= total ? 'done' : ''}`}
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={total}
-        aria-valuenow={done}
-      >
-        <div style={{ width: `${Math.max(pct, 2)}%` }} />
-      </div>
-      <p className="help" style={{ textAlign: 'center', marginTop: 2 }}>
-        {label} : {done}/{total}
-      </p>
-    </div>
-  );
-}
 
 export function Import() {
   const { songs, deleted, saveSong } = useStore();
@@ -161,7 +139,19 @@ export function Import() {
   });
   const [ugSearching, setUgSearching] = useState(false);
   const [ugResults, setUgResults] = useState<UgSearchResult[] | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
+  // Mise en forme automatique (b220) : l'IA passe sur CHAQUE import d'une
+  // partition. Le texte collé reste la source ; le résultat de l'IA vit à
+  // côté, pour qu'on puisse toujours revenir en arrière.
+  const [aiText, setAiText] = useState<string | null>(null);
+  const [aiState, setAiState] = useState<'idle' | 'running' | 'done' | 'failed'>(
+    'idle',
+  );
+  const [aiErreur, setAiErreur] = useState('');
+  const [garderOriginal, setGarderOriginal] = useState(false);
+  const aiSeq = useRef(0);
+  // Mémoire des textes déjà remis en forme : revenir sur ses pas ne
+  // redéclenche pas un appel payant.
+  const aiCache = useRef(new Map<string, string>());
   const [bulkInput, setBulkInput] = useState('');
   const [bulkFiles, setBulkFiles] = useState<{ name: string; text: string }[]>(
     [],
@@ -179,7 +169,8 @@ export function Import() {
   const bulkLinks = useMemo(() => extractUgLinks(bulkInput), [bulkInput]);
   const bulkTotal = bulkLinks.length + bulkFiles.length;
 
-  const preview = useMemo(() => {
+  /** L'analyse LOCALE du texte tel qu'il a été collé. */
+  const previewLocal = useMemo(() => {
     if (text.trim() === '') return null;
     try {
       return importText(text, title || 'Morceau importé');
@@ -187,6 +178,36 @@ export function Import() {
       return null;
     }
   }, [text, title]);
+
+  /** L'analyse du texte remis en forme par l'IA, quand elle a répondu. */
+  const previewIA = useMemo(() => {
+    if (aiText === null || aiText.trim() === '') return null;
+    try {
+      return importText(aiText, title || 'Morceau importé');
+    } catch {
+      return null;
+    }
+  }, [aiText, title]);
+
+  const utiliseIA = !garderOriginal && previewIA !== null;
+  const preview = utiliseIA ? previewIA : previewLocal;
+  const texteRetenu = utiliseIA ? (aiText as string) : text;
+
+  /**
+   * GROS DOUTE après la mise en forme (b220) : un constat de forme — du
+   * texte perdu, des accords disparus, une partition toujours bancale.
+   * Jamais un jugement sur les paroles ni sur les accords eux-mêmes.
+   */
+  const doute = useMemo(() => {
+    if (!previewLocal) return '';
+    if (!utiliseIA || !previewIA) {
+      return raisonDeVerifier(text, previewLocal, {
+        plusieursPartitions: recueilRefuse,
+      });
+    }
+    if (recueilRefuse) return 'ce morceau contient peut-être plusieurs partitions';
+    return douteApresIA(previewLocal, previewIA, aiText ?? '');
+  }, [previewLocal, previewIA, utiliseIA, text, aiText, recueilRefuse]);
 
   // Jumeau détecté : MÊME logique que la validation (findSameSong — titre,
   // artiste, paroles), pour que l'annonce de l'aperçu dise exactement ce
@@ -198,12 +219,10 @@ export function Import() {
     return findSameSong(songs, currentTitle, preview.song.lyrics, a);
   }, [songs, title, artist, preview]);
 
-  // Analyse automatique : l'IA n'est suggérée que si elle peut aider.
   const issues = useMemo(
-    () => (preview ? analyzeImport(text, preview) : []),
-    [text, preview],
+    () => (preview ? analyzeImport(texteRetenu, preview) : []),
+    [texteRetenu, preview],
   );
-  const needsAi = issues.some((i) => i.severity === 'warn');
 
   // Titre / artiste détectés → repris automatiquement (champs modifiables)
   useEffect(() => {
@@ -350,21 +369,67 @@ export function Import() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ugQuery]);
 
-  async function onAiClean() {
-    if (text.trim() === '' || aiLoading) return;
-    setError(null);
-    setAiLoading(true);
-    try {
+  /**
+   * MISE EN FORME AUTOMATIQUE (b220) — l'IA passe sur chaque partition
+   * importée, sans qu'on le demande.
+   *
+   * Jamais bloquante : l'aperçu s'affiche tout de suite avec l'analyse
+   * locale, le bouton d'ajout reste actif, et si l'IA n'aboutit pas on
+   * garde simplement ce qu'on avait. Le texte collé n'est pas remplacé —
+   * il faut pouvoir y revenir.
+   */
+  useEffect(() => {
+    const source = text;
+    if (!meritteUneMiseEnForme(source)) {
+      setAiText(null);
+      setAiState('idle');
+      return;
+    }
+    const dejaVu = aiCache.current.get(source);
+    if (dejaVu !== undefined) {
+      setAiText(dejaVu);
+      setAiState('done');
+      setAiErreur('');
+      return;
+    }
+    const seq = ++aiSeq.current;
+    setAiText(null);
+    setAiState('idle');
+    // Le temps de la frappe : personne ne remet en forme un texte encore
+    // en train d'être écrit.
+    const timer = window.setTimeout(() => {
+      if (seq !== aiSeq.current) return;
+      setAiState('running');
+      setAiErreur('');
       const hint = [title.trim(), artist.trim()]
         .filter((x) => x !== '')
         .join(' — ');
-      setText(await aiCleanText(text, hint || undefined));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t('Le nettoyage IA a échoué.'));
-    } finally {
-      setAiLoading(false);
-    }
-  }
+      aiCleanText(source, hint || undefined)
+        .then((out) => {
+          if (seq !== aiSeq.current) return;
+          if (aiCache.current.size > 4) aiCache.current.clear();
+          aiCache.current.set(source, out);
+          setAiText(out);
+          setAiState('done');
+        })
+        .catch((e: unknown) => {
+          if (seq !== aiSeq.current) return;
+          setAiErreur(
+            e instanceof Error ? e.message : t('la mise en forme a échoué'),
+          );
+          setAiState('failed');
+        });
+    }, 1600);
+    return () => window.clearTimeout(timer);
+    // Le titre et l'artiste ne servent que d'indice : les changer ne
+    // relance pas un appel payant.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
+
+  // Un nouveau texte = un nouveau choix à faire.
+  useEffect(() => {
+    setGarderOriginal(false);
+  }, [text]);
 
   /**
    * Créer un morceau par partition détectée. Chacun repasse par le parseur
@@ -407,15 +472,17 @@ export function Import() {
   }
 
   function onImport(asIdea: boolean) {
-    if (text.trim() === '') return;
-    const outcome = importText(text, title || 'Morceau importé');
-    const { song } = outcome;
-    // L'import a-t-il douté ? La raison voyage avec le morceau (filet de
-    // sécurité) : il entre en bibliothèque, mais on saura qu'il est à relire.
-    const doute = raisonDeVerifier(text, outcome, {
-      plusieursPartitions: recueilRefuse,
-    });
-    if (doute !== '') song.needsCheck = { reason: doute };
+    if (text.trim() === '' || !previewLocal) return;
+    // La mise en forme de l'IA est retenue par défaut (b220) ; en cas de
+    // gros doute, la partition d'AVANT est gardée avec le morceau pour
+    // qu'on puisse y revenir — ici, ou plus tard depuis la bibliothèque.
+    const { song } = fusionMiseEnForme(
+      text,
+      previewLocal,
+      texteRetenu,
+      utiliseIA ? previewIA : null,
+      doute,
+    );
     if (title.trim() !== '') song.title = title.trim();
     if (artist.trim() !== '') song.artist = artist.trim();
     if (asIdea) song.idea = true;
@@ -743,11 +810,7 @@ export function Import() {
             status: 'ok',
             check: doute !== '',
             title: song.title,
-            message: needsAi
-              ? garbled
-                ? t('⚠ police PDF brouillée — décodage IA proposé')
-                : t('⚠ format à revoir — IA conseillée')
-              : '',
+            message: garbled ? t('⚠ police PDF brouillée — décodage IA') : '',
             needsAi,
             songId: song.id,
             raw,
@@ -767,23 +830,42 @@ export function Import() {
       }
     }
     setBulkRunning(false);
+    // Les morceaux sont en bibliothèque : l'IA les reprend maintenant, un
+    // par un (b220). Rien n'attendait ce passage pour être jouable.
+    if (!bulkCancel.current) await onBulkAi(items);
   }
 
-  /** Nettoyage IA ciblé : uniquement les morceaux marqués ⚠ par l'analyse. */
-  async function onBulkAi() {
-    if (!bulkItems || bulkAiRunning || bulkRunning) return;
+  /**
+   * MISE EN FORME DE TOUT LE LOT (b220).
+   *
+   * Deux temps, volontairement : les morceaux entrent d'abord en
+   * bibliothèque (rapide, hors ligne, sans dépendre de personne), PUIS
+   * l'IA les reprend un par un. Un import de cent fichiers n'attend donc
+   * pas cent appels avant de montrer quoi que ce soit.
+   *
+   * Et surtout : on ne s'arrête JAMAIS pour poser une question au milieu
+   * d'un lot. Quand la mise en forme laisse un gros doute, le morceau
+   * garde sa partition d'avant (`beforeAi`) et part en bibliothèque avec
+   * son « 🔎 À vérifier » — le musicien tranchera quand il voudra.
+   *
+   * Quitter l'écran interrompt la reprise : les morceaux non traités
+   * gardent leur analyse locale, ce qui est un état parfaitement valable.
+   */
+  async function onBulkAi(liste?: BulkItem[]) {
+    const source = liste ?? bulkItems;
+    if (!source || bulkAiRunning) return;
     setError(null);
     setBulkAiRunning(true);
-    const items = [...bulkItems];
-    const total = items.filter(
-      (x) => x.needsAi && x.songId && x.raw,
-    ).length;
+    const items = [...source];
+    const aTraiter = items.filter((x) => x.songId && x.raw);
+    const total = aTraiter.length;
     let done = 0;
     setAiProg({ done, total });
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
-      if (!it.needsAi || !it.songId || !it.raw) continue;
-      items[i] = { ...it, message: t('✨ nettoyage IA…') };
+      if (!it.songId || !it.raw) continue;
+      if (bulkCancel.current) break;
+      items[i] = { ...it, message: t('✨ mise en forme…') };
       setBulkItems([...items]);
       try {
         const old = songs.find((s) => s.id === it.songId);
@@ -792,26 +874,37 @@ export function Import() {
         const hint = [old.title || it.title, old.artist]
           .filter((x) => x && x.trim() !== '')
           .join(' — ');
+        const local = importText(it.raw, it.title || 'Morceau importé');
         const cleaned = await aiCleanText(it.raw, hint || undefined);
-        const fresh = importText(cleaned, it.title || 'Morceau importé').song;
+        const apres = importText(cleaned, it.title || 'Morceau importé');
+        const mef = fusionMiseEnForme(it.raw, local, cleaned, apres);
         saveSong({
-          ...fresh,
+          ...mef.song,
           id: old.id,
           title: old.title,
-          artist: old.artist !== '' ? old.artist : fresh.artist,
+          artist: old.artist !== '' ? old.artist : mef.song.artist,
           idea: old.idea,
           createdAt: old.createdAt,
           hearts: old.hearts,
           fanMessages: old.fanMessages,
           rehearsalNotes: old.rehearsalNotes,
         });
-        items[i] = { ...it, needsAi: false, message: t('✨ nettoyé à l’IA') };
+        items[i] = {
+          ...it,
+          needsAi: false,
+          check: mef.doute !== '',
+          message:
+            mef.doute !== ''
+              ? '🔎 ' + t('mis en forme — à vérifier')
+              : '✨ ' + t('mis en forme'),
+        };
       } catch (e) {
+        // Un échec ne casse rien : le morceau garde son analyse locale.
         items[i] = {
           ...it,
           message:
-            '⚠ ' +
-            (e instanceof Error ? e.message : t('le nettoyage IA a échoué')),
+            '· ' +
+            (e instanceof Error ? e.message : t('mise en forme non aboutie')),
         };
       }
       done++;
@@ -927,22 +1020,61 @@ export function Import() {
             </div>
           </div>
         )}
-        {needsAi && (
-          <>
+        {/* Mise en forme automatique (b220). Jamais bloquante : l'aperçu
+            est déjà là, le bouton d'ajout aussi. */}
+        {previewLocal && aiState === 'running' && (
+          <p className="help">{t('✨ Mise en forme de la partition…')}</p>
+        )}
+        {previewLocal && aiState === 'failed' && (
+          <p className="help">
+            {t(
+              'La mise en forme automatique n’a pas abouti — ta partition est reprise telle quelle.',
+            )}
+            {aiErreur !== '' ? ` (${aiErreur})` : ''}
+          </p>
+        )}
+        {previewLocal && aiState === 'done' && previewIA && doute === '' && (
+          <p className="help">
+            ✨ {t('Mise en forme appliquée.')}{' '}
             <button
-              className="btn ghost block"
-              onClick={() => void onAiClean()}
-              disabled={aiLoading}
+              className="btn ghost small"
+              onClick={() => setGarderOriginal(!garderOriginal)}
             >
-              {aiLoading
-                ? t('✨ Nettoyage en cours…')
-                : t("✨ L'analyse suggère un nettoyage IA — corriger le format")}
+              {garderOriginal
+                ? t('Revenir à la version mise en forme')
+                : t('Garder ma version d’origine')}
             </button>
-            <p className="help">
-              {t(
-                "L'IA réécrit la partition au format standard (accords [Am] dans les paroles, sections nommées) pour régler les points ⚠ ci-dessus. Version en ligne + clé IA requises.",
-              )}
-            </p>
+          </p>
+        )}
+        {/* GROS DOUTE : on ne tranche pas à sa place. */}
+        {previewLocal && aiState === 'done' && previewIA && doute !== '' && (
+          <>
+            <div className="card" style={{ borderColor: 'var(--warn)' }}>
+              <div style={{ color: 'var(--warn)' }}>
+                🔎 {t('La mise en forme laisse un doute : {raison}.', {
+                  raison: doute,
+                })}
+              </div>
+              <p className="help" style={{ marginBottom: 0 }}>
+                {t(
+                  'Compare l’aperçu ci-dessus et choisis. Sans réponse, la version mise en forme est gardée et le morceau reste marqué « à vérifier ».',
+                )}
+              </p>
+              <div className="rowactions">
+                <button
+                  className={`btn ${garderOriginal ? 'ghost' : ''}`}
+                  onClick={() => setGarderOriginal(false)}
+                >
+                  {t('Version mise en forme')}
+                </button>
+                <button
+                  className={`btn ${garderOriginal ? '' : 'ghost'}`}
+                  onClick={() => setGarderOriginal(true)}
+                >
+                  {t('Ma version d’origine')}
+                </button>
+              </div>
+            </div>
             <div className="spacer" />
           </>
         )}
@@ -1420,36 +1552,29 @@ export function Import() {
                 total={aiProg.total}
                 label={
                   bulkAiRunning
-                    ? t('Nettoyage IA en cours')
-                    : t('Nettoyage IA terminé')
+                    ? t('Mise en forme des partitions')
+                    : t('Mise en forme terminée')
                 }
               />
             )}
+            {/* La mise en forme s'enchaîne toute seule après l'import
+                (b220). Ce qui reste manuel : la RELANCER si on a quitté
+                l'écran en cours de route, ou si le serveur a dit non. */}
             {bulkItems &&
               !bulkRunning &&
-              bulkItems.some((x) => x.needsAi) && (
+              !bulkAiRunning &&
+              bulkItems.some((x) => x.songId && x.raw) && (
                 <>
                   <div className="spacer" />
                   <button
                     className="btn ghost block"
                     onClick={() => void onBulkAi()}
-                    disabled={bulkAiRunning}
                   >
-                    {bulkAiRunning
-                      ? t('✨ Nettoyage IA en cours…')
-                      : bulkItems.filter((x) => x.needsAi).length > 1
-                        ? t(
-                            "✨ Nettoyer à l'IA les {n} partitions au format problématique",
-                            { n: bulkItems.filter((x) => x.needsAi).length },
-                          )
-                        : t(
-                            "✨ Nettoyer à l'IA les {n} partition au format problématique",
-                            { n: bulkItems.filter((x) => x.needsAi).length },
-                          )}
+                    {t('✨ Reprendre la mise en forme')}
                   </button>
                   <p className="help">
                     {t(
-                      "L'IA ne touche que les morceaux marqués ⚠ — les autres restent tels quels. Chaque morceau garde son titre, son artiste et son statut (bibliothèque ou idée).",
+                      'Chaque morceau garde son titre, son artiste et son statut (bibliothèque ou idée). Les partitions où la mise en forme laisse un doute sont marquées « à vérifier » : tu les retrouves d’un geste dans ta bibliothèque, avec la possibilité de revenir à la version d’origine.',
                     )}
                   </p>
                 </>

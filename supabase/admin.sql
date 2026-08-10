@@ -54,3 +54,52 @@ select
 from ai_usage
 where at > now() - interval '90 days'
 group by 1, 2, 3;
+
+-- ---------------------------------------------------------------------
+-- GARDE-FOU D'USAGE (b220) — compteurs par appelant, par heure et par jour.
+--
+-- Depuis b220 l'IA remet en forme CHAQUE import : ce qui était un geste
+-- délibéré devient automatique. Une boucle — un utilisateur qui s'acharne,
+-- un script qui frappe l'endpoint — coûte de l'argent réel à chaque tour.
+--
+-- `bucket` porte « fonction | portée | empreinte de l'appelant ». L'empreinte
+-- est un HACHÉ : ni identifiant de compte, ni adresse IP en clair ne sont
+-- enregistrés ici.
+-- ---------------------------------------------------------------------
+create table if not exists ai_rate (
+  bucket       text not null,
+  window_start timestamptz not null,
+  count        integer not null default 0,
+  primary key (bucket, window_start)
+);
+
+create index if not exists ai_rate_window_idx on ai_rate (window_start);
+
+alter table ai_rate enable row level security;
+
+-- Incrémente et renvoie la valeur APRÈS incrément, en une seule requête
+-- (deux appels simultanés ne peuvent pas se perdre l'un l'autre).
+create or replace function bump_rate(p_bucket text, p_window_start timestamptz)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  n integer;
+begin
+  insert into ai_rate (bucket, window_start, count)
+  values (p_bucket, p_window_start, 1)
+  on conflict (bucket, window_start)
+    do update set count = ai_rate.count + 1
+  returning count into n;
+  -- Ménage opportuniste : les fenêtres d'avant-hier n'intéressent plus
+  -- personne, et cette table n'a pas vocation à grossir.
+  if random() < 0.01 then
+    delete from ai_rate where window_start < now() - interval '2 days';
+  end if;
+  return n;
+end;
+$$;
+
+revoke all on function bump_rate(text, timestamptz) from public, anon, authenticated;

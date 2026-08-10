@@ -134,6 +134,24 @@ export interface Song {
    * vérifier. Personnel — jamais partagé.
    */
   needsCheck?: { reason: string };
+  /**
+   * LA PARTITION D'AVANT L'IA (b220).
+   *
+   * Depuis b220, l'IA remet en forme CHAQUE import. Quand ce passage laisse
+   * un gros doute, on garde ce qu'on avait avant elle, pour que le musicien
+   * puisse revenir à sa version d'origine — y compris longtemps après, dans
+   * le cas d'un import en masse qui ne s'arrête pas pour poser la question.
+   *
+   * Gardé UNIQUEMENT sur les morceaux marqués « à vérifier » : le conserver
+   * partout doublerait le poids de la bibliothèque en localStorage pour
+   * rien. Effacé dès qu'on tranche (retour en arrière, ou vérification).
+   */
+  beforeAi?: {
+    lyrics: string;
+    structure: StructureRow[];
+    key: string;
+    capo: number;
+  };
   /** Total des ❤ reçus en concert (synchronisé depuis les stats) */
   hearts: number;
   /** Messages du public rattachés à ce morceau */

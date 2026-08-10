@@ -301,3 +301,36 @@ export function Modal({
     </div>
   );
 }
+
+/**
+ * Barre de progression d'un traitement long (import en masse, reprise de la
+ * bibliothèque). Vit ici depuis b220 : deux écrans en avaient besoin, et un
+ * composant par fonction (règle 4 du design system).
+ */
+export function ProgressBar({
+  done,
+  total,
+  label,
+}: {
+  done: number;
+  total: number;
+  label: string;
+}) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  return (
+    <div aria-live="polite">
+      <div
+        className={`progressbar ${done >= total ? 'done' : ''}`}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-valuenow={done}
+      >
+        <div style={{ width: `${Math.max(pct, 2)}%` }} />
+      </div>
+      <p className="help" style={{ textAlign: 'center', marginTop: 2 }}>
+        {label} : {done}/{total}
+      </p>
+    </div>
+  );
+}

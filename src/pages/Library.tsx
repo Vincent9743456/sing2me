@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
+import { garderLaMiseEnForme, revenirAvantIA } from '../lib/aiFormat';
 import { SongBody } from '../components/SongBody';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
@@ -1061,7 +1062,23 @@ export function Library() {
                     icon: 'eye' as const,
                     onClick: () => {
                       const s = songs.find((x) => x.id === rowMenu.id);
-                      if (s) saveSong({ ...s, needsCheck: undefined });
+                      if (s) saveSong(garderLaMiseEnForme(s));
+                    },
+                  },
+                ]
+              : []),
+            // Le doute de la mise en forme automatique se tranche ICI
+            // quand il vient d'un import en masse (b220) : le lot ne
+            // s'arrête pas pour poser la question, donc la partition
+            // d'avant l'IA voyage avec le morceau jusqu'à la réponse.
+            ...(songs.find((s) => s.id === rowMenu.id)?.beforeAi
+              ? [
+                  {
+                    label: t('↩ Revenir à ma partition d’origine'),
+                    icon: 'undo' as const,
+                    onClick: () => {
+                      const s = songs.find((x) => x.id === rowMenu.id);
+                      if (s) saveSong(revenirAvantIA(s));
                     },
                   },
                 ]

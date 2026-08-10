@@ -147,6 +147,67 @@ export function mergeChordLyric(chordLine: string, lyricLine: string): string {
   return result;
 }
 
+/**
+ * RECALER LES ACCORDS D'UNE PARTITION DÉJÀ ENREGISTRÉE (b220).
+ *
+ * Le recalage de b219 opère à la FUSION des lignes d'accords et de paroles :
+ * il ne pouvait donc rien pour la bibliothèque déjà importée, où les accords
+ * sont figés en ligne (« commen[C]t faire »). Même règle, appliquée cette
+ * fois aux positions déjà écrites — c'est du calcul pur, sans réseau, sans
+ * IA, et rejouable sans risque (un accord déjà posé sur une attaque de mot
+ * ne bouge plus).
+ *
+ * Les lignes sans paroles (grilles d'accords) sont laissées telles quelles :
+ * il n'y a pas de mot sur lequel recaler.
+ */
+export function recalerAccordsEnLigne(lyrics: string): string {
+  return lyrics
+    .split('\n')
+    .map((line) => {
+      if (!line.includes('[')) return line;
+      const inserts: { col: number; chord: string }[] = [];
+      const re = /\[([^\]\n]+)\]/g;
+      let nu = '';
+      let last = 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(line)) !== null) {
+        nu += line.slice(last, m.index);
+        inserts.push({ col: nu.length, chord: m[1] });
+        last = m.index + m[0].length;
+      }
+      nu += line.slice(last);
+      if (inserts.length === 0 || nu.trim() === '') return line;
+      const cols = inserts.map((x) => recalerSurUnMot(nu, x.col));
+      let precedent = -1;
+      for (let i = 0; i < cols.length; i++) {
+        if (cols[i] <= precedent) {
+          cols[i] = Math.max(inserts[i].col, precedent + 1);
+        }
+        precedent = cols[i];
+      }
+      let out = nu;
+      for (let i = inserts.length - 1; i >= 0; i--) {
+        const c = Math.min(cols[i], out.length);
+        out = out.slice(0, c) + '[' + inserts[i].chord + ']' + out.slice(c);
+      }
+      return out;
+    })
+    .join('\n');
+}
+
+/** Combien d'accords ce texte déplacerait-il ? (pour annoncer le travail) */
+export function accordsARecaler(lyrics: string): number {
+  const avant = lyrics.split('\n');
+  const apres = recalerAccordsEnLigne(lyrics).split('\n');
+  let n = 0;
+  for (let i = 0; i < avant.length; i++) {
+    if (avant[i] !== apres[i]) {
+      n += (avant[i].match(/\[[^\]\n]*\]/g) ?? []).length;
+    }
+  }
+  return n;
+}
+
 export function chordLineToGrid(line: string): string {
   return line
     .trim()

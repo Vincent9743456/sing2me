@@ -480,4 +480,32 @@ export const EN_MORCEAUX: Record<string, string> = {
     'Nothing could be understood in that recording.',
   'Limite de {n} secondes atteinte : on transcrit ce que tu as dit. Dicte une seconde note si besoin.':
     'Reached the {n}-second limit: transcribing what you said. Dictate a second note if you need to.',
+
+  // Import.tsx — mise en forme automatique (b220)
+  'la mise en forme a échoué': 'formatting failed',
+  '⚠ police PDF brouillée — décodage IA': '⚠ scrambled PDF font — AI decoding',
+  '✨ mise en forme…': '✨ formatting…',
+  'mis en forme — à vérifier': 'formatted — needs a check',
+  'mis en forme': 'formatted',
+  'mise en forme non aboutie': 'formatting did not complete',
+  '✨ Mise en forme de la partition…': '✨ Formatting the chart…',
+  'La mise en forme automatique n’a pas abouti — ta partition est reprise telle quelle.':
+    'Automatic formatting did not complete — your chart is taken as it is.',
+  'Mise en forme appliquée.': 'Formatting applied.',
+  'Revenir à la version mise en forme': 'Back to the formatted version',
+  'Garder ma version d’origine': 'Keep my original version',
+  'La mise en forme laisse un doute : {raison}.':
+    'The formatting leaves a doubt: {raison}.',
+  'Compare l’aperçu ci-dessus et choisis. Sans réponse, la version mise en forme est gardée et le morceau reste marqué « à vérifier ».':
+    'Compare the preview above and choose. With no answer, the formatted version is kept and the song stays flagged “needs a check”.',
+  'Version mise en forme': 'Formatted version',
+  'Ma version d’origine': 'My original version',
+  'Mise en forme des partitions': 'Formatting the charts',
+  'Mise en forme terminée': 'Formatting done',
+  '✨ Reprendre la mise en forme': '✨ Resume formatting',
+  'Chaque morceau garde son titre, son artiste et son statut (bibliothèque ou idée). Les partitions où la mise en forme laisse un doute sont marquées « à vérifier » : tu les retrouves d’un geste dans ta bibliothèque, avec la possibilité de revenir à la version d’origine.':
+    'Every song keeps its title, artist and status (library or idea). Charts where the formatting leaves a doubt are flagged “needs a check”: you find them in one gesture in your library, and you can go back to the original version.',
+  '↩ Revenir à ma partition d’origine': '↩ Back to my original chart',
+  ' · ✨ mis en forme': ' · ✨ formatted',
+  'Revenir à la version d’origine': 'Back to the original version',
 };

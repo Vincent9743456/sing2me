@@ -3,6 +3,7 @@
  * vers du texte « accords au-dessus des paroles », que l'import
  * intelligent sait ensuite analyser.
  */
+import { liveHeaders } from './liveAuth';
 import { decodeHtmlEntities } from './textRepair';
 
 /** Titre/artiste des résultats UG : entités HTML restées en clair décodées
@@ -67,7 +68,11 @@ async function readJson(res: Response): Promise<any> {
 export async function searchUgTabs(query: string): Promise<UgSearchResult[]> {
   let res: Response;
   try {
-    res = await fetch(`/api/tabs?fn=search&q=${encodeURIComponent(query)}`);
+    // Le jeton du compte voyage avec l'appel (b220) : le garde-fou d'usage
+    // du serveur donne beaucoup plus de marge à qui est connecté.
+    res = await fetch(`/api/tabs?fn=search&q=${encodeURIComponent(query)}`, {
+      headers: liveHeaders(),
+    });
   } catch {
     throw new Error(OFFLINE_MSG);
   }
@@ -88,7 +93,7 @@ export async function aiCleanText(text: string, hint?: string): Promise<string> 
   try {
     res = await fetch('/api/ai?fn=clean', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: liveHeaders('', { 'content-type': 'application/json' }),
       body: JSON.stringify(hint ? { text, hint } : { text }),
     });
   } catch {
@@ -126,7 +131,9 @@ export async function findSongKey(
 export async function fetchUgTab(url: string): Promise<UgTab> {
   let res: Response;
   try {
-    res = await fetch(`/api/tabs?fn=fetch&url=${encodeURIComponent(url)}`);
+    res = await fetch(`/api/tabs?fn=fetch&url=${encodeURIComponent(url)}`, {
+      headers: liveHeaders(),
+    });
   } catch {
     throw new Error(
       "Impossible de joindre le serveur d'import. Cette fonction nécessite " +
