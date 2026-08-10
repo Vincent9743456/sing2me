@@ -188,6 +188,14 @@ export function BandEdit({ id }: { id: string }) {
     name: string;
   } | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  /**
+   * DÉJÀ SUR DODOSONGS ? (b252, demande de Vincent : « il faut que
+   * l'invitation puisse vérifier si la personne n'est pas déjà inscrite »).
+   * Cherché pendant la frappe : quand la personne a un compte, l'invitation
+   * part DIRECTEMENT chez elle — rien à envoyer, et sa ligne porte son
+   * identifiant dès l'invitation (b250), donc aucun doublon à l'adhésion.
+   */
+  const [dejaInscrits, setDejaInscrits] = useState<DirectoryPerson[]>([]);
   const [confirmDel, setConfirmDel] = useState(false);
   const [lastMsg, setLastMsg] = useState<{ text: string; at: string } | null>(
     null,
@@ -373,6 +381,49 @@ export function BandEdit({ id }: { id: string }) {
       setInviteBusy(false);
     }
   }
+
+  // Recherche dans l'annuaire au fil de la frappe (400 ms), pendant que la
+  // fenêtre d'invitation est ouverte. Silencieuse : un annuaire indisponible
+  // n'empêche jamais d'obtenir un lien.
+  useEffect(() => {
+    if (!invitePrompt) {
+      setDejaInscrits([]);
+      return;
+    }
+    const q = pendingName.trim();
+    if (q.length < 2) {
+      setDejaInscrits([]);
+      return;
+    }
+    let annule = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const s = await getValidSession();
+          if (!s || annule) return;
+          const rows = await searchProfiles(s, q);
+          // Les membres déjà dans le groupe n'ont pas à être réinvités.
+          if (!annule) {
+            setDejaInscrits(
+              rows.filter(
+                (p) =>
+                  !(band?.members ?? []).some((m) =>
+                    memeMusicien(m, { name: p.name, userId: p.user_id }),
+                  ),
+              ),
+            );
+          }
+        } catch {
+          if (!annule) setDejaInscrits([]);
+        }
+      })();
+    }, 400);
+    return () => {
+      annule = true;
+      window.clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invitePrompt, pendingName]);
 
   /** Ouvre l'ajout de membre : publie le groupe (pour l'annuaire + le jeton). */
   async function openAddMember() {
@@ -1434,6 +1485,45 @@ export function BandEdit({ id }: { id: string }) {
             autoFocus
             onChange={(e) => setPendingName(e.target.value)}
           />
+          {/* DÉJÀ SUR DODOSONGS ? (b252, demande de Vincent : « il faut que
+              l'invitation puisse vérifier si la personne n'est pas déjà
+              inscrite »). On cherche pendant qu'il tape : si la personne a un
+              compte, l'invitation part DIRECTEMENT chez elle — pas de lien à
+              envoyer, et sa ligne porte son identifiant tout de suite (b250),
+              donc aucun doublon possible à l'adhésion. */}
+          {dejaInscrits.length > 0 && (
+            <>
+              <div className="spacer" />
+              <p className="help" style={{ margin: 0 }}>
+                {dejaInscrits.length === 1
+                  ? t('Cette personne est déjà sur DodoSongs :')
+                  : t('Ces musiciens sont déjà sur DodoSongs :')}
+              </p>
+              {dejaInscrits.map((p) => (
+                <div className="row" key={p.user_id}>
+                  <Avatar name={p.name} photo={p.photo} />
+                  <div className="grow" style={{ minWidth: 0 }}>
+                    <div className="title">{p.name}</div>
+                    {p.instrument !== '' && (
+                      <div className="sub">{p.instrument}</div>
+                    )}
+                  </div>
+                  <button
+                    className="btn small"
+                    disabled={invited.has(p.user_id) || inviteBusy}
+                    onClick={() => void invitePerson(p)}
+                  >
+                    {invited.has(p.user_id) ? `✓ ${t('Invité')}` : t('Inviter')}
+                  </button>
+                </div>
+              ))}
+              <p className="help" style={{ margin: '4px 0 0' }}>
+                {t(
+                  'Elle recevra l’invitation dans son application : rien à envoyer.',
+                )}
+              </p>
+            </>
+          )}
           <div className="spacer" />
           {inviteError !== null && (
             <p className="help" style={{ color: 'var(--danger)' }}>
@@ -1447,16 +1537,11 @@ export function BandEdit({ id }: { id: string }) {
           >
             {inviteBusy ? '…' : t("Obtenir le lien d'invitation")}
           </button>
-          <button
-            className="btn ghost block"
-            style={{ marginTop: 8 }}
-            onClick={() => {
-              setInvitePrompt(false);
-              setInvite(true);
-            }}
-          >
-            {t('Partager sans noter de prénom')}
-          </button>
+          {/* Plus de « partager sans noter de prénom » (b252) : ce bouton
+              produisait un lien SANS invitation — donc, depuis b251, un lien
+              que le destinataire ne pouvait pas utiliser, sans le moindre
+              message. C'était aussi le dernier chemin vers un lien ouvert,
+              que b251 avait justement pour objet de supprimer. */}
         </Modal>
       )}
       {invite && invitePayload && (

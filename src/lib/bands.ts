@@ -22,11 +22,26 @@ export interface LinkInvite {
 }
 const PENDING_KEY = 'sing2me/pendingInvite';
 
+/**
+ * Une invitation vient d'être mise en attente (b252). L'adhésion
+ * automatique était accrochée au CHANGEMENT de compte : elle ne partait donc
+ * que pour un compte NEUF. Quelqu'un qui en avait déjà un déposait son
+ * invitation… et rien ne se passait jamais — « j'ai accepté une invitation
+ * mais je ne vois pas le groupe » (Vincent). Cet événement réveille
+ * l'adhésion, session inchangée ou non.
+ */
+export const INVITE_EVENT = 'dodosongs:invitation';
+
 export function savePendingInvite(inv: LinkInvite): void {
   try {
     localStorage.setItem(PENDING_KEY, JSON.stringify(inv));
   } catch {
     // stockage indisponible : l'invité pourra rejoindre manuellement
+  }
+  try {
+    window.dispatchEvent(new Event(INVITE_EVENT));
+  } catch {
+    // pas de fenêtre (test) : l'adhésion partira au prochain lancement
   }
 }
 

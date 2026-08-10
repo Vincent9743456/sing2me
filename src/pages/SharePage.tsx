@@ -122,7 +122,19 @@ export function SharePage({
    */
   async function joinCloudBand() {
     const inv = payload?.invite;
-    if (!inv?.cloudId || !inv.token || joinBusy) return;
+    if (joinBusy) return;
+    // UN BOUTON QUI NE FAIT RIEN N'EXISTE PAS (b252) : sans jeton, ce bouton
+    // rendait la main en silence — on appuyait sur « Rejoindre » et il ne se
+    // passait littéralement rien. On le dit, et on dit quoi faire.
+    if (!inv?.cloudId || !inv.token) {
+      setJoinError(
+        t(
+          'Ce lien ne porte pas d’invitation valable. Demande à {from} de t’en renvoyer une depuis la fiche du groupe.',
+          { from: payload?.invite?.from ?? t('la personne qui t’a invité·e') },
+        ),
+      );
+      return;
+    }
     setJoinBusy(true);
     setJoinError(null);
     try {

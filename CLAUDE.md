@@ -783,6 +783,30 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   paraît valable est pire qu'un lien mort ; et si le serveur ne sait pas
   créer l'invitation, le client REFUSE — produire un lien ouvert de secours
   reviendrait à contourner la règle en silence.
+- **UNE ADHÉSION EN ATTENTE NE DOIT PAS DÉPENDRE D'UN COMPTE NEUF** (b252,
+  signalement de Vincent : « j'ai accepté une invitation… mais je ne vois pas
+  le groupe. Je pense que vu que j'ai déjà un compte ça a dû ne pas
+  fonctionner » — diagnostic exact). L'adhésion automatique était accrochée
+  au CHANGEMENT de compte (`session?.userId`) : parfaite au retour du lien
+  magique, elle ne partait JAMAIS pour quelqu'un qui avait déjà un compte,
+  puisque la navigation ne remonte pas le composant. L'invitation restait
+  dans `sing2me/pendingInvite` indéfiniment, sans un mot. `savePendingInvite`
+  émet donc un ÉVÉNEMENT (`INVITE_EVENT`), écouté par `AccountProvider` avec
+  le retour au premier plan. Règle générale : **un traitement en attente
+  s'accroche à l'arrivée du TRAVAIL, jamais à un changement d'identité qui
+  n'aura peut-être pas lieu.**
+  **Et un bouton qui ne fait rien n'existe pas** : « Partager sans noter de
+  prénom » produisait un lien SANS invitation — depuis b251, un lien dont le
+  bouton « Rejoindre » rendait la main en silence. Le bouton est retiré
+  (c'était aussi le dernier chemin vers un lien ouvert), et un lien sans
+  jeton le DIT au lieu de ne rien faire.
+- **L'INVITATION REGARDE D'ABORD SI LA PERSONNE EST DÉJÀ LÀ** (b252, demande
+  de Vincent). Pendant qu'on tape le prénom, l'annuaire est interrogé : si la
+  personne a un compte, l'invitation part DIRECTEMENT dans son application —
+  rien à envoyer, et sa ligne porte son identifiant dès l'invitation (b250),
+  donc aucun doublon possible à l'adhésion. Les membres déjà dans le groupe
+  n'y apparaissent jamais (`memeMusicien`). Le lien nominatif ne sert plus
+  qu'à qui n'a pas encore de compte — ce pour quoi il est fait.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre
