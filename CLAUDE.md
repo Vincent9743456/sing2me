@@ -75,6 +75,18 @@
   commentaire `_comment`, casse le déploiement. Rien à voir avec le
   quota — on n'y touche que pour une raison qui le vaut, jamais en pleine
   livraison urgente.
+- **LA MISE EN PRODUCTION N'A PLUS À ÊTRE DEMANDÉE** (Vincent, 10 août
+  2026 : « envoie. Ne me demande plus »). Un lot vérifié se fusionne et part
+  en production sans attendre un feu vert. Ne plus finir un lot par
+  « dis-moi si je fusionne » : c'est une friction que Vincent a explicitement
+  retirée.
+  **Ce que ça ne change PAS** : le lot doit être VÉRIFIÉ avant de partir
+  (typecheck strict, i18n, build, contrôles de la fonction livrée) — l'accord
+  porte sur la permission, pas sur la rigueur. La prévisualisation reste
+  produite à chaque push de branche : elle sert quand un lot demande un avis
+  humain (rendu, formulation, choix produit), et on le DIT alors, sans
+  bloquer la livraison. Et ce qui touche à la base (`supabase/*.sql`) reste
+  à annoncer : c'est Vincent qui l'exécute.
 - Après push : vérifier https://sing2me-three.vercel.app/version.txt.
 - Supabase : projet `zssnwjtfzbymtsiccvao` ; après modification d'un
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
