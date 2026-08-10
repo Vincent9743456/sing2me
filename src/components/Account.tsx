@@ -519,27 +519,66 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.userId, dirName, dirPhoto]);
 
+  /**
+   * Ce qui a été modifié et pas encore envoyé (b221). Sans ce repère, une
+   * modification faite hors ligne restait sur le téléphone jusqu'à la
+   * PROCHAINE modification : l'envoi ne se déclenchait qu'au changement de
+   * `stateJson`. Trois morceaux corrigés dans l'avion, on atterrit, on ouvre
+   * l'app pour les relire sans y toucher — rien ne partait.
+   */
+  const aEnvoyer = useRef(false);
+
+  /** L'envoi lui-même, appelable par le débounce ET par le retour du réseau. */
+  const envoyer = useCallback(async () => {
+    if (!readyRef.current) return;
+    try {
+      const valid = await getValidSession();
+      if (!valid) return;
+      await pushCloud(valid, JSON.parse(stateRef.current));
+      aEnvoyer.current = false;
+      setLastSync(new Date().toISOString());
+      setStatus('ok');
+      void syncBands(valid);
+    } catch {
+      // Hors ligne ou serveur muet : rien n'est perdu, tout est en local.
+      // Le drapeau reste levé, le prochain retour de réseau réessaiera.
+      setStatus('error');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncBands]);
+
   // À chaque modification : pousser (debounce 3 s), best-effort.
   useEffect(() => {
     if (!session || !readyRef.current) return;
+    aEnvoyer.current = true;
     // `timer` : évite de masquer la fonction de traduction `t`.
-    const timer = window.setTimeout(() => {
-      void (async () => {
-        try {
-          const valid = await getValidSession();
-          if (!valid) return;
-          await pushCloud(valid, JSON.parse(stateJson));
-          setLastSync(new Date().toISOString());
-          setStatus('ok');
-          void syncBands(valid);
-        } catch {
-          setStatus('error');
-        }
-      })();
-    }, 3000);
+    const timer = window.setTimeout(() => void envoyer(), 3000);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateJson, session?.userId]);
+
+  /**
+   * Retour du réseau, ou retour de l'app au premier plan : on renvoie ce qui
+   * attend. C'est le seul moment où l'on peut rattraper le travail fait hors
+   * ligne, et il ne coûte rien quand il n'y a rien à envoyer.
+   */
+  useEffect(() => {
+    if (!session) return;
+    const reprendre = () => {
+      if (!aEnvoyer.current) return;
+      if (typeof navigator.onLine === 'boolean' && !navigator.onLine) return;
+      void envoyer();
+    };
+    const auPremierPlan = () => {
+      if (document.visibilityState === 'visible') reprendre();
+    };
+    window.addEventListener('online', reprendre);
+    document.addEventListener('visibilitychange', auPremierPlan);
+    return () => {
+      window.removeEventListener('online', reprendre);
+      document.removeEventListener('visibilitychange', auPremierPlan);
+    };
+  }, [session?.userId, envoyer]);
 
   // Cycle régulier : récupère ce que les autres membres ont modifié
   useEffect(() => {

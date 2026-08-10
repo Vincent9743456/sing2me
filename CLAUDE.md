@@ -451,6 +451,31 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **Un crochet vit AVANT les gardes** : tout `useEffect`/`useMemo` écrit
   au-dessus d'un `if (x === null) return …` doit se lire comme si l'état
   n'existait pas encore (`x?.id ?? ''`), dépendances comprises.
+- **Local-first vaut aussi pour le CODE** (b221, constat de Vincent en mode
+  avion) : les DONNÉES vivaient bien en localStorage, mais l'application était
+  retéléchargée à chaque lancement — sans réseau, elle ne s'ouvrait pas du
+  tout. Installée sur l'écran d'accueil, elle affichait une page d'erreur sans
+  même une barre d'adresse. Un service worker (`scripts/build-sw.mjs`, généré
+  après `vite build`, sans aucune dépendance) garde la coquille. Règles :
+  `/api/*` et `version.txt` ne sont JAMAIS mis en cache (un direct périmé
+  serait pire que pas de direct) ; la navigation va au réseau d'abord et
+  retombe sur le cache ; les fichiers du build, dont le nom porte une
+  empreinte, viennent du cache d'abord ; un nom de cache par livraison, donc
+  l'ancien est effacé. **`ignoreVary: true` est OBLIGATOIRE** : les fichiers
+  sont servis avec `Vary: Origin`, et un `<script crossorigin>` envoie un
+  `Origin` que la mise en cache initiale n'avait pas — sans cette option
+  RIEN ne correspond et l'app reste noire. Sortie de secours dans les
+  Réglages (« ↻ Recharger l'application »), parce qu'un cache qui tourne mal
+  ne se répare pas à distance.
+- **Une modification hors ligne doit REPARTIR toute seule** (b221) : l'envoi
+  au cloud ne se déclenchait qu'au changement d'état, donc trois morceaux
+  corrigés dans l'avion restaient sur le téléphone jusqu'à la modification
+  SUIVANTE. Un drapeau « à envoyer » est levé à chaque modification et
+  rabaissé à l'envoi ; le retour du réseau (`online`) et le retour de l'app au
+  premier plan le rejouent. La fusion, elle, ne change pas : dernier écrit
+  gagne, PAR OBJET, sur `updatedAt` (`mergeById`) — à égalité le local gagne.
+  Ne pas construire de résolution de conflit : il faudrait le MÊME objet
+  modifié sur DEUX appareils pendant la même fenêtre hors ligne.
 - **L'IA met en forme CHAQUE import** (b220, décision Vincent) : ce qui
   était un bouton, à la main et seulement sur un import déjà cassé, est
   devenu automatique — à l'unité comme en masse. **Jamais bloquant** :

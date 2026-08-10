@@ -155,4 +155,16 @@ export const EN_COMPTE: Record<string, string> = {
   '{n} partition corrigée.': '{n} chart fixed.',
   '{n} partitions reprises · {d} à vérifier.': '{n} charts redone · {d} need a check.',
   '{n} partitions reprises.': '{n} charts redone.',
+
+  // Settings.tsx — hors ligne et rechargement (b221)
+  'Application': 'App',
+  '↻ Recharger l’application': '↻ Reload the app',
+  'Récupère la dernière version. Tes morceaux, setlists et réglages ne sont pas touchés':
+    'Fetches the latest version. Your songs, setlists and settings are untouched',
+  'Ton répertoire s’ouvre sans réseau : l’application est gardée sur ton téléphone. Si elle se comporte bizarrement après une mise à jour, ce bouton la remet à neuf.':
+    'Your repertoire opens with no network: the app is kept on your phone. If it behaves oddly after an update, this button gives you a clean copy.',
+  'Recharger l’application ?': 'Reload the app?',
+  'L’application est retéléchargée dans sa dernière version. Tes morceaux, tes setlists, tes groupes et tes réglages restent exactement où ils sont. Il te faut du réseau le temps du rechargement.':
+    'The app is downloaded again in its latest version. Your songs, setlists, bands and settings stay exactly where they are. You need a network connection while it reloads.',
+  'Recharger': 'Reload',
 };

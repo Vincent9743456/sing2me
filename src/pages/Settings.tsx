@@ -78,6 +78,32 @@ export function Settings() {
   const toast = useToast();
   const fichierRef = useRef<HTMLInputElement | null>(null);
 
+  // Sortie de secours du cache hors ligne (b221).
+  const [demandeCache, setDemandeCache] = useState(false);
+
+  /**
+   * Efface le cache de l'application et recharge. C'est l'assurance-vie du
+   * hors-ligne : si une version mise en cache tournait mal, ce bouton la
+   * remplace sans avoir à désinstaller quoi que ce soit. Les morceaux, les
+   * setlists et les réglages ne sont PAS touchés — ils vivent ailleurs.
+   */
+  async function viderLeCache() {
+    setDemandeCache(false);
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if ('caches' in window) {
+        const noms = await caches.keys();
+        await Promise.all(noms.map((n) => caches.delete(n)));
+      }
+    } catch {
+      // Rien de grave : le rechargement suffit souvent.
+    }
+    location.reload();
+  }
+
   // Reprise de la bibliothèque déjà importée (b220).
   const [repriseIA, setRepriseIA] = useState<{
     done: number;
@@ -368,6 +394,21 @@ export function Settings() {
             maintenant tout seul. Deux passes séparées : elles n'ont ni le
             même coût, ni le même risque. */}
         <div className="spacer" />
+        <h2 className="pagetitle">{t('Application')}</h2>
+        <AccordionNav
+          title={t('↻ Recharger l’application')}
+          sub={t(
+            'Récupère la dernière version. Tes morceaux, setlists et réglages ne sont pas touchés',
+          )}
+          onClick={() => setDemandeCache(true)}
+        />
+        <p className="help">
+          {t(
+            'Ton répertoire s’ouvre sans réseau : l’application est gardée sur ton téléphone. Si elle se comporte bizarrement après une mise à jour, ce bouton la remet à neuf.',
+          )}
+        </p>
+
+        <div className="spacer" />
         <h2 className="pagetitle">{t('Reprendre mes partitions')}</h2>
         <p className="help" style={{ marginTop: 0 }}>
           {t(
@@ -571,6 +612,17 @@ export function Settings() {
             toast.show(t('Réinitialisation faite ✓'));
           }}
           onClose={() => setConfirming(false)}
+        />
+      )}
+      {demandeCache && (
+        <ConfirmSheet
+          title={t('Recharger l’application ?')}
+          message={t(
+            'L’application est retéléchargée dans sa dernière version. Tes morceaux, tes setlists, tes groupes et tes réglages restent exactement où ils sont. Il te faut du réseau le temps du rechargement.',
+          )}
+          confirmLabel={t('Recharger')}
+          onConfirm={() => void viderLeCache()}
+          onClose={() => setDemandeCache(false)}
         />
       )}
       {demandeIA && (
