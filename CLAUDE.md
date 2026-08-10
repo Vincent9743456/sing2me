@@ -44,36 +44,37 @@
     depuis l'extérieur : GET /version.txt).
 - Un seul commit par livraison, message en français :
   « bN : résumé des changements ».
-- **Quota de déploiements Vercel : 100 PAR JOUR** (plan gratuit, code
-  `api-deployments-free-per-day`), compteur remis à zéro à MINUIT UTC —
-  pas 24 h glissantes, malgré le message « try again in 24 hours ».
-  Épuisé le 8 août 2026 : la production est restée neuf versions en
-  arrière. Trois façons d'y remédier, par ordre d'importance :
-  1. **regrouper** plusieurs retours en un seul lot au lieu d'en livrer un
-     par remarque ;
-  2. **ne pas repousser la branche après un merge** — la remettre à niveau
-     en local suffit ; ce push de resynchronisation déclenchait une
-     prévisualisation pour rien (3 déploiements par lot au lieu de 2) ;
-  3. rien ne relance un déploiement refusé : il faut un NOUVEAU commit sur
-     `main` (un commit vide ne suffit pas — le merge en rebase l'écarte ;
-     un merge COMMIT, lui, en crée un et relance le déploiement).
-- **Les créneaux se libèrent au compte-gouttes** (constat de Vincent,
-  confirmé le 9 août 2026) : un refus n'oblige pas à attendre minuit, il
-  suffit de réessayer. Mais un créneau qui se libère est pris par le
-  PREMIER déploiement venu : à 10:15:05 la prévisualisation d'une branche
-  a pris le seul disponible, et treize secondes plus tard la mise en
-  production de b212 était refusée. **Ne JAMAIS sonder le quota avec une
-  prévisualisation** — c'est prendre la place de sa propre livraison. Les
-  commits de la branche de travail portent donc `[skip ci]`, que Vercel
-  honore : la branche ne déploie plus, seul `main` déploie, un lot coûte
-  UN déploiement au lieu de deux.
-  **`vercel.json` ne se bricole PAS pour ça** (9 août 2026) : y ajouter
-  `git.deploymentEnabled` a fait échouer la mise en production — un
-  déploiement gâché et la correction de Marco retardée d'autant. Ce
-  fichier est validé strictement par Vercel (une clé inconnue, même un
-  commentaire `_comment`, casse le déploiement) et il n'y a aucun moyen de
-  l'essayer sans dépenser un créneau. On n'y touche que pour une raison
-  qui le vaut, jamais en pleine livraison urgente.
+- **Le quota de déploiements n'est plus la contrainte** (abonnement Vercel
+  Pro pris par Vincent, 10 août 2026). Tout ce qui suit en découlait et
+  N'A PLUS LIEU D'ÊTRE :
+  - les commits de la branche de travail ne portent plus `[skip ci]` ;
+  - **on repousse la branche après un merge**, au lieu de la remettre à
+    niveau en local en silence (ça éteint aussi le crochet git qui
+    réclamait ce push à chaque fin de lot) ;
+  - une prévisualisation ne « vole » plus rien : elle redevient utile.
+  **Ce qu'on en fait, maintenant** : chaque lot poussé sur la branche
+  produit une PRÉVISUALISATION, que Vincent peut essayer AVANT la mise en
+  production. Le va-et-vient « je livre / il constate un défaut / je
+  relivre » se règle donc avant que la production bouge. Une PR sans
+  prévisualisation essayée reste une PR livrée à l'aveugle.
+  **Ce qui reste vrai malgré le Pro** : un lot doit rester COHÉRENT (un
+  sujet, un numéro de version, un message qui se lit) — non plus pour
+  économiser des créneaux, mais parce qu'un lot fourre-tout ne se teste
+  ni ne se raconte. Regrouper trois retours liés : oui. Empiler dix
+  changements sans rapport : non.
+  *Historique, à garder pour comprendre le code existant* : le plan
+  gratuit plafonnait à 100 déploiements par jour (`api-deployments-
+  free-per-day`), compteur remis à zéro à minuit UTC — épuisé le 8 août
+  2026, la production est restée neuf versions en arrière. C'est de là que
+  venaient les `[skip ci]` et l'interdiction de sonder le quota avec une
+  prévisualisation.
+- **`vercel.json` ne se bricole PAS** (9 août 2026, toujours valable) : y
+  ajouter `git.deploymentEnabled` a fait échouer la mise en production —
+  un déploiement gâché et la correction de Marco retardée d'autant. Ce
+  fichier est validé strictement par Vercel : une clé inconnue, même un
+  commentaire `_comment`, casse le déploiement. Rien à voir avec le
+  quota — on n'y touche que pour une raison qui le vaut, jamais en pleine
+  livraison urgente.
 - Après push : vérifier https://sing2me-three.vercel.app/version.txt.
 - Supabase : projet `zssnwjtfzbymtsiccvao` ; après modification d'un
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
@@ -312,6 +313,37 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     chez tout le monde). Même filtre sur les morceaux archivés du repli.
     **Supprimer un live est LOCAL** (`prefs.hiddenLives`) : rien n'est
     effacé côté serveur, les autres membres gardent le leur ;
+  - **une adresse publique, un COMPTE — et le groupe est un MIROIR** (b227,
+    décisions de Vincent). Le nom de PROFIL reste libre (cinq Vincent peuvent
+    tous s'appeler Vincent : on n'impose à personne de changer de nom
+    d'artiste). L'ADRESSE, elle, est unique : `public_pages.name` est unique
+    EN BASE, le premier arrivé garde le nom nu, les suivants reçoivent
+    `vincent2`, `vincent3`… et peuvent en choisir un autre — jamais un déjà
+    pris. **Un groupe n'a PAS de QR à lui** : le QR est celui de l'artiste,
+    et c'est l'artiste qui décide au lancement si le public voit son nom ou
+    celui du groupe — on ne revient pas là-dessus. Mais le groupe a une
+    ADRESSE MIROIR (`band_pages`), qui montre la page de son DÉTENTEUR, lu à
+    la volée sur `cloud_bands.owner` : transmettre le groupe déplace le
+    miroir tout seul, sans aucune donnée à recopier — donc rien qui puisse se
+    désynchroniser. Les deux adresses vivent dans le MÊME espace de noms
+    (déclencheur SQL croisé) : un nom pris par un artiste ne peut pas être
+    repris par un groupe.
+    **Et le direct se résout par le COMPTE, plus par le nom affiché** : le
+    nom d'affichage n'est pas unique, donc cinq Vincent avaient bien cinq
+    adresses distinctes mais tombaient tous sur le même concert — la promesse
+    « une adresse, la tienne » se brisait une couche plus bas.
+    `/api/live?page=` remonte l'adresse jusqu'au compte (`lives.owner_id`,
+    b192) ; la recherche par nom ne survit qu'en repli, pour les directs
+    d'avant b192. Cas d'usage validé : un direct de Zakoustiks lancé par
+    Vincent se trouve depuis `/zakoustiks` (miroir) COMME depuis `/vincent`
+    (QR) — c'est le même `owner_id`.
+  - **un groupe peut être MASQUÉ au public** (b227, demande de Vincent) :
+    « un groupe que je fais à l'occasion avec un pote n'a pas vocation à être
+    exposé ». Masqué (`Band.hiddenFromPublic`), il disparaît des identités
+    publiques, son adresse miroir est RETIRÉE, et **on ne peut plus lancer de
+    direct à son nom** — sans cette dernière règle, masquer ne servirait à
+    rien : un seul concert suffirait à l'exposer. C'est un choix PERSONNEL
+    (c'est ma page publique), jamais partagé avec les autres membres.
   - **mon QR est unique, mon choix au lancement décide de ce que voit le
     public** (b183) : le passage en direct réserve/rafraîchit ma fiche
     publique avec MON profil, jamais celui du groupe (sinon un concert de
@@ -610,6 +642,22 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   live + morceau + appareil). **Ce garde-fou ne doit JAMAIS faire perdre un
   cœur** : table absente, base injoignable, spectateur sans identifiant — on
   compte, comme avant. Un concert ne s'interrompt pas pour une statistique.
+- **Un accord se consulte SANS quitter la partition** (b226, retour de
+  Vincent) : la position s'ouvrait dans une boîte centrée sur fond noirci —
+  une interruption, alors qu'on veut l'accord ET la suite du morceau sous les
+  yeux (le suivant est déjà à l'écran). C'est une PASTILLE ancrée sous
+  l'accord touché, sans voile, calée pour ne jamais sortir de l'écran
+  (au-dessus quand il n'y a plus la place en bas), deux positions au plus.
+  Elle disparaît au moindre toucher, N'IMPORTE OÙ — y compris sur la
+  partition — et à Échap.
+- **Un accord barre-oblique n'est PAS son accord de base** (b226, signalement
+  de Marco : « il fait un la normal et il a pas mis la basse en do# »). La
+  basse d'un `A/C#` était ignorée : doigté faux sous étiquette juste, le pire
+  cas. On garde la forme et on descend chercher la basse sur la corde la plus
+  GRAVE qui peut la produire, en étouffant tout ce qui est en dessous — sinon
+  la vraie basse reste la plus grave et l'accord sonne comme avant. Une forme
+  qui ne peut pas porter la basse (empan de main dépassé, moins de trois
+  cordes qui sonnent) est ÉCARTÉE, jamais ramenée à l'accord de base.
 - **Un doigté faux est pire que pas de doigté** (b225) : `src/lib/chordshapes.ts`
   calcule les positions de guitare HORS LIGNE (aucun service, aucune
   dépendance) — une table de positions ouvertes écrites à la main, puis deux

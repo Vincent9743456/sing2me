@@ -152,15 +152,24 @@ async function readJson(res: Response): Promise<any> {
  * rester sur la même adresse quand le concert s'arrête et repart. `code`
  * n'est plus produit nulle part — il n'est lu que pour honorer un vieux lien.
  */
-export async function fetchLive(code = '', artist = ''): Promise<LiveState> {
+export async function fetchLive(
+  code = '',
+  artist = '',
+  page = '',
+): Promise<LiveState> {
   let res: Response;
   try {
     res = await fetch(
-      artist !== ''
-        ? `/api/live?artist=${encodeURIComponent(artist)}`
-        : code !== ''
-          ? `/api/live?code=${encodeURIComponent(code)}`
-          : '/api/live',
+      // L'ADRESSE d'abord (b227) : elle est unique, le nom affiché ne l'est
+      // pas. Le nom reste en repli pour les entrées qui n'ont pas d'adresse
+      // (lien /live d'un vieux QR, bœuf sans page publique).
+      page !== ''
+        ? `/api/live?page=${encodeURIComponent(page)}`
+        : artist !== ''
+          ? `/api/live?artist=${encodeURIComponent(artist)}`
+          : code !== ''
+            ? `/api/live?code=${encodeURIComponent(code)}`
+            : '/api/live',
     );
   } catch {
     throw new Error(OFFLINE_MSG);
@@ -252,6 +261,35 @@ export async function fetchLiveForArtist(
     const res = await fetch(
       `/api/live?artist=${encodeURIComponent(name.trim())}`,
     );
+    return await litLive(res);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * LE DIRECT DE L'ADRESSE `/lenom` (b227).
+ *
+ * On demande au serveur « le direct du COMPTE derrière cette adresse », et
+ * plus « le direct dont le nom affiché est untel ». Un nom d'affichage n'est
+ * pas unique : cinq Vincent avaient cinq adresses distinctes mais tombaient
+ * tous sur le même concert. L'adresse, elle, est unique par construction.
+ */
+export async function fetchLiveForPage(
+  page: string,
+): Promise<LiveState | null> {
+  if (page.trim() === '') return null;
+  try {
+    const res = await fetch(`/api/live?page=${encodeURIComponent(page.trim())}`);
+    return await litLive(res);
+  } catch {
+    return null;
+  }
+}
+
+/** Lecture commune d'une réponse /api/live. Best-effort → null. */
+async function litLive(res: Response): Promise<LiveState | null> {
+  try {
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return null;
     const body = await res.json();
@@ -279,10 +317,13 @@ export async function fetchLiveForArtist(
 export async function fetchLiveSetlist(
   code = '',
   artist = '',
+  page = '',
 ): Promise<LivePublicSong[]> {
   try {
     const res = await fetch(
-      artist !== ''
+      page !== ''
+        ? `/api/live?setlist=1&page=${encodeURIComponent(page)}`
+        : artist !== ''
         ? `/api/live?setlist=1&artist=${encodeURIComponent(artist)}`
         : code !== ''
           ? `/api/live?setlist=1&code=${encodeURIComponent(code)}`

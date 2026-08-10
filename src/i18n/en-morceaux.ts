@@ -511,6 +511,8 @@ export const EN_MORCEAUX: Record<string, string> = {
 
   // b225 — positions d'accords à la guitare
   'Position ouverte': 'Open position',
+  'Basse en {note}': 'Bass on {note}',
+  'Case {n}': 'Fret {n}',
   'Barré case {n} — fondamentale sur la 5ᵉ corde':
     'Barre at fret {n} — root on the 5th string',
   'Barré case {n} — fondamentale sur la 6ᵉ corde':

@@ -3446,49 +3446,45 @@ h2.pagetitle {
 .chorddiag {
   color: var(--text);
 }
-.chordsheet-back {
+/* Pastille de position, ANCRÉE sous l'accord touché (b225, retour de
+   Vincent). Pas de voile : la partition reste lisible tout autour — on veut
+   l'accord ET la suite du morceau sous les yeux. Le capteur transparent ne
+   sert qu'à recevoir le toucher qui referme, où qu'il tombe. */
+.chordpop-catch {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--sp-4);
 }
-.chordsheet {
+.chordpop {
+  position: fixed;
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius);
-  padding: var(--sp-4);
-  max-width: 100%;
-  max-height: 85vh;
-  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  max-width: 250px;
 }
-.chordsheet-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-4);
-  margin-bottom: var(--sp-3);
-}
-.chordsheet-head strong {
+.chordpop-head {
   color: var(--chord);
-  font-size: 1.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
+  margin-bottom: var(--sp-1);
 }
-.chordsheet-body {
+.chordpop-body {
   display: flex;
-  gap: var(--sp-4);
-  flex-wrap: wrap;
+  gap: var(--sp-3);
   justify-content: center;
 }
-.chordsheet-body figure {
+.chordpop-body figure {
   margin: 0;
   text-align: center;
 }
-.chordsheet-body figcaption {
+.chordpop-body figcaption {
   color: var(--text-dim);
-  font-size: 0.72rem;
-  max-width: 150px;
-  margin-top: var(--sp-1);
+  font-size: 0.62rem;
+  line-height: 1.3;
+  max-width: 96px;
+  margin-top: 2px;
 }
+

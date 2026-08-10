@@ -429,4 +429,23 @@ export const EN_ARTISTE: Record<string, string> = {
   '⏹ Arrêter quand même': '⏹ Stop anyway',
   'Le serveur n’a pas répondu. Tu peux couper ici : ton téléphone sort du direct, et l’application préviendra le serveur dès qu’elle y arrive.':
     'The server did not answer. You can stop here: your phone leaves the live, and the app will tell the server as soon as it can.',
+
+  // b227 — le groupe face au public (masquage + adresse miroir)
+  'Connecte-toi d’abord (onglet Artiste).': 'Sign in first (Artist tab).',
+  'Ce groupe et le public': 'This band and the audience',
+  'Masquer ce groupe au public': 'Hide this band from the audience',
+  'il n’apparaît pas sur ta fiche publique, et tu ne peux pas lancer de direct à son nom': 'it does not appear on your public page, and you cannot start a live under its name',
+  'Masquer « {nom} » au public ?': 'Hide “{nom}” from the audience?',
+  'Il disparaît de tes identités publiques et son adresse est retirée. Tes morceaux, tes setlists et les autres membres ne changent pas — et ce choix ne concerne que toi.': 'It disappears from your public identities and its address is released. Your songs, your setlists and the other members do not change — and this choice is yours alone.',
+  'Groupe masqué : rien de ce qui le concerne n’est proposé au public.': 'Hidden band: nothing about it is offered to the audience.',
+  'Publie le groupe (invite un musicien) pour lui donner une adresse publique.': 'Publish the band (invite a musician) to give it a public address.',
+  'adresse choisie par le créateur du groupe': 'address chosen by the band creator',
+  'Seul le créateur du groupe peut lui donner une adresse.': 'Only the band creator can give it an address.',
+  'Une adresse à dicter (« tape {hote}legroupe »). Elle montre TA page : pendant un direct du groupe, elle mène au même concert que ton QR.': 'An address to say out loud (“type {hote}theband”). It shows YOUR page: during a band live, it leads to the same concert as your QR.',
+  'Adresse publique du groupe': 'Public address of the band',
+  '…': '…',
+  'Réserver': 'Reserve',
+  'Changer': 'Change',
+  '✓ Adresse enregistrée.': '✓ Address saved.',
+  'Adresse actuelle :': 'Current address:',
 };

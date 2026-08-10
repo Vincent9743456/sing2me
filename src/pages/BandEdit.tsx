@@ -5,6 +5,7 @@
  * membres réels ✓ affichée ici).
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import { BandPublicCard } from '../components/BandPublicCard';
 
 import { useAccount } from '../components/Account';
 import { ConfirmSheet, MenuSheet, useToast } from '../components/Feedback';
@@ -883,6 +884,9 @@ export function BandEdit({ id }: { id: string }) {
             onChange={(e) => update({ tipUrl: e.target.value })}
           />
         </Field>
+
+        {/* Le groupe face au public (b227) : masquage + adresse miroir. */}
+        <BandPublicCard band={band} onSave={saveBand} />
 
         <h2 className="pagetitle">{t('Streaming & réseaux')}</h2>
         {shown.links.map((link) => (

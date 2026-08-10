@@ -183,7 +183,9 @@ export function Artist() {
       );
       return;
     }
-    const b = value === 'solo' ? null : bands.find((x) => x.id === value);
+    const choisi = value === 'solo' ? null : bands.find((x) => x.id === value);
+    // Masqué au public = jamais publié sous son nom (b227).
+    const b = choisi?.hiddenFromPublic === true ? null : choisi;
     const profile = b ? bandToProfile(b) : draft;
     setWhoBusy(true);
     try {
@@ -509,11 +511,15 @@ export function Artist() {
                 ? t('{nom} (moi, solo)', { nom: draft.name })
                 : t('Moi (solo)')}
             </option>
-            {bands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name || t('Groupe sans nom')}
-              </option>
-            ))}
+            {/* Un groupe masqué ne s'affiche pas ici : le masquer, c'est
+                justement ne pas l'exposer au public (b227). */}
+            {bands
+              .filter((b) => b.hiddenFromPublic !== true)
+              .map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name || t('Groupe sans nom')}
+                </option>
+              ))}
           </select>
         </Field>
         {whoMsg && <p className="help">{whoMsg}</p>}

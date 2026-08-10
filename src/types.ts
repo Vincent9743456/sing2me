@@ -287,6 +287,21 @@ export interface Band {
    * l'invitation. Vide chez le créateur lui-même.
    */
   ownerName?: string;
+  /**
+   * MASQUÉ AU PUBLIC (b227, demande de Vincent).
+   *
+   * « Un groupe que je fais à l'occasion avec un pote, avec qui on ne fait
+   * pas de concert, n'a pas vocation à être exposé aux yeux du public sur ma
+   * fiche artiste. » Deux conséquences, indissociables :
+   *   - il n'est pas proposé comme identité publique (écran du QR) ;
+   *   - il ne peut PAS servir à lancer un direct — sinon le masquer ne
+   *     servirait à rien, il suffirait d'un concert pour l'exposer ;
+   *   - il n'a pas d'adresse miroir (et la sienne est retirée s'il en avait).
+   *
+   * PERSONNEL : c'est MA page publique, donc MON choix. Jamais partagé avec
+   * le groupe, jamais synchronisé vers les autres membres.
+   */
+  hiddenFromPublic?: boolean;
 }
 
 /** Position d'un musicien ou d'un matériel sur le plan de scène (0…1). */

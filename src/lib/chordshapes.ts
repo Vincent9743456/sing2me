@@ -41,6 +41,8 @@ export interface Position {
   ouverte: boolean;
   /** Corde qui porte la fondamentale : 6 ou 5 (0 quand on ne sait pas). */
   cordeRacine: number;
+  /** Basse imposée par un accord barre-oblique (« A/C# ») — '' sinon. */
+  basse?: string;
   /**
    * Le LIBELLÉ n'est pas ici : ce module ne parle aucune langue. C'est
    * l'interface qui l'écrit (`ChordDiagram`), avec `t()` — un module de
@@ -198,6 +200,102 @@ function poser(
   };
 }
 
+/** Note produite par une corde à une case donnée (0..11). */
+function noteDe(corde: number, caseF: number): number {
+  const base = noteIndex(CORDES[corde]);
+  return base === null ? -1 : (base + caseF) % 12;
+}
+
+/**
+ * Étendue réelle d'un barré après modification : les cordes encore tenues à
+ * cette case, de la plus grave à la plus aiguë. `undefined` s'il n'en reste
+ * pas au moins deux — un « barré » d'une corde, c'est un doigt.
+ */
+function recalculeBarre(
+  cases: number[],
+  caseBarre: number,
+): { case_: number; de: number; a: number } | undefined {
+  const sur = cases
+    .map((c, i) => ({ c, i }))
+    .filter((x) => x.c === caseBarre)
+    .map((x) => x.i);
+  if (sur.length < 2) return undefined;
+  return { case_: caseBarre, de: Math.min(...sur), a: Math.max(...sur) };
+}
+
+/** Écart entre la case la plus basse et la plus haute réellement doigtées. */
+function empan(cases: number[]): number {
+  const doigtees = cases.filter((c) => c > 0);
+  if (doigtees.length === 0) return 0;
+  return Math.max(...doigtees) - Math.min(...doigtees);
+}
+
+const EMPAN_MAX = 4;
+
+/**
+ * REPOSER LA BASSE D'UN ACCORD BARRE-OBLIQUE (b226, signalement de Marco :
+ * « il fait un la normal et il a pas mis la basse en do# »).
+ *
+ * Un « A/C# » n'est PAS un A. Ignorer la basse, c'était afficher un doigté
+ * faux sous une étiquette juste — exactement ce que ce module s'interdit.
+ *
+ * Principe : on garde la forme, et on descend chercher la basse sur la corde
+ * la plus grave qui peut la produire à portée de main. Tout ce qui est
+ * EN DESSOUS est étouffé — sinon la vraie basse resterait la plus grave et
+ * l'accord sonnerait comme avant.
+ *
+ * Renvoie null quand la main ne peut pas : on n'invente pas.
+ */
+function poserLaBasse(base: Position, basse: string): Position | null {
+  const cible = noteIndex(basse);
+  if (cible === null) return null;
+
+  // Corde la plus grave actuellement jouée.
+  const graveActuelle = base.cases.findIndex((c) => c !== MUET);
+  if (graveActuelle === -1) return null;
+  // La basse est déjà en place : rien à faire.
+  if (noteDe(graveActuelle, base.cases[graveActuelle]) === cible) {
+    return { ...base, basse };
+  }
+
+  let meilleure: Position | null = null;
+  let empanMeilleur = Infinity;
+  // De la 6ᵉ corde vers la 4ᵉ : on veut la basse la plus GRAVE possible.
+  for (let corde = 0; corde <= 2; corde++) {
+    for (let caseF = 0; caseF <= 12; caseF++) {
+      if (noteDe(corde, caseF) !== cible) continue;
+      const cases = base.cases.map((c, i) =>
+        i < corde ? MUET : i === corde ? caseF : c,
+      );
+      // Il doit rester autre chose que la basse — sinon ce n'est plus un
+      // accord, c'est une note.
+      if (cases.filter((c) => c !== MUET).length < 3) continue;
+      if (empan(cases) > EMPAN_MAX) continue;
+      // Le barré a pu perdre une corde (la basse a déplacé la plus grave) :
+      // on RECALCULE son étendue au lieu de garder l'ancienne, qui
+      // dessinerait un trait là où plus rien n'est tenu.
+      const barre = base.barre
+        ? recalculeBarre(cases, base.barre.case_)
+        : undefined;
+      const doigtees = cases.filter((c) => c > 0);
+      const candidat: Position = {
+        cases,
+        barre,
+        ouverte: doigtees.length === 0 || Math.max(...doigtees) <= 3,
+        cordeRacine: base.cordeRacine,
+        basse,
+      };
+      if (empan(cases) < empanMeilleur) {
+        empanMeilleur = empan(cases);
+        meilleure = candidat;
+      }
+      break; // la case la plus basse de cette corde suffit
+    }
+    if (meilleure !== null) break; // corde la plus grave trouvée : on s'arrête
+  }
+  return meilleure;
+}
+
 /**
  * Positions proposées pour un symbole d'accord, la plus courante d'abord.
  * Tableau VIDE quand on ne sait pas : mieux vaut ne rien montrer qu'un
@@ -242,9 +340,19 @@ export function positionsPour(symbole: string): Position[] {
     if (p) out.push(p);
   }
   // Les positions les plus basses d'abord : c'est là que la main se pose.
-  return out
-    .slice(0, 3)
-    .sort((a, b) => hauteur(a) - hauteur(b));
+  const triees = out.slice(0, 3).sort((a, b) => hauteur(a) - hauteur(b));
+
+  // Accord barre-oblique : la basse doit sonner, sinon ce n'est pas l'accord
+  // demandé (b226). Une forme qui ne peut pas la porter est écartée — pas
+  // ramenée à l'accord de base.
+  const basse = m[3] ?? '';
+  if (basse !== '' && noteIndex(basse) !== null) {
+    const avecBasse = triees
+      .map((p) => poserLaBasse(p, basse))
+      .filter((p): p is Position => p !== null);
+    return avecBasse.slice(0, 2);
+  }
+  return triees;
 }
 
 /** Case la plus basse réellement jouée (0 pour une position ouverte). */
