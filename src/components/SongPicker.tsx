@@ -28,14 +28,16 @@ import { useScrollLock, useVisualViewport } from './StageList';
 import { Modal } from './ui';
 import { t } from '../i18n';
 
+/* Les pastilles de groupe passent par les tokens (b233) : recopiées en dur,
+   elles restaient les teintes du mode sombre sur un fond clair. */
 const BAND_COLORS = [
-  '#fbbf24',
-  '#60a5fa',
-  '#34d399',
-  '#f472b6',
-  '#a78bfa',
-  '#fb923c',
-  '#22d3ee',
+  'var(--band-1)',
+  'var(--band-2)',
+  'var(--band-3)',
+  'var(--band-4)',
+  'var(--band-5)',
+  'var(--band-6)',
+  'var(--band-7)',
 ];
 
 /* ------------------------------------------------------------------ */

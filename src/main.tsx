@@ -3,6 +3,15 @@ import { createRoot } from 'react-dom/client';
 
 import App from './App';
 import './theme.css';
+import { appliquerTheme, themeMemorise } from './lib/theme';
+
+/**
+ * Le thème AVANT tout (b233) : posé depuis la copie locale, avant que React
+ * ne monte quoi que ce soit. `App` le resynchronise ensuite sur `prefs.theme`,
+ * qui fait foi — mais si on attendait le store, l'app s'ouvrirait en sombre
+ * puis basculerait en clair sous les yeux, à chaque lancement.
+ */
+appliquerTheme(themeMemorise());
 
 // Capture l'invite d'installation (Android/Chrome) le plus tôt possible :
 // l'événement peut se déclencher avant le montage de React. On le stocke pour

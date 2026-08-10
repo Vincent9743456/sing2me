@@ -224,6 +224,14 @@ export interface Prefs {
    *  (langue du téléphone), sinon 'fr' | 'en'. */
   lang?: '' | 'fr' | 'en';
   /**
+   * Thème de l'interface (b233) : absent ou 'sombre' = sombre, l'identité
+   * de scène de l'app. 'clair' est une sortie pour le plein jour, réglée
+   * depuis la partition et appliquée partout. Suit le compte, comme la
+   * langue ; une copie locale (`sing2me/theme`) sert à poser le thème avant
+   * le premier rendu, sinon l'app clignoterait à chaque lancement.
+   */
+  theme?: 'sombre' | 'clair';
+  /**
    * Noms donnés APRÈS COUP aux directs passés (b176), par identifiant de
    * session : « soirée chez Marco du 26 août ». Côté serveur une session
    * n'a qu'une date ; c'est l'artiste qui sait ce que c'était. Rangé dans

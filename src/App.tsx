@@ -33,6 +33,7 @@ import { Terms } from './pages/Terms';
 import { Report } from './pages/Report';
 import { PublicArtist, publicNameFromPath } from './pages/PublicArtist';
 import { RESERVED_NAMES } from './lib/publicName';
+import { appliquerTheme, Theme } from './lib/theme';
 import { makeKeepSong } from './lib/keepSong';
 import { Welcome } from './pages/Welcome';
 import { EN } from './i18n.en';
@@ -52,6 +53,18 @@ function Localized({ children }: { children: React.ReactNode }) {
   const { prefs } = useStore();
   const lang = resolveLang(prefs.lang);
   setLang(lang);
+  /**
+   * Thème (b233) : `prefs.theme` fait foi — il suit le compte, comme la
+   * langue. `main.tsx` a déjà posé la copie locale avant le premier rendu ;
+   * ici on recale sur la préférence réelle, et on la rejoue à chaque
+   * changement (bouton de la partition, arrivée d'une synchro).
+   * Pas de remontage : un attribut sur `<html>` suffit, les tokens font le
+   * reste — et remonter l'arbre perdrait le défilement de la partition.
+   */
+  const theme: Theme = prefs.theme === 'clair' ? 'clair' : 'sombre';
+  useEffect(() => {
+    appliquerTheme(theme);
+  }, [theme]);
   return <React.Fragment key={lang}>{children}</React.Fragment>;
 }
 
