@@ -800,6 +800,48 @@ export function memePersonne(a: string, b: string): boolean {
 }
 
 /**
+ * CEUX AVEC QUI JE JOUE DÉJÀ (b253, demande de Vincent : « quand il y aura
+ * 126 Vincent, ce sera plus pratique pour Marco de créer un nouveau groupe
+ * avec moi »).
+ *
+ * Une recherche d'annuaire qui rend cent homonymes ne sert à rien : dans
+ * l'immense majorité des cas, on invite quelqu'un avec qui on joue DÉJÀ
+ * ailleurs. On le sait sans rien demander au réseau — les identifiants de
+ * compte sont posés sur les lignes de mes groupes depuis b249.
+ *
+ * Rend, par compte, les groupes que nous avons en commun : de quoi remonter
+ * ces musiciens en tête ET dire POURQUOI ils y sont — un classement qu'on
+ * n'explique pas passe pour du hasard.
+ */
+export function musiciensConnus(
+  bands: Band[],
+  moi: string,
+): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const b of bands) {
+    const nomGroupe = (b.name ?? '').trim();
+    for (const m of b.members ?? []) {
+      const id = (m.userId ?? '').trim();
+      if (id === '' || id === moi) continue;
+      const liste = out.get(id) ?? [];
+      if (nomGroupe !== '' && !liste.includes(nomGroupe)) liste.push(nomGroupe);
+      out.set(id, liste);
+    }
+  }
+  return out;
+}
+
+/** Les musiciens déjà connus d'abord — l'ordre du serveur départage le reste. */
+export function connusEnTete<T extends { user_id: string }>(
+  rows: T[],
+  connus: Map<string, string[]>,
+): T[] {
+  return [...rows].sort(
+    (a, b) => (connus.has(b.user_id) ? 1 : 0) - (connus.has(a.user_id) ? 1 : 0),
+  );
+}
+
+/**
  * MÊME MUSICIEN ? — L'IDENTIFIANT DE COMPTE FAIT AUTORITÉ (b249, proposition
  * de Vincent : « un identifiant réseau unique par artiste qui s'inscrit, et
  * c'est cet identifiant qui est utilisé partout »).
