@@ -284,6 +284,19 @@ export interface Prefs {
 export interface BandMember {
   id: string;
   name: string;
+  /**
+   * IDENTIFIANT DE COMPTE (b249, proposition de Vincent : « un identifiant
+   * réseau unique par artiste qui s'inscrit, et c'est cet identifiant qui
+   * est utilisé partout »). Il FAIT AUTORITÉ sur le nom : deux lignes qui le
+   * portent sont la même personne, deux lignes qui en portent des différents
+   * ne le sont jamais — quoi que disent les noms.
+   *
+   * Absent tant que le musicien n'a pas de compte (invité à la main, jamais
+   * inscrit) : c'est le seul cas où l'on retombe sur la comparaison des noms.
+   * Il se remplit tout seul dès que le groupe est publié — l'app rapproche
+   * une dernière fois par le nom, puis n'en a plus besoin.
+   */
+  userId?: string;
   instrument: string;
   /** Photo de profil (annuaire) du membre, si disponible. */
   photo?: string;

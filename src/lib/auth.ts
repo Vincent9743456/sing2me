@@ -75,6 +75,18 @@ function saveSession(s: AuthSession | null): void {
 
 let lastAuthError: string | null = null;
 /** Message d'erreur du dernier retour OAuth (affiché une fois). */
+/**
+ * MON IDENTIFIANT DE COMPTE, TOUT DE SUITE (b249).
+ *
+ * `getValidSession` est asynchrone (elle rafraîchit le jeton au besoin) : on
+ * ne peut pas l'attendre au milieu d'une création de groupe. Ici on ne veut
+ * QUE l'identifiant, qui ne change jamais pour un compte donné — la session
+ * locale suffit, même expirée. Vide si personne n'est connecté.
+ */
+export function monId(): string {
+  return loadSession()?.userId ?? '';
+}
+
 export function takeAuthError(): string | null {
   const e = lastAuthError;
   lastAuthError = null;

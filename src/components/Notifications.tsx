@@ -24,6 +24,7 @@ import {
   fetchBandDepartures,
   fetchMyInvites,
 } from '../lib/bands';
+import { memePersonne, stampMemberIds } from '../lib/model';
 import { useStore } from '../store';
 import { BandMember, makeId } from '../types';
 import { t } from '../i18n';
@@ -32,35 +33,54 @@ import { useToast } from './Feedback';
 
 /** Signature stable de la liste de membres (par nom) pour comparer sans churn. */
 function membersSignature(
-  members: { name: string; photo?: string }[],
+  members: { name: string; photo?: string; userId?: string }[],
 ): string {
   return members
-    .map((m) => `${m.name.trim().toLowerCase()}#${m.photo ? '1' : '0'}`)
-    .filter((n) => n !== '#0')
+    .map(
+      (m) =>
+        `${m.name.trim().toLowerCase()}#${m.photo ? '1' : '0'}#${m.userId ?? ''}`,
+    )
+    .filter((n) => n !== '#0#')
     .sort()
     .join('|');
 }
 
 /**
- * Fusionne les membres réels (comptes, cloud_band_members) dans la liste
- * locale du groupe : les comptes deviennent des membres « vérifiés », les
- * membres manuels non représentés par un compte sont conservés. Dé-doublonne
- * par nom (le créateur ne doit pas apparaître deux fois).
+ * Fusionne les membres réels (comptes, `cloud_band_members`) dans la liste
+ * locale du groupe.
+ *
+ * C'EST ICI QUE NAISSAIT LE DOUBLON de Marco (b249, constat de Vincent :
+ * « Marco apparaît 2 fois dans le groupe »). Le rapprochement se faisait par
+ * NOM EXACT : « marco.bosio » (le nom de son compte) ne retrouvait pas la
+ * ligne « Marco » écrite à la main, donc une SECONDE ligne était créée — à
+ * chaque sondage, chez tout le monde. b248 réparait en aval (au chargement,
+ * à la publication) ; ici on tarit la source.
+ *
+ * Le rapprochement se fait donc par IDENTIFIANT DE COMPTE quand la ligne
+ * locale en porte un, sinon par les MOTS du nom (`memePersonne`), qui
+ * encaisse « Marco » ↔ « marco.bosio » sans confondre « Marc » et « Marco ».
+ * Et chaque ligne repart avec son identifiant : au sondage suivant, plus
+ * aucun nom n'est comparé.
  */
 function mergeCloudMembers(
   local: BandMember[],
   cloud: CloudMember[],
 ): BandMember[] {
-  const cloudNames = new Set(
-    cloud.map((m) => m.name.trim().toLowerCase()).filter((n) => n !== ''),
-  );
+  const pris = new Set<BandMember>();
+  const correspond = (l: BandMember, c: CloudMember): boolean =>
+    (l.userId ?? '') !== ''
+      ? l.userId === c.user_id
+      : memePersonne(l.name ?? '', c.name ?? '');
+
   const fromCloud: BandMember[] = cloud.map((m) => {
-    const existing = local.find(
-      (l) => l.name.trim().toLowerCase() === m.name.trim().toLowerCase(),
-    );
+    const existing = local.find((l) => !pris.has(l) && correspond(l, m));
+    if (existing) pris.add(existing);
     return existing
       ? {
           ...existing,
+          userId: m.user_id,
+          // Le nom du compte fait foi une fois qu'il a rejoint ; on garde
+          // celui qu'on avait s'il n'en donne pas.
           name: m.name || existing.name,
           instrument: m.instrument || existing.instrument,
           // Photo d'annuaire du membre (si renseignée) : conservée localement.
@@ -71,29 +91,16 @@ function mergeCloudMembers(
         }
       : {
           id: makeId(),
+          userId: m.user_id,
           name: m.name || 'Musicien',
           instrument: m.instrument,
           photo: m.photo,
           verified: true,
         };
   });
-  const cloudNamesArr = [...cloudNames];
-  const keptManual = local.filter((m) => {
-    const nm = m.name.trim().toLowerCase();
-    if (nm === '') return true; // membre manuel sans nom : conservé
-    if (cloudNames.has(nm)) return false; // déjà représenté (nom exact)
-    // Invité « en attente » : son PRÉNOM peut différer du nom d'artiste
-    // choisi à l'adhésion (« Marco » → « marco.bosio »). Dès qu'un membre
-    // cloud contient ce prénom (ou l'inverse), l'invité a rejoint : on retire
-    // le profil « en attente », remplacé par sa vraie fiche (nom + photo).
-    if (
-      m.pending === true &&
-      cloudNamesArr.some((cn) => cn.includes(nm) || nm.includes(cn))
-    ) {
-      return false;
-    }
-    return true;
-  });
+  // Ne restent que les musiciens qu'AUCUN compte ne représente : invités qui
+  // ne se sont jamais inscrits, musiciens notés à la main.
+  const keptManual = local.filter((m) => !pris.has(m));
   return [...fromCloud, ...keptManual];
 }
 
@@ -210,13 +217,19 @@ export function NotificationsProvider({
   // bannière laissait la pastille allumée jusqu'au sondage suivant.
   const [departures, setDepartures] = useState<BandDeparture[]>([]);
   const [myUserId, setMyUserId] = useState('');
-  const { bands, prefs, saveBand, deleteBand } = useStore();
+  const { artist, bands, prefs, saveBand, deleteBand } = useStore();
   const toast = useToast();
   const [inviteCount, setInviteCount] = useState(0);
   const [memberNews, setMemberNews] = useState<MemberNews[]>(() => loadNews());
   const [unreadByBand, setUnreadByBand] = useState<Record<string, number>>({});
   const bandsRef = useRef(bands);
   bandsRef.current = bands;
+  // Mes noms, pour attacher MON identifiant à ma ligne dans les groupes que
+  // j'ai créés (b249) : le créateur n'est jamais dans `cloud_band_members`.
+  const mesNomsRef = useRef<string[]>([]);
+  mesNomsRef.current = [prefs.userName, artist.name].filter(
+    (n) => (n ?? '').trim() !== '',
+  );
   const saveBandRef = useRef(saveBand);
   saveBandRef.current = saveBand;
   // Réf plutôt que dépendance : `poll` ne doit pas se recréer (et relancer
@@ -308,9 +321,24 @@ export function NotificationsProvider({
           // Tenir la liste locale des membres à jour, pour que le décompte
           // (« X musiciens ») soit correct partout — pas seulement dans la
           // fiche du groupe.
+          // IDENTIFIANTS DE COMPTE (b249) : la fusion les pose sur les
+          // lignes des membres ; reste MA ligne, car le créateur n'est
+          // jamais dans `cloud_band_members`. Réparation silencieuse —
+          // `updatedAt` n'est pas retouché, chaque appareil la refait depuis
+          // la source qui fait autorité.
           const merged = mergeCloudMembers(band.members, members);
-          if (membersSignature(merged) !== membersSignature(band.members)) {
-            saveBandRef.current({ ...band, members: merged });
+          const comptes = members.map((m) => ({
+            user_id: m.user_id,
+            name: m.name,
+          }));
+          if (band.owned === true) {
+            for (const n of mesNomsRef.current) {
+              comptes.push({ user_id: s.userId, name: n });
+            }
+          }
+          const aJour = stampMemberIds({ ...band, members: merged }, comptes);
+          if (membersSignature(aJour.members) !== membersSignature(band.members)) {
+            saveBandRef.current(aJour);
           }
         } catch {
           // groupe injoignable : on réessaiera au prochain cycle

@@ -7,8 +7,8 @@
  * écriture réservée au propriétaire (auth.uid() = user_id). Best-effort :
  * si Supabase n'est pas configuré, tout renvoie null sans jamais planter.
  */
-import { AuthSession, getValidSession } from './auth';
-import { memePersonne } from './model';
+import { AuthSession, getValidSession, monId } from './auth';
+import { memeMusicien, memePersonne } from './model';
 import { miniature } from './photo';
 import { normalizePublicName, publicNameError } from './publicName';
 import { ArtistProfile, Band, PublicBand, PublicMember } from '../types';
@@ -575,6 +575,7 @@ async function musiciensPublics(
   vignette?: (source: string, taille: number) => Promise<string>,
 ): Promise<PublicMember[]> {
   const moi = (artist?.name ?? '').trim();
+  const monCompte = monId();
   // DOUBLONS ÉCARTÉS PAR PERSONNE, pas par chaîne exacte (b248, constat de
   // Vincent : « Marco apparaît 2 fois dans le groupe… alors que le menu
   // d'avant on n'est que 2 »). Sa fiche de groupe portait « Marco » ET
@@ -584,7 +585,7 @@ async function musiciensPublics(
   // rejoint « Marco », mais « Marc » ne devient jamais « Marco » — sur une
   // page publique, fusionner deux musiciens en effacerait un.
   // Premier nom rencontré gagne (b141), photo la plus fournie conservée.
-  const membres: { name: string; photo: string }[] = [];
+  const membres: { name: string; photo: string; userId?: string }[] = [];
   for (const m of band.members ?? []) {
     if (m.pending === true) continue;
     const nom = (m.name ?? '').trim();
@@ -594,11 +595,13 @@ async function musiciensPublics(
     const photo =
       (m.photo ?? '') !== ''
         ? (m.photo as string)
-        : moi !== '' && memePersonne(moi, nom)
+        : // Mon compte tranche quand ma ligne le porte (b249).
+          (monCompte !== '' && (m.userId ?? '') === monCompte) ||
+            ((m.userId ?? '') === '' && moi !== '' && memePersonne(moi, nom))
           ? (artist?.photo ?? '')
           : '';
-    const vu = membres.find((x) => memePersonne(x.name, nom));
-    if (!vu) membres.push({ name: nom, photo });
+    const vu = membres.find((x) => memeMusicien(x, m));
+    if (!vu) membres.push({ name: nom, photo, userId: m.userId });
     else if (vu.photo === '' && photo !== '') vu.photo = photo;
   }
   const adresses = await Promise.all(membres.map((m) => adresseDe(m.name)));

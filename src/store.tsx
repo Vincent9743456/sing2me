@@ -19,6 +19,7 @@ import {
   normalizeTitle,
   songKey,
 } from './lib/normalizeTitle';
+import { monId } from './lib/auth';
 import { ResetMarks } from './lib/sync';
 import { ecartee, remisEnIdee, reprise, sortDuMorceau } from './lib/deletesong';
 import {
@@ -488,6 +489,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         prev.bands ?? [],
         artist,
         prev.prefs?.userName ?? '',
+        monId(),
       ),
     }));
   }, []);

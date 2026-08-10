@@ -13,7 +13,7 @@ import { Icon } from '../components/Icon';
 import { t } from '../i18n';
 import { creatorMember, versionForBand } from '../lib/model';
 import { generateSetlistAI, repertoireForContext } from '../lib/setlistAI';
-import { getValidSession } from '../lib/auth';
+import { getValidSession, monId } from '../lib/auth';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -291,7 +291,7 @@ export function Setlists() {
       ...emptyBand(),
       name: name.trim(),
       owned: true,
-      members: [creatorMember(artist, prefs.userName)],
+      members: [creatorMember(artist, prefs.userName, monId())],
     };
     saveBand(b);
     setCreateOpen(false);
