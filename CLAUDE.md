@@ -44,36 +44,37 @@
     depuis l'extérieur : GET /version.txt).
 - Un seul commit par livraison, message en français :
   « bN : résumé des changements ».
-- **Quota de déploiements Vercel : 100 PAR JOUR** (plan gratuit, code
-  `api-deployments-free-per-day`), compteur remis à zéro à MINUIT UTC —
-  pas 24 h glissantes, malgré le message « try again in 24 hours ».
-  Épuisé le 8 août 2026 : la production est restée neuf versions en
-  arrière. Trois façons d'y remédier, par ordre d'importance :
-  1. **regrouper** plusieurs retours en un seul lot au lieu d'en livrer un
-     par remarque ;
-  2. **ne pas repousser la branche après un merge** — la remettre à niveau
-     en local suffit ; ce push de resynchronisation déclenchait une
-     prévisualisation pour rien (3 déploiements par lot au lieu de 2) ;
-  3. rien ne relance un déploiement refusé : il faut un NOUVEAU commit sur
-     `main` (un commit vide ne suffit pas — le merge en rebase l'écarte ;
-     un merge COMMIT, lui, en crée un et relance le déploiement).
-- **Les créneaux se libèrent au compte-gouttes** (constat de Vincent,
-  confirmé le 9 août 2026) : un refus n'oblige pas à attendre minuit, il
-  suffit de réessayer. Mais un créneau qui se libère est pris par le
-  PREMIER déploiement venu : à 10:15:05 la prévisualisation d'une branche
-  a pris le seul disponible, et treize secondes plus tard la mise en
-  production de b212 était refusée. **Ne JAMAIS sonder le quota avec une
-  prévisualisation** — c'est prendre la place de sa propre livraison. Les
-  commits de la branche de travail portent donc `[skip ci]`, que Vercel
-  honore : la branche ne déploie plus, seul `main` déploie, un lot coûte
-  UN déploiement au lieu de deux.
-  **`vercel.json` ne se bricole PAS pour ça** (9 août 2026) : y ajouter
-  `git.deploymentEnabled` a fait échouer la mise en production — un
-  déploiement gâché et la correction de Marco retardée d'autant. Ce
-  fichier est validé strictement par Vercel (une clé inconnue, même un
-  commentaire `_comment`, casse le déploiement) et il n'y a aucun moyen de
-  l'essayer sans dépenser un créneau. On n'y touche que pour une raison
-  qui le vaut, jamais en pleine livraison urgente.
+- **Le quota de déploiements n'est plus la contrainte** (abonnement Vercel
+  Pro pris par Vincent, 10 août 2026). Tout ce qui suit en découlait et
+  N'A PLUS LIEU D'ÊTRE :
+  - les commits de la branche de travail ne portent plus `[skip ci]` ;
+  - **on repousse la branche après un merge**, au lieu de la remettre à
+    niveau en local en silence (ça éteint aussi le crochet git qui
+    réclamait ce push à chaque fin de lot) ;
+  - une prévisualisation ne « vole » plus rien : elle redevient utile.
+  **Ce qu'on en fait, maintenant** : chaque lot poussé sur la branche
+  produit une PRÉVISUALISATION, que Vincent peut essayer AVANT la mise en
+  production. Le va-et-vient « je livre / il constate un défaut / je
+  relivre » se règle donc avant que la production bouge. Une PR sans
+  prévisualisation essayée reste une PR livrée à l'aveugle.
+  **Ce qui reste vrai malgré le Pro** : un lot doit rester COHÉRENT (un
+  sujet, un numéro de version, un message qui se lit) — non plus pour
+  économiser des créneaux, mais parce qu'un lot fourre-tout ne se teste
+  ni ne se raconte. Regrouper trois retours liés : oui. Empiler dix
+  changements sans rapport : non.
+  *Historique, à garder pour comprendre le code existant* : le plan
+  gratuit plafonnait à 100 déploiements par jour (`api-deployments-
+  free-per-day`), compteur remis à zéro à minuit UTC — épuisé le 8 août
+  2026, la production est restée neuf versions en arrière. C'est de là que
+  venaient les `[skip ci]` et l'interdiction de sonder le quota avec une
+  prévisualisation.
+- **`vercel.json` ne se bricole PAS** (9 août 2026, toujours valable) : y
+  ajouter `git.deploymentEnabled` a fait échouer la mise en production —
+  un déploiement gâché et la correction de Marco retardée d'autant. Ce
+  fichier est validé strictement par Vercel : une clé inconnue, même un
+  commentaire `_comment`, casse le déploiement. Rien à voir avec le
+  quota — on n'y touche que pour une raison qui le vaut, jamais en pleine
+  livraison urgente.
 - Après push : vérifier https://sing2me-three.vercel.app/version.txt.
 - Supabase : projet `zssnwjtfzbymtsiccvao` ; après modification d'un
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
