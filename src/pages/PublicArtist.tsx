@@ -7,12 +7,11 @@
 import React, { useEffect, useState } from 'react';
 
 import { LogoMark } from '../components/Logo';
-import { TipBox } from '../components/TipBox';
 import { t } from '../i18n';
 import { fetchLiveForPage } from '../lib/live';
 import { Live } from './Live';
 import { fetchPublicPage } from '../lib/publicPages';
-import { PublicBands, PublicMembers } from '../components/PublicBands';
+import { PublicPageView } from '../components/PublicPageView';
 import { ArtistProfile } from '../types';
 
 /** Rythme de veille du concert : assez vif pour qu'un spectateur arrivé en
@@ -145,42 +144,13 @@ export function PublicArtist({ name }: { name: string }) {
     );
   }
 
-  const links = (profile.links ?? []).filter((l) => l.url !== '');
-  const shownName = (profile.name ?? '') !== '' ? profile.name : name;
-
   return (
     <div className="public">
       <RetourSiPossible />
-      <div className="artisthead">
-        {(profile.photo ?? '') !== '' && (
-          <img src={profile.photo} alt={shownName} />
-        )}
-        <h1 style={{ margin: '10px 0 4px' }}>{shownName}</h1>
-        {sorte === 'groupe' && <p className="pubsorte">{t('Groupe')}</p>}
-        {(profile.bio ?? '') !== '' && (
-          <p className="help" style={{ whiteSpace: 'pre-wrap' }}>
-            {profile.bio}
-          </p>
-        )}
-        {links.length > 0 && (
-          <div className="links">
-            {links.map((l) => (
-              <a key={l.id} href={l.url} target="_blank" rel="noreferrer">
-                {l.label || l.url}
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Réciproque exacte : la page de l'artiste nomme ses groupes, celle du
-          groupe nomme ses musiciens, et chaque nom mène à la page de l'autre
-          quand elle existe (b231, enrichi b232). Un seul des deux blocs
-          s'affiche — une fiche est d'un artiste OU d'un groupe. */}
-      <PublicMembers members={profile.publicMembers} />
-      <PublicBands bands={profile.publicBands} />
-
-      <TipBox artist={profile} />
+      {/* Le MÊME rendu que l'aperçu dans l'app (b242) : un aperçu qui
+          redessine la page finit toujours par montrer autre chose que ce
+          qu'on vérifie. */}
+      <PublicPageView profile={profile} sorte={sorte} nomDeSecours={name} />
 
       <div className="footer">
         <a

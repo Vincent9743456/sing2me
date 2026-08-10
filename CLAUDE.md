@@ -484,6 +484,17 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     pas le détenteur de l'adresse).
     Repli conservé : tant que le détenteur n'a rien publié, l'adresse retombe
     sur SA fiche — comme avant b232, jamais d'adresse qui n'ouvre rien.
+  - **« Page publique / QR » MONTRE la page** (b242, retour de Vincent :
+    « ça devrait afficher ma page telle que le public doit la voir »). Ce
+    bouton n'ouvrait qu'un QR et des raccourcis d'envoi : impossible de
+    vérifier ce qu'un spectateur voit — la seule chose qui compte quand on
+    donne son adresse. L'aperçu relit la page PUBLIÉE (après l'avoir
+    rafraîchie) et la rend avec `PublicPageView`, le composant de la VRAIE
+    page : l'aperçu et la page ne peuvent donc pas diverger. Le QR reste, en
+    grand, enregistrable en image (pour l'imprimer) et partageable par la
+    feuille du système ; les raccourcis e-mail et WhatsApp sont retirés —
+    ils ne faisaient rien que « Copier le lien » ou la feuille de partage ne
+    fassent déjà ;
   - **la page publique d'un groupe se consulte DEPUIS SA FICHE** (b230,
     demande de Vincent) — et sans quitter l'app (règle b187) : elle se
     RECOPIE dans une fenêtre, son adresse se copie. Depuis b232 c'est bien la
