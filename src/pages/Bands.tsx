@@ -10,7 +10,7 @@ import { Icon } from '../components/Icon';
 import { useNotifications } from '../components/Notifications';
 import { Empty, Field, TopBar } from '../components/ui';
 import { t } from '../i18n';
-import { getValidSession } from '../lib/auth';
+import { getValidSession, monId } from '../lib/auth';
 import {
   BandDeparture,
   departureKey,
@@ -127,7 +127,7 @@ export function Bands() {
           ownerName: inv.from_name || '',
           cloudId: inv.band_id,
           owned: false, // j'ai REJOINT ce groupe : je n'en suis pas le créateur
-          members: [creatorMember(artist, prefs.userName)],
+          members: [creatorMember(artist, prefs.userName, monId())],
         });
       }
       setInvites((list) => list.filter((x) => x.id !== inv.id));
@@ -149,7 +149,7 @@ export function Bands() {
       ...emptyBand(),
       name: newName.trim() || t('Mon groupe'),
       owned: true, // je CRÉE ce groupe : j'en suis le propriétaire
-      members: [creatorMember(artist, prefs.userName)],
+      members: [creatorMember(artist, prefs.userName, monId())],
     };
     saveBand(b);
     cancelCreate();

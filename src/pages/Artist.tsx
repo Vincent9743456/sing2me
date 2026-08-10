@@ -17,7 +17,7 @@ import { APP_BUILD } from '../version';
 import { PublicLyrics } from '../components/PublicLyrics';
 import { PublicNameCard } from '../components/PublicNameCard';
 import { findPublicPageByArtist, monAdressePublique } from '../lib/publicPages';
-import { getValidSession } from '../lib/auth';
+import { getValidSession, monId } from '../lib/auth';
 import {
   ensurePublicPage,
   profilAPublier,
@@ -967,7 +967,7 @@ export function Artist() {
               ...emptyBand(),
               name: t('Mon groupe'),
               owned: true,
-              members: [creatorMember(draft, prefs.userName)],
+              members: [creatorMember(draft, prefs.userName, monId())],
             };
             saveBand(b);
             navigate(`/band/${b.id}`);

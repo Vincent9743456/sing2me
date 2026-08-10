@@ -73,10 +73,14 @@ interface LegacySection {
 export function creatorMember(
   artist: ArtistProfile,
   userName: string,
+  /** Mon compte (b249) : dès la création, ma ligne porte mon identifiant —
+   *  aucun rapprochement par le nom n'aura jamais à être tenté sur elle. */
+  userId?: string,
 ): import('../types').BandMember {
   return {
     id: makeId(),
     name: userName || artist.name || 'Moi',
+    ...(userId ? { userId } : {}),
     instrument: '',
     photo: artist.photo || undefined,
     verified: true,
@@ -796,6 +800,67 @@ export function memePersonne(a: string, b: string): boolean {
 }
 
 /**
+ * MÊME MUSICIEN ? — L'IDENTIFIANT DE COMPTE FAIT AUTORITÉ (b249, proposition
+ * de Vincent : « un identifiant réseau unique par artiste qui s'inscrit, et
+ * c'est cet identifiant qui est utilisé partout »).
+ *
+ * Quand les deux lignes portent un `userId`, la réponse est certaine dans les
+ * DEUX sens : même identifiant → la même personne, quels que soient les noms
+ * (« Marco » et « marco.bosio ») ; identifiants différents → jamais la même,
+ * quand bien même les noms seraient identiques (deux Vincent existent).
+ *
+ * On ne retombe sur les noms que si l'un des deux n'a pas de compte — un
+ * musicien inscrit à la main, invité qui ne s'est jamais inscrit. C'est le
+ * seul cas irréductible : sans compte, il n'y a pas d'identifiant à comparer.
+ */
+export interface Identifiable {
+  name: string;
+  userId?: string;
+}
+
+export function memeMusicien(a: Identifiable, b: Identifiable): boolean {
+  const ia = (a.userId ?? '').trim();
+  const ib = (b.userId ?? '').trim();
+  if (ia !== '' && ib !== '') return ia === ib;
+  return memePersonne(a.name ?? '', b.name ?? '');
+}
+
+/**
+ * ATTACHER LES IDENTIFIANTS AUX LIGNES DÉJÀ ÉCRITES (b249).
+ *
+ * Les groupes existants ne portent que des noms. On fait donc UNE DERNIÈRE
+ * fois le rapprochement par le nom, pour poser l'identifiant — après quoi il
+ * fait autorité et le nom peut changer autant qu'il veut.
+ *
+ * Deux prudences : une ligne qui porte DÉJÀ un identifiant n'est jamais
+ * réécrite (le serveur ne se contredit pas, mais un homonyme, si), et un nom
+ * qui correspond à DEUX comptes n'est attribué à aucun — mieux vaut une ligne
+ * sans identifiant qu'une ligne avec celui du voisin. `updatedAt` n'est pas
+ * retouché : c'est une réparation silencieuse, elle n'a pas à gagner la
+ * fusion de synchro. Idempotente.
+ */
+export function stampMemberIds(
+  band: Band,
+  comptes: { user_id: string; name: string }[],
+): Band {
+  const src = band.members ?? [];
+  if (src.length === 0 || comptes.length === 0) return band;
+  let change = false;
+  const out = src.map((m) => {
+    if ((m.userId ?? '') !== '') return m;
+    const nom = (m.name ?? '').trim();
+    if (nom === '') return m;
+    const candidats = comptes.filter(
+      (c) => (c.user_id ?? '') !== '' && memePersonne(c.name ?? '', nom),
+    );
+    if (candidats.length !== 1) return m;
+    change = true;
+    return { ...m, userId: candidats[0].user_id };
+  });
+  return change ? { ...band, members: out } : band;
+}
+
+/**
  * UN MUSICIEN, UNE LIGNE (b248, constat de Vincent : « Marco apparaît 2 fois
  * dans le groupe… alors que le menu d'avant on n'est que 2 »).
  *
@@ -819,7 +884,11 @@ export function dedupeBandMembers(band: Band): Band {
   const out: import('../types').BandMember[] = [];
   for (const m of src) {
     const nom = (m.name ?? '').trim();
-    const i = nom === '' ? -1 : out.findIndex((k) => memePersonne(k.name, nom));
+    // b249 : l'identifiant de compte tranche quand il est là, le nom sinon.
+    const i =
+      nom === '' && (m.userId ?? '') === ''
+        ? -1
+        : out.findIndex((k) => memeMusicien(k, m));
     if (i < 0) {
       out.push(m);
       continue;
@@ -827,6 +896,7 @@ export function dedupeBandMembers(band: Band): Band {
     const garde = out[i];
     out[i] = {
       ...garde,
+      userId: garde.userId ?? m.userId,
       photo: (garde.photo ?? '') !== '' ? garde.photo : m.photo,
       instrument: garde.instrument !== '' ? garde.instrument : m.instrument,
       gear: (garde.gear ?? []).length > 0 ? garde.gear : m.gear,
@@ -853,17 +923,25 @@ export function majMaPhotoDansGroupes(
   bands: Band[],
   artist: ArtistProfile,
   userName: string,
+  /** Mon compte (b249) : quand ma ligne le porte, aucun nom n'est comparé. */
+  userId?: string,
 ): Band[] {
   const photo = artist.photo ?? '';
   if (photo === '') return bands;
+  const moi = (userId ?? '').trim();
   const mesNoms = [userName, artist.name].filter((n) => (n ?? '').trim() !== '');
-  if (mesNoms.length === 0) return bands;
+  if (mesNoms.length === 0 && moi === '') return bands;
   let touche = false;
   const out = bands.map((b) => {
     let change = false;
     const members = (b.members ?? []).map((m) => {
       if ((m.photo ?? '') === photo) return m;
-      if (!mesNoms.some((n) => memePersonne(n, m.name))) return m;
+      const idLigne = (m.userId ?? '').trim();
+      const cest_moi =
+        idLigne !== '' && moi !== ''
+          ? idLigne === moi
+          : mesNoms.some((n) => memePersonne(n, m.name));
+      if (!cest_moi) return m;
       change = true;
       return { ...m, photo };
     });
@@ -878,12 +956,23 @@ export function majMaPhotoDansGroupes(
  * Liste de musiciens sans doublon : le premier nom rencontré gagne
  * (b141) — évite « marco.bosio, Marco » pour une seule personne.
  */
-export function dedupeMusicians<T extends { name: string }>(list: T[]): T[] {
+export function dedupeMusicians<T extends Identifiable>(list: T[]): T[] {
   const out: T[] = [];
   for (const m of list) {
-    if (!out.some((k) => sameMusician(k.name, m.name))) out.push(m);
+    // b249 : deux identifiants de compte DIFFÉRENTS, ce sont deux musiciens
+    // — deux Vincent existent. Le rapprochement flou des noms ne s'applique
+    // qu'à défaut d'identifiant.
+    if (!out.some((k) => memeMusicienOuNomProche(k, m))) out.push(m);
   }
   return out;
+}
+
+/** Rapprochement d'affichage : l'identifiant tranche, sinon le nom (flou). */
+function memeMusicienOuNomProche(a: Identifiable, b: Identifiable): boolean {
+  const ia = (a.userId ?? '').trim();
+  const ib = (b.userId ?? '').trim();
+  if (ia !== '' && ib !== '') return ia === ib;
+  return sameMusician(a.name, b.name);
 }
 
 /**

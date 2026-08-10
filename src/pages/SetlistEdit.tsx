@@ -24,7 +24,7 @@ import {
   transposeChordSequence,
   versionForBand,
 } from '../lib/model';
-import { getValidSession } from '../lib/auth';
+import { getValidSession, monId } from '../lib/auth';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -571,7 +571,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
                   ...emptyBand(),
                   name: name.trim(),
                   owned: true,
-                  members: [creatorMember(artist, prefs.userName)],
+                  members: [creatorMember(artist, prefs.userName, monId())],
                 };
                 saveBand(b);
                 bandId = b.id;

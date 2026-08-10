@@ -732,6 +732,26 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   synchro), et la publication dédoublonne elle aussi, avec `memePersonne` et
   jamais `sameMusician` — sur une page publique, fusionner deux musiciens en
   EFFACERAIT un.
+- **UN MUSICIEN EST SON COMPTE, PAS SON NOM** (b249, proposition de Vincent :
+  « un identifiant réseau unique par artiste qui s'inscrit, et c'est cet
+  identifiant qui est utilisé partout »). `BandMember.userId` fait autorité
+  dans les DEUX sens (`memeMusicien`) : même identifiant → la même personne
+  quels que soient les noms ; identifiants différents → jamais la même, même
+  nom identique (deux Vincent existent). Les noms ne servent plus qu'à ce qui
+  est irréductible : un musicien noté à la main, qui n'a pas de compte.
+  **C'est là qu'était la SOURCE du doublon de b248** : `mergeCloudMembers`
+  (sondage des notifications) rapprochait par NOM EXACT — « marco.bosio » ne
+  retrouvait pas « Marco », donc une deuxième ligne était créée à chaque
+  sondage, chez tout le monde. b248 réparait en aval ; b249 tarit la source.
+  Trois règles pour l'attachement (`stampMemberIds`) : on ne réécrit jamais
+  une ligne qui porte déjà un identifiant, un nom qui désigne DEUX comptes
+  n'est attribué à aucun, et `updatedAt` n'est pas retouché (chaque appareil
+  refait l'attachement depuis `cloud_band_members`, qui fait autorité — rien
+  à propager, donc rien à désynchroniser). À la création d'un groupe, ma
+  ligne porte mon identifiant tout de suite (`creatorMember`, `monId()`) :
+  aucun rapprochement par le nom n'aura jamais à être tenté dessus. Le
+  créateur n'étant jamais dans `cloud_band_members`, sa propre ligne est le
+  seul cas qui demande encore un dernier rapprochement par le nom.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre

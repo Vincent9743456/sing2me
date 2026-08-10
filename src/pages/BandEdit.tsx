@@ -41,6 +41,7 @@ import {
   dedupeMusicians,
   duplicateVersion,
   memePersonne,
+  stampMemberIds,
   removeVersion,
   sameMusician,
   switchVersion,
@@ -223,6 +224,18 @@ export function BandEdit({ id }: { id: string }) {
         // une transmission, c'est ainsi que le NOUVEAU créateur l'apprend,
         // et que l'ancien voit son drapeau local retomber.
         const own = await fetchBandOwner(s, cid);
+        // IDENTIFIANTS DE COMPTE (b249) : ma ligne et celles des membres
+        // reçoivent leur identifiant, une fois pour toutes. Le créateur n'est
+        // jamais dans `cloud_band_members` — d'où l'ajout du propriétaire.
+        if (!cancelled) {
+          const comptes = members.map((m) => ({
+            user_id: m.user_id,
+            name: m.name,
+          }));
+          if (own) comptes.push({ user_id: own.userId, name: own.name });
+          const estampille = stampMemberIds(band, comptes);
+          if (estampille !== band) saveBand(estampille);
+        }
         if (own && !cancelled) {
           setOwner(own);
           const jeSuisLe = own.userId === s.userId;
@@ -548,10 +561,14 @@ export function BandEdit({ id }: { id: string }) {
   const mesNoms = [prefs.userName, artist.name].filter(
     (n) => (n ?? '').trim() !== '',
   );
-  const estMoi = (nom: string): boolean => {
-    const c = cloudMembers.find((m) => sameMusician(m.name, nom));
+  const estMoi = (m: { name: string; userId?: string }): boolean => {
+    // 1. L'identifiant de compte tranche (b249) — dans les deux sens.
+    if ((m.userId ?? '') !== '' && myId !== '') return m.userId === myId;
+    // 2. Sinon la ligne cloud qui lui correspond, s'il y en a une.
+    const c = cloudMembers.find((x) => sameMusician(x.name, m.name));
     if (c && myId !== '') return c.user_id === myId;
-    return mesNoms.some((n) => memePersonne(n, nom));
+    // 3. En dernier ressort les mots du nom (musicien sans compte).
+    return mesNoms.some((n) => memePersonne(n, m.name));
   };
   /** Le créateur, pour le repérer dans la liste (nom OU « c'est moi »). */
   const createurEstMoi =
@@ -564,15 +581,16 @@ export function BandEdit({ id }: { id: string }) {
     }
     return band?.ownerName ?? '';
   })();
-  const estLeCreateur = (nom: string): boolean =>
-    createurEstMoi
-      ? estMoi(nom)
-      : nomDuCreateurBrut !== '' && memePersonne(nomDuCreateurBrut, nom);
+  const estLeCreateur = (m: { name: string; userId?: string }): boolean => {
+    if (owner && (m.userId ?? '') !== '') return m.userId === owner.userId;
+    if (createurEstMoi) return estMoi(m);
+    return nomDuCreateurBrut !== '' && memePersonne(nomDuCreateurBrut, m.name);
+  };
   // Photo d'un membre. Pour MOI, mon profil fait foi et passe DEVANT la copie
   // enregistrée dans le groupe : ma photo n'a qu'une maison (règle 1), et
   // celle du membre n'est qu'un reflet qui peut dater.
-  const photoOf = (m: { name: string; photo?: string }): string =>
-    estMoi(m.name) ? artist.photo || m.photo || '' : m.photo || '';
+  const photoOf = (m: { name: string; photo?: string; userId?: string }): string =>
+    estMoi(m) ? artist.photo || m.photo || '' : m.photo || '';
   const cloudNames = new Set(
     cloudMembers
       .map((m) => m.name.trim().toLowerCase())
@@ -596,8 +614,12 @@ export function BandEdit({ id }: { id: string }) {
     (m) => m.pending === true && !nameMatchesCloud(m.name.trim().toLowerCase()),
   );
 
-  // Données des 3 portes.
-  const allMembers = dedupeMusicians([...cloudMembers, ...manualMembers]);
+  // Données des 3 portes. Les lignes cloud sont ramenées à la forme commune
+  // (`userId`) pour que l'identité de compte serve partout (b249).
+  const allMembers = dedupeMusicians([
+    ...cloudMembers.map((m) => ({ ...m, userId: m.user_id })),
+    ...manualMembers,
+  ]);
   const memberCount = allMembers.length;
   const fewMembers = memberCount < 2;
   const repCount = songs.filter(
@@ -1442,7 +1464,7 @@ export function BandEdit({ id }: { id: string }) {
             <p className="help">{t("Aucun musicien pour l'instant.")}</p>
           )}
           {allMembers.map((m, i) => {
-            const isMe = estMoi(m.name);
+            const isMe = estMoi(m);
             // Membre avec compte : le créateur peut le retirer du groupe
             // (b143). Les musiciens saisis à la main n'ont pas de compte.
             const cloud = cloudMembers.find((c) => sameMusician(c.name, m.name));
@@ -1479,7 +1501,7 @@ export function BandEdit({ id }: { id: string }) {
                   <div className="title">
                     {m.name || t('Musicien')}
                     {/* Qui gère le groupe se lit sur la ligne (b213). */}
-                    {estLeCreateur(m.name) && (
+                    {estLeCreateur(m) && (
                       <span className="badge-next">{t('⭐ créateur')}</span>
                     )}
                   </div>
