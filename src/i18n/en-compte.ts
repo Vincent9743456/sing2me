@@ -1,5 +1,7 @@
 /** Traductions anglaises — domaine compte (clé = chaîne française exacte). */
 export const EN_COMPTE: Record<string, string> = {
+  'Tu as changé de compte : les données du compte précédent restent chez lui, elles ne sont pas mélangées avec celles-ci.':
+    'You switched accounts: the previous account keeps its own data — it is not mixed with this one.',
   ' (Lien court — le contenu est servi par ton cloud.)': ' (Short link — the content is served by your cloud.)',
   ' : les musiciens qui suivent voient ton morceau, dans leur vue et leur tonalité. Sans réseau, chacun reprend la main sur sa bibliothèque locale.': ' : musicians following you see your song, in their view and their key. Without a network, everyone falls back to their own local library.',
   ' de l\'email (recommandé si tu utilises l\'app installée sur l\'écran d\'accueil). Pense aux spams.': ' from the email (recommended if you use the app installed on your home screen). Check your spam folder.',

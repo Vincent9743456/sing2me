@@ -9,6 +9,8 @@ import {
   Band,
   BandRemoval,
   Concert,
+  defaultPrefs,
+  emptyArtist,
   Prefs,
   Setlist,
   Song,
@@ -107,6 +109,25 @@ function mergeBandsById(local: Band[], cloud: Band[]): Band[] {
     });
   }
   return [...result.values()];
+}
+
+/**
+ * L'état d'un compte qui n'a encore rien (b259). Sert de point de départ
+ * quand on change de compte : la bibliothèque du compte précédent ne doit
+ * pas servir de base à celle qui arrive.
+ */
+export function etatVide(): SyncState {
+  return {
+    songs: [],
+    setlists: [],
+    concerts: [],
+    bands: [],
+    artist: emptyArtist(),
+    prefs: defaultPrefs(),
+    deleted: [],
+    bandRemovals: [],
+    resetAt: {},
+  };
 }
 
 export function mergeStates(

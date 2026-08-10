@@ -642,6 +642,30 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 
 - Local-first : localStorage est la source ; le cloud est une copie.
   Jamais de fonctionnalité qui exige le réseau pour jouer.
+- **DEUX COMPTES NE FUSIONNENT PAS** (b259, question de Vincent : « j'ai créé
+  2 comptes avec 2 mails différents… j'ai l'impression qu'ils fusionnent.
+  Comment empêcher cela ? »). Il avait raison, et c'était STRUCTUREL :
+  `localStorage` appartient à l'APPAREIL, pas à un compte. Se déconnecter
+  n'effaçait que la session ; la bibliothèque restait. La synchro suivante
+  faisait alors ce qu'elle sait faire — une FUSION entre le local et le cloud
+  du compte qui arrive — puis elle POUSSAIT le résultat. Au bout d'un
+  aller-retour A → B → A, les deux comptes contenaient tout, définitivement.
+  On note donc à QUI appartiennent les données de l'appareil
+  (`sing2me/compte`, `src/lib/compte.ts`), et trois cas se présentent à la
+  connexion : rien de noté → on adopte le compte qui arrive (installations
+  existantes, app essayée avant de créer son compte) ; même compte → fusion
+  normale, c'est le multi-appareil ; AUTRE compte → on repart de `etatVide()`,
+  on ne pousse rien du précédent, et on efface les caches qui appartiennent
+  au compte (adresse publique, direct en cours, repères de notification) —
+  pas ceux de l'appareil (`deviceId`, thème, langue, police du mode scène).
+  Deux garde-fous : le marqueur n'est posé qu'APRÈS un envoi réussi (sans
+  quoi on marquerait un compte dont le cloud n'a jamais reçu ces données, et
+  le changement suivant les perdrait), et la ceinture « une synchro ne vide
+  jamais une bibliothèque remplie » ne s'applique PAS au changement de compte
+  — arriver sur un compte neuf, c'est légitimement une bibliothèque vide.
+  Ce qui est déjà mélangé ne se démêle pas tout seul : rien ne dit de quel
+  compte vient un morceau. La sortie est la réinitialisation partielle des
+  Réglages, sur le compte à nettoyer.
 - **UN BROUILLON D'ÉCRAN NE DOIT JAMAIS SURVIVRE À SA SOURCE** (b243, perte
   de données signalée par Vincent : « je me suis déconnecté et reconnecté,
   j'ai perdu les informations de profil, photo, liens… »). L'écran Artiste

@@ -56,7 +56,12 @@ import {
   mergeBandData,
 } from '../lib/bandSync';
 import { migrateSong } from '../lib/model';
-import { compterEnAttente, mergeStates, SyncState } from '../lib/sync';
+import {
+  compteLocal,
+  noterCompteLocal,
+  oublierCachesDuCompte,
+} from '../lib/compte';
+import { compterEnAttente, etatVide, mergeStates, SyncState } from '../lib/sync';
 import { navigate } from '../router';
 import { AppState, useStore } from '../store';
 import { emptyBand, makeId } from '../types';
@@ -386,9 +391,35 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         const cloud = await pullCloud(valid);
         if (cancelled) return;
         const local = JSON.parse(stateRef.current) as SyncState;
+        /*
+         * DEUX COMPTES NE FUSIONNENT PAS (b259, question de Vincent : « j'ai
+         * créé 2 comptes avec 2 mails différents… j'ai l'impression qu'ils
+         * fusionnent »). Il avait raison : `localStorage` appartient à
+         * l'APPAREIL, la déconnexion n'effaçait que la session, et la
+         * synchro suivante fusionnait la bibliothèque du compte précédent
+         * avec le cloud du compte qui arrive — puis la POUSSAIT. Au bout
+         * d'un aller-retour, les deux comptes contenaient tout.
+         *
+         * Quand le compte change, on repart donc de RIEN en local : le
+         * cloud du compte qui arrive fait foi, à lui seul. Ce n'est pas une
+         * perte — les données du compte précédent sont dans SON cloud (le
+         * marqueur n'est posé qu'après un envoi réussi), et elles
+         * reviennent s'il se reconnecte ici.
+         */
+        const precedent = compteLocal();
+        const changeDeCompte = precedent !== '' && precedent !== valid.userId;
+        if (changeDeCompte) {
+          oublierCachesDuCompte();
+          setError(
+            t(
+              'Tu as changé de compte : les données du compte précédent restent chez lui, elles ne sont pas mélangées avec celles-ci.',
+            ),
+          );
+        }
+        const depart = changeDeCompte ? etatVide() : local;
         const merged = cloud
-          ? mergeStates(local, fromCloud(cloud.data))
-          : local;
+          ? mergeStates(depart, fromCloud(cloud.data))
+          : depart;
         /*
          * CEINTURE DE SÉCURITÉ : une synchronisation ne VIDE JAMAIS une
          * bibliothèque déjà remplie.
@@ -405,8 +436,13 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
          * REFUSE et on garde le local. Un décalage se rattrape à la synchro
          * suivante ; une collection effacée, non.
          */
+        // La ceinture ne s'applique PAS à un changement de compte (b259) :
+        // arriver sur un compte neuf, c'est légitimement une bibliothèque
+        // vide — et garder celle du compte précédent la lui donnerait.
         const videe =
-          (local.songs?.length ?? 0) > 0 && (merged.songs?.length ?? 0) === 0;
+          !changeDeCompte &&
+          (local.songs?.length ?? 0) > 0 &&
+          (merged.songs?.length ?? 0) === 0;
         const sur = videe ? local : merged;
         if (videe) {
           setError(
@@ -418,6 +454,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         hydrateRef.current(sur as AppState);
         await pushCloud(valid, sur);
         if (cancelled) return;
+        // Noté APRÈS l'envoi : un compte marqué dont le cloud n'aurait rien
+        // reçu ferait perdre ces données au changement suivant.
+        noterCompteLocal(valid.userId);
         readyRef.current = true;
         setLastSync(new Date().toISOString());
         setStatus('ok');
@@ -778,6 +817,18 @@ export function AccountSection() {
             devenu normal depuis b221 : ce repère dit que rien n'est perdu,
             sans réclamer d'action. Il disparaît dès qu'il n'a plus rien à
             dire — jamais de mention qui reste là à vie (règle 11). */}
+        {/* CHANGEMENT DE COMPTE (b259) : le message vivait dans le
+            formulaire de connexion — donc invisible une fois connecté,
+            c'est-à-dire au seul moment où il a quelque chose à dire. */}
+        {account.error !== null && (
+          <span
+            className="help"
+            style={{ color: 'var(--warn)', width: '100%' }}
+            aria-live="polite"
+          >
+            {account.error}
+          </span>
+        )}
         {account.enAttente > 0 && (
           <span
             className="help"
