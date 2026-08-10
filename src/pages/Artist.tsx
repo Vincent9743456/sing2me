@@ -1003,32 +1003,16 @@ export function Artist() {
         />
         <div className="spacer" />
 
-        <h2 className="pagetitle">{t('Mode ON AIR')}</h2>
-        {/* b192 : c'est le COMPTE qui autorise le direct. La clé n'est plus
-            demandée à personne — elle n'est acceptée que le temps que les
-            applications installées se mettent à jour. */}
-        {liveReady(prefs.liveKey) ? (
-          <p className="help">
-            {t(
-              'Ton compte suffit : touche le bouton ON AIR pour lancer le partage avec le public.',
-            )}
-          </p>
-        ) : (
-          <>
-            <p className="help">
-              {t(
-                'Ta clé secrète du direct — identique à la variable LIVE_KEY configurée sur Vercel. Elle autorise ton appareil à piloter le direct (bouton ON AIR).',
-              )}
-            </p>
-            <input
-              type="text"
-              value={prefs.liveKey}
-              placeholder="ma-cle-secrete"
-              onChange={(e) => savePrefs({ ...prefs, liveKey: e.target.value })}
-            />
-          </>
-        )}
-        <div className="spacer" />
+        {/* Le bloc « Mode ON AIR » a été RETIRÉ (b257, demande de Vincent :
+            « supprimer ce paragraphe qui est dorénavant inutile, on l'avait
+            mis quand il y avait un code air à saisir »). Depuis b192, c'est
+            le COMPTE qui autorise le direct : il n'y a plus rien à saisir,
+            donc plus rien à expliquer. Un réglage qui ne se règle plus n'est
+            pas un réglage — c'est de la place prise à ce qui compte.
+            La clé n'a pas disparu du modèle (`prefs.liveKey`) : elle reste
+            acceptée par le serveur le temps que les applications installées
+            se mettent à jour, et se renseigne toute seule depuis la variable
+            de build. Elle n'est simplement plus DEMANDÉE à personne. */}
 
         <h2 className="pagetitle">{t('Streaming & réseaux')}</h2>
         {draft.links.map((link) => (
