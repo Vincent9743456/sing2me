@@ -1,5 +1,5 @@
 # DodoSongs — seule la landing marketing (/site/) est indexable.
-# L'application et ses pages publiques (artiste, session ON AIR, liens de
+# L'application et ses pages publiques (artiste, session Live, liens de
 # partage) ne doivent pas être indexées (chantier 3 — paquet défensif).
 User-agent: *
 Allow: /site/

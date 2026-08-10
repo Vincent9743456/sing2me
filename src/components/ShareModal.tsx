@@ -135,7 +135,7 @@ export function ShareModal({
             {url === null
               ? t('Préparation du lien…')
               : t(
-                  'Contenu trop volumineux pour un QR code — utilise le lien ci-dessous. (Astuce : avec la clé On Air renseignée et la version en ligne, le lien devient court et le QR revient.)',
+                  'Contenu trop volumineux pour un QR code — utilise le lien ci-dessous. (Astuce : avec la version en ligne, le lien devient court et le QR revient.)',
                 )}
           </p>
         )}

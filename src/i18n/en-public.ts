@@ -30,7 +30,7 @@ export const EN_PUBLIC: Record<string, string> = {
   'Créer mon compte gratuit pour rejoindre': 'Create my free account to join',
   'Demande au leader de te partager le répertoire (invitation de groupe) — tu pourras l\'ajouter en un clic.': 'Ask the leader to share the repertoire with you (band invite) — you’ll be able to add it in one click.',
   'Depuis l\'appli DodoSongs : onglet Concerts → « Rejoindre un direct », code': 'From the DodoSongs app: Concerts tab → “Join a live”, code',
-  'Dès qu\'il active « 📡 Synchroniser le groupe » (panneau ON AIR) et ouvre un morceau, il s\'affichera ici — dans ta vue, transposé dans sa tonalité.': 'As soon as they turn on “📡 Sync the band” (ON AIR panel) and open a song, it’ll show up here — in your view, transposed to their key.',
+  'Dès qu\'il active « 📡 Synchroniser le groupe » (panneau Live) et ouvre un morceau, il s\'affichera ici — dans ta vue, transposé dans sa tonalité.': 'As soon as they turn on “📡 Sync the band” (Live panel) and open a song, it’ll show up here — in your view, transposed to their key.',
   'Dès que le leader lance un morceau, ta partition s\'affiche ici, avec les accords dans la tonalité jouée.': 'As soon as the leader starts a song, your chart shows up here, with the chords in the key being played.',
   'Découvrez': 'Discover',
   'Découvrir DodoSongs': 'Discover DodoSongs',

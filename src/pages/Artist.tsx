@@ -240,10 +240,10 @@ export function Artist() {
       setWhoMsg(
         onair !== 'off'
           ? t(
-              'Direct en cours : le changement s’appliquera au prochain ON AIR.',
+              'Direct en cours : le changement s’appliquera au prochain live.',
             )
           : t(
-              'Renseigne ta clé ON AIR (plus bas) pour mettre la page à jour.',
+              'Mise à jour impossible pour l’instant — réessaie avec du réseau.',
             ),
       );
       return;
@@ -365,7 +365,7 @@ export function Artist() {
             </button>
             <p className="help" style={{ marginTop: 10 }}>
               {t('Créer ta fiche débloque aussi le mode')}{' '}
-              <strong>ON AIR</strong>{' '}
+              <strong>{t('Live')}</strong>{' '}
               {t(': tes concerts en direct, avec paroles pour le public.')}
             </p>
           </div>
@@ -637,7 +637,7 @@ export function Artist() {
         </button>
         <p className="help">
           {t(
-            "C'est aussi l'identité proposée au lancement d'un direct (panneau ON AIR). Choisis ensuite ce que voient les personnes qui scannent ton QR — pendant les morceaux et entre eux. Tout est actif par défaut.",
+            "C'est aussi l'identité proposée au lancement d'un direct (bouton GO LIVE). Choisis ensuite ce que voient les personnes qui scannent ton QR — pendant les morceaux et entre eux. Tout est actif par défaut.",
           )}
         </p>
         {PUBLIC_SCREEN_LABELS.map((item) => (

@@ -202,6 +202,6 @@ export const EN_SETLISTS: Record<string, string> = {
   '▶ EN COURS': '▶ PLAYING',
   suivant: 'next',
   'Morceau suivant : {titre}': 'Next song: {titre}',
-  'Re-taper le morceau en cours le désélectionne. Le direct public se pilote avec le bouton ON AIR en haut à droite.':
-    'Tapping the current song again deselects it. The public broadcast is controlled with the ON AIR button top right.',
+  'Re-taper le morceau en cours le désélectionne. Le direct public se pilote avec le bouton GO LIVE en haut à droite.':
+    'Tapping the current song again deselects it. The public broadcast is controlled with the GO LIVE button top right.',
 };
