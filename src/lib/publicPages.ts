@@ -8,8 +8,9 @@
  * si Supabase n'est pas configuré, tout renvoie null sans jamais planter.
  */
 import { AuthSession } from './auth';
+import { miniature } from './photo';
 import { normalizePublicName, publicNameError } from './publicName';
-import { ArtistProfile, Band, PublicBand } from '../types';
+import { ArtistProfile, Band, PublicBand, PublicMember } from '../types';
 
 function sbUrl(): string {
   return (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
@@ -25,11 +26,20 @@ export interface PublicPage {
   name: string;
   profile: ArtistProfile;
   /**
-   * Adresse vers laquelle ce miroir pointe (b227) — renseignée seulement
-   * pour l'adresse d'un GROUPE. Un groupe n'a pas de page à lui : son
-   * adresse montre celle de son détenteur, et suit le transfert.
+   * Adresse du DÉTENTEUR du groupe — renseignée seulement pour l'adresse d'un
+   * GROUPE. Elle suit le transfert toute seule (c'est le propriétaire de
+   * `cloud_bands` qui la désigne), et c'est elle qui porte le direct : un
+   * groupe n'a pas de QR à lui, le QR est celui du lanceur (b227).
    */
   miroirDe?: string | null;
+  /**
+   * Sorte d'adresse (b232). Un groupe a désormais une PAGE à lui — sa photo,
+   * sa présentation, ses liens, ses musiciens — et non plus seulement un
+   * renvoi vers celle de son détenteur : « la page du Groupe ou de l'artiste
+   * doivent rester consultables » (Vincent). Le renvoi ne concerne plus que
+   * le DIRECT.
+   */
+  sorte?: 'artiste' | 'groupe';
 }
 
 /* Cache LOCAL du nom public de CE compte : le QR unique (panneau ON AIR)
@@ -88,6 +98,35 @@ export async function findPublicPageByArtist(
 }
 
 /**
+ * L'ADRESSE PUBLIQUE D'UN MUSICIEN, PAR SON NOM (b232).
+ *
+ * Même résolution que `findPublicPageByArtist`, mais on ne ramène QUE
+ * l'adresse : cette fonction est appelée une fois par musicien de chaque
+ * groupe au moment de publier, et une fiche entière pèse ses photos.
+ *
+ * Deux pages du même nom : on rend une chaîne vide. Un lien vers le mauvais
+ * Vincent serait pire que pas de lien du tout.
+ */
+export async function adressePubliqueDuNom(nom: string): Promise<string> {
+  const name = nom.trim();
+  if (!publicPagesAvailable() || name === '') return '';
+  try {
+    const res = await fetch(
+      `${sbUrl()}/rest/v1/public_pages?profile->>name=eq.${encodeURIComponent(
+        name,
+      )}&select=name&limit=2`,
+      { headers: { apikey: anon(), authorization: `Bearer ${anon()}` } },
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length !== 1) return ''; // 0 ou ambigu
+    return typeof rows[0]?.name === 'string' ? rows[0].name : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Fiche publique par nom dictable (lecture anonyme).
  *
  * Passe par `resolve_public_name` (b227), qui connaît DEUX sortes d'adresses :
@@ -116,6 +155,14 @@ export async function fetchPublicPage(name: string): Promise<PublicPage | null> 
       name: row.nom ?? name,
       profile: (row.profil ?? {}) as ArtistProfile,
       miroirDe: row.miroir_de ?? null,
+      // `sorte` manque tant que `public.sql` n'a pas été rejoué : on la
+      // déduit alors du miroir, comme avant b232.
+      sorte:
+        row.sorte === 'groupe' || row.sorte === 'artiste'
+          ? row.sorte
+          : (row.miroir_de ?? null) !== null
+            ? 'groupe'
+            : 'artiste',
     };
   } catch {
     return null;
@@ -388,37 +435,155 @@ export async function releaseBandPage(
   }
 }
 
+/* ============================================================
+ * CE QUE LE PUBLIC VOIT D'UN GROUPE (b231, refondu b232)
+ *
+ * Deux pages, deux métiers, et un seul espace de noms :
+ *  · `/vincent`     — la fiche de l'artiste. Elle NOMME ses groupes.
+ *  · `/zakoustiks`  — la fiche du GROUPE : sa photo, sa présentation, ses
+ *                     liens, sa composition. Elle NOMME ses musiciens.
+ * Chacune mène à l'autre. « Le QR code est unique et la page du live dépend
+ * de comment a été paramétré le live, mais la page du Groupe ou de l'artiste
+ * doivent rester consultables » (Vincent, b232) : le renvoi vers le
+ * détenteur ne concerne donc plus que le DIRECT — plus l'affichage.
+ * ============================================================ */
+
+/** Tailles d'affichage des vignettes publiques (b232), en pixels. */
+const MINI_GROUPE = 96;
+const MINI_MUSICIEN = 64;
 /**
- * LES GROUPES À PUBLIER AVEC LE PROFIL (b231).
- *
- * Les groupes MASQUÉS n'y entrent jamais — c'est tout l'objet du réglage. On
- * ne sort que des noms : celui du groupe, ceux des musiciens tels qu'ils
- * apparaissent dans la fiche. Ni photo de musicien, ni e-mail, ni identifiant
- * de compte.
- *
- * L'adresse du groupe est jointe quand il en a une, pour que le public puisse
- * la noter — mais elle n'est pas indispensable : le groupe se lit d'abord
- * comme une information sur l'artiste.
+ * Plafond de photos embarquées dans UNE fiche publique, en caractères de
+ * data-URL. Une fiche part au serveur en un seul objet JSON, republié à
+ * chaque enregistrement de profil et à chaque GO LIVE : au-delà, on préfère
+ * une fiche sans quelques vignettes à une fiche qui traîne. Ce qui se lit en
+ * premier se sert en premier.
  */
-export async function groupesPublics(bands: Band[]): Promise<PublicBand[]> {
-  const visibles = bands.filter((b) => b.hiddenFromPublic !== true);
-  const out: PublicBand[] = [];
-  for (const b of visibles) {
-    const membres = [
-      ...new Set(
-        (b.members ?? [])
-          .map((m) => (m.name ?? '').trim())
-          .filter((n) => n !== ''),
-      ),
-    ];
-    const adresse = await fetchBandPageName(b.cloudId ?? '');
+const BUDGET_PHOTOS = 160_000;
+
+/** Compteur de vignettes : une fiche, un budget. */
+function porteMonnaie() {
+  let poids = 0;
+  return async (source: string, taille: number): Promise<string> => {
+    if ((source ?? '') === '' || poids >= BUDGET_PHOTOS) return '';
+    const mini = await miniature(source, taille);
+    if (mini === '' || poids + mini.length > BUDGET_PHOTOS) return '';
+    poids += mini.length;
+    return mini;
+  };
+}
+
+/**
+ * Résolveur d'adresses de musiciens, avec mémoire : une même personne joue
+ * dans deux groupes, son adresse ne se cherche qu'une fois. Ma propre page
+ * n'est jamais cherchée — un lien vers soi-même n'a aucun sens.
+ */
+function resolveurAdresses(moi: string) {
+  const connues = new Map<string, Promise<string>>();
+  return (nom: string): Promise<string> => {
+    const cle = nom.trim().toLowerCase();
+    if (cle === '' || cle === moi) return Promise.resolve('');
+    const deja = connues.get(cle);
+    if (deja) return deja;
+    const p = adressePubliqueDuNom(nom);
+    connues.set(cle, p);
+    return p;
+  };
+}
+
+/**
+ * Les musiciens d'un groupe, prêts à publier.
+ *
+ * Deux refus explicites : un invité qui n'a pas accepté n'est PAS annoncé au
+ * public (il n'a rien accepté), et un nom qui désigne deux pages publiques
+ * n'est pas lié — mieux vaut pas de lien qu'un lien vers un homonyme.
+ *
+ * `vignette` absente : on ne publie que les noms et les adresses. C'est le
+ * cas sur la fiche d'un ARTISTE, où les groupes ne sont qu'une mention ; les
+ * visages appartiennent à la page du groupe.
+ */
+async function musiciensPublics(
+  band: Band,
+  artist: ArtistProfile | undefined,
+  adresseDe: (nom: string) => Promise<string>,
+  vignette?: (source: string, taille: number) => Promise<string>,
+): Promise<PublicMember[]> {
+  const moi = (artist?.name ?? '').trim().toLowerCase();
+  // Doublons de nom écartés en gardant la fiche la plus fournie.
+  const parNom = new Map<string, { name: string; photo: string }>();
+  for (const m of band.members ?? []) {
+    if (m.pending === true) continue;
+    const nom = (m.name ?? '').trim();
+    if (nom === '') continue;
+    const cle = nom.toLowerCase();
+    // Le détenteur est souvent absent des membres cloud : sa photo de profil
+    // sert de secours, comme dans la fiche du groupe côté musicien.
+    const photo =
+      (m.photo ?? '') !== ''
+        ? (m.photo as string)
+        : cle === moi
+          ? (artist?.photo ?? '')
+          : '';
+    const vu = parNom.get(cle);
+    if (!vu) parNom.set(cle, { name: nom, photo });
+    else if (vu.photo === '' && photo !== '') vu.photo = photo;
+  }
+  const membres = [...parNom.values()];
+  const adresses = await Promise.all(membres.map((m) => adresseDe(m.name)));
+  const out: PublicMember[] = [];
+  for (let i = 0; i < membres.length; i++) {
+    const photo = vignette
+      ? await vignette(membres[i].photo, MINI_MUSICIEN)
+      : '';
     out.push({
-      name: b.name || '',
-      members: membres,
-      ...(adresse !== '' ? { address: adresse } : {}),
+      name: membres[i].name,
+      ...(photo !== '' ? { photo } : {}),
+      ...(adresses[i] !== '' ? { address: adresses[i] } : {}),
     });
   }
-  return out.filter((g) => g.name !== '');
+  return out;
+}
+
+/**
+ * LES GROUPES À PUBLIER AVEC LE PROFIL DE L'ARTISTE (b231, enrichi b232).
+ *
+ * Les groupes MASQUÉS n'y entrent jamais — c'est tout l'objet du réglage.
+ *
+ * On en sort le nom du groupe, sa photo (« le mieux est de mettre la photo
+ * présente sur la fiche du Groupe ou du musicien, et un lien cliquable »),
+ * son adresse publique si elle existe, et les noms de ses musiciens. Rien
+ * n'est créé ici : aucune adresse n'est réservée au nom de quelqu'un
+ * d'autre, on ne fait que dire celles qu'un visiteur trouverait seul.
+ */
+export async function groupesPublics(
+  bands: Band[],
+  artist?: ArtistProfile,
+): Promise<PublicBand[]> {
+  const visibles = bands.filter(
+    (b) => b.hiddenFromPublic !== true && (b.name ?? '').trim() !== '',
+  );
+  const adresseDe = resolveurAdresses((artist?.name ?? '').trim().toLowerCase());
+  const vignette = porteMonnaie();
+
+  const brut = await Promise.all(
+    visibles.map(async (b) => ({
+      nom: (b.name ?? '').trim(),
+      photo: b.photo ?? '',
+      adresse: await fetchBandPageName(b.cloudId ?? ''),
+      membres: await musiciensPublics(b, artist, adresseDe),
+    })),
+  );
+
+  const out: PublicBand[] = [];
+  for (const g of brut) {
+    const photo = await vignette(g.photo, MINI_GROUPE);
+    out.push({
+      name: g.nom,
+      members: g.membres,
+      ...(g.adresse !== '' ? { address: g.adresse } : {}),
+      ...(photo !== '' ? { photo } : {}),
+    });
+  }
+  return out;
 }
 
 /** Le profil enrichi de ses groupes, prêt à publier. */
@@ -427,9 +592,86 @@ export async function profilAPublier(
   bands: Band[],
 ): Promise<ArtistProfile> {
   try {
-    return { ...artist, publicBands: await groupesPublics(bands) };
+    return { ...artist, publicBands: await groupesPublics(bands, artist) };
   } catch {
     // Jamais bloquant : sans la liste, la fiche part quand même.
     return artist;
+  }
+}
+
+/**
+ * LA FICHE PUBLIQUE D'UN GROUPE (b232).
+ *
+ * Même forme qu'une fiche d'artiste — un groupe se présente au public
+ * exactement comme un musicien : une photo, une présentation, des liens, un
+ * pourboire — avec en plus sa composition (`publicMembers`).
+ */
+export async function ficheGroupe(
+  band: Band,
+  artist?: ArtistProfile,
+): Promise<ArtistProfile> {
+  const adresseDe = resolveurAdresses((artist?.name ?? '').trim().toLowerCase());
+  const vignette = porteMonnaie();
+  const membres = await musiciensPublics(band, artist, adresseDe, vignette);
+  return {
+    name: (band.name ?? '').trim(),
+    bio: band.bio ?? '',
+    photo: await vignette(band.photo ?? '', MINI_GROUPE * 2),
+    links: (band.links ?? []).filter((l) => (l.url ?? '') !== ''),
+    tipUrl: band.tipUrl ?? '',
+    publicMembers: membres,
+  };
+}
+
+/**
+ * Publie (ou rafraîchit) la fiche d'un groupe à son adresse.
+ *
+ * Best-effort de bout en bout : sans adresse il n'y a rien à publier, et la
+ * politique RLS refuse tout net si je ne suis pas le détenteur — dans les
+ * deux cas on s'en va sans bruit. Une fiche publique qui ne part pas ne doit
+ * jamais empêcher d'enregistrer un profil ni de lancer un concert.
+ */
+export async function publierFicheGroupe(
+  s: AuthSession,
+  band: Band,
+  artist?: ArtistProfile,
+): Promise<void> {
+  if (!publicPagesAvailable()) return;
+  const cloudId = band.cloudId ?? '';
+  if (cloudId === '' || band.owned !== true || band.hiddenFromPublic === true) {
+    return;
+  }
+  try {
+    if ((await fetchBandPageName(cloudId)) === '') return;
+    await fetch(
+      `${sbUrl()}/rest/v1/band_pages?band_id=eq.${encodeURIComponent(cloudId)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: anon(),
+          authorization: `Bearer ${s.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          profile: await ficheGroupe(band, artist),
+          updated_at: new Date().toISOString(),
+        }),
+      },
+    );
+  } catch {
+    /* hors ligne : la fiche partira au prochain passage */
+  }
+}
+
+/** Rafraîchit d'un coup les fiches de tous mes groupes publiés. */
+export async function publierFichesGroupes(
+  s: AuthSession,
+  bands: Band[],
+  artist?: ArtistProfile,
+): Promise<void> {
+  try {
+    await Promise.all(bands.map((b) => publierFicheGroupe(s, b, artist)));
+  } catch {
+    /* jamais bloquant */
   }
 }

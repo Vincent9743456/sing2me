@@ -463,6 +463,10 @@ export const EN_ARTISTE: Record<string, string> = {
   // b227 — le groupe face au public (masquage + adresse miroir)
   'Connecte-toi d’abord (onglet Artiste).': 'Sign in first (Artist tab).',
   'Ce groupe et le public': 'This band and the audience',
+  'Une adresse à dicter (« tape {hote}legroupe »). Elle ouvre la page du groupe — sa photo, sa présentation, ses musiciens — et pendant un direct du groupe, elle mène au concert, comme ton QR.':
+    'An address you can say out loud (“type {hote}theband”). It opens the band’s page — photo, bio, musicians — and during a band show it leads to the gig, just like your QR.',
+  'Cette adresse ouvre la page du groupe. Pendant un direct du groupe, elle mène au concert — comme ton QR.':
+    'This address opens the band’s page. During a band show it leads to the gig — just like your QR.',
   'Masquer ce groupe au public': 'Hide this band from the audience',
   'il n’apparaît pas sur ta fiche publique, et tu ne peux pas lancer de direct à son nom': 'it does not appear on your public page, and you cannot start a live under its name',
   'Masquer « {nom} » au public ?': 'Hide “{nom}” from the audience?',

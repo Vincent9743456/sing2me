@@ -10,6 +10,9 @@ export const EN_PUBLIC: Record<string, string> = {
   'Accords réels · {key}': 'Real chords · {key}',
   'Adresse concernée': 'Address in question',
   'Aucun artiste ne correspond à « {name} ».': 'No artist matches “{name}”.',
+  'Aucun artiste ni groupe ne correspond à « {name} ».':
+    'No artist or band matches “{name}”.',
+  'Les musiciens': 'The musicians',
   'Aucun concert en cours.': 'No concert right now.',
   'Branchements': 'Wiring',
   'Bravo pour ce concert !…': 'Great show tonight!…',

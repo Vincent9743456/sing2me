@@ -65,6 +65,17 @@ create table if not exists public.band_pages (
   updated_at timestamptz not null default now()
 );
 
+-- LA FICHE DU GROUPE (b232). Jusqu'ici l'adresse d'un groupe n'était qu'un
+-- renvoi vers la page de son détenteur : « ça devrait renvoyer vers la page
+-- Zakoustiks, pas la mienne » (Vincent). Le groupe a donc sa PAGE — photo,
+-- présentation, liens, pourboire, composition — écrite par son détenteur,
+-- au même format qu'une fiche d'artiste. Le renvoi ne sert plus qu'au
+-- DIRECT : le QR reste unique, c'est celui du lanceur.
+-- Vide (`{}`) tant que le détenteur n'a rien publié : la résolution retombe
+-- alors sur la fiche du détenteur, comme avant.
+alter table public.band_pages
+  add column if not exists profile jsonb not null default '{}'::jsonb;
+
 alter table public.band_pages enable row level security;
 
 alter table public.band_pages drop constraint if exists band_pages_name_format;
@@ -148,18 +159,26 @@ create trigger band_pages_nom_libre
 -- Les colonnes de sortie portent des noms DISTINCTS de ceux des tables
 -- (`nom`, `profil`) : dans une fonction SQL `returns table`, un nom de sortie
 -- qui reprend un nom de colonne rend le corps ambigu.
+-- `sorte` (b232) dit au lecteur ce qu'il a sous les yeux : une fiche
+-- d'artiste ou une fiche de GROUPE. `miroir_de` reste l'adresse du détenteur
+-- — elle ne décide plus de ce qui s'affiche, seulement de QUI porte le
+-- direct. Jointure EXTERNE sur `public_pages` : un groupe dont le détenteur
+-- n'a pas (encore) d'adresse a quand même sa page.
 drop function if exists public.resolve_public_name(text);
 create function public.resolve_public_name(p_name text)
-returns table (nom text, profil jsonb, miroir_de text)
+returns table (nom text, profil jsonb, miroir_de text, sorte text)
 language sql stable security definer set search_path = public as $$
-  select p.name, p.profile, null::text
+  select p.name, p.profile, null::text, 'artiste'::text
     from public.public_pages p
    where p.name = p_name
   union all
-  select bp.name, p.profile, p.name
+  select bp.name,
+         case when bp.profile = '{}'::jsonb then p.profile else bp.profile end,
+         p.name,
+         'groupe'::text
     from public.band_pages bp
     join public.cloud_bands b on b.id = bp.band_id
-    join public.public_pages p on p.user_id = b.owner
+    left join public.public_pages p on p.user_id = b.owner
    where bp.name = p_name
   limit 1
 $$;

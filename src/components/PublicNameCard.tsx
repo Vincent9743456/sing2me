@@ -13,6 +13,7 @@ import { getValidSession } from '../lib/auth';
 import {
   claimPublicPage,
   profilAPublier,
+  publierFichesGroupes,
   fetchMyPublicName,
   isPublicNameFree,
   publicPagesAvailable,
@@ -104,6 +105,7 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
         return;
       }
       await claimPublicPage(s, name, await profilAPublier(artist, bands));
+      await publierFichesGroupes(s, bands, artist);
       setClaimed(name);
       rememberPublicName(name);
       setSaved(true);

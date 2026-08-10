@@ -1,6 +1,13 @@
 /**
  * Fiche artiste/groupe consultable PENDANT le concert (vue public) :
- * ouverte par le bouton-avatar, elle montre photo, bio, liens et pourboire.
+ * ouverte par le bouton-avatar, elle montre photo, bio, liens, groupes et
+ * pourboire.
+ *
+ * Les GROUPES y figurent depuis b232 (« Vincent lance un live en solo. Un
+ * spectateur flashe, atterrit sur la page de Vincent, et veut consulter le
+ * profil du Groupe Zakoustiks : il faut qu'il puisse le faire »). Pendant un
+ * direct, cette fiche EST la page de l'artiste — sans ce bloc, la seule
+ * porte vers la page d'un groupe se refermait dès que le concert commençait.
  * Le retour aux paroles est volontairement évident : grand bouton en tête
  * + fermeture d'un tap n'importe où autour du contenu. Chunk différé.
  */
@@ -8,6 +15,7 @@ import React, { Suspense, lazy } from 'react';
 
 import { StageList } from '../../components/StageList';
 import { TipBox } from '../../components/TipBox';
+import { PublicBands, PublicMembers } from '../../components/PublicBands';
 import { ArtistProfile } from '../../types';
 
 // « Suivre » vit ici pendant le concert (b177) : le bouton n'existait que
@@ -50,6 +58,8 @@ export default function ArtistSheet({
             </div>
           )}
         </div>
+        <PublicMembers members={artist.publicMembers} />
+        <PublicBands bands={artist.publicBands} />
         <TipBox artist={artist} />
         {showFollow && artist.name !== '' && (
           <Suspense fallback={null}>

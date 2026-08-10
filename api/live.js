@@ -209,7 +209,11 @@ async function proprietaireDeLAdresse(base, nomPublic) {
       const rows = await r.json();
       const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
       if (row) {
-        return { ownerId: row.user_id ?? '', nom: row.profile?.name ?? '' };
+        return {
+          ownerId: row.user_id ?? '',
+          nom: row.profile?.name ?? '',
+          bandId: '',
+        };
       }
     }
     // Adresse de groupe : on remonte au détenteur.
@@ -231,7 +235,11 @@ async function proprietaireDeLAdresse(base, nomPublic) {
     if (!groupe?.owner) return null;
     // Le nom d'affichage utile au repli est celui du GROUPE : c'est lui que
     // porte un direct lancé au nom du groupe.
-    return { ownerId: groupe.owner, nom: groupe.name ?? '' };
+    return {
+      ownerId: groupe.owner,
+      nom: groupe.name ?? '',
+      bandId: bande.band_id,
+    };
   } catch {
     return null;
   }
@@ -270,7 +278,31 @@ async function resolveLive(base, q) {
      */
     const proprio = await proprietaireDeLAdresse(base, q.page);
     if (!proprio) return null;
-    if (proprio.ownerId !== '') {
+    /**
+     * ADRESSE DE GROUPE → LE DIRECT DE CE GROUPE, ET LUI SEUL (b232).
+     *
+     * Avant, on remontait au détenteur et on prenait SON direct : taper
+     * `/zakoustiks` pendant que Vincent jouait en solo montrait le concert
+     * solo, et la page du groupe devenait inatteignable. « La page du Groupe
+     * ou de l'artiste doivent rester consultables » (Vincent). On cherche
+     * donc le direct DU GROUPE ; s'il n'y en a pas, l'appelant n'a rien et
+     * affiche la fiche du groupe.
+     *
+     * Effet de bord bienvenu : un direct de groupe lancé par un AUTRE membre
+     * est trouvé lui aussi — c'est le groupe qui joue, pas le détenteur de
+     * l'adresse.
+     */
+    if (proprio.bandId) {
+      const parGroupe = await fetch(
+        `${base}/rest/v1/lives?band_id=eq.${enc(proprio.bandId)}&status=neq.off` +
+          `&select=${LIVE_COLS}&order=started_at.desc&limit=1`,
+        { headers: sbHeaders() },
+      );
+      if (parGroupe.ok) {
+        const rows = await parGroupe.json();
+        if (Array.isArray(rows) && rows[0]) return rows[0];
+      }
+    } else if (proprio.ownerId !== '') {
       const parCompte = await fetch(
         `${base}/rest/v1/lives?owner_id=eq.${enc(proprio.ownerId)}&status=neq.off` +
           `&select=${LIVE_COLS}&order=started_at.desc&limit=1`,

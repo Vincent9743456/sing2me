@@ -8,15 +8,25 @@
  * RECOPIE donc ici, telle que la voit un visiteur, et son adresse se copie
  * pour être dictée ou envoyée.
  *
- * Rappel du modèle (b227) : un groupe n'a pas de page à lui. Son adresse est
- * un MIROIR vers la page de son détenteur — c'est donc bien cette page-là
- * qu'on montre, et c'est ce que verra quiconque tape l'adresse du groupe.
+ * Modèle CORRIGÉ en b232 : le groupe a bien une page à LUI — « ça devrait
+ * renvoyer vers la page Zakoustiks, pas la mienne » (Vincent). Le renvoi
+ * vers le détenteur ne concerne plus que le DIRECT : le QR reste unique,
+ * c'est celui du lanceur. La fiche du groupe est donc republiée à
+ * l'ouverture de cet aperçu (par son détenteur seulement) : ce qu'on regarde
+ * ici est exactement ce que verra un visiteur, à l'instant présent.
  */
 import React, { useEffect, useState } from 'react';
 
 import { Modal } from './ui';
 import { useToast } from './Feedback';
-import { fetchBandPageName, fetchPublicPage, PublicPage } from '../lib/publicPages';
+import { getValidSession } from '../lib/auth';
+import {
+  fetchBandPageName,
+  fetchPublicPage,
+  publierFicheGroupe,
+  PublicPage,
+} from '../lib/publicPages';
+import { useStore } from '../store';
 import { t } from '../i18n';
 import { Band } from '../types';
 
@@ -28,6 +38,7 @@ export function BandPublicPeek({
   onClose: () => void;
 }) {
   const toast = useToast();
+  const { artist } = useStore();
   const [adresse, setAdresse] = useState<string | null>(null);
   const [page, setPage] = useState<PublicPage | null>(null);
   const [charge, setCharge] = useState(false);
@@ -39,6 +50,11 @@ export function BandPublicPeek({
       if (annule) return;
       setAdresse(nom);
       if (nom !== '') {
+        // Rafraîchir avant de montrer : sans quoi on regarderait une fiche
+        // publiée au dernier enregistrement de profil, pas celle d'aujourd'hui.
+        const s = await getValidSession();
+        if (s) await publierFicheGroupe(s, band, artist);
+        if (annule) return;
         const p = await fetchPublicPage(nom);
         if (!annule) setPage(p);
       }
@@ -47,6 +63,9 @@ export function BandPublicPeek({
     return () => {
       annule = true;
     };
+    // Une seule visite = un seul rafraîchissement : on ne republie pas la
+    // fiche à chaque frappe dans le nom du groupe.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [band.cloudId]);
 
   const lien = adresse ? `${location.origin}/${adresse}` : '';
@@ -95,7 +114,7 @@ export function BandPublicPeek({
           </div>
           <p className="help">
             {t(
-              'Cette adresse montre la page de celui qui tient le groupe — c’est le même concert que ton QR pendant un direct.',
+              'Cette adresse ouvre la page du groupe. Pendant un direct du groupe, elle mène au concert — comme ton QR.',
             )}
           </p>
           <div className="spacer" />
@@ -129,6 +148,13 @@ export function BandPublicPeek({
               ) : (
                 <p className="help" style={{ margin: '0 0 8px' }}>
                   {t('(aucune présentation)')}
+                </p>
+              )}
+              {(page.profile.publicMembers ?? []).length > 0 && (
+                <p className="help" style={{ margin: '0 0 8px' }}>
+                  {(page.profile.publicMembers ?? [])
+                    .map((m) => m.name)
+                    .join(' · ')}
                 </p>
               )}
               {(page.profile.links ?? []).length > 0 && (

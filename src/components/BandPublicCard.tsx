@@ -11,11 +11,13 @@
  *     rien, un seul concert suffirait à l'exposer. C'est un choix PERSONNEL,
  *     jamais partagé avec les autres membres : c'est ma page publique.
  *
- *  2. **L'ADRESSE MIROIR.** Un groupe n'a pas de QR à lui — le QR est celui
+ *  2. **L'ADRESSE DU GROUPE.** Un groupe n'a pas de QR à lui — le QR est celui
  *     de l'artiste, et c'est l'artiste qui décide au lancement de ce que voit
- *     le public. Mais le groupe a une adresse, qui MONTRE la page de son
- *     détenteur. Elle se donne à l'oral (« tape …/zakoustiks ») ; pendant un
- *     direct de groupe, les deux adresses mènent au même concert.
+ *     le public. Mais le groupe a une adresse, et depuis b232 cette adresse
+ *     ouvre SA page : sa photo, sa présentation, ses liens, ses musiciens
+ *     (« ça devrait renvoyer vers la page Zakoustiks, pas la mienne »). Elle
+ *     se donne à l'oral (« tape …/zakoustiks ») ; pendant un direct de groupe,
+ *     elle mène au concert, comme le QR du lanceur.
  *     Réservée au détenteur — la base le vérifie, pas seulement cet écran —
  *     et elle suit le groupe s'il est transmis, sans rien à recopier.
  */
@@ -27,9 +29,11 @@ import {
   claimBandPage,
   fetchBandPageName,
   publicPagesAvailable,
+  publierFicheGroupe,
   releaseBandPage,
 } from '../lib/publicPages';
 import { normalizePublicName, publicNameError } from '../lib/publicName';
+import { useStore } from '../store';
 import { t } from '../i18n';
 import { Band } from '../types';
 
@@ -40,6 +44,7 @@ export function BandPublicCard({
   band: Band;
   onSave: (band: Band) => void;
 }) {
+  const { artist } = useStore();
   const masque = band.hiddenFromPublic === true;
   const cloudId = band.cloudId ?? '';
   const estDetenteur = band.owned !== false;
@@ -94,6 +99,9 @@ export function BandPublicCard({
         return;
       }
       await claimBandPage(s, cloudId, nom);
+      // Une adresse qui n'ouvrirait rien ne servirait à personne : la fiche
+      // du groupe part dans la foulée (b232).
+      await publierFicheGroupe(s, band, artist);
       setAdresse(nom);
       setOk(true);
     } catch (e) {
@@ -170,7 +178,7 @@ export function BandPublicCard({
         <>
           <p className="help" style={{ marginTop: 0 }}>
             {t(
-              'Une adresse à dicter (« tape {hote}legroupe »). Elle montre TA page : pendant un direct du groupe, elle mène au même concert que ton QR.',
+              'Une adresse à dicter (« tape {hote}legroupe »). Elle ouvre la page du groupe — sa photo, sa présentation, ses musiciens — et pendant un direct du groupe, elle mène au concert, comme ton QR.',
               { hote },
             )}
           </p>

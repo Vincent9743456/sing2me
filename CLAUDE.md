@@ -75,6 +75,18 @@
   commentaire `_comment`, casse le déploiement. Rien à voir avec le
   quota — on n'y touche que pour une raison qui le vaut, jamais en pleine
   livraison urgente.
+- **LA MISE EN PRODUCTION N'A PLUS À ÊTRE DEMANDÉE** (Vincent, 10 août
+  2026 : « envoie. Ne me demande plus »). Un lot vérifié se fusionne et part
+  en production sans attendre un feu vert. Ne plus finir un lot par
+  « dis-moi si je fusionne » : c'est une friction que Vincent a explicitement
+  retirée.
+  **Ce que ça ne change PAS** : le lot doit être VÉRIFIÉ avant de partir
+  (typecheck strict, i18n, build, contrôles de la fonction livrée) — l'accord
+  porte sur la permission, pas sur la rigueur. La prévisualisation reste
+  produite à chaque push de branche : elle sert quand un lot demande un avis
+  humain (rendu, formulation, choix produit), et on le DIT alors, sans
+  bloquer la livraison. Et ce qui touche à la base (`supabase/*.sql`) reste
+  à annoncer : c'est Vincent qui l'exécute.
 - Après push : vérifier https://sing2me-three.vercel.app/version.txt.
 - Supabase : projet `zssnwjtfzbymtsiccvao` ; après modification d'un
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
@@ -337,11 +349,30 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     d'avant b192. Cas d'usage validé : un direct de Zakoustiks lancé par
     Vincent se trouve depuis `/zakoustiks` (miroir) COMME depuis `/vincent`
     (QR) — c'est le même `owner_id`.
+  - **un groupe a sa PROPRE page — le miroir ne concerne plus que le
+    DIRECT** (b232, correction de Vincent : « ça devrait renvoyer vers la
+    page Zakoustiks, pas la mienne »). Ce qui NE CHANGE PAS : le QR est
+    unique, c'est celui de l'artiste, et ce que voit le public pendant un
+    concert dépend de la façon dont le live a été paramétré. Ce qui change :
+    `/zakoustiks` ouvre la fiche DU GROUPE — sa photo, sa présentation, ses
+    liens, son pourboire, ses musiciens — écrite par son détenteur dans
+    `band_pages.profile`, au même format qu'une fiche d'artiste
+    (`publicMembers` en plus). « La page du Groupe ou de l'artiste doivent
+    rester consultables. »
+    **Corollaire dans `/api/live?page=`** : une adresse de GROUPE ne trouve
+    que le direct DE CE GROUPE (`lives.band_id`), plus celui de son
+    détenteur. Sans quoi, Vincent jouant en solo, `/zakoustiks` montrait le
+    concert solo et la page du groupe devenait inatteignable — exactement le
+    cas d'usage de Vincent. Effet de bord bienvenu : un direct de groupe
+    lancé par un AUTRE membre est trouvé lui aussi (c'est le groupe qui joue,
+    pas le détenteur de l'adresse).
+    Repli conservé : tant que le détenteur n'a rien publié, l'adresse retombe
+    sur SA fiche — comme avant b232, jamais d'adresse qui n'ouvre rien.
   - **la page publique d'un groupe se consulte DEPUIS SA FICHE** (b230,
     demande de Vincent) — et sans quitter l'app (règle b187) : elle se
-    RECOPIE dans une fenêtre, son adresse se copie. Un groupe n'ayant pas de
-    page à lui, c'est celle de son détenteur qui s'affiche : c'est bien ce
-    que verra quiconque tape l'adresse du groupe.
+    RECOPIE dans une fenêtre, son adresse se copie. Depuis b232 c'est bien la
+    fiche DU GROUPE qui s'y affiche, republiée à l'ouverture de l'aperçu :
+    ce qu'on regarde est ce que verra un visiteur, à l'instant présent.
   - **l'onglet Artiste distingue ce que le public verra** (b230) : les
     groupes masqués y sont en TRANSPARENCE (opacité + niveaux de gris +
     bordure pointillée), avec la raison écrite en dessous. Cet écran donne
@@ -354,15 +385,28 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     et l'adresse du groupe s'il en a une. Publié PAR l'artiste au même moment
     que sa fiche — donc c'est son choix par construction, et un groupe masqué
     n'y entre jamais.
-    **La réciprocité ne demande pas de deuxième page** : l'adresse d'un
-    groupe étant un MIROIR vers la page de son détenteur (b227), taper
-    `/zakoustiks` amène sur cette page, où le groupe est nommé avec ses
-    musiciens. Un seul objet publié, les deux sens satisfaits.
-    On ne sort de l'app que des NOMS — jamais une photo de musicien, jamais
-    un e-mail, jamais un identifiant de compte. La liste se rafraîchit à
-    chaque publication de la fiche (enregistrement du profil, passage ON
-    AIR) : un musicien qui rejoint le groupe n'apparaît donc pas dans la
-    seconde, mais au prochain de ces gestes.
+    **La réciprocité est SYMÉTRIQUE depuis b232** : la page de l'artiste
+    nomme ses groupes, celle du groupe nomme ses musiciens, et chaque nom est
+    un LIEN vers la page de l'autre quand elle existe — un seul composant
+    pour les deux sens (`src/components/PublicBands.tsx`).
+    **Photos comprises** (b232 : « le mieux est de mettre la photo présente
+    sur la fiche du Groupe ou du musicien, et un lien cliquable ») — réduites
+    en vignettes (`miniature`) avec un budget par fiche, parce qu'une fiche
+    part au serveur en UN objet JSON republié à chaque profil enregistré et à
+    chaque GO LIVE. Sans photo : les initiales, jamais une silhouette
+    anonyme. Ne sortent JAMAIS de l'app : un e-mail, un identifiant de
+    compte, et un musicien seulement INVITÉ (il n'a rien accepté). Un nom qui
+    désigne deux pages publiques n'est pas lié — mieux vaut pas de lien qu'un
+    lien vers un homonyme. La sortie reste le masquage du groupe.
+    **Ces listes vivent AUSSI dans la fiche ouverte pendant un concert**
+    (`live/ArtistSheet`, alimentée par l'état du live) : « un spectateur
+    flashe, atterrit sur la page de Vincent, et veut consulter le profil du
+    Groupe Zakoustiks ». Pendant un direct, cette fiche EST la page de
+    l'artiste — sans ce bloc, la porte se refermait au coup d'envoi.
+    La liste se rafraîchit à chaque publication de la fiche (enregistrement
+    du profil, passage ON AIR, réservation d'adresse) : un musicien qui
+    rejoint le groupe n'apparaît donc pas dans la seconde, mais au prochain
+    de ces gestes.
   - **un groupe peut être MASQUÉ au public** (b227, demande de Vincent) :
     « un groupe que je fais à l'occasion avec un pote n'a pas vocation à être
     exposé ». Masqué (`Band.hiddenFromPublic`), il disparaît des identités
