@@ -159,4 +159,6 @@ export const EN_PUBLIC: Record<string, string> = {
   '📤 Partager': '📤 Share',
   '🔗 Copier le lien': '🔗 Copy the link',
   '🤝 Rejoindre « {band} »': '🤝 Join “{band}”',
+  // b231 — les groupes de l'artiste sur sa page publique
+  'Ses groupes': 'Their bands',
 };

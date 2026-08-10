@@ -3488,3 +3488,52 @@ h2.pagetitle {
   margin-top: 2px;
 }
 
+
+/* Groupe masqué au public (b230) : l'onglet Artiste donne l'identité
+   PUBLIQUE de l'artiste — il doit donc distinguer d'un coup d'œil ce que le
+   public verra de ce qu'il ne verra pas. La transparence dit « présent chez
+   toi, absent dehors » sans ajouter ni badge ni ligne. */
+.bandavatar.masque {
+  opacity: 0.42;
+}
+.bandavatar.masque img,
+.bandavatar.masque > span[aria-hidden] {
+  filter: grayscale(1);
+  border-style: dashed;
+}
+
+/* Les groupes de l'artiste sur sa page publique (b231). Sobre : le public
+   vient pour l'artiste, les groupes le situent — ils ne prennent pas la
+   vedette. Les groupes masqués n'arrivent jamais jusqu'ici. */
+.pubgroupes {
+  margin: var(--sp-5) 0 0;
+}
+.pubgroupes h2 {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--text-faint);
+  margin: 0 0 var(--sp-3);
+  text-align: center;
+}
+.pubgroupe {
+  text-align: center;
+  padding: var(--sp-2) 0;
+}
+.pubgroupe + .pubgroupe {
+  border-top: 1px solid var(--border-soft);
+}
+.pg-nom {
+  font-weight: 650;
+}
+.pg-membres {
+  color: var(--text-dim);
+  font-size: 0.86rem;
+}
+.pg-adresse {
+  color: var(--text-faint);
+  font-size: 0.76rem;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  margin-top: 2px;
+}

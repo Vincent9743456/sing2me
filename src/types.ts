@@ -484,6 +484,15 @@ export function defaultPublicScreen(): PublicScreen {
 /* Champ libre « Structure » d'un morceau : des notes générales, sans
  * découpage imposé par sections ni suites d'accords par partie. */
 
+/** Un groupe tel qu'il apparaît sur une page publique (b231). */
+export interface PublicBand {
+  name: string;
+  /** Noms des musiciens — rien d'autre ne sort de l'app. */
+  members: string[];
+  /** Adresse publique du groupe, si elle existe (« zakoustiks »). */
+  address?: string;
+}
+
 export interface ArtistProfile {
   name: string;
   bio: string;
@@ -495,6 +504,21 @@ export interface ArtistProfile {
   gear?: GearItem[];
   /** Ce que voit le public sur l'écran du QR (tout actif par défaut) */
   publicScreen?: Partial<PublicScreen>;
+  /**
+   * LES GROUPES DE L'ARTISTE, TELS QUE LE PUBLIC LES VOIT (b231, demande de
+   * Vincent : « la page publique de l'artiste mentionne les groupes auxquels
+   * il appartient, et réciproquement »).
+   *
+   * Publié AVEC le profil, donc c'est l'artiste qui décide par construction :
+   * un groupe masqué (`Band.hiddenFromPublic`) n'entre jamais dans cette
+   * liste. Réciprocité obtenue sans deuxième page : l'adresse d'un groupe
+   * étant un MIROIR vers la page de son détenteur (b227), y lire le groupe
+   * ET ses musiciens suffit aux deux sens de la demande.
+   *
+   * On ne publie que des NOMS — jamais une photo de musicien, jamais un
+   * e-mail, jamais un identifiant.
+   */
+  publicBands?: PublicBand[];
   /**
    * Licence Scène (annuelle, attachée au compte artiste). PRÉVU mais SANS
    * AUCUN EFFET pour l'instant (chantier 2 — mesure seulement) : aucun seuil,

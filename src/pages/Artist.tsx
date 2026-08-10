@@ -17,7 +17,7 @@ import { PublicLyrics } from '../components/PublicLyrics';
 import { PublicNameCard } from '../components/PublicNameCard';
 import { cachedPublicName } from '../lib/publicPages';
 import { getValidSession } from '../lib/auth';
-import { ensurePublicPage } from '../lib/publicPages';
+import { ensurePublicPage, profilAPublier } from '../lib/publicPages';
 import { bandToProfile, creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -387,10 +387,20 @@ export function Artist() {
                 {bands.map((band) => (
                   <button
                     key={band.id}
-                    className="bandavatar"
-                    title={t('{nom} — ouvrir la fiche', {
-                      nom: band.name || t('Groupe'),
-                    })}
+                    /* Groupe masqué = en transparence (b230, demande de
+                       Vincent) : cet écran donne l'identité publique de
+                       l'artiste, il doit donc distinguer ce que le public
+                       verra de ce qu'il ne verra pas. */
+                    className={`bandavatar${band.hiddenFromPublic === true ? ' masque' : ''}`}
+                    title={
+                      band.hiddenFromPublic === true
+                        ? t('{nom} — masqué au public', {
+                            nom: band.name || t('Groupe'),
+                          })
+                        : t('{nom} — ouvrir la fiche', {
+                            nom: band.name || t('Groupe'),
+                          })
+                    }
                     onClick={() => navigate(`/band/${band.id}`)}
                   >
                     {band.photo !== '' ? (
@@ -404,6 +414,13 @@ export function Artist() {
                   </button>
                 ))}
               </div>
+            )}
+            {bands.some((b) => b.hiddenFromPublic === true) && (
+              <p className="help" style={{ marginTop: 'var(--sp-2)' }}>
+                {t(
+                  'Les groupes en transparence sont masqués au public : ils n’apparaissent pas sur ta page publique et ne peuvent pas porter un direct. Un appui sur l’œil, dans l’onglet Groupes, les rend visibles.',
+                )}
+              </p>
             )}
             <div className="spacer" />
             <div className="rowactions">
@@ -1007,7 +1024,8 @@ export function Artist() {
               // est réservé automatiquement. Best-effort, jamais bloquant.
               void (async () => {
                 const s = await getValidSession();
-                if (s) await ensurePublicPage(s, draft);
+                // La fiche part avec les groupes NON masqués (b231).
+                if (s) await ensurePublicPage(s, await profilAPublier(draft, bands));
               })();
             }}
           >
