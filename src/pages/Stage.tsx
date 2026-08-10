@@ -3,7 +3,13 @@
  * défilement automatique, anti-veille, zéro distraction.
  * Fonctionne hors connexion (toutes les données sont locales).
  */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   useOnAirLive,
@@ -47,7 +53,27 @@ export function Stage({
    *  sur celui qu'on regardait, plus au début du set. */
   startIndex?: number;
 }) {
-  const { songs, setlists, prefs, saveSong, replaceNote } = useStore();
+  const { songs, setlists, prefs, savePrefs, saveSong, replaceNote } =
+    useStore();
+  /**
+   * LE MODE SCÈNE EST SOMBRE, ET C'EST LA SEULE OPTION (b235, décision de
+   * Vincent). Y entrer en mode clair fait basculer TOUTE l'app en sombre —
+   * et ça ne se défait pas tout seul en sortant : « repasser en mode clair,
+   * même hors mode scène, doit faire l'objet d'une nouvelle action de
+   * l'utilisateur ». On ne mémorise donc rien pour restaurer : le bouton de
+   * la bibliothèque est le seul chemin du retour.
+   *
+   * `useLayoutEffect` et pas `useEffect` : le basculement doit être posé
+   * avant que le navigateur ne peigne, sinon le premier appui sur « Scène »
+   * ferait un éclair blanc — exactement au moment où l'on monte sur scène.
+   */
+  useLayoutEffect(() => {
+    if (prefs.theme === 'clair') savePrefs({ ...prefs, theme: 'sombre' });
+    // Une seule fois, à l'entrée : rejouer à chaque rendu écraserait un
+    // changement volontaire (et il n'y en a pas d'autre ici, mais la règle
+    // vaut pour la suite).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [index, setIndex] = useState(startIndex);
   const view = 'complete' as ViewMode; // partition entière pour tous
   const [fontSize, setFontSize] = useState(() => {

@@ -102,9 +102,11 @@
   --surface-high: #ffffff;
   --surface-sunken: #eceae4;
   --surface-hover: #e9e6e0;
-  --stage-bg: #fbfaf7;
-  --stage-text: #17161a;
-  --stage-bar: #efece6;
+  /* Le mode scène n'a PAS de version claire (b235, décision de Vincent) :
+     y entrer bascule toute l'app en sombre, et ça ne se défait qu'à la main
+     depuis la bibliothèque. Les trois tokens de scène ne sont donc pas
+     redéfinis ici — s'ils l'étaient malgré tout, on aurait un pupitre blanc
+     en plein concert. */
   --scrim: rgba(28, 25, 20, 0.42);
   --scrim-soft: rgba(28, 25, 20, 0.32);
   /* Bordures */

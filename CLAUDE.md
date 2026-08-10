@@ -46,6 +46,14 @@
     l'app clignote à chaque lancement ; `prefs.theme` fait foi et recale
     ensuite. Les pages PUBLIQUES ne suivent pas ce réglage : le spectateur
     n'a pas à hériter du confort de l'artiste.
+    **Le MODE SCÈNE est sombre, et c'est la seule option** (b235, décision
+    de Vincent) : y entrer bascule TOUTE l'app en sombre, et ça ne se défait
+    pas en sortant — « repasser en mode clair, même hors mode scène, doit
+    faire l'objet d'une nouvelle action de l'utilisateur ». On ne mémorise
+    donc rien pour restaurer le clair : le bouton de la bibliothèque est le
+    seul chemin du retour. Corollaire dans le CSS : les tokens `--stage-*`
+    n'ont PAS de valeur claire, sinon un pupitre blanc pourrait apparaître
+    en plein concert.
 
 ## Déploiement & versions (pipeline actuel)
 
