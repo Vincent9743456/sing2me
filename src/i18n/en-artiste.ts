@@ -164,6 +164,13 @@ export const EN_ARTISTE: Record<string, string> = {
     'Nothing for this gig yet: it has not been played, or the live was not linked to it at launch.',
   'Invitation impossible.': 'Couldn\'t send the invitation.',
   'Invitation impossible : {raison}': 'Invitation failed: {raison}',
+  'Cette personne est déjà sur DodoSongs :': 'This person is already on DodoSongs:',
+  'Ces musiciens sont déjà sur DodoSongs :': 'These musicians are already on DodoSongs:',
+  'Elle recevra l’invitation dans son application : rien à envoyer.':
+    'They’ll get the invitation in their app: nothing to send.',
+  'Ce lien ne porte pas d’invitation valable. Demande à {from} de t’en renvoyer une depuis la fiche du groupe.':
+    'This link carries no valid invitation. Ask {from} to send you a new one from the band page.',
+  'la personne qui t’a invité·e': 'the person who invited you',
   'Connexion requise': 'You need to be signed in',
   'Cette invitation est nominative : elle a été créée pour {nom}, et ne peut servir qu’une fois.':
     'This invitation is personal: it was created for {nom}, and can only be used once.',

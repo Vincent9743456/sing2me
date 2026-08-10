@@ -40,6 +40,7 @@ import { ProviderMark } from './ProviderMark';
 import {
   cleanupOrphanCloudBands,
   clearPendingInvite,
+  INVITE_EVENT,
   joinBand,
   peekPendingInvite,
   pullBandLibrary,
@@ -470,10 +471,31 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.userId]);
 
-  // Invitation en attente : dès qu'un compte est disponible (typiquement au
-  // retour du lien magique), on termine l'adhésion tout seul → « crée ton
-  // compte » suffit pour devenir membre du groupe.
+  /**
+   * INVITATION EN ATTENTE — TERMINÉE TOUTE SEULE, COMPTE NEUF OU PAS (b252).
+   *
+   * L'adhésion automatique n'était déclenchée que par le CHANGEMENT de
+   * compte (`session?.userId`) : parfaite au retour du lien magique, elle ne
+   * partait JAMAIS pour quelqu'un qui avait déjà un compte — la navigation
+   * vers l'onglet Artiste ne remonte pas le composant, donc rien ne
+   * réveillait l'effet. L'invitation restait en attente indéfiniment :
+   * « j'ai accepté une invitation mais je ne vois pas le groupe » (Vincent).
+   *
+   * On écoute donc AUSSI le dépôt de l'invitation, et le retour de l'app au
+   * premier plan — un lien ouvert dans un autre onglet ne laisse pas d'autre
+   * signal.
+   */
   const invitedRef = useRef(false);
+  const [inviteTick, setInviteTick] = useState(0);
+  useEffect(() => {
+    const reveille = () => setInviteTick((n) => n + 1);
+    window.addEventListener(INVITE_EVENT, reveille);
+    window.addEventListener('focus', reveille);
+    return () => {
+      window.removeEventListener(INVITE_EVENT, reveille);
+      window.removeEventListener('focus', reveille);
+    };
+  }, []);
   useEffect(() => {
     if (!session || invitedRef.current) return;
     const pending = peekPendingInvite();
@@ -542,7 +564,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.userId]);
+  }, [session?.userId, inviteTick]);
 
   // Re-publier la fiche d'annuaire dès que le nom (ou la photo) change, pour
   // être trouvable tout de suite après avoir renseigné son profil — sans
