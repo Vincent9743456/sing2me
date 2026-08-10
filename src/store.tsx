@@ -24,6 +24,7 @@ import { ecartee, remisEnIdee, reprise, sortDuMorceau } from './lib/deletesong';
 import {
   duplicateVersion,
   isAbandonedSetlist,
+  majMaPhotoDansGroupes,
   migrateConcert,
   migrateSetlist,
   migrateSong,
@@ -473,6 +474,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({
       ...prev,
       artist: { ...artist, updatedAt: new Date().toISOString() },
+      // MA PHOTO SUIT DANS MES GROUPES (b247). La ligne de musicien garde une
+      // COPIE de la photo, recopiée à la création du groupe : elle ne bougeait
+      // plus jamais, donc les autres membres voyaient une pastille grise même
+      // après que j'aie mis une photo. On la recale ici — enregistrer son
+      // profil est un ACTE, pas une consultation (b243/b245) — et seulement
+      // la photo : le nom, lui, sert à me reconnaître, on n'y touche pas.
+      bands: majMaPhotoDansGroupes(
+        prev.bands ?? [],
+        artist,
+        prev.prefs?.userName ?? '',
+      ),
     }));
   }, []);
 
