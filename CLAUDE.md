@@ -660,6 +660,16 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   `ProfilRestore` compare et propose de rendre ce qui manque — uniquement les
   champs VIDES, jamais par-dessus ce qui est là, et la bannière se lève seule
   quand il n'y a plus rien à rendre (règle 11).
+  **DEUXIÈME CAUSE, même famille** (b244, constat sur la capture de Vincent :
+  son nom d'artiste était devenu « tessier vincent ») : le nom donné par le
+  compte s'écrivait AU MONTAGE, donc AVANT la fusion de connexion. Comme
+  `saveArtist` horodate, un profil local vide se retrouvait estampillé à
+  l'instant, battait la copie du cloud à la fusion suivante et partait
+  l'écraser. Règle générale : **AUCUNE écriture automatique avant la fusion
+  initiale** (`readyRef`) — un remplissage par défaut ne doit s'appliquer
+  qu'une fois qu'on sait ce que le cloud contient, et seulement si le champ
+  est TOUJOURS vide à ce moment-là. Cela vaut pour le nom d'artiste comme
+  pour `prefs.userName`.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre
