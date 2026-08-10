@@ -17,13 +17,27 @@ import { t } from '../i18n';
 const CORDES = 6;
 const CASES = 5;
 
-/** Libellé d'une position — écrit ICI, jamais dans le module de calcul. */
+/**
+ * Libellé d'une position — écrit ICI, jamais dans le module de calcul.
+ *
+ * L'ordre compte : sur un accord barre-oblique, ce que le musicien doit
+ * savoir c'est QUELLE BASSE il joue (c'est tout l'objet de l'accord). Le
+ * reste — barré, case — se lit sur le dessin.
+ */
 export function nomDePosition(p: Position): string {
+  if (p.basse) return t('Basse en {note}', { note: p.basse });
   if (p.ouverte) return t('Position ouverte');
-  const c = p.barre?.case_ ?? 0;
-  return p.cordeRacine === 5
-    ? t('Barré case {n} — fondamentale sur la 5ᵉ corde', { n: c })
-    : t('Barré case {n} — fondamentale sur la 6ᵉ corde', { n: c });
+  if (p.barre) {
+    return p.cordeRacine === 5
+      ? t('Barré case {n} — fondamentale sur la 5ᵉ corde', { n: p.barre.case_ })
+      : t('Barré case {n} — fondamentale sur la 6ᵉ corde', { n: p.barre.case_ });
+  }
+  // Ni ouverte ni barrée : on dit simplement où la main se pose. Dire
+  // « barré case 0 » comme avant n'avait aucun sens.
+  const doigtees = p.cases.filter((c) => c > 0);
+  return doigtees.length === 0
+    ? t('Position ouverte')
+    : t('Case {n}', { n: Math.min(...doigtees) });
 }
 
 export function ChordDiagram({

@@ -74,6 +74,7 @@ groupe, direct). Marco est le second appareil.
 | P-1 | Transposer (+/−) | **Les accords écrits changent** et la tonalité suit ; c'est enregistré | 🔴 |
 | P-1bis | Taper sur un accord de la partition | Une **petite** pastille s'ouvre sous l'accord — la partition reste lisible autour, aucun voile ; un toucher n'importe où la fait disparaître. Un accord exotique n'ouvre **rien** plutôt qu'un doigté inventé | 🟠 |
 | P-1ter | Taper un accord tout en BAS de l'écran | La pastille se pose au-dessus, jamais hors de l'écran | 🟠 |
+| P-1quater | Taper un accord avec basse (`A/C#`, `C/G`, `D/F#`) | La basse demandée est la note la plus GRAVE du doigté — ce n'est pas l'accord de base — ⚠️ cicatrice b226 | 🔴 |
 | P-2 | Re-transposer en sens inverse | On retombe exactement sur l'original | 🔴 |
 | P-3 | Poser un capo | Ce qui sonne change, les accords affichés non ; l'aide le dit | 🟠 |
 | P-4 | Basculer « tonalité réelle » | Les accords s'affichent capo compris | ⚪ |

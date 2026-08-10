@@ -619,6 +619,14 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   (au-dessus quand il n'y a plus la place en bas), deux positions au plus.
   Elle disparaît au moindre toucher, N'IMPORTE OÙ — y compris sur la
   partition — et à Échap.
+- **Un accord barre-oblique n'est PAS son accord de base** (b226, signalement
+  de Marco : « il fait un la normal et il a pas mis la basse en do# »). La
+  basse d'un `A/C#` était ignorée : doigté faux sous étiquette juste, le pire
+  cas. On garde la forme et on descend chercher la basse sur la corde la plus
+  GRAVE qui peut la produire, en étouffant tout ce qui est en dessous — sinon
+  la vraie basse reste la plus grave et l'accord sonne comme avant. Une forme
+  qui ne peut pas porter la basse (empan de main dépassé, moins de trois
+  cordes qui sonnent) est ÉCARTÉE, jamais ramenée à l'accord de base.
 - **Un doigté faux est pire que pas de doigté** (b225) : `src/lib/chordshapes.ts`
   calcule les positions de guitare HORS LIGNE (aucun service, aucune
   dépendance) — une table de positions ouvertes écrites à la main, puis deux
