@@ -304,6 +304,23 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     dans `store.saveSetlist`, donc par TOUS les chemins d'ajout. Le
     bouton « ✓ Accepter » reste disponible sans passer par une setlist,
     et le chip « 📥 Propositions » n'est plus qu'une vue filtrée ;
+  - **supprimer un morceau du répertoire d'un GROUPE ne l'efface pas** (b239,
+    demande de Vincent) : il RETOURNE dans les Idées, en proposition du
+    groupe d'où il vient — « pour pouvoir restaurer si c'était nécessaire ».
+    Un morceau du répertoire n'est pas seulement à moi : quelqu'un l'y a mis
+    et le groupe continue de l'avoir, donc l'effacer chez moi n'a pas à le
+    perdre. Aucune pierre tombale dans ce cas — elle l'empêcherait de
+    revenir. Et **s'il est PROGRAMMÉ dans une setlist du groupe, on REFUSE**
+    la suppression : le programme engage les autres musiciens. La sortie
+    existe déjà (retirer le morceau du répertoire du groupe, ce qui enlève
+    la version de groupe), après quoi il se supprime comme n'importe quel
+    morceau perso. Une IDÉE, elle, se supprime pour de bon : c'est la seule
+    façon de décliner une proposition, et la règle ne doit pas la
+    confisquer. La décision vit à UN endroit (`src/lib/deletesong.ts`) : le
+    store l'applique, la feuille `SongDeleteSheet` l'ANNONCE — les quatre
+    chemins de suppression (fiche, ligne, aperçu, éditeur) passent par elle,
+    sinon un écran finirait par promettre « supprimé » là où l'app garde une
+    proposition ;
   - un morceau supprimé n'est jamais réimporté par l'import en masse
     (tombstones) ;
   - navigation : les boutons ← des pages vont vers un parent explicite

@@ -20,6 +20,7 @@ import {
   songKey,
 } from './lib/normalizeTitle';
 import { ResetMarks } from './lib/sync';
+import { remisEnIdee, sortDuMorceau } from './lib/deletesong';
 import {
   duplicateVersion,
   isAbandonedSetlist,
@@ -336,9 +337,37 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  /**
+   * SUPPRIMER — trois issues, décidées par `sortDuMorceau` (b239).
+   *
+   * La règle vit ICI, dans le store, pour que TOUS les chemins de
+   * suppression l'appliquent sans avoir à y penser (fiche morceau, ligne de
+   * la bibliothèque, volet d'aperçu, éditeur) — même raisonnement que pour
+   * `saveSetlist`. Les écrans, eux, ANNONCENT la même décision avant de
+   * demander confirmation : ils appellent la même fonction.
+   */
   const deleteSong = useCallback((songId: string) => {
     setState((prev) => {
       const song = prev.songs.find((s) => s.id === songId);
+      const sort = song ? sortDuMorceau(song, prev.setlists) : { mode: 'supprime' as const };
+      // Programmé dans une setlist du GROUPE : on ne touche à rien. Le
+      // retirer du programme engage les autres musiciens, pas seulement moi.
+      if (sort.mode === 'refus') return prev;
+      // Morceau du répertoire d'un groupe : il ne s'efface pas, il REDEVIENT
+      // une proposition dans les Idées — récupérable, et sans pierre
+      // tombale (une tombe l'empêcherait de revenir).
+      if (sort.mode === 'idee' && song) {
+        return {
+          ...prev,
+          songs: prev.songs.map((s) =>
+            s.id === songId ? remisEnIdee(s, sort.bandId) : s,
+          ),
+          setlists: prev.setlists.map((sl) => ({
+            ...sl,
+            items: sl.items.filter((it) => it.songId !== songId),
+          })),
+        };
+      }
       return {
         ...prev,
         songs: prev.songs.filter((s) => s.id !== songId),

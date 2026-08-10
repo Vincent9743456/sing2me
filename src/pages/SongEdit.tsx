@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Icon } from '../components/Icon';
 import { MenuSheet } from '../components/Feedback';
 import { Field, TopBar } from '../components/ui';
+import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { t } from '../i18n';
 import { KEY_CHOICES } from '../lib/chords';
 import { importText } from '../lib/importer';
@@ -24,7 +25,7 @@ import {
 } from '../types';
 
 export function SongEdit({ id }: { id: string | null }) {
-  const { songs, bands, saveSong, deleteSong } = useStore();
+  const { songs, bands, saveSong } = useStore();
   // Feuille « appliquer à toutes les versions / seulement celle-ci » à
   // l'enregistrement (quand le morceau a plusieurs versions).
   const [askScope, setAskScope] = useState(false);
@@ -195,18 +196,11 @@ export function SongEdit({ id }: { id: string | null }) {
     commitSave('current');
   }
 
-  function onDelete() {
-    if (
-      !confirm(
-        t('Supprimer « {title} » ? Le morceau sera retiré des setlists.', {
-          title: draft.title,
-        }),
-      )
-    )
-      return;
-    deleteSong(draft.id);
-    navigate('/');
-  }
+  // La suppression passe par la feuille commune (b239) : c'est elle qui sait
+  // qu'un morceau venu d'un groupe ne s'efface pas, et qu'un morceau
+  // programmé par le groupe ne se supprime pas du tout.
+  const [suppr, setSuppr] = useState(false);
+  const enBibliotheque = songs.find((s) => s.id === draft.id);
 
   return (
     <>
@@ -459,12 +453,20 @@ export function SongEdit({ id }: { id: string | null }) {
               <Icon name="eye" size={15} /> {t('Voir la partition')}
             </button>
             <div className="spacer" />
-            <button className="btn danger block" onClick={onDelete}>
+            <button className="btn danger block" onClick={() => setSuppr(true)}>
               {t('Supprimer le morceau')}
             </button>
           </>
         )}
       </div>
+
+      {suppr && enBibliotheque && (
+        <SongDeleteSheet
+          song={enBibliotheque}
+          onDeleted={() => navigate('/')}
+          onClose={() => setSuppr(false)}
+        />
+      )}
 
       {askScope && (
         <MenuSheet

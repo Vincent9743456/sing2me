@@ -7,7 +7,8 @@ import { SongBody } from '../components/SongBody';
 import { PublicEye, PublicPreview } from '../components/PublicPreview';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
-import { ConfirmSheet, MenuSheet } from '../components/Feedback';
+import { SongDeleteSheet } from '../components/SongDeleteSheet';
+import { MenuSheet } from '../components/Feedback';
 import { Onboarding } from '../components/Onboarding';
 import { BackupNudge } from '../components/BackupNudge';
 import { EXAMPLE_TAG } from '../seed';
@@ -190,7 +191,6 @@ function isRecent(createdAt: string): boolean {
 export function Library() {
   const {
     songs,
-    deleteSong,
     acceptSong,
     bands,
     setlists,
@@ -1176,15 +1176,9 @@ export function Library() {
         <AssignSheet songId={rowAssign} onClose={() => setRowAssign(null)} />
       )}
       {rowDelete && (
-        <ConfirmSheet
-          title={t('Supprimer « {title} » ?', {
-            title: rowDelete.title || t('ce morceau'),
-          })}
-          message={t('Le morceau sera aussi retiré des setlists.')}
-          confirmLabel={t('Supprimer')}
-          danger
-          onConfirm={() => {
-            deleteSong(rowDelete.id);
+        <SongDeleteSheet
+          song={rowDelete}
+          onDeleted={() => {
             if (selectedId === rowDelete.id) setSelectedId(null);
           }}
           onClose={() => setRowDelete(null)}
@@ -1209,7 +1203,6 @@ function SongPreview({
     prefs,
     artist,
     saveSong,
-    deleteSong,
     bands,
     setlists,
     saveSetlist,
@@ -1217,6 +1210,7 @@ function SongPreview({
     clearBandRemoval,
   } = useStore();
   const author = prefs.userName || artist.name || t('Moi');
+  const [suppr, setSuppr] = useState(false);
   const song = id ? songs.find((s) => s.id === id) : undefined;
   const paneRef = useRef<HTMLElement | null>(null);
   const [ugOpen, setUgOpen] = useState(false);
@@ -1372,21 +1366,17 @@ function SongPreview({
           style={{ color: 'var(--danger)' }}
           title={t('Supprimer ce morceau')}
           aria-label={t('Supprimer ce morceau')}
-          onClick={() => {
-            if (
-              confirm(
-                t('Supprimer « {title} » ? Le morceau sera aussi retiré des setlists.', {
-                  title: song.title || t('(sans titre)'),
-                }),
-              )
-            ) {
-              deleteSong(song.id);
-              onClose();
-            }
-          }}
+          onClick={() => setSuppr(true)}
         >
           <Icon name="trash" size={14} />
         </button>
+        {suppr && (
+          <SongDeleteSheet
+            song={song}
+            onDeleted={onClose}
+            onClose={() => setSuppr(false)}
+          />
+        )}
       </div>
       <div className="hstack" style={{ marginBottom: 10 }}>
         <span className="help">

@@ -527,6 +527,16 @@ export const EN_MORCEAUX: Record<string, string> = {
 
   // b223 — ce que verra le public, sur la fiche d'un morceau
   'Vue du public': 'Audience view',
+  '« {title} » est au programme': '“{title}” is on the setlist',
+  'Ce morceau est dans la setlist « {setlist} » de {groupe}. Tant qu’il y est, tu ne peux pas le supprimer : le programme engage les autres musiciens, pas seulement toi.':
+    'This song is on {groupe}’s “{setlist}” setlist. While it’s there you can’t delete it: the setlist commits the other musicians, not just you.',
+  'Retire-le d’abord de la setlist, puis reviens ici.':
+    'Take it off the setlist first, then come back here.',
+  'J’ai compris': 'Got it',
+  'Retirer « {title} » de tes morceaux ?': 'Remove “{title}” from your songs?',
+  'Il vient du répertoire de {groupe} : il ne sera pas effacé, il retournera dans tes Idées, en proposition. Tu pourras le reprendre quand tu veux.':
+    'It comes from {groupe}’s repertoire: it won’t be erased, it goes back to your Ideas as a suggestion. You can take it back whenever you want.',
+  'Remettre en proposition': 'Move back to suggestions',
   'Passer toute l’app en clair': 'Switch the whole app to light',
   'Repasser toute l’app en sombre': 'Switch the whole app back to dark',
   'Lire le morceau comme le liront tes spectateurs':
