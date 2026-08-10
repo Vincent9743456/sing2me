@@ -18,7 +18,7 @@
  */
 import React, { useEffect, useState } from 'react';
 
-import { fetchPublicPage, monAdressePublique } from '../lib/publicPages';
+import { maFichePubliee } from '../lib/publicPages';
 import { t } from '../i18n';
 import { ArtistProfile } from '../types';
 
@@ -60,23 +60,25 @@ export function ProfilRestore({
   onRestore: (champs: Partial<ArtistProfile>) => void;
 }) {
   const [champs, setChamps] = useState<Partial<ArtistProfile> | null>(null);
+  // Fiche retrouvée par le NOM et non par le compte (b246) : on le dit.
+  const [parNom, setParNom] = useState(false);
 
   useEffect(() => {
     let annule = false;
     void (async () => {
-      // On DEMANDE l'adresse au serveur si le cache local est muet (b245) :
-      // un cache vidé (réinstallation, données du site effacées) faisait
-      // croire qu'il n'y avait pas de fiche publiée, donc rien à récupérer —
-      // le filet disparaissait au moment précis où il servait.
-      const nom = await monAdressePublique();
-      if (nom === '') {
-        if (!annule) setChamps(null);
+      // On DEMANDE au serveur si le cache local est muet (b245), et à défaut
+      // d'adresse sur ce compte on cherche une page au même NOM D'ARTISTE
+      // (b246) : une reconnexion avec une autre adresse e-mail crée un autre
+      // compte, qui n'a jamais rien réservé — la fiche existe pourtant.
+      const trouvee = await maFichePubliee(artist.name ?? '');
+      if (annule) return;
+      if (!trouvee) {
+        setChamps(null);
         return;
       }
-      const page = await fetchPublicPage(nom);
-      if (annule || !page) return;
-      const manquants = champsARendre(artist, page.profile);
+      const manquants = champsARendre(artist, trouvee.page.profile);
       if (!annule) {
+        setParNom(trouvee.parNom);
         setChamps(Object.keys(manquants).length > 0 ? manquants : null);
       }
     })();
@@ -94,10 +96,15 @@ export function ProfilRestore({
   return (
     <div className="card" style={{ borderColor: 'var(--warn)' }}>
       <p style={{ margin: 0, color: 'var(--warn)' }}>
-        {t(
-          '↩ Ta page publique contient encore {quoi}. Ce profil ne les a plus.',
-          { quoi: quoi.join(', ') },
-        )}
+        {parNom
+          ? t(
+              '↩ Une page publique à ton nom contient encore {quoi}. Ce profil ne les a plus.',
+              { quoi: quoi.join(', ') },
+            )
+          : t(
+              '↩ Ta page publique contient encore {quoi}. Ce profil ne les a plus.',
+              { quoi: quoi.join(', ') },
+            )}
       </p>
       <div className="spacer" />
       <button className="btn" onClick={() => onRestore(champs)}>

@@ -484,6 +484,10 @@ export const EN_ARTISTE: Record<string, string> = {
   'ton nom d’artiste': 'your artist name',
   '↩ Ta page publique contient encore {quoi}. Ce profil ne les a plus.':
     '↩ Your public page still has {quoi}. This profile no longer does.',
+  '↩ Une page publique à ton nom contient encore {quoi}. Ce profil ne les a plus.':
+    '↩ A public page under your name still has {quoi}. This profile no longer does.',
+  'Ce compte n’a réservé aucune adresse. Une page publique existe pourtant à ton nom, à l’adresse {adresse} : elle a été créée avec un autre compte — tu t’es peut-être reconnecté avec une autre adresse e-mail que celle d’origine.':
+    'This account has no address reserved. A public page does exist under your name, at {adresse}: it was created with another account — you may have signed back in with a different email address.',
   'Masquer ce groupe au public': 'Hide this band from the audience',
   'il n’apparaît pas sur ta fiche publique, et tu ne peux pas lancer de direct à son nom': 'it does not appear on your public page, and you cannot start a live under its name',
   'Masquer « {nom} » au public ?': 'Hide “{nom}” from the audience?',

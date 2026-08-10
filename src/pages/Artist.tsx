@@ -16,7 +16,7 @@ import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
 import { PublicLyrics } from '../components/PublicLyrics';
 import { PublicNameCard } from '../components/PublicNameCard';
-import { monAdressePublique } from '../lib/publicPages';
+import { findPublicPageByArtist, monAdressePublique } from '../lib/publicPages';
 import { getValidSession } from '../lib/auth';
 import {
   ensurePublicPage,
@@ -124,15 +124,29 @@ export function Artist() {
    * reste de l'app (QR du panneau ON AIR, carte du lien public).
    */
   const [adressePublique, setAdressePublique] = useState<string | null>(null);
+  /**
+   * Une page existe-t-elle sous mon NOM alors que ce compte n'a réservé
+   * aucune adresse (b246) ? C'est le seul cas où « pas encore réservée » est
+   * vrai mais trompeur : la page est bien là, elle appartient à un autre
+   * compte — typiquement après une reconnexion avec une autre adresse
+   * e-mail. Le dire vaut mieux que laisser chercher.
+   */
+  const [pageHomonyme, setPageHomonyme] = useState('');
   useEffect(() => {
     let annule = false;
     void (async () => {
       const nom = await monAdressePublique();
-      if (!annule) setAdressePublique(nom);
+      if (annule) return;
+      setAdressePublique(nom);
+      if (nom !== '') return;
+      const autre = await findPublicPageByArtist(artist.name ?? '');
+      if (!annule && autre) setPageHomonyme(autre.name);
     })();
     return () => {
       annule = true;
     };
+    // Une seule recherche par ouverture de l'écran.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Vue par défaut = profil mis en forme (ce que voit le public) ; « Modifier »
   // ouvre le formulaire complet. Profil vide → « Créer le profil artiste ».
@@ -1147,9 +1161,16 @@ export function Artist() {
              coup d'œil, avec un profil qu'on vient justement de perdre,
              écraserait la dernière copie qui restait. Le profil enregistré
              et le passage ON AIR la republient, eux — ce sont des actes. */
-          sansAdresse={t(
-            'Ta page publique n’est pas encore réservée. Enregistre ton profil : l’adresse se crée toute seule, à partir de ton nom d’artiste.',
-          )}
+          sansAdresse={
+            pageHomonyme !== ''
+              ? t(
+                  'Ce compte n’a réservé aucune adresse. Une page publique existe pourtant à ton nom, à l’adresse {adresse} : elle a été créée avec un autre compte — tu t’es peut-être reconnecté avec une autre adresse e-mail que celle d’origine.',
+                  { adresse: pageHomonyme },
+                )
+              : t(
+                  'Ta page publique n’est pas encore réservée. Enregistre ton profil : l’adresse se crée toute seule, à partir de ton nom d’artiste.',
+                )
+          }
           onClose={() => setShare(false)}
         />
       )}
