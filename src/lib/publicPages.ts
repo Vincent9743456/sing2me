@@ -9,7 +9,7 @@
  */
 import { AuthSession } from './auth';
 import { normalizePublicName, publicNameError } from './publicName';
-import { ArtistProfile } from '../types';
+import { ArtistProfile, Band, PublicBand } from '../types';
 
 function sbUrl(): string {
   return (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
@@ -385,5 +385,51 @@ export async function releaseBandPage(
     );
   } catch {
     /* hors ligne : l'adresse partira au prochain passage */
+  }
+}
+
+/**
+ * LES GROUPES À PUBLIER AVEC LE PROFIL (b231).
+ *
+ * Les groupes MASQUÉS n'y entrent jamais — c'est tout l'objet du réglage. On
+ * ne sort que des noms : celui du groupe, ceux des musiciens tels qu'ils
+ * apparaissent dans la fiche. Ni photo de musicien, ni e-mail, ni identifiant
+ * de compte.
+ *
+ * L'adresse du groupe est jointe quand il en a une, pour que le public puisse
+ * la noter — mais elle n'est pas indispensable : le groupe se lit d'abord
+ * comme une information sur l'artiste.
+ */
+export async function groupesPublics(bands: Band[]): Promise<PublicBand[]> {
+  const visibles = bands.filter((b) => b.hiddenFromPublic !== true);
+  const out: PublicBand[] = [];
+  for (const b of visibles) {
+    const membres = [
+      ...new Set(
+        (b.members ?? [])
+          .map((m) => (m.name ?? '').trim())
+          .filter((n) => n !== ''),
+      ),
+    ];
+    const adresse = await fetchBandPageName(b.cloudId ?? '');
+    out.push({
+      name: b.name || '',
+      members: membres,
+      ...(adresse !== '' ? { address: adresse } : {}),
+    });
+  }
+  return out.filter((g) => g.name !== '');
+}
+
+/** Le profil enrichi de ses groupes, prêt à publier. */
+export async function profilAPublier(
+  artist: ArtistProfile,
+  bands: Band[],
+): Promise<ArtistProfile> {
+  try {
+    return { ...artist, publicBands: await groupesPublics(bands) };
+  } catch {
+    // Jamais bloquant : sans la liste, la fiche part quand même.
+    return artist;
   }
 }

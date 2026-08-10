@@ -347,11 +347,22 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     bordure pointillée), avec la raison écrite en dessous. Cet écran donne
     l'identité publique de l'artiste : y afficher à l'identique un groupe
     qui n'en fait pas partie, c'était mentir par omission.
-    **Réserve à lever un jour** : la page publique ne LISTE aucun groupe
-    aujourd'hui (`PublicArtist` n'affiche ni membres ni groupes). La
-    transparence dit donc vrai sur l'identité de direct et sur l'adresse
-    miroir, mais tant que la liste n'existe pas, un groupe visible n'est pas
-    plus « sur la page » qu'un groupe masqué.
+    (Réserve levée en b231 : la page publique liste désormais les groupes.)
+  - **la page publique de l'artiste NOMME ses groupes, et réciproquement**
+    (b231, décision de Vincent). Les groupes NON masqués voyagent avec le
+    profil (`ArtistProfile.publicBands`) : nom du groupe, noms des musiciens,
+    et l'adresse du groupe s'il en a une. Publié PAR l'artiste au même moment
+    que sa fiche — donc c'est son choix par construction, et un groupe masqué
+    n'y entre jamais.
+    **La réciprocité ne demande pas de deuxième page** : l'adresse d'un
+    groupe étant un MIROIR vers la page de son détenteur (b227), taper
+    `/zakoustiks` amène sur cette page, où le groupe est nommé avec ses
+    musiciens. Un seul objet publié, les deux sens satisfaits.
+    On ne sort de l'app que des NOMS — jamais une photo de musicien, jamais
+    un e-mail, jamais un identifiant de compte. La liste se rafraîchit à
+    chaque publication de la fiche (enregistrement du profil, passage ON
+    AIR) : un musicien qui rejoint le groupe n'apparaît donc pas dans la
+    seconde, mais au prochain de ces gestes.
   - **un groupe peut être MASQUÉ au public** (b227, demande de Vincent) :
     « un groupe que je fais à l'occasion avec un pote n'a pas vocation à être
     exposé ». Masqué (`Band.hiddenFromPublic`), il disparaît des identités

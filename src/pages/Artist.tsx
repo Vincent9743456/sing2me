@@ -17,7 +17,7 @@ import { PublicLyrics } from '../components/PublicLyrics';
 import { PublicNameCard } from '../components/PublicNameCard';
 import { cachedPublicName } from '../lib/publicPages';
 import { getValidSession } from '../lib/auth';
-import { ensurePublicPage } from '../lib/publicPages';
+import { ensurePublicPage, profilAPublier } from '../lib/publicPages';
 import { bandToProfile, creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -1024,7 +1024,8 @@ export function Artist() {
               // est réservé automatiquement. Best-effort, jamais bloquant.
               void (async () => {
                 const s = await getValidSession();
-                if (s) await ensurePublicPage(s, draft);
+                // La fiche part avec les groupes NON masqués (b231).
+                if (s) await ensurePublicPage(s, await profilAPublier(draft, bands));
               })();
             }}
           >

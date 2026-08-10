@@ -41,6 +41,7 @@ import { bandToProfile } from '../lib/model';
 import {
   cachedPublicName,
   ensurePublicPage,
+  profilAPublier,
   fetchMyPublicName,
   rememberPublicName,
 } from '../lib/publicPages';
@@ -443,7 +444,10 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
           try {
             const s = await getValidSession();
             if (!s) return;
-            const name = await ensurePublicPage(s, artist);
+            const name = await ensurePublicPage(
+              s,
+              await profilAPublier(artist, bands),
+            );
             if (name) setPublicName(name);
           } catch {
             /* best-effort */

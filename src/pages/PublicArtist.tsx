@@ -166,6 +166,31 @@ export function PublicArtist({ name }: { name: string }) {
         )}
       </div>
 
+      {/* LES GROUPES DE L'ARTISTE (b231, demande de Vincent). Ceux qu'il a
+          masqués n'y sont pas : la liste est construite au moment où il
+          publie sa fiche, donc c'est son choix par construction.
+          Réciprocité : l'adresse d'un groupe étant un miroir vers la page de
+          son détenteur, taper « /legroupe » amène ici, où le groupe est
+          nommé avec ses musiciens. */}
+      {(profile.publicBands ?? []).length > 0 && (
+        <div className="pubgroupes">
+          <h2>{t('Ses groupes')}</h2>
+          {(profile.publicBands ?? []).map((g, i) => (
+            <div className="pubgroupe" key={i}>
+              <div className="pg-nom">{g.name}</div>
+              {g.members.length > 0 && (
+                <div className="pg-membres">{g.members.join(' · ')}</div>
+              )}
+              {g.address ? (
+                <div className="pg-adresse">
+                  {location.host}/{g.address}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+
       <TipBox artist={profile} />
 
       <div className="footer">
