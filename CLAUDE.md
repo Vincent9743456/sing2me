@@ -702,6 +702,24 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   faux : il nomme l'adresse trouvée et explique le décalage de compte.
   Règle générale : **un identifiant qui ne trouve rien n'est pas une preuve
   d'absence** — c'est la version « compte » de la règle du cache ci-dessus.
+- **ON NE SE RECONNAÎT PAS À UNE ÉGALITÉ DE CHAÎNES** (b247, constat de
+  Vincent : « dans le groupe je ne vois pas ma photo à côté de celle de
+  Marco »). Sa ligne de musicien disait « Vincent », son profil « tessier
+  vincent » : l'app ne savait plus laquelle des lignes était la sienne — ni
+  photo, ni accès à sa fiche, et le ⭐ créateur tombait à côté. Un nom
+  d'artiste qui change suffit. On se reconnaît donc par son COMPTE quand la
+  ligne a un pendant côté cloud (et une ligne qui appartient à QUELQU'UN
+  D'AUTRE n'est jamais moi, même si les noms se ressemblent), sinon par les
+  MOTS du nom (`memePersonne`, `src/lib/model.ts`) — pas par `sameMusician`,
+  dont le rapprochement par sous-chaîne ferait de « Marc » un « Marco » : se
+  prendre pour quelqu'un d'autre coûte bien plus cher que de ne pas se
+  reconnaître.
+  **Et une COPIE se recale à l'acte, jamais à la consultation** : la photo de
+  ma ligne de musicien était figée à la création du groupe, donc les autres
+  membres voyaient une pastille grise longtemps après. `majMaPhotoDansGroupes`
+  la recale à l'enregistrement du PROFIL (idempotente — sans quoi chaque
+  enregistrement retamponnerait tous les groupes) ; sur MON écran, mon profil
+  passe devant la copie, parce que ma photo n'a qu'une maison (règle 1).
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre

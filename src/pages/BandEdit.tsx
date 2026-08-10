@@ -40,6 +40,7 @@ import {
   bandToProfile,
   dedupeMusicians,
   duplicateVersion,
+  memePersonne,
   removeVersion,
   sameMusician,
   switchVersion,
@@ -530,27 +531,48 @@ export function BandEdit({ id }: { id: string }) {
     return band?.owned === false ? t('un autre musicien') : t('Toi');
   };
 
-  const meKey = (prefs.userName || artist.name || '').trim().toLowerCase();
-  /** Clé (nom normalisé) du créateur, pour le repérer dans la liste. */
-  const cleDuCreateur = ((): string => {
-    if (owner && myId !== '' && owner.userId === myId) return meKey;
+  /**
+   * EST-CE MOI ? (b247, constat de Vincent : « je ne vois pas ma photo à côté
+   * de celle de Marco »). Sa ligne de musicien dit « Vincent », son profil
+   * dit « tessier vincent » : l'égalité de chaînes ne les reconnaissait plus,
+   * donc plus de photo, plus d'accès à sa fiche, et le ⭐ créateur tombait à
+   * côté. Un nom d'artiste qui change suffit à provoquer ça.
+   *
+   * Deux niveaux, du plus sûr au plus tolérant :
+   *  1. mon COMPTE, quand la ligne a un pendant côté cloud — sans ambiguïté,
+   *     et à l'inverse une ligne qui appartient à QUELQU'UN D'AUTRE n'est
+   *     jamais moi, même si les noms se ressemblent ;
+   *  2. sinon les MOTS du nom (`memePersonne`), qui encaissent un nom de
+   *     famille ajouté sans confondre « Marc » et « Marco ».
+   */
+  const mesNoms = [prefs.userName, artist.name].filter(
+    (n) => (n ?? '').trim() !== '',
+  );
+  const estMoi = (nom: string): boolean => {
+    const c = cloudMembers.find((m) => sameMusician(m.name, nom));
+    if (c && myId !== '') return c.user_id === myId;
+    return mesNoms.some((n) => memePersonne(n, nom));
+  };
+  /** Le créateur, pour le repérer dans la liste (nom OU « c'est moi »). */
+  const createurEstMoi =
+    (owner && myId !== '' && owner.userId === myId) ||
+    (!owner && (band?.ownerName ?? '') === '' && band?.owned !== false);
+  const nomDuCreateurBrut = ((): string => {
     if (owner) {
       const c = cloudMembers.find((m) => m.user_id === owner.userId);
-      const n = (c?.name || owner.name || '').trim().toLowerCase();
-      if (n !== '') return n;
+      return c?.name || owner.name || '';
     }
-    if ((band?.ownerName ?? '') !== '') {
-      return (band?.ownerName ?? '').trim().toLowerCase();
-    }
-    return band?.owned === false ? '' : meKey;
+    return band?.ownerName ?? '';
   })();
-  // Photo d'un membre : la sienne, ou — pour MOI (le créateur, absent des
-  // membres cloud) — celle de mon profil artiste en secours.
+  const estLeCreateur = (nom: string): boolean =>
+    createurEstMoi
+      ? estMoi(nom)
+      : nomDuCreateurBrut !== '' && memePersonne(nomDuCreateurBrut, nom);
+  // Photo d'un membre. Pour MOI, mon profil fait foi et passe DEVANT la copie
+  // enregistrée dans le groupe : ma photo n'a qu'une maison (règle 1), et
+  // celle du membre n'est qu'un reflet qui peut dater.
   const photoOf = (m: { name: string; photo?: string }): string =>
-    m.photo ||
-    (meKey !== '' && m.name.trim().toLowerCase() === meKey
-      ? artist.photo || ''
-      : '');
+    estMoi(m.name) ? artist.photo || m.photo || '' : m.photo || '';
   const cloudNames = new Set(
     cloudMembers
       .map((m) => m.name.trim().toLowerCase())
@@ -1420,8 +1442,7 @@ export function BandEdit({ id }: { id: string }) {
             <p className="help">{t("Aucun musicien pour l'instant.")}</p>
           )}
           {allMembers.map((m, i) => {
-            const isMe =
-              meKey !== '' && m.name.trim().toLowerCase() === meKey;
+            const isMe = estMoi(m.name);
             // Membre avec compte : le créateur peut le retirer du groupe
             // (b143). Les musiciens saisis à la main n'ont pas de compte.
             const cloud = cloudMembers.find((c) => sameMusician(c.name, m.name));
@@ -1458,10 +1479,9 @@ export function BandEdit({ id }: { id: string }) {
                   <div className="title">
                     {m.name || t('Musicien')}
                     {/* Qui gère le groupe se lit sur la ligne (b213). */}
-                    {cleDuCreateur !== '' &&
-                      m.name.trim().toLowerCase() === cleDuCreateur && (
-                        <span className="badge-next">{t('⭐ créateur')}</span>
-                      )}
+                    {estLeCreateur(m.name) && (
+                      <span className="badge-next">{t('⭐ créateur')}</span>
+                    )}
                   </div>
                   {m.instrument !== '' && (
                     <div className="sub">{m.instrument}</div>

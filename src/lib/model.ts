@@ -763,6 +763,75 @@ export function sameMusician(a: string, b: string): boolean {
 }
 
 /**
+ * MÊME PERSONNE ? — comparaison par MOTS (b247, constat de Vincent : « dans
+ * le groupe je ne vois pas ma photo à côté de celle de Marco »).
+ *
+ * Sa ligne de musicien dit « Vincent », son profil dit « tessier vincent » :
+ * une égalité de chaînes ne les reconnaissait pas, donc l'app ne savait plus
+ * laquelle des deux lignes était la sienne — ni photo, ni accès à sa fiche.
+ * Tout nom d'artiste qui change casse ce genre de rapprochement.
+ *
+ * `sameMusician` (rapprochement flou par sous-chaîne) serait trop large ici :
+ * « Marc » y est inclus dans « Marco », et se prendre pour quelqu'un d'autre
+ * coûte bien plus cher que de ne pas se reconnaître. On compare donc des
+ * MOTS entiers : l'un des deux noms doit être fait de mots tous présents
+ * dans l'autre, dont un d'au moins deux lettres (sinon une simple initiale
+ * suffirait à confondre deux musiciens).
+ */
+export function memePersonne(a: string, b: string): boolean {
+  const mots = (x: string) =>
+    x
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .split(/[^a-z0-9]+/)
+      .filter((m) => m !== '');
+  const ma = mots(a);
+  const mb = mots(b);
+  if (ma.length === 0 || mb.length === 0) return false;
+  const [petit, grand] = ma.length <= mb.length ? [ma, mb] : [mb, ma];
+  if (!petit.every((m) => grand.includes(m))) return false;
+  return petit.some((m) => m.length >= 2);
+}
+
+/**
+ * MA PHOTO SUIT DANS MES GROUPES (b247). La ligne de musicien porte une
+ * COPIE de la photo, prise à la création du groupe ou à l'adhésion : elle ne
+ * bougeait plus jamais ensuite, donc les autres membres continuaient de voir
+ * une pastille grise longtemps après que j'aie mis une photo.
+ *
+ * On la recale à l'enregistrement du PROFIL — un acte, pas une consultation.
+ * Seule la photo est recopiée : le nom sert à me reconnaître d'un appareil à
+ * l'autre, on n'y touche pas. Idempotente (aucune écriture si rien ne change,
+ * sinon chaque enregistrement retamponnerait tous les groupes).
+ */
+export function majMaPhotoDansGroupes(
+  bands: Band[],
+  artist: ArtistProfile,
+  userName: string,
+): Band[] {
+  const photo = artist.photo ?? '';
+  if (photo === '') return bands;
+  const mesNoms = [userName, artist.name].filter((n) => (n ?? '').trim() !== '');
+  if (mesNoms.length === 0) return bands;
+  let touche = false;
+  const out = bands.map((b) => {
+    let change = false;
+    const members = (b.members ?? []).map((m) => {
+      if ((m.photo ?? '') === photo) return m;
+      if (!mesNoms.some((n) => memePersonne(n, m.name))) return m;
+      change = true;
+      return { ...m, photo };
+    });
+    if (!change) return b;
+    touche = true;
+    return { ...b, members, updatedAt: new Date().toISOString() };
+  });
+  return touche ? out : bands;
+}
+
+/**
  * Liste de musiciens sans doublon : le premier nom rencontré gagne
  * (b141) — évite « marco.bosio, Marco » pour une seule personne.
  */
