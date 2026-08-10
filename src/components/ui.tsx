@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n';
 import { navigate, Route } from '../router';
 import { Icon, IconName } from './Icon';
-import { Brand } from './Logo';
+import { Brand, LogoMark } from './Logo';
 import { OnAirButton } from './OnAir';
 
 /**
@@ -150,10 +150,23 @@ export function TopBar({
   return (
     <div className="topbar">
       <div className="side">
-        {onBack && (
+        {onBack ? (
           <button className="btn icon" onClick={onBack} aria-label={t('Retour')}>
             <Icon name="chevron-left" size={22} />
           </button>
+        ) : (
+          /* LA MARQUE SUR TÉLÉPHONE (b238, constat de Vincent : « le logo
+             n'apparaît pas sur le téléphone »). Elle ne vivait que dans la
+             barre latérale, qui n'existe qu'à partir de 900 px : sur un
+             téléphone, le dodo ne se voyait donc nulle part une fois
+             connecté. Il prend la gouttière gauche, déjà réservée au bouton
+             Retour — donc rien ne bouge, et il s'efface dès qu'on entre dans
+             un écran d'où l'on revient. Décoratif et NON cliquable : l'onglet
+             Morceaux mène déjà à l'accueil, on n'ouvre pas un deuxième
+             chemin vers la même action. */
+          <span className="topbrand" aria-hidden="true">
+            <LogoMark size={30} />
+          </span>
         )}
       </div>
       <h1>{title}</h1>
