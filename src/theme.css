@@ -19,6 +19,11 @@
      regrouper visuellement (encarts de setlists par groupe). */
   --surface-sunken: #0d1424;
   --surface-hover: #24304e;
+  /* Fond PRÊTÉ à un document étranger (lecteur YouTube/Spotify intégré).
+     Il ne suit PAS le thème, et c'est voulu : un document qu'on n'écrit pas
+     dessine toujours son texte en NOIR par défaut, en clair comme en
+     sombre. Voir `.embedbox iframe`. */
+  --embed-canvas: #f4f0e9;
   /* Mode scène : « tout disparaît sauf ce qui se joue », sur le fond nuit
      pur (charte §6). Sa propre paire, parce qu'il ne suit pas les surfaces
      de l'app — c'est un écran de pupitre, pas une page. */
@@ -3508,6 +3513,25 @@ h2.pagetitle {
   width: 100%;
   height: 100%;
   border: 0;
+  /* b263 : un lecteur intégré est un document ÉTRANGER. On ne peut ni le
+     styler ni savoir qu'il a échoué (autre origine). Le jour où Spotify est
+     tombé, sa page d'erreur est apparue dans la fiche de Vincent en NOIR sur
+     le fond nuit : mesuré, un document sans style reçoit un canvas
+     TRANSPARENT et du texte noir. `color-scheme` sur l'iframe n'y change
+     rien — il ne traverse pas la frontière d'origine (vérifié, ne pas
+     réessayer).
+     La seule prise qui reste est le fond qu'on lui PRÊTE. On le pose donc en
+     crème… mais seulement au bout de 4 s : sinon chaque lecteur ferait
+     clignoter la page en clair pendant son chargement. Un lecteur qui
+     s'affiche recouvre ce fond — on ne voit le crème que si rien n'est venu.
+     (Le mode « animations réduites » raccourcit la durée, jamais le délai :
+     le fond arrive quand même.) */
+  animation: embed-canvas 0.35s linear 4s forwards;
+}
+@keyframes embed-canvas {
+  to {
+    background: var(--embed-canvas);
+  }
 }
 .embedbox.video {
   aspect-ratio: 16 / 9;

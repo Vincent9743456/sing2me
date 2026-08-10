@@ -2,6 +2,17 @@
  * Aperçu des liens d'un artiste : puces cliquables + lecteurs intégrés
  * (YouTube en vidéo, Spotify en écoute directe). Utilisé sur la fiche
  * Artiste et sur les pages publiques.
+ *
+ * **Un lecteur intégré peut afficher n'importe quoi, et on n'en saura rien**
+ * (b263) : c'est un document d'une AUTRE origine — impossible de lire ce
+ * qu'il contient, impossible de savoir qu'il a échoué (`onError` ne se
+ * déclenche pas sur un 503, `onLoad` si). Le jour où Spotify est tombé, sa
+ * page « Error 503 » s'est affichée telle quelle au milieu de la fiche de
+ * Vincent. On ne PRÉTEND donc rien détecter : la seule chose qu'on maîtrise
+ * est le fond prêté au document, posé après un délai dans `.embedbox iframe`
+ * pour qu'un texte étranger reste lisible. Les puces, elles, marchent
+ * toujours : le lien reste cliquable quand le lecteur est en panne — c'est
+ * pour ça qu'on ne remplace jamais les puces par le lecteur.
  */
 import React from 'react';
 
