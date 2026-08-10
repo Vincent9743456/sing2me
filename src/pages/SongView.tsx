@@ -25,6 +25,7 @@ import {
 } from '../lib/model';
 import { parolesPubliques } from '../lib/publiclyrics';
 import { PublicEye, PublicPreview } from '../components/PublicPreview';
+import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { songKey } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet } from '../components/SongPicker';
@@ -90,7 +91,6 @@ export function SongView({
     prefs,
     artist,
     saveSong,
-    deleteSong,
     acceptSong,
     setlists,
     saveSetlist,
@@ -883,17 +883,9 @@ export function SongView({
           <Icon name="trash" size={15} /> {t('Supprimer ce morceau')}
         </button>
         {delSongOpen && (
-          <ConfirmSheet
-            title={t('Supprimer « {title} » ?', {
-              title: song.title || t('(sans titre)'),
-            })}
-            message={t('Le morceau sera aussi retiré des setlists.')}
-            confirmLabel={t('Supprimer')}
-            danger
-            onConfirm={() => {
-              deleteSong(song.id);
-              navigate('/');
-            }}
+          <SongDeleteSheet
+            song={song}
+            onDeleted={() => navigate('/')}
             onClose={() => setDelSongOpen(false)}
           />
         )}
