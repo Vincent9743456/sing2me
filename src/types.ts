@@ -84,6 +84,22 @@ export interface Song {
   structureNotes?: string;
   /** Paroles + accords [X], bloc continu (version active) */
   lyrics: string;
+  /**
+   * LE TEXTE QUE LIT LE PUBLIC, QUAND L'ARTISTE L'A ÉCRIT LUI-MÊME (b223).
+   *
+   * Absent dans le cas normal : le public lit alors la partition préparée
+   * automatiquement (`stripChords`), et suit donc toute correction apportée
+   * au morceau sans que personne n'ait rien à entretenir.
+   *
+   * Présent, il fait autorité PARTOUT (direct, setlist parcourue par le
+   * spectateur, mode scène, télécommande, vue « paroles seules ») jusqu'à ce
+   * que l'artiste revienne au texte automatique. `from` garde le texte
+   * automatique tel qu'il était à l'enregistrement : c'est ce qui permet de
+   * dire, sans deviner, que la partition a changé depuis.
+   *
+   * Voir `src/lib/publiclyrics.ts` — toute lecture passe par là.
+   */
+  publicLyrics?: { text: string; from: string; updatedAt: string };
   /** Toutes les versions du morceau (la version active est reflétée ci-dessus) */
   versions: SongVersion[];
   activeVersionId: string;

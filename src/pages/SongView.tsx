@@ -23,7 +23,8 @@ import {
   transposeSong,
   versionForBand,
 } from '../lib/model';
-import { stripChords } from '../lib/chordpro';
+import { parolesPubliques } from '../lib/publiclyrics';
+import { PublicPreview } from '../components/PublicPreview';
 import { songKey } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet } from '../components/SongPicker';
@@ -186,7 +187,7 @@ export function SongView({
       ? {
           title: song.title,
           artist: song.artist,
-          lyrics: stripChords(song.lyrics),
+          lyrics: parolesPubliques(song),
           chords: song.lyrics,
           chordKey: song.key,
           // Formes affichées (le musicien voit ça) ; la tonalité réelle se
@@ -209,7 +210,7 @@ export function SongView({
             .map((s) => ({
               title: s.title,
               artist: s.artist,
-              lyrics: stripChords(s.lyrics),
+              lyrics: parolesPubliques(s),
             }))
         : null,
     [ctxSetlist, songs],
@@ -798,6 +799,11 @@ export function SongView({
               ))}
           </div>
         )}
+
+        {/* Ce que lisent les spectateurs sur ce morceau (b223) : à vérifier
+            avant de monter sur scène, pas par-dessus l'épaule de quelqu'un
+            pendant le concert. Corriger ici ne touche pas à la partition. */}
+        <PublicPreview song={song} onSave={saveSong} />
 
         {/* Réglages personnels du musicien : locaux, jamais partagés */}
         <details className="stfold">

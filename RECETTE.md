@@ -240,6 +240,10 @@ groupe, direct). Marco est le second appareil.
 | H-9bis | Arrêter le direct quand le réseau lâche | Le bouton ne reste JAMAIS sur « ⏳ Arrêt… » : au bout de 12 s il dit pourquoi et propose « ⏹ Arrêter quand même » ; l'app reprévient le serveur toute seule — ⚠️ cicatrice b216 | 🔴 |
 | H-10bis | 📱📱 Page du spectateur pendant un direct | Elle affiche le concert — **jamais un écran noir** ; avec ou sans partition, en pause, sans réseau — ⚠️ cicatrice b215 | 🔴 |
 | H-10ter | 📱📱 Paroles côté public | Un vers par ligne, centré, **sans grille d'accords ni ligne vide en trop** ; les sections sont rappelées en petit ; une section sans paroles (l'intro) ne s'affiche pas | 🟠 |
+| H-10quater | Fiche d'un morceau → pli « 👁 Ce que verra le public » | Le texte est celui du direct, sans accords ni grille, sections rappelées ; la partition du musicien garde ses accords | 🟠 |
+| H-10quinquies | « ✏️ Modifier ce texte », enregistrer, puis diffuser | Le public lit le texte réécrit — sur le direct, la setlist qu'il parcourt et le mode scène ; **la partition n'a pas bougé d'une ligne** | 🔴 |
+| H-10sexies | Modifier la partition APRÈS avoir retouché le texte public | Le pli s'ouvre sur « à revoir » et le dit ; le public lit toujours mon texte (rien n'est écrasé) ; « ↻ Reprendre ma partition » et « Garder mon texte » éteignent le repère tous les deux, et le pli **ne se referme pas** au nez de celui qui vient de trancher | 🟠 |
+| H-10septies | « ↩ Revenir au texte automatique », puis corriger la partition | Le public suit la correction tout seul, sans rien à régler | 🟠 |
 | H-11 | Fiche Artiste : les quatre chiffres | Cohérents avec l'historique, **jamais 0 spectateur avec des cœurs** — ⚠️ cicatrice b201/b203 | 🔴 |
 | H-12 | Concert passé rattaché à un live | Il affiche ses cœurs, mots et spectateurs — ⚠️ cicatrice b207 | 🟠 |
 | H-13 | Concert jamais joué | Aucun chiffre inventé | 🟠 |
