@@ -847,15 +847,26 @@ export function AccountSection() {
                 )}
           </span>
         )}
+        {/* QUEL COMPTE ? (b260, question de Vincent : « je peux supprimer un
+            compte sans impacter l'autre ? »). On ne peut pas répondre à ça
+            sans savoir sur lequel on est — et l'écran ne disait que
+            « Connecté ». Avec deux comptes, c'est la seule information qui
+            permette d'agir sans se tromper de côté. */}
         <span
           style={{
-            color: 'var(--accent)',
-            fontWeight: 650,
-            flexShrink: 0,
+            flexShrink: 1,
             flex: 1,
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
+          title={account.email}
         >
-          {t('☁ Connecté')}
+          <span style={{ color: 'var(--accent)', fontWeight: 650 }}>
+            {t('☁ Connecté')}
+          </span>
+          <span style={{ color: 'var(--text-dim)' }}> · {account.email}</span>
         </span>
         <button className="btn ghost small" onClick={account.logout}>
           {t('Se déconnecter')}
