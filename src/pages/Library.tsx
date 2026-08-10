@@ -636,8 +636,11 @@ export function Library() {
 
   // Badge du bouton « Filtrer » : nombre de filtres actifs (une vue
   // particulière, un répertoire, un tag — le tri n'est pas un filtre).
+  // Le chiffre du bouton « Filtrer » ne compte que ce qui vit DEDANS : les
+  // Idées ont leur propre bouton, à l'écran (b225) — les compter ici ferait
+  // parler la pastille d'un réglage que le pli ne montre pas.
   const activeFilters =
-    (showIdeas || showNew || showCheck ? 1 : 0) +
+    (showNew || showCheck ? 1 : 0) +
     (bandFilter !== null ? 1 : 0) +
     (tag !== null ? 1 : 0);
 
@@ -744,7 +747,7 @@ export function Library() {
           </>
         )}
         {filtersOpen &&
-          (bands.length > 0 || ideaCount > 0 || newCount > 0) && (
+          (bands.length > 0 || checkCount > 0 || newCount > 0) && (
           <>
             <div className="spacer" />
             {/* Rangée 1 — VUES particulières (état des morceaux) :
@@ -796,21 +799,12 @@ export function Library() {
                   {t('🔎 À vérifier ({n})', { n: checkCount })}
                 </button>
               )}
-              {ideaCount > 0 && (
-                <button
-                  className={`chip ${showIdeas ? '' : 'off'}`}
-                  title={t(
-                    'Morceaux importés non encore validés — réserve à travailler',
-                  )}
-                  onClick={() => {
-                    setShowIdeas(!showIdeas);
-                    setBandFilter(null);
-                    setShowNew(false);
-                  }}
-                >
-                  {t('💡 Idées ({n})', { n: ideaCount })}
-                </button>
-              )}
+              {/* La puce « 💡 Idées » a QUITTÉ ce pli (b225, demande de
+                  Vincent) : elle est le seul filtre qui CACHE des morceaux —
+                  une idée n'apparaît nulle part ailleurs. La ranger derrière
+                  « Filtrer » revenait à masquer une partie de la
+                  bibliothèque sans le dire. Elle vit maintenant au-dessus de
+                  la liste, et seulement quand il y a des idées. */}
             </div>
             {/* Rangée 2 — RÉPERTOIRES (identification par groupe / solo) :
                 fonction différente, rendue évidente par le libellé et la
@@ -869,15 +863,8 @@ export function Library() {
         )}
         {/* Résumé du filtre actif : TOUJOURS visible (même panneau fermé),
             pour que la liste réduite s'explique d'elle-même. */}
-        {(showIdeas || showNew || bandFilter !== null) && (
+        {(showNew || bandFilter !== null) && (
           <>
-            {showIdeas && (
-              <p className="help" style={{ margin: '6px 0 0' }}>
-                {t(
-                  'Réserve à travailler : jouables partout, mais pas encore validées dans la bibliothèque — ouvre un morceau pour le valider ✓ ou le supprimer.',
-                )}
-              </p>
-            )}
             {showNew && (
               <p className="help" style={{ margin: '6px 0 0' }}>
                 {filtered.length > 1
@@ -937,6 +924,49 @@ export function Library() {
           </>
         )}
         </div>
+        {/* 💡 IDÉES — À L'ÉCRAN, PAS DERRIÈRE « FILTRER » (b225, demande de
+            Vincent). C'est le seul filtre qui CACHE des morceaux : une idée
+            n'apparaît nulle part ailleurs dans la bibliothèque. La ranger
+            dans un pli, c'était masquer une partie du répertoire sans le
+            dire — et obliger à deux gestes pour retrouver ce qu'on vient
+            d'importer. Le bouton n'existe QUE s'il y a des idées : l'écran
+            reste « recherche + liste » pour tous les autres. */}
+        {ideaCount > 0 && (
+          <div className="chips" style={{ marginTop: 'var(--sp-2)' }}>
+            <button
+              className={`chip ${showIdeas ? '' : 'off'}`}
+              aria-pressed={showIdeas}
+              title={t(
+                'Morceaux importés non encore validés — réserve à travailler',
+              )}
+              onClick={() => {
+                setShowIdeas(!showIdeas);
+                setBandFilter(null);
+                setShowNew(false);
+                setShowCheck(false);
+              }}
+            >
+              {t('💡 Idées ({n})', { n: ideaCount })}
+            </button>
+            {showIdeas && (
+              <button
+                className="chip off"
+                onClick={() => setShowIdeas(false)}
+              >
+                {t('Tous les morceaux')}
+              </button>
+            )}
+          </div>
+        )}
+        {/* L'explication vient APRÈS le bouton qui l'a déclenchée — au-dessus,
+            elle répondait à une question que personne ne s'était encore posée. */}
+        {showIdeas && (
+          <p className="help" style={{ margin: '6px 0 0' }}>
+            {t(
+              'Réserve à travailler : jouables partout, mais pas encore validées dans la bibliothèque — ouvre un morceau pour le valider ✓ ou le supprimer.',
+            )}
+          </p>
+        )}
         <Onboarding />
         <BackupNudge />
         <div className={`libsplit${selectedId ? ' hasdetail' : ''}`}>

@@ -57,6 +57,7 @@ export const EN_PUBLIC: Record<string, string> = {
   'Soutenir': 'Support',
   'Un mot': 'Say hi',
   'J’aime': 'Like',
+  'Aimé': 'Liked',
   'Le concert commence dans un instant…': 'The concert starts in a moment…',
   'Le lieu': 'The venue',
   'Le répertoire du groupe arrive tout seul': 'The band’s repertoire arrives on its own',

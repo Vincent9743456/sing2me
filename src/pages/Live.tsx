@@ -167,15 +167,28 @@ export function Live({
   const floatId = useRef(0);
   // Identifiant du live suivi (pour cœurs / messages / présence).
   const stateIdRef = useRef('');
+  /**
+   * UN CŒUR PAR MORCEAU (b225, demande de Vincent). Le titre du morceau déjà
+   * aimé : taper encore fait voler un ❤ — le geste reste libre, et c'est ce
+   * retour immédiat qui compte pour le spectateur — mais rien ne repart au
+   * serveur, et le chiffre affiché ne ment pas.
+   *
+   * Le serveur refuse le doublon de son côté aussi (une page rouverte, un
+   * deuxième onglet) : ici on lui évite simplement des appels inutiles.
+   */
+  const dejaAime = useRef('');
 
   function onHeart() {
-    // animation immédiate
+    // animation immédiate — toujours, même quand le cœur ne compte plus.
     const id = ++floatId.current;
     setFloats((f) => [...f, { id, x: Math.random() * 40 - 20 }]);
     window.setTimeout(
       () => setFloats((f) => f.filter((h) => h.id !== id)),
       1300,
     );
+    const titre = state?.song?.title ?? '';
+    if (dejaAime.current === titre && titre !== '') return;
+    dejaAime.current = titre;
     setLocalHearts((h) => h + 1);
     // envoi groupé (toutes les 600 ms)
     pending.current += 1;
@@ -204,6 +217,8 @@ export function Live({
         const newTitle = s.song?.title ?? '';
         if (newTitle !== lastTitle.current) {
           lastTitle.current = newTitle;
+          // Nouveau morceau, nouveau cœur possible (b225).
+          dejaAime.current = '';
           setLocalHearts(0);
           window.scrollTo({ top: 0 });
         }
@@ -563,8 +578,9 @@ export function Live({
         <div className="pubbar" role="group" aria-label={t('Réagir')}>
           {ps.hearts && (
             <button
-              className="heart"
+              className={`heart ${localHearts > 0 ? 'done' : ''}`}
               onClick={onHeart}
+              aria-pressed={localHearts > 0}
               aria-label={t('Envoyer un j’aime')}
             >
               <span className="ico" aria-hidden="true">
@@ -577,7 +593,7 @@ export function Live({
               {/* « J'aime » plutôt que « Un cœur » (retour de Marco) : le
                   geste est universel, le mot n'a pas à être appris. Le
                   symbole ❤ reste — c'est lui qui s'envole au tap. */}
-              <span>{t('J’aime')}</span>
+              <span>{localHearts > 0 ? t('Aimé') : t('J’aime')}</span>
               {floats.map((f) => (
                 <span
                   key={f.id}

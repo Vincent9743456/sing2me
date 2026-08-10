@@ -2217,6 +2217,15 @@ textarea.mono {
 .pubbar .heart {
   color: var(--heart);
 }
+/* Déjà aimé (b225) : un seul cœur par morceau est comptabilisé. Le bouton le
+   DIT — le ❤ continue de s'envoler à chaque tap, mais on ne laisse pas croire
+   que le chiffre monte. */
+.pubbar .heart.done .ico {
+  transform: scale(1.12);
+}
+.pubbar .heart.done span:not(.ico):not(.heartfloat) {
+  opacity: 0.75;
+}
 /* Les paroles ne doivent jamais finir SOUS la barre. */
 .public.withbar {
   padding-bottom: 104px;
@@ -3419,4 +3428,67 @@ h2.pagetitle {
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: var(--sp-2);
+}
+
+/* ---------- Positions d'accords (b225) ----------
+   Un accord se tape pour voir son doigté. La cible doit être atteignable au
+   doigt sans agrandir le texte de la partition : on élargit la zone de clic
+   par du remplissage négatif en marge, pas par une taille de police. */
+.chordline .chord {
+  cursor: pointer;
+  padding: 2px 3px;
+  margin: -2px -3px;
+  border-radius: 4px;
+}
+.chordline .chord:active {
+  background: var(--surface);
+}
+.chorddiag {
+  color: var(--text);
+}
+.chordsheet-back {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+}
+.chordsheet {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+  max-width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.chordsheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.chordsheet-head strong {
+  color: var(--chord);
+  font-size: 1.5rem;
+}
+.chordsheet-body {
+  display: flex;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.chordsheet-body figure {
+  margin: 0;
+  text-align: center;
+}
+.chordsheet-body figcaption {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  max-width: 150px;
+  margin-top: var(--sp-1);
 }

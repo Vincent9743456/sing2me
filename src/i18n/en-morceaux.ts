@@ -509,6 +509,14 @@ export const EN_MORCEAUX: Record<string, string> = {
   ' · ✨ mis en forme': ' · ✨ formatted',
   'Revenir à la version d’origine': 'Back to the original version',
 
+  // b225 — positions d'accords à la guitare
+  'Position ouverte': 'Open position',
+  'Barré case {n} — fondamentale sur la 5ᵉ corde':
+    'Barre at fret {n} — root on the 5th string',
+  'Barré case {n} — fondamentale sur la 6ᵉ corde':
+    'Barre at fret {n} — root on the 6th string',
+  'Position de {accord}': '{accord} shape',
+
   // b224 — retours de Marco
   'Jouer en mode scène': 'Play in stage mode',
   'Jouer « {title} » en mode scène': 'Play “{title}” in stage mode',

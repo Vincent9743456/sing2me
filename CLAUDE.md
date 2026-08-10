@@ -598,6 +598,25 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   (`model.ts`, qui retamponne la version) et `versionEqual` (`bandSync.ts`,
   qui décide qu'une version est inchangée). Toute nouvelle donnée de version
   doit être ajoutée à CES DEUX endroits en plus du type.
+- **Un cœur = un spectateur, pour un morceau** (b225, demande de Vincent). Le
+  public tape autant qu'il veut — le ❤ s'envole à chaque fois, c'est ce retour
+  immédiat qui FAIT le geste — mais un seul cœur est COMPTABILISÉ par
+  spectateur et par morceau. Sinon le chiffre ne dit plus « combien de gens
+  ont aimé », il dit « qui a le doigt le plus rapide », et les statistiques de
+  l'artiste ne veulent plus rien dire. Le spectateur n'a pas de compte : il
+  est identifié par `sing2me/deviceId`, l'identifiant anonyme déjà utilisé
+  pour les spectateurs uniques ; le MORCEAU est lu par le serveur sur la ligne
+  du live, jamais annoncé par le client. Table `live_hearts` (clé primaire
+  live + morceau + appareil). **Ce garde-fou ne doit JAMAIS faire perdre un
+  cœur** : table absente, base injoignable, spectateur sans identifiant — on
+  compte, comme avant. Un concert ne s'interrompt pas pour une statistique.
+- **Un doigté faux est pire que pas de doigté** (b225) : `src/lib/chordshapes.ts`
+  calcule les positions de guitare HORS LIGNE (aucun service, aucune
+  dépendance) — une table de positions ouvertes écrites à la main, puis deux
+  gabarits déplaçables (forme de Mi, forme de La) pour les barrés. Un accord
+  dont on ne sait rien renvoie un tableau VIDE et ne s'ouvre pas : on n'invente
+  jamais une position. Le module ne parle AUCUNE langue — les libellés
+  s'écrivent dans `ChordDiagram` avec `t()`.
 - **Une migration de contenu se PROUVE avant de s'appliquer** (b219) : pour
   reposer les sections sur la bibliothèque déjà importée, on ne se contente
   pas de compter les blocs — on recalcule la suite d'accords de chaque bloc
