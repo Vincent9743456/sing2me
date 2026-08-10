@@ -600,8 +600,12 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         value={{ status, hearts, openPanel: () => setPanel(true) }}
       >
         {children}
+        {/* « Mode Live » et non plus « Mode ON AIR » (b257, remarque de
+            Vincent : « il n'y a plus de mode on air, maintenant c'est le
+            mode live »). Le bouton dit GO LIVE, l'onglet dit Live : le
+            panneau qu'ils ouvrent ne peut pas porter un autre nom. */}
         {panel && (
-          <Modal title={t('Mode ON AIR')} onClose={() => setPanel(false)}>
+          <Modal title={t('Mode Live')} onClose={() => setPanel(false)}>
             <p className="help" style={{ textAlign: 'center' }}>
               {status === 'on' &&
                 (mode === 'repet'

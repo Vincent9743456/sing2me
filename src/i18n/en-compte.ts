@@ -45,7 +45,7 @@ export const EN_COMPTE: Record<string, string> = {
   'Le groupe « {name} » n\'existe plus — tes morceaux restent dans ta bibliothèque.': 'The band “{name}” no longer exists — your songs stay in your library.',
   'Le nettoyage IA a échoué.': 'The AI cleanup failed.',
   'Lien envoyé à {email}': 'Link sent to {email}',
-  'Mode ON AIR': 'ON AIR mode',
+  'Mode Live': 'Live mode',
   'Moi (solo)': 'Me (solo)',
   'Mon QR unique': 'My unique QR',
   'Morceau': 'Song',
