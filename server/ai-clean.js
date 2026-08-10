@@ -46,6 +46,7 @@ export default async function handler(req, res) {
       "- S'il n'y a AUCUN marqueur, identifie les sections toi-même : les blocs qui se répètent sont des refrains, les blocs à paroles uniques des couplets ; repère intro, pont et final. Si l'indice titre/artiste te permet de reconnaître la chanson, appuie-toi sur ta connaissance de sa structure — sans JAMAIS modifier ni compléter les paroles du document.\n" +
       '- Les accords placés ENTRE CROCHETS directement dans les paroles, juste avant la syllabe où ils tombent, ex. : "[Am]Sous le ciel de [F]Port-Louis"\n' +
       '- Une ligne d\'accords sans paroles s\'écrit : "[Am] [F] [C] [G]"\n' +
+      '- Un accord se place TOUJOURS au DÉBUT d\'un mot ou d\'une syllabe chantée, JAMAIS au milieu d\'un mot : écris "[C]comment faire", pas "commen[C]t faire".\n' +
       '- Si le document est une tablature (lignes e|--3--…), résume chaque partie par sa suite d\'accords quand elle est identifiable, et garde les paroles si présentes.\n' +
       'Règles STRICTES : ne modifie JAMAIS les paroles (orthographe, ordre, langue), n\'invente pas de paroles, conserve tous les couplets. ' +
       'Corrige uniquement le placement/format des accords et la mise en page.\n' +

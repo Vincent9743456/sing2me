@@ -14,6 +14,7 @@ import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
 import { StageList } from '../components/StageList';
 import { LogoMark } from '../components/Logo';
+import { PublicLyrics } from '../components/PublicLyrics';
 import { TipBox } from '../components/TipBox';
 import { t } from '../i18n';
 import {
@@ -491,9 +492,7 @@ export function Live({
             </>
           )}
           {ps.lyrics ? (
-            <div className="livelyrics">
-              {decodeHtmlEntities(state.song.lyrics)}
-            </div>
+            <PublicLyrics text={decodeHtmlEntities(state.song.lyrics)} />
           ) : (
             <p style={{ textAlign: 'center', fontSize: '1.2rem' }}>
               {t('🎶 Concert en cours — profitez du moment !')}

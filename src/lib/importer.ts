@@ -10,6 +10,12 @@
  *    continu.
  */
 import { extractChordSequence } from './model';
+import {
+  ligneDeSection,
+  lireEnTeteDeSection,
+  SECTION_HEADER_RE,
+  sectionDeLaLigne,
+} from './sections';
 import { makeId, parseDuration, Song, StructureRow } from '../types';
 
 const CHORD_TOKEN =
@@ -18,31 +24,6 @@ const CHORD_TOKEN =
 const NOISE_TOKEN = /^(\||%|-|–|—|x\d+|\(x\d+\)|N\.?C\.?|\.|,)$/i;
 
 const INLINE_CHORD = /\[[A-G](?:#|b)?[^\]\n]*\]/;
-
-// Les en-têtes de sections prennent toutes les formes : [Couplet 1],
-// Refrain:, (couplet 1), Verse 2, PONT… — crochets, parenthèses ou rien.
-const HEADER_RE =
-  /^\s*[\[(]?\s*(intro|couplet|verse|strophe|refrain|chorus|pont|bridge|pre[- ]?chorus|pr[eé][- ]?refrain|solo|instrumental|interlude|outro|coda|final)\s*(\d*)\s*[\])]?\s*:?\s*$/i;
-
-const LABEL_MAP: { [k: string]: string } = {
-  intro: 'Intro',
-  couplet: 'Couplet',
-  verse: 'Couplet',
-  strophe: 'Couplet',
-  refrain: 'Refrain',
-  chorus: 'Refrain',
-  pont: 'Pont',
-  bridge: 'Pont',
-  prechorus: 'Pré-refrain',
-  prerefrain: 'Pré-refrain',
-  prérefrain: 'Pré-refrain',
-  solo: 'Solo',
-  instrumental: 'Instrumental',
-  interlude: 'Interlude',
-  outro: 'Outro',
-  coda: 'Coda',
-  final: 'Final',
-};
 
 export function isChordLine(line: string): boolean {
   if (INLINE_CHORD.test(line)) return false;
@@ -54,6 +35,86 @@ export function isChordLine(line: string): boolean {
     else if (!NOISE_TOKEN.test(t)) return false;
   }
   return chords > 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Recalage des accords sur les mots                                    */
+/* ------------------------------------------------------------------ */
+
+/** Caractère faisant partie d'un mot. L'apostrophe et le trait d'union
+ *  SÉPARENT : « d'Amsterdam » a deux attaques, et un accord posé sur
+ *  l'apostrophe appartient à ce qui suit. */
+function estLettre(c: string): boolean {
+  return /[0-9A-Za-zÀ-ÖØ-öø-ÿ]/.test(c);
+}
+
+/** Attaque de mot : une lettre précédée d'autre chose. */
+function estAttaque(s: string, i: number): boolean {
+  return estLettre(s[i]) && (i === 0 || !estLettre(s[i - 1]));
+}
+
+/**
+ * Écart maximal toléré pour rapatrier un accord sur une attaque de mot quand
+ * le mot est LONG. Au-delà, l'accord tombe vraiment en cours de mot (mélisme,
+ * syllabe tenue) et on le laisse où il est.
+ */
+const TOLERANCE_RECALAGE = 3;
+
+/** Au-delà de cette longueur, un mot peut légitimement porter un changement
+ *  d'accord en son milieu. En deçà, un accord planté dedans est un décalage
+ *  de mise en page, jamais une intention. */
+const MOT_LONG = 8;
+
+/**
+ * Un accord écrit au-dessus des paroles est aligné à la COLONNE près, dans
+ * une police à chasse fixe — la partition d'origine, elle, ne l'est pas
+ * toujours : un espace en trop, une accentuation qui décale, et l'accord
+ * atterrit au milieu d'un mot. Le musicien lisait « commen[C]t faire » et
+ * « un coup d[A7]'je t'aime ».
+ *
+ * On ramène donc l'accord au début du mot le plus proche quand il tombe DANS
+ * un mot et que la frontière est à portée. Un changement d'accord se fait
+ * presque toujours sur une attaque de mot ; à quelques caractères près,
+ * c'est le typographe de la partition qui a glissé, pas le musicien.
+ */
+export function recalerSurUnMot(lyric: string, col: number): number {
+  if (col <= 0 || col >= lyric.length) return col;
+  if (estAttaque(lyric, col)) return col;
+
+  let avant = -1;
+  for (let i = col - 1; i >= 0; i--) {
+    if (estAttaque(lyric, i)) {
+      avant = i;
+      break;
+    }
+  }
+  let apres = -1;
+  for (let i = col + 1; i < lyric.length; i++) {
+    if (estAttaque(lyric, i)) {
+      apres = i;
+      break;
+    }
+  }
+
+  // Accord posé sur une espace : il appartient au mot qui SUIT — jamais à
+  // celui qu'on vient de quitter (« cou,[G] sur » se lit « cou, [G]sur »).
+  // Au-delà de la tolérance, l'espace est une tenue et l'accord y reste.
+  if (/\s/.test(lyric[col])) {
+    return apres >= 0 && apres - col <= TOLERANCE_RECALAGE ? apres : col;
+  }
+
+  // Mot court : on recale toujours vers l'attaque la plus proche.
+  let court = false;
+  if (estLettre(lyric[col]) && avant >= 0) {
+    let fin = col;
+    while (fin < lyric.length && estLettre(lyric[fin])) fin++;
+    court = fin - avant <= MOT_LONG;
+  }
+  const seuil = court ? Infinity : TOLERANCE_RECALAGE;
+  const dAvant = avant >= 0 && col - avant <= seuil ? col - avant : Infinity;
+  const dApres = apres >= 0 && apres - col <= seuil ? apres - col : Infinity;
+  if (dAvant === Infinity && dApres === Infinity) return col;
+  return dAvant <= dApres ? avant : apres;
 }
 
 export function mergeChordLyric(chordLine: string, lyricLine: string): string {
@@ -71,10 +132,17 @@ export function mergeChordLyric(chordLine: string, lyricLine: string): string {
   if (result.length < maxCol) {
     result = result + ' '.repeat(maxCol - result.length);
   }
+  // Recalage, puis remise en ordre : deux accords ne peuvent pas se
+  // retrouver sur la même colonne (« [C][G]faire » ne veut rien dire).
+  const cols = inserts.map((x) => recalerSurUnMot(result, x.col));
+  let precedent = -1;
+  for (let i = 0; i < cols.length; i++) {
+    if (cols[i] <= precedent) cols[i] = Math.max(inserts[i].col, precedent + 1);
+    precedent = cols[i];
+  }
   for (let i = inserts.length - 1; i >= 0; i--) {
-    const { col, chord } = inserts[i];
-    const c = Math.min(col, result.length);
-    result = result.slice(0, c) + '[' + chord + ']' + result.slice(c);
+    const c = Math.min(cols[i], result.length);
+    result = result.slice(0, c) + '[' + inserts[i].chord + ']' + result.slice(c);
   }
   return result;
 }
@@ -192,7 +260,7 @@ function extractMeta(lines: string[]): {
     }
     if (inHeader) {
       const o = ONSONG_RE.exec(line);
-      if (o && !HEADER_RE.test(line)) {
+      if (o && !SECTION_HEADER_RE.test(line)) {
         applyMeta(o[1].toLowerCase(), o[2].trim());
         continue;
       }
@@ -262,6 +330,21 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
     zone.lines.push(text);
   }
 
+  /**
+   * En-tête de section à la ligne i — ou null.
+   *
+   * Un en-tête SANS décoration (« Solo » nu, sans crochets, parenthèses ni
+   * deux-points) qui suit une ligne d'accords n'est pas un titre : c'est LA
+   * PAROLE que ces accords surmontent. « Je marche solo dans la nuit / Am
+   *  F / Solo » découpait le morceau en deux et le mot disparaissait.
+   */
+  function enTeteA(i: number) {
+    const h = lireEnTeteDeSection(lines[i] ?? '');
+    if (!h) return null;
+    if (h.decore) return h;
+    return i > 0 && isChordLine(lines[i - 1] ?? '') ? null : h;
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const marker = markers.get(i);
     if (marker === 'soc') openZone('Refrain', '');
@@ -269,10 +352,9 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
     else if (marker === 'eoc' || marker === 'eov') current = null;
 
     const line = lines[i];
-    const header = HEADER_RE.exec(line);
+    const header = enTeteA(i);
     if (header) {
-      const base = LABEL_MAP[header[1].toLowerCase().replace(/[- ]/g, '')];
-      openZone(base, header[2]);
+      openZone(header.label, header.num);
       continue;
     }
 
@@ -286,7 +368,7 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
       const nextUsable =
         next.trim() !== '' &&
         !isChordLine(next) &&
-        !HEADER_RE.test(next) &&
+        enTeteA(i + 1) === null &&
         !markers.has(i + 1);
       if (nextUsable) {
         appendLine(mergeChordLyric(line, next));
@@ -313,9 +395,23 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
         }))
       : [];
 
+  // Les paroles GARDENT le nom de leurs sections (b219). Le fichier disait
+  // « Refrain » ; jusqu'ici l'import s'en servait pour bâtir le résumé de
+  // structure, puis le jetait — et comme « Structure » est devenu un bloc de
+  // notes libres, plus aucun écran ne le montrait. Le musicien recevait un
+  // pavé continu. Le libellé est écrit en clair (« Refrain : »), jamais entre
+  // crochets : les crochets, ici, ce sont les accords.
   const lyrics = zones
-    .map((z) => z.lines.join('\n').replace(/\n+$/g, ''))
-    .filter((c) => c.trim() !== '')
+    .map((z) => {
+      const corps = z.lines.join('\n').replace(/^\n+|\n+$/g, '');
+      if (z.label === '') return corps.trim() === '' ? '' : corps;
+      // Un en-tête sans contenu (« Refrain » seul = « on reprend le
+      // refrain ») dit quelque chose : on le garde.
+      return corps.trim() === ''
+        ? ligneDeSection(z.label)
+        : `${ligneDeSection(z.label)}\n${corps}`;
+    })
+    .filter((c) => c !== '')
     .join('\n\n')
     .replace(/\n{3,}/g, '\n\n');
 
@@ -419,7 +515,11 @@ export function analyzeImport(
 
   const inlineChords = (song.lyrics.match(/\[[A-G](?:#|b)?[^\]\n]*\]/g) ?? [])
     .length;
-  const lyricLines = song.lyrics.split('\n');
+  // Les en-têtes de sections vivent maintenant DANS les paroles (b219) :
+  // ils ne comptent ni comme grille d'accords, ni comme ligne de paroles.
+  const lyricLines = song.lyrics
+    .split('\n')
+    .filter((l) => sectionDeLaLigne(l) === null);
   const gridOnly = lyricLines.filter(
     (l) => l.includes('[') && l.replace(/\[[^\]\n]*\]/g, '').trim() === '',
   ).length;
@@ -489,9 +589,10 @@ export function raisonDeVerifier(
   const warn = analyzeImport(raw, outcome).find((x) => x.severity === 'warn');
   if (warn) return warn.text;
   // Contenu anormalement court : deux lignes ne font pas une partition.
+  // Un en-tête de section n'est pas du contenu (b219).
   const utiles = outcome.song.lyrics
     .split('\n')
-    .filter((l) => l.trim() !== '').length;
+    .filter((l) => l.trim() !== '' && sectionDeLaLigne(l) === null).length;
   if (utiles > 0 && utiles < 3) return 'contenu très court — rien d’autre n’a été lu';
   return '';
 }
@@ -511,6 +612,12 @@ export function findDuplicate(songs: Song[], title: string): Song | null {
 function lyricsTokens(lyrics: string): Set<string> {
   return new Set(
     lyrics
+      // Les en-têtes de sections ne sont pas des paroles (b219) : sans quoi
+      // « refrain » et « couplet » pèseraient dans la reconnaissance de
+      // doublons, entre un morceau importé avant ce lot et le même après.
+      .split('\n')
+      .filter((l) => sectionDeLaLigne(l) === null)
+      .join('\n')
       .replace(/\[[^\]\n]*\]/g, '')
       .toLowerCase()
       .normalize('NFD')

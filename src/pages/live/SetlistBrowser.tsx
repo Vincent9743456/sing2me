@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { streamLinks } from './streamLinks';
+import { PublicLyrics } from '../../components/PublicLyrics';
 import { StageList } from '../../components/StageList';
 import { t } from '../../i18n';
 import { LivePublicSong } from '../../lib/live';
@@ -42,10 +43,11 @@ export default function SetlistBrowser({
                 {setlist[idx].artist}
               </p>
             )}
-            <div className="livelyrics">
-              {decodeHtmlEntities(setlist[idx].lyrics) ||
-                t('(paroles non disponibles)')}
-            </div>
+            {setlist[idx].lyrics.trim() !== '' ? (
+              <PublicLyrics text={decodeHtmlEntities(setlist[idx].lyrics)} />
+            ) : (
+              <p className="publyrics">{t('(paroles non disponibles)')}</p>
+            )}
             <div className="rowactions" style={{ justifyContent: 'center' }}>
               <button
                 className="btn ghost small"
