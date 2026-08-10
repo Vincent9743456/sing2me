@@ -1,8 +1,9 @@
 import { LiveBanner } from '../components/LiveBanner';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Icon } from '../components/Icon';
 import { PublicPagePeek } from '../components/PublicPagePeek';
+import { ProfilRestore } from '../components/ProfilRestore';
 import { AccountSection } from '../components/Account';
 import { GearEditor } from '../components/GearEditor';
 import { LinkPreviews } from '../components/LinkPreviews';
@@ -117,6 +118,33 @@ export function Artist() {
   // Vue par défaut = profil mis en forme (ce que voit le public) ; « Modifier »
   // ouvre le formulaire complet. Profil vide → « Créer le profil artiste ».
   const [editing, setEditing] = useState(false);
+
+  /**
+   * LE BROUILLON SUIT LE PROFIL (b243, perte de données signalée par Vincent :
+   * « je me suis déconnecté et reconnecté, j'ai perdu les informations de
+   * profil, photo, liens… »).
+   *
+   * `draft` était figé au MONTAGE de l'écran. Or la synchro de connexion
+   * arrive APRÈS : le store recevait le vrai profil, le brouillon gardait
+   * l'ancien — et le premier `saveArtist(draft)` le réécrivait par-dessus,
+   * avec un horodatage tout neuf. Le profil vide gagnait alors la fusion
+   * suivante et partait écraser le cloud : la perte devenait définitive, sur
+   * tous les appareils.
+   *
+   * On resynchronise donc dès que le profil enregistré change SOUS l'écran —
+   * jamais pendant qu'on édite, sinon la synchro effacerait ce qu'on est en
+   * train de taper.
+   */
+  const profilRef = useRef(JSON.stringify(artist));
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
+  useEffect(() => {
+    const signature = JSON.stringify(artist);
+    if (signature === profilRef.current) return;
+    profilRef.current = signature;
+    if (editingRef.current) return;
+    setDraft({ ...artist, links: (artist.links ?? []).map((l) => ({ ...l })) });
+  }, [artist]);
 
 
   const payload = useMemo<SharePayload | null>(() => {
@@ -272,6 +300,25 @@ export function Artist() {
           >
             ← {t('Enregistrer et revenir au profil')}
           </button>
+        )}
+
+        {/* Filet de récupération (b243) : la fiche PUBLIÉE garde une copie
+            complète du profil. Si le profil local a perdu des champs qu'elle
+            a encore, on le dit et on propose de les rendre — seulement ceux
+            qui manquent, jamais par-dessus ce qui est là. La bannière se
+            lève toute seule quand il n'y a plus rien à rendre (règle 11). */}
+        {!editing && (
+          <ProfilRestore
+            artist={artist}
+            onRestore={(champs) => {
+              const rendu = { ...artist, ...champs };
+              saveArtist(rendu);
+              setDraft({
+                ...rendu,
+                links: (rendu.links ?? []).map((l) => ({ ...l })),
+              });
+            }}
+          />
         )}
 
         {!editing && artist.name.trim() === '' && (
@@ -434,10 +481,11 @@ export function Artist() {
               <button
                 className="btn ghost"
                 disabled={payload === null}
-                onClick={() => {
-                  saveArtist(draft);
-                  setShare(true);
-                }}
+                /* Consulter n'est pas enregistrer (b243) : ce bouton écrivait
+                   `draft` au passage, ce qui suffisait à réécrire le profil
+                   par un brouillon périmé. L'aperçu republie de toute façon
+                   depuis le profil ENREGISTRÉ. */
+                onClick={() => setShare(true)}
               >
                 {t('Page publique / QR')}
               </button>
@@ -1042,10 +1090,7 @@ export function Artist() {
           <button
             className="btn ghost"
             disabled={payload === null}
-            onClick={() => {
-              saveArtist(draft);
-              setShare(true);
-            }}
+            onClick={() => setShare(true)}
           >
             {t('Page publique / QR')}
           </button>

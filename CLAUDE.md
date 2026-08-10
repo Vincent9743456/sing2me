@@ -642,6 +642,24 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 
 - Local-first : localStorage est la source ; le cloud est une copie.
   Jamais de fonctionnalité qui exige le réseau pour jouer.
+- **UN BROUILLON D'ÉCRAN NE DOIT JAMAIS SURVIVRE À SA SOURCE** (b243, perte
+  de données signalée par Vincent : « je me suis déconnecté et reconnecté,
+  j'ai perdu les informations de profil, photo, liens… »). L'écran Artiste
+  copiait `artist` dans un `draft` au MONTAGE et ne le resynchronisait
+  jamais. La synchro de connexion arrive APRÈS : le store recevait le vrai
+  profil, le brouillon gardait l'ancien, et le premier `saveArtist(draft)` le
+  réécrivait par-dessus — avec un horodatage tout neuf, donc il gagnait la
+  fusion suivante et partait écraser le cloud. La perte devenait définitive,
+  sur tous les appareils. Deux règles qui en découlent, valables pour TOUT
+  écran à brouillon : le brouillon se resynchronise dès que sa source change
+  sous lui (jamais pendant qu'on édite), et **un bouton qui CONSULTE n'écrit
+  rien** — « Page publique / QR » enregistrait au passage, ce qui suffisait à
+  déclencher la perte sans qu'on ait rien modifié.
+  **Filet** : la fiche PUBLIÉE (`public_pages.profile`) garde une copie
+  complète du profil et n'est jamais touchée par la synchro entre appareils.
+  `ProfilRestore` compare et propose de rendre ce qui manque — uniquement les
+  champs VIDES, jamais par-dessus ce qui est là, et la bannière se lève seule
+  quand il n'y a plus rien à rendre (règle 11).
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre
