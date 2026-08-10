@@ -31,6 +31,20 @@
     disparaît, et À LA MAIN dans tous les cas. Corollaire : **une pastille
     compte EXACTEMENT ce que l'écran montrera** — elle se calcule au rendu,
     jamais au sondage, sinon elle appelle vers un écran vide.
+12. **Deux thèmes, un seul jeu de règles** (b233) : l'app est SOMBRE par
+    défaut — c'est son identité de scène — et le mode clair est une SORTIE
+    pour le plein jour, réglée depuis la partition (`prefs.theme`), qui
+    s'applique à TOUTE l'app. Conséquence sur tout code d'interface :
+    `:root[data-theme='clair']` ne redéfinit que des TOKENS, jamais un
+    composant. Une couleur écrite en dur dans un composant est un bug de
+    thème — même un `#fff` posé sur ce qu'on croit être un fond coloré :
+    le fond d'un `.livebadge` n'est qu'un rouge à 24 %, en clair le texte
+    devenait blanc sur blanc. Le sombre n'écrit AUCUN attribut : si le
+    module de thème ne s'exécutait pas, l'app resterait sombre. Le thème
+    est posé AVANT React (`main.tsx`, copie locale `sing2me/theme`), sinon
+    l'app clignote à chaque lancement ; `prefs.theme` fait foi et recale
+    ensuite. Les pages PUBLIQUES ne suivent pas ce réglage : le spectateur
+    n'a pas à hériter du confort de l'artiste.
 
 ## Déploiement & versions (pipeline actuel)
 

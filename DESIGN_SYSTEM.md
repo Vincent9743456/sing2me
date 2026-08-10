@@ -73,9 +73,25 @@ Règles :
   (rouge) et `--accent` (orange scène) sont proches et ne doivent pas
   être le seul signal distinctif. Ne jamais coder un état sur la couleur
   seule.
-- Mode clair : non planifié à court terme (décision actée — voir audit
-  G7). Si un jour : dupliquer ce bloc sous `[data-theme='light']`,
-  aucune couleur en dur ne doit l'empêcher.
+- **Mode clair : FAIT (b233).** Le bloc ci-dessus est dupliqué sous
+  `:root[data-theme='clair']` (theme.css) — et il ne contient QUE des
+  tokens. Un composant qui aurait besoin d'une règle propre au clair est
+  un composant qui a une couleur en dur : c'est elle qu'on corrige, jamais
+  une exception qu'on ajoute. Le sombre reste le défaut et n'écrit aucun
+  attribut : si le module de thème ne s'exécutait pas, l'app serait sombre.
+  Le réglage vit sur la PARTITION (seul écran qu'on regarde longtemps) et
+  s'applique à toute l'app ; il est dans `prefs.theme`, donc il suit le
+  compte comme la langue. Les pages publiques ne le suivent pas.
+- Tokens ajoutés avec lui, parce qu'ils étaient écrits en dur :
+  `--stage-text`, `--stage-bar` (le mode scène a sa propre paire — c'est un
+  pupitre, pas une page), `--scrim` / `--scrim-soft` (voiles des modales et
+  des feuilles du bas), `--on-ok` (texte sur pastille verte).
+- En clair, les teintes fonctionnelles sont ASSOMBRIES, jamais inversées :
+  l'ambre, le cyan des accords, le rouge du direct restent reconnaissables,
+  à des valeurs qui tiennent ≥ 4.5:1 sur `--surface`. `--on-accent` passe
+  au BLANC (l'accent y est foncé — le sens s'inverse).
+  Seule exception assumée : `ErrorBoundary` reste sombre en dur. C'est
+  l'écran de crash : il doit s'afficher même si le CSS n'a pas chargé.
 
 ## 3. Tokens — typographie
 

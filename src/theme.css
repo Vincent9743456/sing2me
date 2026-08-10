@@ -13,6 +13,13 @@
   --surface-sunken: #0e0e13;
   --surface-hover: #22222c;
   --stage-bg: #000;
+  /* Mode scène : sa propre paire, parce qu'il ne suit pas les surfaces de
+     l'app — c'est un écran de pupitre, pas une page. */
+  --stage-text: #fff;
+  --stage-bar: #000;
+  /* Voiles des modales et des feuilles du bas. */
+  --scrim: rgba(0, 0, 0, 0.66);
+  --scrim-soft: rgba(0, 0, 0, 0.55);
   /* Bordures */
   --border: #24242e;
   --border-soft: #1d1d25;
@@ -34,6 +41,7 @@
   --live-soft: #ffb4b4;
   --ok: #34d399;
   --ok-soft: rgba(52, 211, 153, 0.14);
+  --on-ok: #06281c;
   /* Avertissement : ni une erreur (--danger, on a perdu quelque chose), ni
      un succès. « L'import a douté, jette un œil. » Ambre chaud, lisible sur
      fond sombre sans hurler comme le rouge. */
@@ -62,6 +70,82 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.3);
   --transition: 0.16s ease;
+}
+
+/* ============================================================
+   MODE CLAIR (b233, demande de Vincent)
+
+   L'app est SOMBRE par défaut — c'est son identité de scène, et rien de
+   cela ne change. Le mode clair est une SORTIE, pour le plein jour et pour
+   les yeux qui fatiguent sur du blanc-sur-noir. Il se règle depuis la
+   partition (c'est là qu'on lit vraiment) et s'applique à TOUTE l'app.
+
+   Règle du design system, enfin honorée : « dupliquer ce bloc sous
+   [data-theme], aucune couleur en dur ne doit l'empêcher ». On ne
+   redéfinit ICI que des TOKENS — jamais un composant. Un composant qui
+   aurait besoin d'une règle propre au clair est un composant qui a une
+   couleur en dur : c'est elle qu'il faut corriger, pas ajouter une
+   exception.
+
+   Les teintes fonctionnelles sont ASSOMBRIES, pas inversées : l'ambre
+   scène, le cyan des accords, le rouge du direct restent reconnaissables,
+   mais à des valeurs qui tiennent le contraste sur du papier (toutes
+   ≥ 4.5:1 sur --surface, y compris en texte blanc sur l'accent).
+   ============================================================ */
+:root[data-theme='clair'] {
+  /* Fonds & surfaces — un blanc CHAUD, jamais un blanc d'écran de bureau */
+  --bg: #f4f2ee;
+  /* Les surfaces ne sont pas TOUTES blanches : « high » (modales, feuilles)
+     garde un cran d'élévation au-dessus des listes, sinon les dégradés et
+     les panneaux posés sur une carte deviennent invisibles. */
+  --surface: #fdfcfa;
+  --surface-high: #ffffff;
+  --surface-sunken: #eceae4;
+  --surface-hover: #e9e6e0;
+  --stage-bg: #fbfaf7;
+  --stage-text: #17161a;
+  --stage-bar: #efece6;
+  --scrim: rgba(28, 25, 20, 0.42);
+  --scrim-soft: rgba(28, 25, 20, 0.32);
+  /* Bordures */
+  --border: #ddd9d1;
+  --border-soft: #e9e5dd;
+  --border-strong: #c3bdb1;
+  /* Textes */
+  --text: #17161a;
+  --text-dim: #55535d;
+  --text-faint: #706d7a;
+  /* Blanc SUR l'ambre : à cette valeur d'accent, c'est le sens qui donne
+     le meilleur contraste (l'inverse du sombre, où l'ambre est clair). */
+  --on-accent: #ffffff;
+  /* Accent — le même orange scène, descendu jusqu'à être lisible sur blanc
+     ET porter du texte blanc : les deux usages existent dans l'app. */
+  --accent: #b45309;
+  --accent-strong: #94430a;
+  --accent-soft: rgba(180, 83, 9, 0.1);
+  --accent-dark: #dda56c;
+  /* Fonctionnelles */
+  --chord: #0e6d93;
+  --danger: #c62828;
+  --live: #d61f1f;
+  --live-soft: #8f1d1d;
+  --ok: #0d7a53;
+  --ok-soft: rgba(13, 122, 83, 0.12);
+  --on-ok: #ffffff;
+  --warn: #8a6100;
+  --warn-soft: rgba(138, 97, 0, 0.12);
+  --heart: #c2185b;
+  /* Pastilles de groupe */
+  --band-1: #a16207;
+  --band-2: #1d4ed8;
+  --band-3: #047857;
+  --band-4: #be185d;
+  --band-5: #6d28d9;
+  --band-6: #c2410c;
+  --band-7: #0e7490;
+  /* Ombres : portées par la lumière, pas par le noir */
+  --shadow: 0 10px 30px rgba(30, 27, 22, 0.14);
+  --shadow-soft: 0 4px 14px rgba(30, 27, 22, 0.1);
 }
 
 * {
@@ -692,7 +776,7 @@ textarea.mono {
 .onbcheck.on {
   background: var(--ok);
   border-color: var(--ok);
-  color: #06281c;
+  color: var(--on-ok);
 }
 .onbdone {
   color: var(--text-dim);
@@ -709,7 +793,7 @@ textarea.mono {
   position: fixed;
   inset: 0;
   z-index: 500;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--scrim-soft);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -1806,7 +1890,7 @@ textarea.mono {
   position: fixed;
   inset: 0;
   background: var(--stage-bg);
-  color: #fff;
+  color: var(--stage-text);
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -1846,7 +1930,7 @@ textarea.mono {
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   /* Opaque, sans flou (b183) : en mode scène on fait défiler les paroles
      sous cette barre — c'est le cas qui déclenche le repaint fautif iOS. */
-  background: #000;
+  background: var(--stage-bar);
   border-top: 1px solid var(--border-soft);
 }
 .stage .controls .btn {
@@ -1868,7 +1952,7 @@ textarea.mono {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.66);
+  background: var(--scrim);
   backdrop-filter: blur(3px);
   display: flex;
   align-items: flex-end;
@@ -2097,7 +2181,9 @@ textarea.mono {
   gap: 8px;
   margin: 6px auto 20px;
   width: fit-content;
-  color: #fff;
+  /* Pas de blanc en dur : le fond n'est qu'un voile rouge à 24 %, donc en
+     mode clair il faut le texte du thème, pas celui du fond. */
+  color: var(--text);
   background: color-mix(in srgb, var(--live) 24%, transparent);
   border: 1px solid var(--live);
   font-size: 0.75rem;

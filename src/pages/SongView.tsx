@@ -88,6 +88,7 @@ export function SongView({
     songs,
     bands,
     prefs,
+    savePrefs,
     artist,
     saveSong,
     deleteSong,
@@ -455,6 +456,28 @@ export function SongView({
             actif={vuePublic}
             onToggle={() => setVuePublic((v) => !v)}
           />
+          {/* SOMBRE / CLAIR (b233, demande de Vincent). Le réglage vit ICI,
+              sur la partition — c'est le seul écran qu'on regarde longtemps,
+              et donc le seul endroit où l'envie de changer de fond se
+              présente. Il s'applique à TOUTE l'app : un thème par écran
+              n'aurait aucun sens. */}
+          <button
+            className="chip"
+            aria-pressed={prefs.theme === 'clair'}
+            title={
+              prefs.theme === 'clair'
+                ? t('Repasser en sombre (toute l’app)')
+                : t('Passer en clair (toute l’app)')
+            }
+            onClick={() =>
+              savePrefs({
+                ...prefs,
+                theme: prefs.theme === 'clair' ? 'sombre' : 'clair',
+              })
+            }
+          >
+            {prefs.theme === 'clair' ? t('☾ Sombre') : t('☀ Clair')}
+          </button>
           {/* En haut de page (demande Vincent) : proposer une meilleure
               partition dès l'arrivée sur le morceau. */}
           {!isBandVersion && song.versions.length < 2 && (
