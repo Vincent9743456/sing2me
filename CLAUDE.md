@@ -666,6 +666,29 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   Ce qui est déjà mélangé ne se démêle pas tout seul : rien ne dit de quel
   compte vient un morceau. La sortie est la réinitialisation partielle des
   Réglages, sur le compte à nettoyer.
+- **UN COMPTE SE SUPPRIME DEPUIS L'APP** (b261, demande de Vincent : « c'est
+  important pour les utilisateurs de pouvoir supprimer toutes les données »).
+  Réglages → tout en bas. Quatre règles, parce qu'une suppression ratée est
+  pire qu'une suppression absente :
+  1. **l'appelant EST son compte** : le serveur (`server/account.js`) lit le
+     jeton (b192), en tire l'identifiant, et n'efface QUE ce qui le porte —
+     la vieille clé partagée ne suffit pas pour un acte irréversible ;
+  2. **on efface AVANT de fermer la porte** : le compte d'authentification
+     part en DERNIER, et seulement si tout le reste a réussi. S'il partait
+     d'abord, un échec au milieu laisserait des données que plus personne,
+     pas même leur propriétaire, ne pourrait retrouver ni effacer ;
+  3. **on annonce des CHIFFRES, pas « toutes tes données »** : le nombre et
+     le nom des groupes qui seront DISSOUS pour les autres, l'adresse
+     publique qui sera libérée (les QR imprimés meurent avec). L'inventaire
+     vient du serveur : ce qu'il annonce est ce qu'il effacera ;
+  4. **on confirme en tapant son ADRESSE**, pas par un « oui » — avec deux
+     comptes sur le même téléphone, c'est la seule barrière contre
+     l'effacement du mauvais. Et l'export de sauvegarde est rappelé
+     juste au-dessus : partir ne doit pas obliger à tout perdre.
+  Côté appareil, le ménage se fait AU DÉMARRAGE (drapeau `sessionStorage`
+  lu dans `main.tsx`) : effacer puis recharger dans la même foulée laisse
+  les composants encore montés réécrire des clés (le store enregistre en
+  différé). Aucun SQL à exécuter — tout passe par les cascades existantes.
 - **UN BROUILLON D'ÉCRAN NE DOIT JAMAIS SURVIVRE À SA SOURCE** (b243, perte
   de données signalée par Vincent : « je me suis déconnecté et reconnecté,
   j'ai perdu les informations de profil, photo, liens… »). L'écran Artiste

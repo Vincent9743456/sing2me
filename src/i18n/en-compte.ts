@@ -1,5 +1,29 @@
 /** Traductions anglaises — domaine compte (clé = chaîne française exacte). */
 export const EN_COMPTE: Record<string, string> = {
+  // Suppression de compte (b261)
+  'Supprimer mon compte…': 'Delete my account…',
+  'Supprimer mon compte': 'Delete my account',
+  'Efface définitivement ce compte et tout ce qu’il contient sur nos serveurs. Réinitialiser (ci-dessus) vide les données mais garde le compte ; ceci supprime les deux.':
+    'Permanently erases this account and everything it holds on our servers. Reset (above) empties the data but keeps the account; this removes both.',
+  'Supprimer le compte {email}': 'Delete the account {email}',
+  'Tout ce que ce compte contient sera effacé de nos serveurs, définitivement : ta bibliothèque en ligne, ton profil, tes directs et ce qu’ils ont produit.':
+    'Everything this account holds will be erased from our servers, for good: your online library, your profile, your live sessions and what they produced.',
+  '⚠ Le groupe « {noms} » sera DISSOUS pour tous ses musiciens — répertoire et discussions compris. Pour l’éviter, transmets-le d’abord à un membre depuis sa fiche.':
+    '⚠ The band “{noms}” will be DISSOLVED for all its musicians — repertoire and chat included. To avoid that, hand it over to a member first, from its page.',
+  '⚠ {n} groupes seront DISSOUS pour tous leurs musiciens ({noms}) — répertoires et discussions compris. Pour l’éviter, transmets-les d’abord à un membre depuis leur fiche.':
+    '⚠ {n} bands will be DISSOLVED for all their musicians ({noms}) — repertoires and chats included. To avoid that, hand them over to a member first, from their pages.',
+  '⚠ Ton adresse publique « {adresse} » sera libérée : les QR déjà imprimés ne mèneront plus à toi.':
+    '⚠ Your public address “{adresse}” will be released: QR codes already printed will no longer lead to you.',
+  'Tu quitteras aussi {n} groupe(s) dont tu es membre — ceux-là continuent d’exister sans toi.':
+    'You will also leave {n} band(s) you belong to — those keep existing without you.',
+  'Avant d’effacer : exporte ta sauvegarde (plus haut sur cet écran) si tu veux garder tes partitions.':
+    'Before erasing: export your backup (higher up on this screen) if you want to keep your songs.',
+  'Pour confirmer, écris ton adresse : {email}': 'To confirm, type your address: {email}',
+  'Supprimer définitivement': 'Delete permanently',
+  'Supprimer définitivement le compte {email} ?': 'Permanently delete the account {email}?',
+  'Il n’y a pas de retour en arrière, et rien ne peut être restauré ensuite.':
+    'There is no going back, and nothing can be restored afterwards.',
+  'Suppression impossible.': 'Deletion failed.',
   'Tu as changé de compte : les données du compte précédent restent chez lui, elles ne sont pas mélangées avec celles-ci.':
     'You switched accounts: the previous account keeps its own data — it is not mixed with this one.',
   ' (Lien court — le contenu est servi par ton cloud.)': ' (Short link — the content is served by your cloud.)',

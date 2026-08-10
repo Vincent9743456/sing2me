@@ -15,6 +15,8 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 
+import { useAccount } from '../components/Account';
+import { DeleteAccount } from '../components/DeleteAccount';
 import { ConfirmSheet, useToast } from '../components/Feedback';
 import { fusionMiseEnForme, meritteUneMiseEnForme } from '../lib/aiFormat';
 import { importText } from '../lib/importer';
@@ -73,6 +75,7 @@ const RESET_CHOICES: {
 
 export function Settings() {
   const store = useStore();
+  const compte = useAccount();
   const { songs, setlists, concerts, bands, resetData, prefs, savePrefs } =
     store;
   const toast = useToast();
@@ -553,6 +556,24 @@ export function Settings() {
           <Icon name="trash" size={15} /> {t('Réinitialiser')}
           {picked.size > 0 ? ` (${pickedLabels.join(', ')})` : '…'}
         </button>
+
+        {/* SUPPRIMER SON COMPTE (b261, demande de Vincent : « c'est important
+            pour les utilisateurs de pouvoir supprimer toutes les données »).
+            Tout en bas, après la sauvegarde et la réinitialisation : on ne
+            tombe pas dessus par hasard, et on a croisé la sortie de secours
+            (l'export) avant d'y arriver. */}
+        {compte?.email != null && (
+          <>
+            <div className="spacer" />
+            <h2 className="pagetitle">{t('Supprimer mon compte')}</h2>
+            <p className="help">
+              {t(
+                'Efface définitivement ce compte et tout ce qu’il contient sur nos serveurs. Réinitialiser (ci-dessus) vide les données mais garde le compte ; ceci supprime les deux.',
+              )}
+            </p>
+            <DeleteAccount email={compte.email} />
+          </>
+        )}
       </div>
 
       {confirming && (
