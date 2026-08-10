@@ -846,6 +846,15 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   attente », et l'invité figure dans la liste, marqué. Une ligne CONFIRMÉE
   l'emporte sur une invitation en attente quand les deux désignent la même
   personne.
+  **Un écran qui se contredit doit s'expliquer** (b256, correction de
+  Vincent : « non, c'est le groupe que j'ai créé moi »). Sa fiche affichait
+  « créé par tessier vincent » — son nom d'artiste — ET « Membre du groupe ».
+  Les deux étaient vrais : le groupe a bien été créé par un compte portant ce
+  nom, mais pas par CELUI qui regardait. C'est b246 vu du côté des groupes.
+  Quand le créateur porte l'un de mes noms sans porter mon identifiant, on le
+  DIT, avec l'adresse e-mail en cours — c'est le seul fait qui permette de
+  comprendre et d'agir. Le serveur reste l'autorité : `owned` se recale à
+  l'ouverture, donc si c'est bien mon compte, le message n'apparaît jamais.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre
