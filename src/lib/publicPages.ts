@@ -662,11 +662,42 @@ export async function groupesPublics(
   return out;
 }
 
+/**
+ * UNE PAGE RENDUE INVISIBLE NE PUBLIE RIEN (b262, demande de Vincent :
+ * « prévoir dans les réglages que la page publique puisse ne pas être
+ * disponible en ligne à la demande de l'utilisateur »).
+ *
+ * On ne publie PAS un profil qu'on masquerait ensuite à l'affichage : photo,
+ * bio, liens et pourboire ne doivent alors être nulle part en ligne.
+ * « Invisible » veut dire absent, pas caché derrière un écran — sinon
+ * n'importe qui lisant la réponse du serveur récupérerait tout.
+ *
+ * La LIGNE reste : elle réserve l'adresse (sinon un autre la prendrait) et
+ * laisse le QR retrouver un direct en cours. Un concert ne s'interrompt pas
+ * parce que la fiche est privée : ce que voit le public pendant le direct
+ * vient de l'état du live, pas de cette page.
+ */
+export function ficheMasquee(nom: string): ArtistProfile {
+  return {
+    name: nom,
+    bio: '',
+    photo: '',
+    links: [],
+    tipUrl: '',
+    masquee: true,
+  };
+}
+
 /** Le profil enrichi de ses groupes, prêt à publier. */
 export async function profilAPublier(
   artist: ArtistProfile,
   bands: Band[],
+  /** Réglage de l'utilisateur : sa page est-elle rendue invisible ? */
+  masquee = false,
 ): Promise<ArtistProfile> {
+  // Rien de personnel ne part quand la page est masquée — pas même le nom
+  // d'artiste, que l'adresse suffit à porter.
+  if (masquee) return ficheMasquee('');
   try {
     return { ...artist, publicBands: await groupesPublics(bands, artist) };
   } catch {

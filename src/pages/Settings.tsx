@@ -26,6 +26,8 @@ import { Icon } from '../components/Icon';
 import { AccordionNav, ProgressBar, TopBar } from '../components/ui';
 import { rememberLang, storedLang, t } from '../i18n';
 import { getValidSession } from '../lib/auth';
+import { ensurePublicPage, profilAPublier } from '../lib/publicPages';
+import { emptyArtist } from '../types';
 import { leaveBand } from '../lib/bands';
 import { LiveStatus, pushLive, pushSetlist } from '../lib/live';
 import { navigate } from '../router';
@@ -76,6 +78,42 @@ const RESET_CHOICES: {
 export function Settings() {
   const store = useStore();
   const compte = useAccount();
+  const [pageBusy, setPageBusy] = useState(false);
+  const [pageMsg, setPageMsg] = useState<string | null>(null);
+
+  /**
+   * Le réglage n'a de sens que s'il AGIT tout de suite : cocher republie une
+   * fiche vide, décocher republie la vraie. Un réglage qui n'attendrait le
+   * prochain enregistrement de profil laisserait les données en ligne sans
+   * que personne le sache.
+   */
+  async function basculerPagePublique(masquee: boolean) {
+    setPageBusy(true);
+    setPageMsg(null);
+    try {
+      const s = await getValidSession();
+      if (!s) throw new Error(t('Connexion requise'));
+      await ensurePublicPage(
+        s,
+        await profilAPublier(store.artist, store.bands, masquee),
+      );
+      savePrefs({ ...prefs, pagePubliqueMasquee: masquee });
+      setPageMsg(
+        masquee
+          ? t('✓ Ta page n’est plus en ligne.')
+          : t('✓ Ta page publique est de nouveau visible.'),
+      );
+    } catch {
+      // On ne coche RIEN si le serveur n'a pas suivi : une case cochée qui
+      // n'aurait rien retiré serait un mensonge sur une question de vie
+      // privée.
+      setPageMsg(
+        t('Impossible de joindre le serveur — le réglage n’a pas changé.'),
+      );
+    } finally {
+      setPageBusy(false);
+    }
+  }
   const { songs, setlists, concerts, bands, resetData, prefs, savePrefs } =
     store;
   const toast = useToast();
@@ -557,6 +595,46 @@ export function Settings() {
           {picked.size > 0 ? ` (${pickedLabels.join(', ')})` : '…'}
         </button>
 
+        {/* MA PAGE PUBLIQUE EN LIGNE OU NON (b262, demande de Vincent :
+            « prévoir dans les réglages que la page publique puisse ne pas
+            être disponible en ligne à la demande de l'utilisateur. Par
+            défaut, visible, mais option avec une case à cocher pour la
+            rendre invisible »).
+
+            Cocher ne CACHE pas la fiche : elle est RETIRÉE du serveur, et
+            republiée telle quelle en décochant. Photo, bio, liens et
+            pourboire ne restent alors nulle part en ligne — « invisible »
+            doit vouloir dire absent. L'adresse, elle, reste réservée. */}
+        {compte?.email != null && (
+          <>
+            <div className="spacer" />
+            <h2 className="pagetitle">{t('Ma page publique')}</h2>
+            <label
+              className="row"
+              style={{ alignItems: 'flex-start', cursor: 'pointer' }}
+            >
+              <input
+                type="checkbox"
+                checked={prefs.pagePubliqueMasquee === true}
+                style={{ width: 20, height: 20, marginTop: 2, flexShrink: 0 }}
+                disabled={pageBusy}
+                onChange={(e) => void basculerPagePublique(e.target.checked)}
+              />
+              <div className="grow">
+                <div className="title">
+                  {t('Rendre ma page publique invisible')}
+                </div>
+                <div className="sub" style={{ whiteSpace: 'normal' }}>
+                  {t(
+                    'Ta fiche est retirée du serveur : photo, présentation, liens et pourboire ne sont plus en ligne. Ton adresse reste réservée, et un concert en direct reste visible par le public.',
+                  )}
+                </div>
+              </div>
+            </label>
+            {pageMsg !== null && <p className="help">{pageMsg}</p>}
+          </>
+        )}
+
         {/* SUPPRIMER SON COMPTE (b261, demande de Vincent : « c'est important
             pour les utilisateurs de pouvoir supprimer toutes les données »).
             Tout en bas, après la sauvegarde et la réinitialisation : on ne
@@ -611,6 +689,33 @@ export function Settings() {
               }
             }
             resetData(parts);
+            /*
+             * LA PAGE PUBLIÉE SUIT LE PROFIL EFFACÉ (b262, constat de
+             * Vincent : après une réinitialisation du profil, sa page
+             * publique contenait encore photo, liens et pourboire — c'est
+             * même ce que la bannière de récupération lui proposait de
+             * rendre).
+             *
+             * La fiche publiée est un FILET (b243) contre une perte
+             * ACCIDENTELLE. Une réinitialisation, elle, est délibérée :
+             * laisser en ligne ce qu'on vient d'effacer, c'est laisser
+             * public ce que l'utilisateur croit supprimé. On vide donc la
+             * fiche, en gardant l'adresse réservée.
+             */
+            if (parts.artist === true) {
+              void (async () => {
+                try {
+                  const s = await getValidSession();
+                  if (!s) return;
+                  await ensurePublicPage(
+                    s,
+                    await profilAPublier(emptyArtist(), [], true),
+                  );
+                } catch {
+                  // best-effort : l'effacement local a eu lieu de toute façon
+                }
+              })();
+            }
             // Ce que le PUBLIC voit doit suivre (bug signalé par Marco,
             // b137) : la setlist et le morceau diffusés vivent sur le
             // serveur — sans cet effacement, « Voir la setlist » montrait

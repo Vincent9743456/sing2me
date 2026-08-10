@@ -453,7 +453,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
             if (!s) return;
             const name = await ensurePublicPage(
               s,
-              await profilAPublier(artist, bands),
+              await profilAPublier(artist, bands, prefs.pagePubliqueMasquee === true),
             );
             if (name) setPublicName(name);
             // Les fiches de mes groupes se rafraîchissent en même temps

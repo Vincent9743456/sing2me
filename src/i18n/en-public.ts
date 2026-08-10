@@ -1,6 +1,9 @@
 /** Traductions anglaises — pages PUBLIQUES (spectateur, bœuf) : chargées
  *  par l'entrée légère uniquement. Clé = chaîne française exacte. */
 export const EN_PUBLIC: Record<string, string> = {
+  'Page non disponible': 'Page not available',
+  'Cette page a été rendue privée par son propriétaire.':
+    'This page has been made private by its owner.',
   '(paroles non disponibles)': '(lyrics unavailable)',
   '(sans nom)': '(no name)',
   '(sans titre)': '(untitled)',

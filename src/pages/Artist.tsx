@@ -1095,7 +1095,14 @@ export function Artist() {
                 const s = await getValidSession();
                 if (!s) return;
                 // La fiche part avec les groupes NON masqués (b231)…
-                await ensurePublicPage(s, await profilAPublier(draft, bands));
+                await ensurePublicPage(
+                  s,
+                  await profilAPublier(
+                    draft,
+                    bands,
+                    prefs.pagePubliqueMasquee === true,
+                  ),
+                );
                 // …et les fiches de mes groupes se rafraîchissent (b232) :
                 // ma photo y figure comme musicien, elle vient de changer.
                 await publierFichesGroupes(s, bands, draft);

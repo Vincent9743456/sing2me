@@ -25,7 +25,7 @@ import { t } from '../i18n';
 
 export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
   // Les groupes non masqués voyagent avec la fiche (b231).
-  const { bands } = useStore();
+  const { bands, prefs } = useStore();
   const [claimed, setClaimed] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [input, setInput] = useState('');
@@ -104,7 +104,11 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
         );
         return;
       }
-      await claimPublicPage(s, name, await profilAPublier(artist, bands));
+      await claimPublicPage(
+        s,
+        name,
+        await profilAPublier(artist, bands, prefs.pagePubliqueMasquee === true),
+      );
       await publierFichesGroupes(s, bands, artist);
       setClaimed(name);
       rememberPublicName(name);

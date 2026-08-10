@@ -1,5 +1,14 @@
 /** Traductions anglaises — domaine compte (clé = chaîne française exacte). */
 export const EN_COMPTE: Record<string, string> = {
+  // Page publique visible / invisible (b262)
+  'Ma page publique': 'My public page',
+  'Rendre ma page publique invisible': 'Make my public page invisible',
+  'Ta fiche est retirée du serveur : photo, présentation, liens et pourboire ne sont plus en ligne. Ton adresse reste réservée, et un concert en direct reste visible par le public.':
+    'Your profile is removed from the server: photo, bio, links and tip link are no longer online. Your address stays reserved, and a live gig remains visible to the audience.',
+  '✓ Ta page n’est plus en ligne.': '✓ Your page is no longer online.',
+  '✓ Ta page publique est de nouveau visible.': '✓ Your public page is visible again.',
+  'Impossible de joindre le serveur — le réglage n’a pas changé.':
+    'Couldn’t reach the server — the setting was not changed.',
   // Suppression de compte (b261)
   'Supprimer mon compte…': 'Delete my account…',
   'Supprimer mon compte': 'Delete my account',
