@@ -796,6 +796,49 @@ export function memePersonne(a: string, b: string): boolean {
 }
 
 /**
+ * UN MUSICIEN, UNE LIGNE (b248, constat de Vincent : « Marco apparaît 2 fois
+ * dans le groupe… alors que le menu d'avant on n'est que 2 »).
+ *
+ * Sa fiche de groupe portait « Marco » ET « marco.bosio » — la même personne,
+ * inscrite une fois à la main et une fois par son compte. Les écrans le
+ * cachaient (b141 fusionne à l'affichage), mais la donnée, elle, restait
+ * double : il a suffi d'un écran qui ne fusionnait pas — la page publique —
+ * pour que le groupe annonce un musicien de plus qu'il n'en compte.
+ * On répare donc à la SOURCE, au chargement.
+ *
+ * Le premier nom rencontré gagne (b141) et absorbe ce que les doublons ont
+ * de plus : photo, instrument, matériel, ✓ compte vérifié. Comparaison par
+ * MOTS — « Marc » ne devient jamais « Marco », fusionner deux musiciens en
+ * effacerait un. Idempotente : sans doublon, l'objet d'origine est rendu tel
+ * quel (et `updatedAt` n'est jamais retouché : une réparation silencieuse
+ * n'a pas à gagner la fusion de synchro).
+ */
+export function dedupeBandMembers(band: Band): Band {
+  const src = band.members ?? [];
+  if (src.length < 2) return band;
+  const out: import('../types').BandMember[] = [];
+  for (const m of src) {
+    const nom = (m.name ?? '').trim();
+    const i = nom === '' ? -1 : out.findIndex((k) => memePersonne(k.name, nom));
+    if (i < 0) {
+      out.push(m);
+      continue;
+    }
+    const garde = out[i];
+    out[i] = {
+      ...garde,
+      photo: (garde.photo ?? '') !== '' ? garde.photo : m.photo,
+      instrument: garde.instrument !== '' ? garde.instrument : m.instrument,
+      gear: (garde.gear ?? []).length > 0 ? garde.gear : m.gear,
+      verified: garde.verified === true || m.verified === true ? true : undefined,
+      // Un invité en attente ne le reste que si TOUTES ses lignes le sont.
+      pending: garde.pending === true && m.pending === true ? true : undefined,
+    };
+  }
+  return out.length === src.length ? band : { ...band, members: out };
+}
+
+/**
  * MA PHOTO SUIT DANS MES GROUPES (b247). La ligne de musicien porte une
  * COPIE de la photo, prise à la création du groupe ou à l'adhésion : elle ne
  * bougeait plus jamais ensuite, donc les autres membres continuaient de voir

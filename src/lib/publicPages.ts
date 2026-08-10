@@ -8,6 +8,7 @@
  * si Supabase n'est pas configuré, tout renvoie null sans jamais planter.
  */
 import { AuthSession, getValidSession } from './auth';
+import { memePersonne } from './model';
 import { miniature } from './photo';
 import { normalizePublicName, publicNameError } from './publicName';
 import { ArtistProfile, Band, PublicBand, PublicMember } from '../types';
@@ -573,27 +574,33 @@ async function musiciensPublics(
   adresseDe: (nom: string) => Promise<string>,
   vignette?: (source: string, taille: number) => Promise<string>,
 ): Promise<PublicMember[]> {
-  const moi = (artist?.name ?? '').trim().toLowerCase();
-  // Doublons de nom écartés en gardant la fiche la plus fournie.
-  const parNom = new Map<string, { name: string; photo: string }>();
+  const moi = (artist?.name ?? '').trim();
+  // DOUBLONS ÉCARTÉS PAR PERSONNE, pas par chaîne exacte (b248, constat de
+  // Vincent : « Marco apparaît 2 fois dans le groupe… alors que le menu
+  // d'avant on n'est que 2 »). Sa fiche de groupe portait « Marco » ET
+  // « marco.bosio » : l'écran du groupe les fusionnait (b141), la page
+  // publique non — le public voyait donc un musicien de plus que le groupe
+  // n'en compte. On compare par MOTS (`memePersonne`) : « marco.bosio »
+  // rejoint « Marco », mais « Marc » ne devient jamais « Marco » — sur une
+  // page publique, fusionner deux musiciens en effacerait un.
+  // Premier nom rencontré gagne (b141), photo la plus fournie conservée.
+  const membres: { name: string; photo: string }[] = [];
   for (const m of band.members ?? []) {
     if (m.pending === true) continue;
     const nom = (m.name ?? '').trim();
     if (nom === '') continue;
-    const cle = nom.toLowerCase();
     // Le détenteur est souvent absent des membres cloud : sa photo de profil
     // sert de secours, comme dans la fiche du groupe côté musicien.
     const photo =
       (m.photo ?? '') !== ''
         ? (m.photo as string)
-        : cle === moi
+        : moi !== '' && memePersonne(moi, nom)
           ? (artist?.photo ?? '')
           : '';
-    const vu = parNom.get(cle);
-    if (!vu) parNom.set(cle, { name: nom, photo });
+    const vu = membres.find((x) => memePersonne(x.name, nom));
+    if (!vu) membres.push({ name: nom, photo });
     else if (vu.photo === '' && photo !== '') vu.photo = photo;
   }
-  const membres = [...parNom.values()];
   const adresses = await Promise.all(membres.map((m) => adresseDe(m.name)));
   const out: PublicMember[] = [];
   for (let i = 0; i < membres.length; i++) {

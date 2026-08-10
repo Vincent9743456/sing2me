@@ -23,6 +23,7 @@ import { ResetMarks } from './lib/sync';
 import { ecartee, remisEnIdee, reprise, sortDuMorceau } from './lib/deletesong';
 import {
   duplicateVersion,
+  dedupeBandMembers,
   isAbandonedSetlist,
   majMaPhotoDansGroupes,
   migrateConcert,
@@ -155,13 +156,16 @@ function loadState(): AppState {
         // qui existe gagne (une clé absente ne remplace rien).
         bands: (Array.isArray(parsed.bands) ? parsed.bands : []).map(
           (b: Partial<Band>) =>
-            ({
+            // Un musicien inscrit deux fois (à la main ET par son compte)
+            // n'a qu'une ligne (b248) : les écrans le cachaient, la page
+            // publique le montrait — on répare à la source.
+            dedupeBandMembers({
               bio: '',
               photo: '',
               links: [],
               tipUrl: '',
               ...b,
-            }) as Band,
+            } as Band),
         ),
         artist: { ...emptyArtist(), ...(parsed.artist ?? {}) },
         prefs: { ...defaultPrefs(), ...(parsed.prefs ?? {}) },

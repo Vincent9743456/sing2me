@@ -720,6 +720,18 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   la recale à l'enregistrement du PROFIL (idempotente — sans quoi chaque
   enregistrement retamponnerait tous les groupes) ; sur MON écran, mon profil
   passe devant la copie, parce que ma photo n'a qu'une maison (règle 1).
+- **UN DOUBLON MASQUÉ À L'ÉCRAN RESTE UN DOUBLON DANS LA DONNÉE** (b248,
+  constat de Vincent : « Marco apparaît 2 fois dans le groupe… alors que le
+  menu d'avant on n'est que 2 »). Sa fiche portait « Marco » ET
+  « marco.bosio » — la même personne, inscrite à la main puis par son compte.
+  b141 fusionnait à l'AFFICHAGE, donc le groupe semblait sain ; il a suffi
+  d'un écran qui ne fusionnait pas — la page publique — pour annoncer au
+  public un musicien de plus que le groupe n'en compte. Deux conséquences :
+  on répare à la SOURCE (`dedupeBandMembers`, au chargement, sans toucher
+  `updatedAt` : une réparation silencieuse n'a pas à gagner la fusion de
+  synchro), et la publication dédoublonne elle aussi, avec `memePersonne` et
+  jamais `sameMusician` — sur une page publique, fusionner deux musiciens en
+  EFFACERAIT un.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre
