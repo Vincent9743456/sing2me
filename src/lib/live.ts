@@ -351,7 +351,10 @@ export async function sendHearts(
     const res = await fetch('/api/live-x?fn=heart', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ n, liveId }),
+      // `device` : l'identifiant anonyme du navigateur (b225). Le serveur
+      // s'en sert pour ne compter QU'UN cœur par spectateur et par morceau —
+      // le geste, lui, reste libre.
+      body: JSON.stringify({ n, liveId, device: deviceId() }),
     });
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return null;

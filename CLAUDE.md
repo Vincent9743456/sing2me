@@ -581,6 +581,42 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   Corollaire : corriger le texte du public ne touche JAMAIS aux paroles ni aux
   accords du musicien, et un texte vide n'ouvre pas un écran blanc au public —
   il ramène à l'automatique.
+- **Le texte du public appartient à la VERSION, pas au morceau** (b224,
+  question de Vincent : « ça suit les versions ? et les morceaux partagés avec
+  le groupe ? »). Posé sur le morceau (b223), il ne bougeait pas d'une version
+  à l'autre et ne partait JAMAIS aux autres membres — celui qui prenait la
+  peine de corriger était le seul à en profiter, et Marco diffusait autre
+  chose que lui pour le même morceau du répertoire. Une version, c'est « comme
+  on le joue dans ce contexte » : si la version du groupe raccourcit un
+  couplet, le public doit lire le couplet raccourci. `SongVersion.publicLyrics`
+  est donc la source ; `Song.publicLyrics` n'en est que le REFLET de la version
+  active, exactement comme `Song.lyrics` (`syncActiveVersion` /
+  `switchVersion` / `resolveVersion` le portent dans les deux sens), et le
+  champ voyage dans le blob du groupe (`SharedVersion`).
+  **Deux comparaisons devaient suivre**, sans quoi la correction ne serait
+  jamais partie — cicatrice b202, quatrième récidive : `versionContentDiffers`
+  (`model.ts`, qui retamponne la version) et `versionEqual` (`bandSync.ts`,
+  qui décide qu'une version est inchangée). Toute nouvelle donnée de version
+  doit être ajoutée à CES DEUX endroits en plus du type.
+- **Un cœur = un spectateur, pour un morceau** (b225, demande de Vincent). Le
+  public tape autant qu'il veut — le ❤ s'envole à chaque fois, c'est ce retour
+  immédiat qui FAIT le geste — mais un seul cœur est COMPTABILISÉ par
+  spectateur et par morceau. Sinon le chiffre ne dit plus « combien de gens
+  ont aimé », il dit « qui a le doigt le plus rapide », et les statistiques de
+  l'artiste ne veulent plus rien dire. Le spectateur n'a pas de compte : il
+  est identifié par `sing2me/deviceId`, l'identifiant anonyme déjà utilisé
+  pour les spectateurs uniques ; le MORCEAU est lu par le serveur sur la ligne
+  du live, jamais annoncé par le client. Table `live_hearts` (clé primaire
+  live + morceau + appareil). **Ce garde-fou ne doit JAMAIS faire perdre un
+  cœur** : table absente, base injoignable, spectateur sans identifiant — on
+  compte, comme avant. Un concert ne s'interrompt pas pour une statistique.
+- **Un doigté faux est pire que pas de doigté** (b225) : `src/lib/chordshapes.ts`
+  calcule les positions de guitare HORS LIGNE (aucun service, aucune
+  dépendance) — une table de positions ouvertes écrites à la main, puis deux
+  gabarits déplaçables (forme de Mi, forme de La) pour les barrés. Un accord
+  dont on ne sait rien renvoie un tableau VIDE et ne s'ouvre pas : on n'invente
+  jamais une position. Le module ne parle AUCUNE langue — les libellés
+  s'écrivent dans `ChordDiagram` avec `t()`.
 - **Une migration de contenu se PROUVE avant de s'appliquer** (b219) : pour
   reposer les sections sur la bibliothèque déjà importée, on ne se contente
   pas de compter les blocs — on recalcule la suite d'accords de chaque bloc

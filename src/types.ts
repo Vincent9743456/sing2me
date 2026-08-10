@@ -54,6 +54,22 @@ export interface SongVersion {
   structure: StructureRow[];
   lyrics: string;
   /**
+   * Le texte que lit le public POUR CETTE VERSION (b224).
+   *
+   * Il vit sur la VERSION et pas sur le morceau (question de Vincent) pour
+   * deux raisons qui n'en font qu'une : une version, c'est « comme on le joue
+   * dans ce contexte » — si la version du groupe raccourcit un couplet, le
+   * public doit lire le couplet raccourci ; et c'est la version qui VOYAGE
+   * vers les autres membres, donc c'est le seul endroit d'où le texte du
+   * public peut les suivre. Posé sur le morceau, il ne bougeait pas d'une
+   * version à l'autre et ne partait jamais au groupe.
+   *
+   * Absent = le public lit la partition préparée automatiquement.
+   * `Song.publicLyrics` en est le REFLET pour la version active, comme
+   * `Song.lyrics`. Voir `src/lib/publiclyrics.ts`.
+   */
+  publicLyrics?: { text: string; from: string; updatedAt: string };
+  /**
    * Dernière modification du CONTENU de cette version (paroles, accords,
    * structure, tonalité, capo, tempo). Sert à propager les modifications
    * d'une version de groupe entre membres, indépendamment du `updatedAt`
@@ -98,6 +114,10 @@ export interface Song {
    * dire, sans deviner, que la partition a changé depuis.
    *
    * Voir `src/lib/publiclyrics.ts` — toute lecture passe par là.
+   *
+   * REFLET de la version active (b224), exactement comme `lyrics` : la
+   * source est `SongVersion.publicLyrics`, pour que le texte suive les
+   * versions et voyage jusqu'aux autres membres du groupe.
    */
   publicLyrics?: { text: string; from: string; updatedAt: string };
   /** Toutes les versions du morceau (la version active est reflétée ci-dessus) */

@@ -278,3 +278,37 @@ begin
       alter column created_at type timestamptz using created_at at time zone 'UTC';
   end if;
 end $$;
+
+-- ------------------------------------------------------------
+-- b225 — UN CŒUR PAR SPECTATEUR ET PAR MORCEAU (demande de Vincent).
+--
+-- Le public peut taper autant qu'il veut — le ❤ s'envole à chaque fois,
+-- c'est le retour immédiat qui fait le geste. Mais UN SEUL cœur par
+-- spectateur et par morceau est COMPTABILISÉ : sinon le chiffre ne dit plus
+-- « combien de gens ont aimé », il dit « qui a le doigt le plus rapide », et
+-- les statistiques de l'artiste ne veulent plus rien dire.
+--
+-- Le spectateur n'a pas de compte : on l'identifie par l'identifiant anonyme
+-- et stable de son navigateur (`sing2me/deviceId`), le même que pour le
+-- comptage des spectateurs uniques. Rien d'autre n'est enregistré — ni IP,
+-- ni nom, ni la moindre donnée personnelle.
+--
+-- Le morceau est identifié par son TITRE tel que le serveur le connaît au
+-- moment du clic : c'est le serveur qui le lit sur la ligne du live, jamais
+-- le client qui l'annonce.
+-- ------------------------------------------------------------
+create table if not exists live_hearts (
+  live_id text not null,
+  song_key text not null,
+  device text not null,
+  created_at timestamptz not null default now(),
+  primary key (live_id, song_key, device)
+);
+
+alter table live_hearts enable row level security;
+
+-- Aucune politique : la table n'est écrite que par les fonctions serveur
+-- (service_role), qui contournent RLS. Le public n'y accède jamais
+-- directement — il passe par /api/heart.
+
+create index if not exists live_hearts_live_idx on live_hearts (live_id);

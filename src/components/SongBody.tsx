@@ -3,11 +3,13 @@
  * - complete : notes de structure + paroles avec accords
  * - paroles  : paroles seules (public, écran du QR)
  */
-import React from 'react';
+import React, { useState } from 'react';
 
 import { t } from '../i18n';
 import { parseContent, ParsedLine, stripChords } from '../lib/chordpro';
 import { Spelling, transposeContent } from '../lib/chords';
+import { ChordSheet } from './ChordDiagram';
+import { positionsPour } from '../lib/chordshapes';
 import { parolesPubliques, parolesRetouchees } from '../lib/publiclyrics';
 import { repairChordedLyrics } from '../lib/textRepair';
 import { Song, SongNote, ViewMode } from '../types';
@@ -108,8 +110,36 @@ export function SongBody({
   // sections ni d'accords par partie).
   const structureNotes = (song.structureNotes ?? '').trim();
 
+  /**
+   * POSITION D'ACCORD AU CLIC (b225, demande de Vincent — comme le font les
+   * autres recueils). Par DÉLÉGATION sur le bloc entier : threader une
+   * fonction jusque dans chaque segment aurait alourdi le rendu de la
+   * partition, qui est le chemin le plus chaud de l'app.
+   *
+   * Un accord qu'on ne sait pas dessiner ne s'ouvre PAS — pas de feuille
+   * vide, et surtout pas de doigté inventé.
+   */
+  const [accordOuvert, setAccordOuvert] = useState<string | null>(null);
+  const positions = accordOuvert === null ? [] : positionsPour(accordOuvert);
+
+  function surClicAccord(e: React.MouseEvent<HTMLDivElement>) {
+    if (!showChords) return;
+    const cible = (e.target as HTMLElement).closest('.chord');
+    if (!cible) return;
+    const symbole = (cible.textContent ?? '').trim();
+    if (symbole === '' || positionsPour(symbole).length === 0) return;
+    setAccordOuvert(symbole);
+  }
+
   return (
-    <div style={{ fontSize: `${fontSize}rem` }}>
+    <div style={{ fontSize: `${fontSize}rem` }} onClick={surClicAccord}>
+      {accordOuvert !== null && positions.length > 0 && (
+        <ChordSheet
+          symbole={accordOuvert}
+          positions={positions}
+          onClose={() => setAccordOuvert(null)}
+        />
+      )}
       {view === 'complete' && structureNotes !== '' && (
         <details className="stfold" open>
           <summary>{t('🗺 Structure')}</summary>

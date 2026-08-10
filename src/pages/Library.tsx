@@ -4,6 +4,7 @@ import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
 import { garderLaMiseEnForme, revenirAvantIA } from '../lib/aiFormat';
 import { SongBody } from '../components/SongBody';
+import { PublicEye, PublicPreview } from '../components/PublicPreview';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { ConfirmSheet, MenuSheet } from '../components/Feedback';
@@ -599,6 +600,24 @@ export function Library() {
                         {t('✓ Accepter')}
                       </button>
                     )}
+                    {/* ▶ Scène directement sur la ligne (demande de Marco,
+                        sa priorité) : jouer un morceau était à deux gestes —
+                        ouvrir le « ⋯ », puis choisir. C'est l'action la plus
+                        fréquente de l'écran, elle mérite d'être la plus
+                        courte. */}
+                    <button
+                      className="btn icon"
+                      title={t('Jouer en mode scène')}
+                      aria-label={t('Jouer « {title} » en mode scène', {
+                        title: song.title || t('ce morceau'),
+                      })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/stage/song/${song.id}`);
+                      }}
+                    >
+                      <Icon name="play" size={18} />
+                    </button>
                     <button
                       className="btn icon"
                       title={t('Actions')}
@@ -617,8 +636,11 @@ export function Library() {
 
   // Badge du bouton « Filtrer » : nombre de filtres actifs (une vue
   // particulière, un répertoire, un tag — le tri n'est pas un filtre).
+  // Le chiffre du bouton « Filtrer » ne compte que ce qui vit DEDANS : les
+  // Idées ont leur propre bouton, à l'écran (b225) — les compter ici ferait
+  // parler la pastille d'un réglage que le pli ne montre pas.
   const activeFilters =
-    (showIdeas || showNew || showCheck ? 1 : 0) +
+    (showNew || showCheck ? 1 : 0) +
     (bandFilter !== null ? 1 : 0) +
     (tag !== null ? 1 : 0);
 
@@ -725,7 +747,7 @@ export function Library() {
           </>
         )}
         {filtersOpen &&
-          (bands.length > 0 || ideaCount > 0 || newCount > 0) && (
+          (bands.length > 0 || checkCount > 0 || newCount > 0) && (
           <>
             <div className="spacer" />
             {/* Rangée 1 — VUES particulières (état des morceaux) :
@@ -777,21 +799,12 @@ export function Library() {
                   {t('🔎 À vérifier ({n})', { n: checkCount })}
                 </button>
               )}
-              {ideaCount > 0 && (
-                <button
-                  className={`chip ${showIdeas ? '' : 'off'}`}
-                  title={t(
-                    'Morceaux importés non encore validés — réserve à travailler',
-                  )}
-                  onClick={() => {
-                    setShowIdeas(!showIdeas);
-                    setBandFilter(null);
-                    setShowNew(false);
-                  }}
-                >
-                  {t('💡 Idées ({n})', { n: ideaCount })}
-                </button>
-              )}
+              {/* La puce « 💡 Idées » a QUITTÉ ce pli (b225, demande de
+                  Vincent) : elle est le seul filtre qui CACHE des morceaux —
+                  une idée n'apparaît nulle part ailleurs. La ranger derrière
+                  « Filtrer » revenait à masquer une partie de la
+                  bibliothèque sans le dire. Elle vit maintenant au-dessus de
+                  la liste, et seulement quand il y a des idées. */}
             </div>
             {/* Rangée 2 — RÉPERTOIRES (identification par groupe / solo) :
                 fonction différente, rendue évidente par le libellé et la
@@ -850,15 +863,8 @@ export function Library() {
         )}
         {/* Résumé du filtre actif : TOUJOURS visible (même panneau fermé),
             pour que la liste réduite s'explique d'elle-même. */}
-        {(showIdeas || showNew || bandFilter !== null) && (
+        {(showNew || bandFilter !== null) && (
           <>
-            {showIdeas && (
-              <p className="help" style={{ margin: '6px 0 0' }}>
-                {t(
-                  'Réserve à travailler : jouables partout, mais pas encore validées dans la bibliothèque — ouvre un morceau pour le valider ✓ ou le supprimer.',
-                )}
-              </p>
-            )}
             {showNew && (
               <p className="help" style={{ margin: '6px 0 0' }}>
                 {filtered.length > 1
@@ -918,6 +924,49 @@ export function Library() {
           </>
         )}
         </div>
+        {/* 💡 IDÉES — À L'ÉCRAN, PAS DERRIÈRE « FILTRER » (b225, demande de
+            Vincent). C'est le seul filtre qui CACHE des morceaux : une idée
+            n'apparaît nulle part ailleurs dans la bibliothèque. La ranger
+            dans un pli, c'était masquer une partie du répertoire sans le
+            dire — et obliger à deux gestes pour retrouver ce qu'on vient
+            d'importer. Le bouton n'existe QUE s'il y a des idées : l'écran
+            reste « recherche + liste » pour tous les autres. */}
+        {ideaCount > 0 && (
+          <div className="chips" style={{ marginTop: 'var(--sp-2)' }}>
+            <button
+              className={`chip ${showIdeas ? '' : 'off'}`}
+              aria-pressed={showIdeas}
+              title={t(
+                'Morceaux importés non encore validés — réserve à travailler',
+              )}
+              onClick={() => {
+                setShowIdeas(!showIdeas);
+                setBandFilter(null);
+                setShowNew(false);
+                setShowCheck(false);
+              }}
+            >
+              {t('💡 Idées ({n})', { n: ideaCount })}
+            </button>
+            {showIdeas && (
+              <button
+                className="chip off"
+                onClick={() => setShowIdeas(false)}
+              >
+                {t('Tous les morceaux')}
+              </button>
+            )}
+          </div>
+        )}
+        {/* L'explication vient APRÈS le bouton qui l'a déclenchée — au-dessus,
+            elle répondait à une question que personne ne s'était encore posée. */}
+        {showIdeas && (
+          <p className="help" style={{ margin: '6px 0 0' }}>
+            {t(
+              'Réserve à travailler : jouables partout, mais pas encore validées dans la bibliothèque — ouvre un morceau pour le valider ✓ ou le supprimer.',
+            )}
+          </p>
+        )}
         <Onboarding />
         <BackupNudge />
         <div className={`libsplit${selectedId ? ' hasdetail' : ''}`}>
@@ -1143,6 +1192,9 @@ function SongPreview({
   const [ugOpen, setUgOpen] = useState(false);
   // Éditeur « Ajouter à un groupe / une setlist » (à la demande).
   const [assocOpen, setAssocOpen] = useState(false);
+  // 👁 Vue du public : la partition de l'aperçu bascule sur ce que liront
+  // les spectateurs (b223).
+  const [vuePublic, setVuePublic] = useState(false);
 
   // Mêmes réglages de lecture que la fiche : tonalité/capo mémorisés
   // par morceau + version (sur cet appareil).
@@ -1197,6 +1249,9 @@ function SongPreview({
     if (paneRef.current) paneRef.current.scrollTop = 0;
     setUgOpen(false);
     setAssocOpen(false);
+    // Changer de morceau ramène à la partition : l'œil est un coup d'œil,
+    // pas un mode dans lequel on s'installe.
+    setVuePublic(false);
   }, [id]);
 
   if (!song) return null;
@@ -1267,6 +1322,14 @@ function SongPreview({
         >
           <Icon name="play" size={14} /> {t('Scène')}
         </button>
+        {/* 👁 L'œil doit être là où la partition s'affiche (b223) : Vincent
+            l'a cherché ICI, dans l'aperçu de la liste, pas seulement sur la
+            page du morceau. */}
+        <PublicEye
+          song={song}
+          actif={vuePublic}
+          onToggle={() => setVuePublic((v) => !v)}
+        />
         <button
           className="btn ghost small"
           title={t('Ajouter à une setlist')}
@@ -1380,7 +1443,9 @@ function SongPreview({
       {assocOpen && (
         <AssignSheet songId={song.id} onClose={() => setAssocOpen(false)} />
       )}
-      {!displayReal && (
+      {/* Transposer n'a aucun sens dans la vue du public : elle ne montre
+          pas un seul accord (b223). */}
+      {!displayReal && !vuePublic && (
         <div className="transpose" style={{ marginBottom: 10 }}>
           <span className="transpose-unit">
             <span className="lbl">{t('Transposer')}</span>
@@ -1442,13 +1507,21 @@ function SongPreview({
           )}
         </div>
       )}
-      <SongBody
-        song={song}
-        view="complete"
-        semitones={displayShift}
-        capo={0}
-        preferFlat={preferFlat}
-      />
+      {vuePublic ? (
+        <PublicPreview
+          song={song}
+          onSave={saveSong}
+          onClose={() => setVuePublic(false)}
+        />
+      ) : (
+        <SongBody
+          song={song}
+          view="complete"
+          semitones={displayShift}
+          capo={0}
+          preferFlat={preferFlat}
+        />
+      )}
     </aside>
   );
 }

@@ -48,6 +48,8 @@ groupe, direct). Marco est le second appareil.
 | M-1 | Ouvrir l'onglet Morceaux | Recherche + liste, rien d'autre à l'écran | 🔴 |
 | M-2 | Chercher par titre, par artiste, par tag | La liste se réduit ; la croix efface | 🔴 |
 | M-3 | Ouvrir « Filtrer » | Tri, vues, répertoires, tags | 🟠 |
+| M-3bis | ▶ sur la ligne d'un morceau | Un seul appui ouvre le mode scène — plus besoin de passer par le « ⋯ » (demande de Marco) | 🟠 |
+| M-3ter | Le bouton « 💡 Idées » | Visible **sans ouvrir « Filtrer »**, et seulement s'il y a des idées ; le compte annoncé = ce que l'écran montre | 🟠 |
 | M-4 | Trier par titre / artiste / récents | L'ordre change ; le choix survit au rechargement | ⚪ |
 | M-5 | Filtrer sur un répertoire de groupe | Seuls les morceaux de ce groupe ; « Filtre actif » l'annonce | 🔴 |
 | M-6 | Filtrer sur « Solo » | Tous sauf ceux déqualifiés du solo | 🟠 |
@@ -70,6 +72,7 @@ groupe, direct). Marco est le second appareil.
 | N° | Cas | Ce qu'on doit voir | Prio |
 |---|---|---|---|
 | P-1 | Transposer (+/−) | **Les accords écrits changent** et la tonalité suit ; c'est enregistré | 🔴 |
+| P-1bis | Taper sur un accord de la partition | Sa position guitare s'affiche (positions ouvertes et barrés) ; un accord exotique n'ouvre **rien** plutôt qu'un doigté inventé | 🟠 |
 | P-2 | Re-transposer en sens inverse | On retombe exactement sur l'original | 🔴 |
 | P-3 | Poser un capo | Ce qui sonne change, les accords affichés non ; l'aide le dit | 🟠 |
 | P-4 | Basculer « tonalité réelle » | Les accords s'affichent capo compris | ⚪ |
@@ -95,6 +98,7 @@ groupe, direct). Marco est le second appareil.
 | N° | Cas | Ce qu'on doit voir | Prio |
 |---|---|---|---|
 | I-1 | Rechercher un morceau et l'importer | Aperçu, puis ajout à la bibliothèque | 🔴 |
+| I-1bis | Choisir un résultat de recherche | La liste des autres versions **reste affichée**, le choix est coché : on en essaie une autre sans refaire la recherche (demande de Marco) | 🟠 |
 | I-2 | Coller le lien d'une page de partition | Idem | 🔴 |
 | I-3 | Coller du texte brut | Accords détectés et alignés **sur le début des mots** ; les en-têtes de sections du fichier sont gardés | 🔴 |
 | I-4 | Déposer un fichier .txt / ChordPro / .onsong | Contenu lu, titre repris du nom de fichier | 🔴 |
@@ -240,10 +244,14 @@ groupe, direct). Marco est le second appareil.
 | H-9bis | Arrêter le direct quand le réseau lâche | Le bouton ne reste JAMAIS sur « ⏳ Arrêt… » : au bout de 12 s il dit pourquoi et propose « ⏹ Arrêter quand même » ; l'app reprévient le serveur toute seule — ⚠️ cicatrice b216 | 🔴 |
 | H-10bis | 📱📱 Page du spectateur pendant un direct | Elle affiche le concert — **jamais un écran noir** ; avec ou sans partition, en pause, sans réseau — ⚠️ cicatrice b215 | 🔴 |
 | H-10ter | 📱📱 Paroles côté public | Un vers par ligne, centré, **sans grille d'accords ni ligne vide en trop** ; les sections sont rappelées en petit ; une section sans paroles (l'intro) ne s'affiche pas | 🟠 |
+| H-10ter2 | 📱📱 Bouton de réaction du spectateur | Il dit « J'aime » — le ❤ reste le symbole qui s'envole (demande de Marco) | ⚪ |
+| H-10ter3 | 📱📱 Taper dix fois sur ❤ pour le MÊME morceau | Le ❤ s'envole à chaque fois, mais **un seul cœur** est comptabilisé ; le bouton passe à « Aimé ». Un autre morceau, ou un autre spectateur, compte de nouveau — ⚠️ cicatrice b225 | 🔴 |
 | H-10quater | Fiche d'un morceau : l'œil « 👁 Vue du public » | Il est **visible tout en haut, sans rien dérouler** ; un clic bascule la partition sur le texte du direct — sans accords ni grille, sections rappelées ; « ✕ Ma partition » revient, accords compris | 🔴 |
 | H-10quinquies | « ✏️ Modifier ce texte », enregistrer, puis diffuser | Le public lit le texte réécrit — sur le direct, la setlist qu'il parcourt et le mode scène ; **la partition n'a pas bougé d'une ligne** | 🔴 |
 | H-10sexies | Modifier la partition APRÈS avoir retouché le texte public | L'œil dit « à revoir » **sans qu'on l'ouvre** ; le public lit toujours mon texte (rien n'est écrasé) ; « ↻ Reprendre ma partition » et « Garder mon texte » éteignent le repère tous les deux, et la vue **ne se referme pas** au nez de celui qui vient de trancher | 🟠 |
 | H-10septies | « ↩ Revenir au texte automatique », puis corriger la partition | Le public suit la correction tout seul, sans rien à régler | 🟠 |
+| H-10octies | Retoucher le texte public sur la version d'un GROUPE, puis basculer sur l'originale | Chaque version a SON texte : l'originale reste automatique, la version du groupe garde la retouche ; changer de version ne déclenche **aucune** fausse alerte « à revoir » — ⚠️ cicatrice b224 | 🔴 |
+| H-10nonies | 👥 Marco reçoit le morceau du groupe après ma retouche | Son public lit MON texte corrigé, pas la partition brute ; sa version perso n'est pas touchée. Vaut aussi quand je ne corrige QUE le texte public (rien d'autre ne change) — ⚠️ cicatrice b202/b224 | 🔴 |
 | H-11 | Fiche Artiste : les quatre chiffres | Cohérents avec l'historique, **jamais 0 spectateur avec des cœurs** — ⚠️ cicatrice b201/b203 | 🔴 |
 | H-12 | Concert passé rattaché à un live | Il affiche ses cœurs, mots et spectateurs — ⚠️ cicatrice b207 | 🟠 |
 | H-13 | Concert jamais joué | Aucun chiffre inventé | 🟠 |

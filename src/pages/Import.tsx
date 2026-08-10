@@ -139,6 +139,8 @@ export function Import() {
   });
   const [ugSearching, setUgSearching] = useState(false);
   const [ugResults, setUgResults] = useState<UgSearchResult[] | null>(null);
+  /** Le résultat en cours de chargement / chargé — repéré dans la liste. */
+  const [ugChoisi, setUgChoisi] = useState('');
   // Mise en forme automatique (b220) : l'IA passe sur CHAQUE import d'une
   // partition. Le texte collé reste la source ; le résultat de l'IA vit à
   // côté, pour qu'on puisse toujours revenir en arrière.
@@ -322,6 +324,7 @@ export function Import() {
     setError(null);
     setUgSearching(true);
     setUgResults(null);
+    setUgChoisi('');
     try {
       const results = await searchUgTabs(ugQuery.trim());
       setUgResults(results);
@@ -349,6 +352,7 @@ export function Import() {
       setError(null);
       setUgSearching(true);
       setUgResults(null);
+      setUgChoisi('');
       searchUgTabs(q)
         .then((results) => {
           if (seq !== searchSeq.current) return;
@@ -1133,19 +1137,35 @@ export function Import() {
         {method === 'ug' && ugResults !== null && ugResults.length > 0 && (
           <div
             className="card"
-            style={{ maxHeight: 320, overflowY: 'auto', padding: 6 }}
+            style={{
+              // Une fois une partition chargée, la liste se fait petite : elle
+              // reste à portée sans repousser l'aperçu hors de l'écran.
+              maxHeight: text.trim() !== '' ? 150 : 320,
+              overflowY: 'auto',
+              padding: 6,
+            }}
           >
+            {text.trim() !== '' && (
+              <p className="help" style={{ margin: '2px 6px 6px' }}>
+                {t('Une autre version ? Elles sont toujours là.')}
+              </p>
+            )}
             {ugResults.map((r, i) => (
               <div
-                className="row"
+                className={`row ${r.url === ugChoisi ? 'active' : ''}`}
                 key={i}
                 onClick={() => {
-                  setUgResults(null);
+                  // La liste RESTE (retour de Marco) : en choisir une ne doit
+                  // pas obliger à refaire la recherche pour essayer la
+                  // suivante — c'est justement quand la première ne convient
+                  // pas qu'on veut la deuxième.
+                  setUgChoisi(r.url);
                   void loadUgUrl(r.url);
                 }}
               >
                 <div className="grow">
                   <div className="title">
+                    {r.url === ugChoisi ? '✓ ' : ''}
                     {r.title}
                     {r.version > 1 ? ` (v${r.version})` : ''}
                   </div>

@@ -37,6 +37,7 @@
  * peut pas vérifier depuis la scène.
  */
 import { stripChords } from './chordpro';
+import { syncActiveVersion } from './model';
 import { Song } from '../types';
 
 /** Le minimum nécessaire pour savoir ce que lit le public. */
@@ -77,20 +78,22 @@ export function partitionAChange(song: SourcePublique): boolean {
  */
 export function retoucherParoles(song: Song, texte: string): Song {
   if (texte.trim() === '') return rendreAutomatique(song);
-  return {
+  // `syncActiveVersion` recopie le champ dans la VERSION active (b224) :
+  // c'est de là qu'il suit les versions et part vers les autres membres.
+  return syncActiveVersion({
     ...song,
     publicLyrics: {
       text: texte,
       from: parolesAutomatiques(song),
       updatedAt: new Date().toISOString(),
     },
-  };
+  });
 }
 
 /** Revenir au texte préparé depuis la partition. */
 export function rendreAutomatique(song: Song): Song {
   const { publicLyrics: _retire, ...reste } = song;
-  return reste;
+  return syncActiveVersion(reste);
 }
 
 /**
@@ -100,12 +103,12 @@ export function rendreAutomatique(song: Song): Song {
  */
 export function garderMonTexte(song: Song): Song {
   if (!parolesRetouchees(song)) return song;
-  return {
+  return syncActiveVersion({
     ...song,
     publicLyrics: {
       text: song.publicLyrics?.text ?? '',
       from: parolesAutomatiques(song),
       updatedAt: new Date().toISOString(),
     },
-  };
+  });
 }
