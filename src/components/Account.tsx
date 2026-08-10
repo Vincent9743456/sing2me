@@ -230,15 +230,25 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     void setMarketingConsent(session, pending === '1');
   }, [session?.userId]);
 
+  /**
+   * NOM DONNÉ PAR LE FOURNISSEUR (Google/Apple/Facebook) — MIS DE CÔTÉ, PAS
+   * ÉCRIT TOUT DE SUITE (b244, deuxième cause de la perte de profil de
+   * Vincent : son nom d'artiste était devenu « tessier vincent »).
+   *
+   * Ce nom s'écrivait AU MONTAGE, donc AVANT la fusion de connexion — et
+   * `saveArtist` horodate. Un profil local vide se retrouvait donc estampillé
+   * à l'instant, battait la copie du cloud à la fusion suivante, et partait
+   * l'écraser. Le nom du compte remplaçait le nom d'artiste, et le reste
+   * disparaissait.
+   *
+   * On garde donc le nom sous le coude et on ne l'applique qu'APRÈS la
+   * fusion, et seulement si le profil est TOUJOURS sans nom. C'est le seul
+   * moment où l'écrire ne peut rien écraser.
+   */
+  const nomFournisseur = useRef('');
   useEffect(() => {
     const given = takeProviderName();
-    if (given === '') return;
-    if ((store.prefs.userName ?? '').trim() === '') {
-      store.savePrefs({ ...store.prefs, userName: given });
-    }
-    if (store.artist.name.trim() === '') {
-      store.saveArtist({ ...store.artist, name: given });
-    }
+    if (given !== '') nomFournisseur.current = given;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Pas de push tant que la fusion initiale n'a pas eu lieu
@@ -410,6 +420,19 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         readyRef.current = true;
         setLastSync(new Date().toISOString());
         setStatus('ok');
+        // Le nom du fournisseur, MAINTENANT que la fusion est faite : il ne
+        // sert qu'à un compte qui n'a vraiment aucun nom (b244).
+        const donne = nomFournisseur.current;
+        nomFournisseur.current = '';
+        if (donne !== '') {
+          const apres = JSON.parse(stateRef.current) as SyncState;
+          if ((apres.prefs?.userName ?? '').trim() === '') {
+            store.savePrefs({ ...apres.prefs, userName: donne });
+          }
+          if ((apres.artist?.name ?? '').trim() === '') {
+            store.saveArtist({ ...apres.artist, name: donne });
+          }
+        }
         // Répertoires de groupes (étape 2b), après la bibliothèque perso
         void syncBands(valid);
         // Groupes cloud orphelins (supprimés localement, y compris avant que
