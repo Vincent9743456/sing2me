@@ -85,6 +85,10 @@ Règles :
   place de la recherche à 360 px : c'est l'`aria-label` qui le nomme. Il
   s'applique à toute l'app et vit dans `prefs.theme`, donc il suit le
   compte comme la langue. Les pages publiques ne le suivent pas.
+- **Le mode scène est sombre, sans alternative** (b235) : y entrer bascule
+  toute l'app en sombre et ne restaure rien en sortant. Les tokens
+  `--stage-bg` / `--stage-text` / `--stage-bar` n'ont donc pas de valeur
+  claire — un pupitre blanc en plein concert n'est pas un cas à couvrir.
 - Tokens ajoutés avec lui, parce qu'ils étaient écrits en dur :
   `--stage-text`, `--stage-bar` (le mode scène a sa propre paire — c'est un
   pupitre, pas une page), `--scrim` / `--scrim-soft` (voiles des modales et
