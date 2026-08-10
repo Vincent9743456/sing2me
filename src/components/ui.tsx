@@ -165,7 +165,7 @@ export function TopBar({
              Morceaux mène déjà à l'accueil, on n'ouvre pas un deuxième
              chemin vers la même action. */
           <span className="topbrand" aria-hidden="true">
-            <LogoMark size={30} />
+            <LogoMark size={56} />
           </span>
         )}
       </div>
@@ -215,7 +215,7 @@ export function TabBar({
   return (
     <nav className="tabbar">
       <div className="brand">
-        <Brand size={26} />
+        <Brand size={48} />
       </div>
       {TABS.map((tab) => (
         <button

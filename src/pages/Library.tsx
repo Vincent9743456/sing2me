@@ -995,7 +995,16 @@ export function Library() {
             d'importer. Le bouton n'existe QUE s'il y a des idées : l'écran
             reste « recherche + liste » pour tous les autres. */}
         {ideaCount > 0 && (
-          <div className="chips" style={{ marginTop: 'var(--sp-2)' }}>
+          /* De l'air en dessous (b241, constat de Vincent : « ils sont
+             collés, ce n'est pas joli ») : cette rangée sort de la barre
+             d'outils figée, donc rien ne la séparait de la première carte. */
+          <div
+            className="chips"
+            style={{
+              marginTop: 'var(--sp-2)',
+              marginBottom: 'var(--sp-3)',
+            }}
+          >
             <button
               className={`chip ${showIdeas ? '' : 'off'}`}
               aria-pressed={showIdeas}

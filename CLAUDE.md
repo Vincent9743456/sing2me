@@ -106,7 +106,12 @@
   l'on revient, et il disparaît à partir de 900 px pour ne pas doubler la
   barre latérale. Décoratif et NON cliquable — l'onglet Morceaux mène déjà à
   l'accueil, et on n'ouvre pas un deuxième chemin vers une action existante
-  (règle 3).
+  (règle 3). **Taille doublée en b241** (« double la taille si ça entre dans
+  le format ») : 56 px dans la barre du haut — 60 l'aurait poussée au-delà
+  de 86 px, 56 la garde à 83 et tient dans la gouttière de 64 déjà réservée.
+  `LogoMark` sert `dodosongs-128.png` jusqu'à 64 px d'affichage et
+  `dodosongs-256.png` au-delà : sinon l'icône se pixelise sur un écran à
+  haute densité, et la page du spectateur n'a pas à charger la grande.
 - **Reste à faire un jour** : l'adresse de déploiement est encore
   `sing2me-three.vercel.app` (c'est celle de Vercel, elle se change dans
   leur console, pas dans le code).

@@ -302,7 +302,7 @@ export function SharePage({
             padding: 'var(--sp-5)',
           }}
         >
-          <LogoMark size={48} />
+          <LogoMark size={96} />
           <h1 style={{ margin: 0 }}>
             {t("{from} t'invite à rejoindre « {band} »", {
               from: payload.invite.from,
@@ -735,7 +735,7 @@ export function SharePage({
 
       <div className="footer">
         <a className="ctabanner" href={location.origin + location.pathname}>
-          <LogoMark size={22} /> {t('Téléchargez')} <strong>DodoSongs</strong>{' '}
+          <LogoMark size={44} /> {t('Téléchargez')} <strong>DodoSongs</strong>{' '}
           {t('— votre songbook, gratuit')}
         </a>
         <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>

@@ -10,16 +10,18 @@
  * diverger de l'icône de la charte, puisqu'il en est un redimensionnement
  * (`scripts/build-icons.mjs`, à partir de `public/dodosongs.png`).
  *
- * Version 128 px : l'icône est affichée entre 16 et 64 px, y compris sur la
- * page du spectateur, qui a un budget de poids. La grande vit dans le
- * manifeste et le favicon.
+ * Deux fichiers, choisis par la taille demandée : la 128 px pour les emplois
+ * courants (barres, pieds de page — la page du spectateur la charge aussi et
+ * a un budget de poids), la 256 px au-delà de 64 px, sans quoi l'icône se
+ * voit pixelisée sur un écran à haute densité. La 512 vit dans le manifeste
+ * et le favicon.
  */
 import React from 'react';
 
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
     <img
-      src="/dodosongs-128.png"
+      src={size > 64 ? '/dodosongs-256.png' : '/dodosongs-128.png'}
       width={size}
       height={size}
       alt="DodoSongs"

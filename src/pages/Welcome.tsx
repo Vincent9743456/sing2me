@@ -23,7 +23,7 @@ export function Welcome() {
       style={{ paddingTop: 'calc(var(--sp-6) + env(safe-area-inset-top))' }}
     >
       <div style={{ textAlign: 'center', marginBottom: 'var(--sp-5)' }}>
-        <LogoMark size={64} />
+        <LogoMark size={128} />
         <h1 style={{ margin: 'var(--sp-3) 0 var(--sp-1)' }}>DodoSongs</h1>
         <p className="help" style={{ margin: 0 }}>
           {t('Ton songbook, tes groupes, tes concerts.')}
