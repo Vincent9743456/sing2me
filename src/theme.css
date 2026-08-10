@@ -360,6 +360,10 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* Un <a class="btn"> est un BOUTON : ni souligné, ni bleu (b242). Il n'y
+     avait pas de règle ici, seulement des remises à zéro locales — donc le
+     premier bouton-lien posé hors de ces zones sortait en lien brut. */
+  text-decoration: none;
   gap: 6px;
   border-radius: var(--radius-s);
   border: none;

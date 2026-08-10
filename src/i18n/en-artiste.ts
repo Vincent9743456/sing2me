@@ -467,6 +467,15 @@ export const EN_ARTISTE: Record<string, string> = {
     'An address you can say out loud (“type {hote}theband”). It opens the band’s page — photo, bio, musicians — and during a band show it leads to the gig, just like your QR.',
   'Cette adresse ouvre la page du groupe. Pendant un direct du groupe, elle mène au concert — comme ton QR.':
     'This address opens the band’s page. During a band show it leads to the gig — just like your QR.',
+  'Pas encore d’adresse publique.': 'No public address yet.',
+  'QR code de ta page publique': 'QR code for your public page',
+  '⤓ Enregistrer le QR': '⤓ Save the QR',
+  '↗ Partager': '↗ Share',
+  'À imprimer et à poser dans la salle — il ne change jamais.':
+    'Print it and put it up in the room — it never changes.',
+  'CE QUE VOIT LE PUBLIC': 'WHAT THE AUDIENCE SEES',
+  'Ta page publique n’est pas encore réservée. Enregistre ton profil : l’adresse se crée toute seule, à partir de ton nom d’artiste.':
+    'Your public page isn’t reserved yet. Save your profile: the address is created automatically, from your artist name.',
   'Masquer ce groupe au public': 'Hide this band from the audience',
   'il n’apparaît pas sur ta fiche publique, et tu ne peux pas lancer de direct à son nom': 'it does not appear on your public page, and you cannot start a live under its name',
   'Masquer « {nom} » au public ?': 'Hide “{nom}” from the audience?',

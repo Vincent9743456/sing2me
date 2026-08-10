@@ -2,7 +2,7 @@ import { LiveBanner } from '../components/LiveBanner';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { Icon } from '../components/Icon';
-import { ShareModal } from '../components/ShareModal';
+import { PublicPagePeek } from '../components/PublicPagePeek';
 import { AccountSection } from '../components/Account';
 import { GearEditor } from '../components/GearEditor';
 import { LinkPreviews } from '../components/LinkPreviews';
@@ -1065,18 +1065,26 @@ export function Artist() {
         </p>
       </div>
 
-      {share && payload && (
-        <ShareModal
-          title={t('Page publique de {nom}', { nom: draft.name })}
-          payload={payload}
-          // L'adresse À DICTER est celle qu'on partage (b175) : le lien
-          // technique « #/p/… » affiché jusqu'ici n'était pas la page
-          // publique et n'avait donc rien à faire ici.
-          directUrl={
-            cachedPublicName() !== ''
-              ? `${location.origin}/${cachedPublicName()}`
-              : undefined
-          }
+      {/* MA PAGE PUBLIQUE (b242, retour de Vincent : « ça devrait afficher ma
+          page telle que le public doit la voir »). Ce bouton n'ouvrait qu'un
+          QR et une rangée de raccourcis d'envoi — on ne pouvait donc pas
+          vérifier ce qu'un spectateur voit. L'aperçu montre maintenant la
+          page RÉELLEMENT publiée, relue depuis le serveur après
+          rafraîchissement, et rendue par le composant de la vraie page. Le QR
+          reste, en grand et enregistrable ; les raccourcis e-mail et WhatsApp
+          sont partis (« n'ont pas d'utilité »). */}
+      {share && (
+        <PublicPagePeek
+          titre={t('Page publique de {nom}', { nom: draft.name })}
+          adresse={cachedPublicName()}
+          publier={async () => {
+            const s = await getValidSession();
+            if (!s) return;
+            await ensurePublicPage(s, await profilAPublier(draft, bands));
+          }}
+          sansAdresse={t(
+            'Ta page publique n’est pas encore réservée. Enregistre ton profil : l’adresse se crée toute seule, à partir de ton nom d’artiste.',
+          )}
           onClose={() => setShare(false)}
         />
       )}
