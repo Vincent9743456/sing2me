@@ -337,6 +337,21 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     d'avant b192. Cas d'usage validé : un direct de Zakoustiks lancé par
     Vincent se trouve depuis `/zakoustiks` (miroir) COMME depuis `/vincent`
     (QR) — c'est le même `owner_id`.
+  - **la page publique d'un groupe se consulte DEPUIS SA FICHE** (b230,
+    demande de Vincent) — et sans quitter l'app (règle b187) : elle se
+    RECOPIE dans une fenêtre, son adresse se copie. Un groupe n'ayant pas de
+    page à lui, c'est celle de son détenteur qui s'affiche : c'est bien ce
+    que verra quiconque tape l'adresse du groupe.
+  - **l'onglet Artiste distingue ce que le public verra** (b230) : les
+    groupes masqués y sont en TRANSPARENCE (opacité + niveaux de gris +
+    bordure pointillée), avec la raison écrite en dessous. Cet écran donne
+    l'identité publique de l'artiste : y afficher à l'identique un groupe
+    qui n'en fait pas partie, c'était mentir par omission.
+    **Réserve à lever un jour** : la page publique ne LISTE aucun groupe
+    aujourd'hui (`PublicArtist` n'affiche ni membres ni groupes). La
+    transparence dit donc vrai sur l'identité de direct et sur l'adresse
+    miroir, mais tant que la liste n'existe pas, un groupe visible n'est pas
+    plus « sur la page » qu'un groupe masqué.
   - **un groupe peut être MASQUÉ au public** (b227, demande de Vincent) :
     « un groupe que je fais à l'occasion avec un pote n'a pas vocation à être
     exposé ». Masqué (`Band.hiddenFromPublic`), il disparaît des identités

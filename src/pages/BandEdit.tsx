@@ -5,6 +5,7 @@
  * membres réels ✓ affichée ici).
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import { BandPublicPeek } from '../components/BandPublicPeek';
 import { BandPublicCard } from '../components/BandPublicCard';
 
 import { useAccount } from '../components/Account';
@@ -137,6 +138,8 @@ export function BandEdit({ id }: { id: string }) {
   // Vue par défaut = écran d'accueil du groupe (3 portes) ; l'avancé
   // (édition, page publique, suppression) vit derrière « ⋯ ».
   const [editing, setEditing] = useState(false);
+  // Consulter la page publique du groupe sans quitter l'app (b230).
+  const [peek, setPeek] = useState(false);
   // b149 : l'édition passe par un BROUILLON — rien n'est enregistré tant
   // que « Valider » (barre de validation) n'est pas pressé.
   const [editDraft, setEditDraft] = useState<Band | null>(null);
@@ -806,8 +809,30 @@ export function BandEdit({ id }: { id: string }) {
                 ›
               </span>
             </button>
+
+            {/* PAGE PUBLIQUE DU GROUPE (b230, demande de Vincent). On ne
+                quitte pas l'app pour la consulter (règle b187) : elle se
+                recopie ici, et son adresse se copie pour être dictée. */}
+            <button className="bigrow" onClick={() => setPeek(true)}>
+              <span className="i" aria-hidden="true">
+                👁
+              </span>
+              <div className="grow" style={{ minWidth: 0 }}>
+                <div className="ti">{t('Page publique du groupe')}</div>
+                <div className="su">
+                  {band.hiddenFromPublic === true
+                    ? t('Masqué au public — pas d’adresse')
+                    : t('Ce que voit quelqu’un qui tape son adresse')}
+                </div>
+              </div>
+              <span className="chev" aria-hidden="true">
+                ›
+              </span>
+            </button>
           </>
         )}
+
+        {peek && <BandPublicPeek band={band} onClose={() => setPeek(false)} />}
 
         {editing && (
           <>

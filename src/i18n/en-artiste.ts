@@ -430,6 +430,29 @@ export const EN_ARTISTE: Record<string, string> = {
   'Le serveur n’a pas répondu. Tu peux couper ici : ton téléphone sort du direct, et l’application préviendra le serveur dès qu’elle y arrive.':
     'The server did not answer. You can stop here: your phone leaves the live, and the app will tell the server as soon as it can.',
 
+  // b230 — page publique du groupe + groupes masqués en transparence
+  'Page publique du groupe': 'Public page of the band',
+  'Masqué au public — pas d’adresse': 'Hidden from the audience — no address',
+  'Ce que voit quelqu’un qui tape son adresse':
+    'What someone typing its address sees',
+  '{nom} — masqué au public': '{nom} — hidden from the audience',
+  'Les groupes en transparence sont masqués au public : ils n’apparaissent pas sur ta page publique et ne peuvent pas porter un direct. Un appui sur l’œil, dans l’onglet Groupes, les rend visibles.':
+    'Faded bands are hidden from the audience: they do not appear on your public page and cannot carry a live. One tap on the eye, in the Bands tab, makes them visible.',
+  'Ce groupe est masqué au public : il n’a pas d’adresse, et aucun direct ne peut être lancé à son nom. Retire le masquage depuis l’onglet Groupes pour lui en donner une.':
+    'This band is hidden from the audience: it has no address, and no live can run under its name. Remove the hiding from the Bands tab to give it one.',
+  'Ce groupe n’a pas encore d’adresse publique. Le créateur peut lui en donner une depuis « Modifier ».':
+    'This band has no public address yet. The creator can give it one from “Edit”.',
+  'Cette adresse montre la page de celui qui tient le groupe — c’est le même concert que ton QR pendant un direct.':
+    'This address shows the page of whoever holds the band — it is the same concert as your QR during a live.',
+  'La page n’a pas pu être chargée. Elle existe peut-être quand même : réessaie avec du réseau.':
+    'The page could not be loaded. It may exist all the same: try again with a connection.',
+  '(aucune présentation)': '(no introduction)',
+  'Lien copié.': 'Link copied.',
+  'Copie impossible — sélectionne le lien à la main.':
+    'Copy failed — select the link by hand.',
+  Copier: 'Copy',
+  Lien: 'Link',
+
   // b228 — masquer / démasquer depuis la liste des groupes
   'masqué au public': 'hidden from the audience',
   'Masqué au public — aucun direct possible à son nom. Toucher pour le rendre visible.':

@@ -179,6 +179,8 @@ groupe, direct). Marco est le second appareil.
 | N° | Cas | Ce qu'on doit voir | Prio |
 |---|---|---|---|
 | G-1 | Créer un groupe | Bouton de validation visible ; le groupe apparaît | 🔴 |
+| G-1quinquies | Fiche d'un groupe → « 👁 Page publique du groupe » | La page s'ouvre **dans l'app** (jamais un onglet sans retour) et montre ce que verrait un visiteur ; l'adresse se copie. Un groupe masqué explique qu'il n'en a pas | 🟠 |
+| G-1sexies | Onglet Artiste → « Mes groupes » | Les groupes masqués sont **en transparence**, avec la raison écrite en dessous | 🟠 |
 | G-1quater | Onglet Groupes : l'œil sur la ligne d'un groupe | Un appui masque, un appui démasque — **sans entrer en modification** ; « masqué au public » se lit sous le nom — ⚠️ cicatrice b228 | 🔴 |
 | G-1bis | Groupe → Modifier → « Masquer ce groupe au public » | Il disparaît des identités publiques (onglet Artiste ET panneau ON AIR) : **impossible de lancer un direct à son nom** ; son adresse est retirée | 🔴 |
 | G-1ter | Groupe visible → adresse publique | Le créateur peut la réserver et la changer ; un membre la voit sans pouvoir la modifier | 🟠 |

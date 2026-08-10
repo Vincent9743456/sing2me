@@ -3488,3 +3488,16 @@ h2.pagetitle {
   margin-top: 2px;
 }
 
+
+/* Groupe masqué au public (b230) : l'onglet Artiste donne l'identité
+   PUBLIQUE de l'artiste — il doit donc distinguer d'un coup d'œil ce que le
+   public verra de ce qu'il ne verra pas. La transparence dit « présent chez
+   toi, absent dehors » sans ajouter ni badge ni ligne. */
+.bandavatar.masque {
+  opacity: 0.42;
+}
+.bandavatar.masque img,
+.bandavatar.masque > span[aria-hidden] {
+  filter: grayscale(1);
+  border-style: dashed;
+}
