@@ -9,7 +9,7 @@
  * vide, un point = un doigt, un trait épais = un barré, et le numéro de case
  * à gauche quand on n'est plus au sillet.
  */
-import React from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { MUET, Position } from '../lib/chordshapes';
 import { t } from '../i18n';
@@ -165,41 +165,84 @@ export function ChordDiagram({
 }
 
 /**
- * La feuille qui s'ouvre au clic sur un accord : le symbole, une ou
- * plusieurs positions, et rien d'autre. On ne quitte pas la partition.
+ * LA PASTILLE QUI S'OUVRE AU CLIC SUR UN ACCORD (b225, resserrée sur retour
+ * de Vincent : « plus petit, pour ne pas empiéter sur toute la partition ;
+ * toucher ailleurs doit faire disparaître la position »).
+ *
+ * Ce n'était pas la bonne forme : une boîte centrée sur fond noirci, c'est
+ * une interruption — on quitte la partition pour lire un accord, alors qu'on
+ * veut les DEUX sous les yeux (l'accord suivant est déjà à l'écran). D'où une
+ * pastille ANCRÉE sous l'accord touché, sans voile, calée pour ne jamais
+ * sortir de l'écran, et qui disparaît au moindre toucher — n'importe où, y
+ * compris sur la partition.
  */
 export function ChordSheet({
   symbole,
   positions,
+  ancre,
   onClose,
 }: {
   symbole: string;
   positions: Position[];
+  /** Rectangle de l'accord touché, en coordonnées écran. */
+  ancre: { x: number; bas: number; haut: number };
   onClose: () => void;
 }) {
+  const boite = useRef<HTMLDivElement | null>(null);
+  const [pose, setPose] = useState<{ left: number; top: number } | null>(null);
+
+  // Deux positions au plus : l'ouverte et le premier barré. Au-delà, la
+  // pastille redevient une boîte, ce qu'on vient justement d'enlever.
+  const montrees = positions.slice(0, 2);
+
+  useLayoutEffect(() => {
+    const el = boite.current;
+    if (!el) return;
+    const { width, height } = el.getBoundingClientRect();
+    const marge = 8;
+    const left = Math.min(
+      Math.max(marge, ancre.x - width / 2),
+      window.innerWidth - width - marge,
+    );
+    // Sous l'accord ; au-dessus s'il n'y a plus la place en bas.
+    const enBas = ancre.bas + 6;
+    const top =
+      enBas + height + marge <= window.innerHeight
+        ? enBas
+        : Math.max(marge, ancre.haut - height - 6);
+    setPose({ left, top });
+  }, [ancre.x, ancre.bas, ancre.haut, symbole]);
+
+  useEffect(() => {
+    const auClavier = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', auClavier);
+    return () => window.removeEventListener('keydown', auClavier);
+  }, [onClose]);
+
   return (
-    <div
-      className="chordsheet-back"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('Position de {accord}', { accord: symbole })}
-      onClick={onClose}
-    >
-      <div className="chordsheet" onClick={(e) => e.stopPropagation()}>
-        <div className="chordsheet-head">
-          <strong>{symbole}</strong>
-          <button
-            className="btn ghost small"
-            onClick={onClose}
-            aria-label={t('Fermer')}
-          >
-            {t('Fermer')}
-          </button>
-        </div>
-        <div className="chordsheet-body">
-          {positions.map((p, i) => (
+    // Capteur transparent : PAS de voile — la partition reste lisible autour.
+    // Il n'est là que pour recevoir le toucher qui referme.
+    <div className="chordpop-catch" onClick={onClose} role="presentation">
+      <div
+        ref={boite}
+        className="chordpop"
+        role="dialog"
+        aria-label={t('Position de {accord}', { accord: symbole })}
+        style={{
+          left: pose?.left ?? ancre.x,
+          top: pose?.top ?? ancre.bas + 6,
+          // Tant qu'on n'a pas mesuré, on ne montre rien : sinon la pastille
+          // saute d'un coin de l'écran à sa place, à chaque accord touché.
+          visibility: pose === null ? 'hidden' : 'visible',
+        }}
+      >
+        <div className="chordpop-head">{symbole}</div>
+        <div className="chordpop-body">
+          {montrees.map((p, i) => (
             <figure key={i}>
-              <ChordDiagram position={p} />
+              <ChordDiagram position={p} taille={0.62} />
               <figcaption>{nomDePosition(p)}</figcaption>
             </figure>
           ))}

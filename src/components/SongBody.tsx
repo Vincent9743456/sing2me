@@ -119,8 +119,12 @@ export function SongBody({
    * Un accord qu'on ne sait pas dessiner ne s'ouvre PAS — pas de feuille
    * vide, et surtout pas de doigté inventé.
    */
-  const [accordOuvert, setAccordOuvert] = useState<string | null>(null);
-  const positions = accordOuvert === null ? [] : positionsPour(accordOuvert);
+  const [accordOuvert, setAccordOuvert] = useState<{
+    symbole: string;
+    ancre: { x: number; bas: number; haut: number };
+  } | null>(null);
+  const positions =
+    accordOuvert === null ? [] : positionsPour(accordOuvert.symbole);
 
   function surClicAccord(e: React.MouseEvent<HTMLDivElement>) {
     if (!showChords) return;
@@ -128,15 +132,21 @@ export function SongBody({
     if (!cible) return;
     const symbole = (cible.textContent ?? '').trim();
     if (symbole === '' || positionsPour(symbole).length === 0) return;
-    setAccordOuvert(symbole);
+    // La pastille se pose SOUS l'accord touché : elle doit savoir où il est.
+    const r = cible.getBoundingClientRect();
+    setAccordOuvert({
+      symbole,
+      ancre: { x: r.left + r.width / 2, bas: r.bottom, haut: r.top },
+    });
   }
 
   return (
     <div style={{ fontSize: `${fontSize}rem` }} onClick={surClicAccord}>
       {accordOuvert !== null && positions.length > 0 && (
         <ChordSheet
-          symbole={accordOuvert}
+          symbole={accordOuvert.symbole}
           positions={positions}
+          ancre={accordOuvert.ancre}
           onClose={() => setAccordOuvert(null)}
         />
       )}
