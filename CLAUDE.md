@@ -959,6 +959,27 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **Un crochet vit AVANT les gardes** : tout `useEffect`/`useMemo` écrit
   au-dessus d'un `if (x === null) return …` doit se lire comme si l'état
   n'existait pas encore (`x?.id ?? ''`), dépendances comprises.
+- **LE CLAVIER EST UN FAIT DE L'APP, PAS UNE AFFAIRE D'ÉCRAN** (b264, constat
+  de Vincent : « l'apparition instantanée du clavier empêche de scroller »).
+  Sur iOS, le clavier ne rétrécit pas la fenêtre de mise en page : il la
+  RECOUVRE. Une page ordinaire garde donc exactement la même hauteur à faire
+  défiler — arrivé en bas, il ne reste plus rien à dérouler et le champ actif
+  est coincé dessous. On avait déjà corrigé le symptôme DEUX fois, chaque fois
+  pour un écran (b152 : translation sur les feuilles ; b210 : deux variables
+  CSS pour le sélecteur plein écran) ; la troisième surface — la page elle-même
+  — n'était traitée nulle part, et une quatrième était garantie. La mesure vit
+  donc à UN endroit (`src/lib/clavier.ts`), démarrée avant React comme le
+  thème, dans les DEUX entrées (le spectateur écrit aussi). Elle publie
+  `--vv-h`, `--vv-t`, `--clavier` et la classe `clavier-ouvert`, que le CSS
+  consomme : réserve de défilement sur `.app`, voiles arrêtés au-dessus du
+  clavier (donc feuilles et modales bien nées, sans un mot dans les
+  composants), barre d'onglets effacée pendant la saisie. Trois règles à ne
+  pas défaire : une hauteur qu'on n'a pas ne s'invente pas (sans
+  `visualViewport`, on ne pose RIEN et les valeurs de repli rendent le
+  comportement d'avant) ; en dessous de 90 px ce n'est pas un clavier mais la
+  barre d'adresse de Safari qui se replie ; et tout ce qui s'ancre en bas de
+  l'écran passe par `--clavier`, jamais par une translation posée sur un
+  élément — elle borne la hauteur sans donner de quoi faire défiler.
 - **Local-first vaut aussi pour le CODE** (b221, constat de Vincent en mode
   avion) : les DONNÉES vivaient bien en localStorage, mais l'application était
   retéléchargée à chaque lancement — sans réseau, elle ne s'ouvrait pas du

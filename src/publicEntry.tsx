@@ -18,6 +18,7 @@ import { EN_PUBLIC } from './i18n/en-public';
 import { Live } from './pages/Live';
 import { PublicArtist } from './pages/PublicArtist';
 import { RESERVED_NAMES } from './lib/publicName';
+import { suivreLeClavier } from './lib/clavier';
 import './theme.css';
 
 /**
@@ -29,6 +30,10 @@ import './theme.css';
  */
 registerTranslations(EN_PUBLIC);
 setLang(detectLang());
+
+// Le spectateur écrit lui aussi (mot au livre d'or, pendant le concert) :
+// le clavier ne doit pas plus bloquer sa page que celle du musicien (b264).
+suivreLeClavier();
 
 function pageFromPath(): React.ReactElement | null {
   const seg = location.pathname
