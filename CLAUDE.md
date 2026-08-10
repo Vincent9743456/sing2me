@@ -55,6 +55,43 @@
     n'ont PAS de valeur claire, sinon un pupitre blanc pourrait apparaître
     en plein concert.
 
+## Marque — DodoSongs (charte d'août 2026)
+
+- **Le nom du produit est DodoSongs**, et son icône est le dodo à la
+  guitare. Charte fournie par Vincent (PDF), appliquée en b236 **sur la
+  LANDING uniquement** (`public/site/index.html`) — voir la réserve plus
+  bas.
+- **L'icône est un bloc complet** : le dodo et sa guitare sont posés sur le
+  fond nuit, dans un carré aux angles arrondis (22,5 % du côté). On n'en
+  extrait ni l'oiseau seul ni la guitare seule ; jamais dans un cercle,
+  jamais recolorée, jamais d'ombre portée, jamais sur un fond autre que le
+  nuit. Fichier : `public/dodosongs.png` (512 px, coins transparents,
+  extrait du PDF de la charte).
+- **Deux règles qui ne souffrent aucune exception** :
+  1. **le CYAN est réservé aux ACCORDS** — dans le logo il ne sert qu'aux
+     mécaniques de la guitare, dans l'app qu'à ce qui se joue. Un
+     utilisateur apprend en trois secondes que « bleu = accord » ; une seule
+     exception et la règle ne vaut plus rien. Corollaire : la page du
+     PUBLIC est la seule surface où le cyan n'apparaît pas (elle ne montre
+     aucun accord) ;
+  2. **un seul bouton ambre par écran** : celui qui fait avancer.
+- Rappel compatible avec la règle 12 : le direct se signale par un mot ET un
+  mouvement, jamais par la couleur seule.
+- Jetons de la charte (déjà en place dans la landing) : `--nuit #0A0F1D`,
+  `--nuit-2 #121A2E`, `--nuit-3 #1B2540`, `--creme #F4F0E9`,
+  `--creme-2 #A7AFC2`, `--creme-3 #69728A`, `--ambre #FCA711`,
+  `--ambre-fonce #DE8F00`, `--cyan #5BD0E8`, `--vert #5BD8A6`,
+  `--rouge #F4677E` ; rayons 10 / 14 / 20 / 28 px. Typographie : DEUX
+  familles, pas plus — une sans-serif pour l'interface, une monospace pour
+  ce qui doit s'aligner (les accords, et rien d'autre).
+- **RÉSERVE, à lever avec Vincent** : l'APPLICATION n'a pas encore été
+  migrée. Elle s'appelle toujours Sing2Me et garde l'ancienne palette
+  (ambre `#f6832a`, cyan `#62c9f2`, fond `#0a0a0e`), qui est PROCHE mais
+  pas identique. Migrer l'app, c'est : les jetons de `theme.css` (les deux
+  thèmes), le nom dans l'i18n, le manifeste, les icônes, les e-mails, et
+  l'adresse de déploiement. Ne pas le faire à moitié : deux noms en
+  circulation est pire qu'un seul ancien.
+
 ## Déploiement & versions (pipeline actuel)
 
 - Source de vérité : ce dépôt GitHub (`Vincent9743456/sing2me`).

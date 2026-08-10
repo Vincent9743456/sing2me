@@ -3,291 +3,348 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sing2Me — Tes partitions, ton groupe, ta scène</title>
+<title>DodoSongs — Tes partitions, ton groupe, ta scène</title>
 <meta name="description" content="L'application des musiciens qui jouent en vrai : importe tes partitions en masse, prépare tes setlists, joue en mode scène — et fais suivre les paroles à ton public en direct." />
-<meta property="og:title" content="Sing2Me — Tes partitions, ton groupe, ta scène" />
+<meta name="theme-color" content="#0A0F1D" />
+<meta property="og:title" content="DodoSongs — Tes partitions, ton groupe, ta scène" />
 <meta property="og:description" content="Importe tes partitions, prépare tes setlists, joue en mode scène. Gratuit, sans installation, même hors connexion." />
 <meta property="og:type" content="website" />
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<meta property="og:image" content="/dodosongs.png" />
+<link rel="icon" href="/dodosongs.png" type="image/png" />
+<link rel="apple-touch-icon" href="/dodosongs.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
+  /* ============================================================
+     DodoSongs — charte d'identité, août 2026.
+     Les jetons ci-dessous sont ceux de la charte, au pipette près.
+     Deux règles qui ne souffrent aucune exception :
+       · le CYAN est réservé aux accords — et à rien d'autre ;
+       · un seul bouton ambre par écran : celui qui fait avancer.
+     ============================================================ */
   :root {
-    --bg: #0a0a0e;
-    --surface: #131318;
-    --surface-high: #1b1b23;
-    --border: #24242e;
-    --border-strong: #34343f;
-    --text: #f5f5f7;
-    --dim: #9a9aac;
-    --faint: #6b6b7e;
-    --accent: #f6832a;
-    --accent-strong: #ea6c12;
-    --accent-soft: rgba(246, 131, 42, 0.12);
-    --on-accent: #16120a;
-    --chord: #62c9f2;
-    --live: #ff1f1f;
-    --ok: #34d399;
-    --radius: 16px;
-    --radius-s: 10px;
+    --nuit:        #0A0F1D;   /* fond de l'application      */
+    --nuit-2:      #121A2E;   /* cartes, panneaux           */
+    --nuit-3:      #1B2540;   /* champs, surfaces hautes    */
+    --creme:       #F4F0E9;   /* texte principal, paroles   */
+    --creme-2:     #A7AFC2;   /* texte secondaire           */
+    --creme-3:     #69728A;   /* légendes                   */
+    --ambre:       #FCA711;   /* actions, direct            */
+    --ambre-fonce: #DE8F00;   /* pression                   */
+    --ambre-doux:  rgba(252, 167, 17, 0.14);
+    --cyan:        #5BD0E8;   /* accords — usage réservé    */
+    --cyan-doux:   rgba(91, 208, 232, 0.13);
+    --vert:        #5BD8A6;   /* succès, synchronisé        */
+    --rouge:       #F4677E;   /* erreur                     */
+    --ligne:       rgba(244, 240, 233, 0.10);
+    --ligne-2:     rgba(244, 240, 233, 0.18);
+    --r-s: 10px; --r-m: 14px; --r-l: 20px; --r-xl: 28px;
+    /* Deux familles, pas plus (charte §3) : une sans-serif pour tout, une
+       monospace pour ce qui doit s'aligner — les accords, et rien d'autre. */
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--nuit);
+    color: var(--creme);
+    font-family: var(--sans);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
-  h1, h2, h3 { font-family: 'Sora', 'Inter', sans-serif; line-height: 1.15; letter-spacing: -0.02em; }
+  h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; }
   a { color: inherit; text-decoration: none; }
   .wrap { max-width: 1080px; margin: 0 auto; padding: 0 22px; }
+  ::selection { background: var(--ambre-doux); color: var(--creme); }
+  :focus-visible { outline: 2px solid var(--ambre); outline-offset: 3px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* ---------- L'icône : un bloc complet, jamais décomposé ----------
+     Elle porte déjà son fond nuit et ses angles arrondis à 22,5 %.
+     Ni cercle, ni ombre portée, ni recoloration (charte §1). */
+  .icone { display: block; flex-shrink: 0; }
 
   /* ---------- Boutons ---------- */
   .btn {
     display: inline-flex; align-items: center; gap: 10px;
-    background: linear-gradient(180deg, var(--accent), var(--accent-strong));
-    color: var(--on-accent); font-weight: 700; font-family: 'Sora', sans-serif;
+    background: var(--ambre); color: var(--nuit);
+    font-weight: 700; font-family: var(--sans);
     padding: 15px 30px; border-radius: 999px; font-size: 1.02rem;
-    box-shadow: 0 8px 30px rgba(246, 131, 42, 0.28);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: background 0.15s ease, transform 0.15s ease;
   }
-  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 38px rgba(246, 131, 42, 0.4); }
+  .btn:hover { background: var(--ambre-fonce); transform: translateY(-2px); }
+  .btn:active { background: var(--ambre-fonce); transform: none; }
   .btn.ghost {
-    background: transparent; color: var(--text);
-    border: 1px solid var(--border-strong); box-shadow: none;
+    background: transparent; color: var(--creme);
+    border: 1px solid var(--ligne-2);
   }
-  .btn.ghost:hover { border-color: var(--accent); color: var(--accent); box-shadow: none; }
+  .btn.ghost:hover { background: var(--nuit-3); border-color: var(--creme-3); transform: none; }
 
-  /* ---------- Header ---------- */
+  /* ---------- En-tête ---------- */
   header {
     position: sticky; top: 0; z-index: 50;
-    background: rgba(10, 10, 14, 0.82); backdrop-filter: blur(14px);
-    border-bottom: 1px solid var(--border);
+    background: rgba(10, 15, 29, 0.86); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--ligne);
   }
-  .nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
-  .logo { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.25rem; display: flex; align-items: center; gap: 9px; }
-  .logo .amp { color: var(--accent); }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+  /* Zone de protection : un quart de la largeur de l'icône, libre (charte §1). */
+  .logo { font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 9px; letter-spacing: -0.02em; }
+  .logo .hl { color: var(--ambre); }
   .nav .btn { padding: 10px 20px; font-size: 0.92rem; }
-  .navlinks { display: flex; gap: 26px; font-size: 0.93rem; color: var(--dim); }
-  .navlinks a:hover { color: var(--text); }
-  @media (max-width: 720px) { .navlinks { display: none; } }
+  .navlinks { display: flex; gap: 26px; font-size: 0.93rem; color: var(--creme-2); }
+  .navlinks a:hover { color: var(--creme); }
+  @media (max-width: 760px) { .navlinks { display: none; } }
 
   /* ---------- Hero ---------- */
-  .hero { position: relative; padding: 84px 0 60px; }
+  /* `overflow-x: clip` et pas `hidden` : le halo décoratif déborde de 20 %
+     de chaque côté, et il doit être coupé SANS créer de conteneur de
+     défilement (qui rognerait l'ombre du téléphone). */
+  .hero { position: relative; padding: 84px 0 60px; overflow-x: clip; }
   .hero::before {
     content: ''; position: absolute; inset: -40% -20% auto -20%; height: 130%;
-    background:
-      radial-gradient(ellipse 55% 45% at 68% 30%, rgba(246, 131, 42, 0.13), transparent 65%),
-      radial-gradient(ellipse 45% 40% at 25% 15%, rgba(98, 201, 242, 0.07), transparent 60%);
+    background: radial-gradient(ellipse 55% 45% at 68% 30%, rgba(252, 167, 17, 0.10), transparent 65%);
     pointer-events: none;
   }
   .herogrid { position: relative; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; }
   @media (max-width: 860px) { .herogrid { grid-template-columns: 1fr; } }
   .kicker {
     display: inline-flex; align-items: center; gap: 8px;
-    background: var(--accent-soft); color: var(--accent);
+    background: var(--ambre-doux); color: var(--ambre);
     font-size: 0.82rem; font-weight: 600; letter-spacing: 0.04em;
     padding: 7px 16px; border-radius: 999px; margin-bottom: 22px;
   }
   .hero h1 { font-size: clamp(2.3rem, 5.5vw, 3.6rem); font-weight: 800; margin-bottom: 20px; }
-  .hero h1 .hl { color: var(--accent); }
-  .hero .sub { font-size: clamp(1.02rem, 2vw, 1.18rem); color: var(--dim); max-width: 34em; margin-bottom: 32px; }
+  .hero h1 .hl { color: var(--ambre); }
+  .hero .sub { font-size: clamp(1.02rem, 2vw, 1.18rem); color: var(--creme-2); max-width: 34em; margin-bottom: 32px; }
   .heroctas { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
-  .herofacts { display: flex; gap: 18px; flex-wrap: wrap; color: var(--faint); font-size: 0.86rem; }
+  .herofacts { display: flex; gap: 18px; flex-wrap: wrap; color: var(--creme-3); font-size: 0.86rem; }
   .herofacts span { display: inline-flex; align-items: center; gap: 6px; }
-  .herofacts b { color: var(--ok); font-weight: 600; }
+  .herofacts b { color: var(--vert); font-weight: 600; }
 
-  /* ---------- Téléphone (mode scène) ---------- */
+  /* ---------- Téléphone (mode scène) ----------
+     Le mode scène de la charte (§6) : fond nuit pur, rien que ce qui se joue. */
   .phonewrap { display: flex; justify-content: center; position: relative; }
   .phone {
     width: 280px; height: 560px; border-radius: 40px;
-    background: #000; border: 1px solid var(--border-strong);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 0 8px #131318, 0 0 90px rgba(246, 131, 42, 0.08);
+    background: var(--nuit); border: 1px solid var(--ligne-2);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 8px var(--nuit-2);
     overflow: hidden; position: relative; flex-shrink: 0;
   }
   .phone .notch {
     position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-    width: 90px; height: 22px; background: #131318; border-radius: 999px; z-index: 3;
+    width: 90px; height: 22px; background: var(--nuit-2); border-radius: 999px; z-index: 3;
   }
   .stagehead {
     position: absolute; top: 0; left: 0; right: 0; z-index: 2;
     padding: 44px 20px 12px;
-    background: linear-gradient(180deg, #000 55%, transparent);
-    font-family: 'Sora', sans-serif;
+    background: linear-gradient(180deg, var(--nuit) 55%, transparent);
   }
   .stagehead .t { font-weight: 700; font-size: 1.02rem; }
-  .stagehead .m { color: var(--faint); font-size: 0.72rem; margin-top: 2px; }
-  .stagehead .m b { color: var(--accent); font-weight: 600; }
+  .stagehead .m { color: var(--creme-3); font-size: 0.72rem; margin-top: 2px; font-family: var(--mono); }
+  .stagehead .m b { color: var(--ambre); font-weight: 700; }
   .scroller { position: absolute; inset: 0; padding: 105px 20px 30px; overflow: hidden; }
   .scrollin { animation: crawl 26s linear infinite; }
   @keyframes crawl { 0% { transform: translateY(0); } 8% { transform: translateY(0); } 100% { transform: translateY(-58%); } }
   .ln { margin-bottom: 3px; font-size: 0.86rem; white-space: nowrap; }
-  .ch { color: var(--chord); font-weight: 700; font-size: 0.78rem; font-family: 'Sora', sans-serif; letter-spacing: 0.06em; margin-bottom: -1px; }
-  .sec { color: var(--accent); font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 14px 0 6px; }
+  /* Les accords : cyan, monospace, au-dessus des paroles en crème (charte §5). */
+  .ch { color: var(--cyan); font-weight: 700; font-size: 0.76rem; font-family: var(--mono); margin-bottom: -1px; }
+  .sec { color: var(--ambre); font-weight: 700; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 14px 0 6px; }
   .stagefoot {
     position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
     display: flex; justify-content: space-between; align-items: center;
     padding: 14px 18px 20px;
-    background: linear-gradient(0deg, #000 60%, transparent);
-    font-size: 0.72rem; color: var(--faint);
+    background: linear-gradient(0deg, var(--nuit) 60%, transparent);
+    font-size: 0.72rem; color: var(--creme-3);
   }
-  .stagefoot .pill { border: 1px solid var(--border-strong); border-radius: 999px; padding: 4px 11px; }
-  .stagefoot .live { color: var(--live); border-color: rgba(255, 31, 31, 0.4); font-weight: 700; }
-  .stagefoot .live .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--live); margin-right: 5px; animation: blink 1.4s infinite; }
+  .stagefoot .pill { border: 1px solid var(--ligne-2); border-radius: 999px; padding: 4px 11px; }
+  /* Le direct se signale par un mot ET un mouvement, jamais par la couleur
+     seule (charte §4) : le libellé « ON AIR » et le point qui bat. */
+  .stagefoot .live { color: var(--ambre); border-color: var(--ambre); font-weight: 700; }
+  .stagefoot .live .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ambre); margin-right: 5px; animation: blink 1.4s infinite; }
   @keyframes blink { 50% { opacity: 0.25; } }
 
   /* ---------- Sections ---------- */
   section { padding: 76px 0; }
   .sechead { text-align: center; max-width: 620px; margin: 0 auto 52px; }
   .sechead h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); font-weight: 800; margin-bottom: 14px; }
-  .sechead p { color: var(--dim); font-size: 1.05rem; }
+  .sechead p { color: var(--creme-2); font-size: 1.05rem; }
 
   /* ---------- 3 étapes ---------- */
   .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
   @media (max-width: 820px) { .steps { grid-template-columns: 1fr; } }
   .step {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 30px 26px; position: relative;
+    background: var(--nuit-2); border: 1px solid var(--ligne);
+    border-radius: var(--r-l); padding: 30px 26px; position: relative;
   }
   .step .num {
-    font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.8rem;
-    color: var(--accent); background: var(--accent-soft);
+    font-weight: 800; font-size: 0.8rem;
+    color: var(--ambre); background: var(--ambre-doux);
     width: 34px; height: 34px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
   }
   .step h3 { font-size: 1.18rem; margin-bottom: 10px; }
-  .step p { color: var(--dim); font-size: 0.94rem; }
+  .step p { color: var(--creme-2); font-size: 0.94rem; }
 
   /* ---------- Grille de fonctionnalités ---------- */
   .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
   @media (max-width: 940px) { .feats { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 620px) { .feats { grid-template-columns: 1fr; } }
   .feat {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 26px 24px;
+    background: var(--nuit-2); border: 1px solid var(--ligne);
+    border-radius: var(--r-l); padding: 26px 24px;
     transition: border-color 0.2s ease, transform 0.2s ease;
   }
-  .feat:hover { border-color: var(--border-strong); transform: translateY(-3px); }
+  .feat:hover { border-color: var(--ligne-2); transform: translateY(-3px); }
   .feat .ico { font-size: 1.7rem; margin-bottom: 14px; display: block; }
   .feat h3 { font-size: 1.05rem; margin-bottom: 8px; }
-  .feat p { color: var(--dim); font-size: 0.9rem; }
+  .feat p { color: var(--creme-2); font-size: 0.9rem; }
+
+  /* ---------- La partition, composant central (charte §5) ---------- */
+  .partition {
+    background: var(--nuit-2); border: 1px solid var(--ligne);
+    border-radius: var(--r-xl); padding: 40px 34px;
+    max-width: 720px; margin: 0 auto; overflow-x: auto;
+  }
+  .partition .lab {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--creme-3); margin-bottom: 18px;
+  }
+  .partition .ch { font-size: 0.95rem; }
+  .partition .ln { font-size: 1.08rem; margin-bottom: 10px; }
 
   /* ---------- Bloc ON AIR ---------- */
   .onair {
-    background: linear-gradient(135deg, var(--surface) 0%, #17131a 100%);
-    border: 1px solid var(--border); border-radius: 22px;
+    background: var(--nuit-2);
+    border: 1px solid var(--ligne); border-radius: var(--r-xl);
     padding: 52px 46px; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 44px; align-items: center;
     position: relative; overflow: hidden;
   }
   .onair::after {
     content: ''; position: absolute; right: -15%; top: -40%;
     width: 60%; height: 130%;
-    background: radial-gradient(ellipse, rgba(255, 31, 31, 0.09), transparent 65%);
+    background: radial-gradient(ellipse, rgba(252, 167, 17, 0.09), transparent 65%);
     pointer-events: none;
   }
   @media (max-width: 820px) { .onair { grid-template-columns: 1fr; padding: 36px 26px; } }
   .onair .badge {
     display: inline-flex; align-items: center; gap: 8px;
-    color: var(--live); font-family: 'Sora', sans-serif; font-weight: 800;
+    color: var(--ambre); font-weight: 800;
     font-size: 0.85rem; letter-spacing: 0.12em;
-    border: 1px solid rgba(255, 31, 31, 0.4); border-radius: 999px;
+    border: 1px solid var(--ambre); border-radius: 999px;
     padding: 7px 16px; margin-bottom: 20px;
   }
-  .onair .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--live); animation: blink 1.4s infinite; }
+  .onair .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ambre); animation: blink 1.4s infinite; }
   .onair h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); margin-bottom: 14px; }
-  .onair p { color: var(--dim); max-width: 30em; }
-  .onair ul { list-style: none; margin-top: 18px; color: var(--dim); font-size: 0.95rem; }
+  .onair p { color: var(--creme-2); max-width: 30em; }
+  .onair ul { list-style: none; margin-top: 18px; color: var(--creme-2); font-size: 0.95rem; }
   .onair li { margin-bottom: 9px; padding-left: 26px; position: relative; }
-  .onair li::before { content: '✓'; position: absolute; left: 0; color: var(--ok); font-weight: 700; }
+  .onair li::before { content: '✓'; position: absolute; left: 0; color: var(--vert); font-weight: 700; }
   .qrcard {
-    background: #fff; border-radius: 18px; padding: 26px;
+    background: var(--creme); border-radius: var(--r-l); padding: 26px;
     display: flex; flex-direction: column; align-items: center; gap: 12px;
-    color: #16120a; font-family: 'Sora', sans-serif; text-align: center;
+    color: var(--nuit); text-align: center;
     max-width: 240px; margin: 0 auto; position: relative; z-index: 1;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
     transform: rotate(2deg);
   }
   .qrcard .qr { width: 150px; height: 150px; }
   .qrcard b { font-size: 0.95rem; }
-  .qrcard span { font-size: 0.75rem; color: #6b6b7e; font-family: 'Inter', sans-serif; }
+  .qrcard span { font-size: 0.75rem; color: #565E70; }
+
+  /* ---------- L'écran du public (charte §7) ----------
+     Une seule chose à l'écran : les paroles du moment. Le vers en cours en
+     crème pleine, les autres estompés. AUCUN accord — c'est la seule
+     surface où le cyan n'apparaît pas. */
+  .publicscreen {
+    background: var(--nuit); border: 1px solid var(--ligne);
+    border-radius: var(--r-l); padding: 30px 26px; text-align: center;
+    max-width: 300px; margin: 0 auto;
+  }
+  .publicscreen .past { color: var(--creme-3); font-size: 0.95rem; margin-bottom: 8px; }
+  .publicscreen .now { color: var(--creme); font-size: 1.16rem; font-weight: 600; margin-bottom: 8px; }
+  .publicscreen .next { color: var(--creme-3); font-size: 0.95rem; }
 
   /* ---------- Piliers ---------- */
   .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
   @media (max-width: 820px) { .pillars { grid-template-columns: 1fr; } }
-  .pillar { text-align: center; padding: 34px 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-  .pillar .big { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--accent); margin-bottom: 8px; }
-  .pillar p { color: var(--dim); font-size: 0.92rem; }
+  .pillar { text-align: center; padding: 34px 24px; border: 1px solid var(--ligne); border-radius: var(--r-l); background: var(--nuit-2); }
+  .pillar .big { font-weight: 800; font-size: 1.5rem; color: var(--ambre); margin-bottom: 8px; }
+  .pillar p { color: var(--creme-2); font-size: 0.92rem; }
 
   /* ---------- Tarifs ---------- */
-  .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
+  .pricing { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; align-items: start; }
   @media (max-width: 820px) { .pricing { grid-template-columns: 1fr; } }
-  .pricecard { padding: 30px 26px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); display: flex; flex-direction: column; }
-  .pricecard.feat { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft); }
-  .pricecard h3 { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.25rem; margin-bottom: 4px; }
-  .pricecard .price { color: var(--accent); font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 16px; }
-  .pricecard .soon { display: inline-block; margin-left: 8px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 3px 9px; vertical-align: middle; font-family: 'Sora', sans-serif; font-weight: 700; }
+  .pricecard { padding: 30px 26px; border: 1px solid var(--ligne); border-radius: var(--r-l); background: var(--nuit-2); display: flex; flex-direction: column; }
+  .pricecard.mis { border-color: var(--ambre); }
+  .pricecard h3 { font-weight: 800; font-size: 1.25rem; margin-bottom: 4px; }
+  .pricecard .price { color: var(--ambre); font-weight: 700; font-size: 1.05rem; margin-bottom: 16px; }
+  .pricecard .soon { display: inline-block; margin-left: 8px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ambre); background: var(--ambre-doux); border-radius: 999px; padding: 3px 9px; vertical-align: middle; font-weight: 700; }
   .pricecard ul { list-style: none; padding: 0; margin: 0; }
-  .pricecard li { color: var(--dim); font-size: 0.92rem; padding: 6px 0 6px 24px; position: relative; }
-  .pricecard li::before { content: '✓'; color: var(--accent); position: absolute; left: 0; font-weight: 700; }
-  .pricecard .keep { margin-top: 14px; color: var(--text); font-size: 0.9rem; font-style: italic; }
-  .pricebanner { margin-top: 26px; background: var(--accent-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 26px; text-align: center; }
-  .pricebanner p { color: var(--text); font-size: 1.02rem; margin: 0; line-height: 1.55; }
-  .pricebanner .small { color: var(--dim); font-size: 0.86rem; margin-top: 10px; }
+  .pricecard li { color: var(--creme-2); font-size: 0.92rem; padding: 6px 0 6px 24px; position: relative; }
+  .pricecard li::before { content: '✓'; color: var(--ambre); position: absolute; left: 0; font-weight: 700; }
+  .pricecard .keep { margin-top: 14px; color: var(--creme); font-size: 0.9rem; font-style: italic; }
+  .pricebanner { margin-top: 26px; background: var(--ambre-doux); border: 1px solid var(--ligne); border-radius: var(--r-l); padding: 22px 26px; text-align: center; }
+  .pricebanner p { color: var(--creme); font-size: 1.02rem; margin: 0; line-height: 1.55; }
 
   /* ---------- FAQ ---------- */
   .faq { max-width: 720px; margin: 0 auto; }
   .faq details {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius-s); padding: 20px 24px; margin-bottom: 12px;
+    background: var(--nuit-2); border: 1px solid var(--ligne);
+    border-radius: var(--r-m); padding: 20px 24px; margin-bottom: 12px;
   }
   .faq summary {
-    cursor: pointer; font-family: 'Sora', sans-serif; font-weight: 600;
+    cursor: pointer; font-weight: 600;
     font-size: 1rem; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px;
   }
   .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: '+'; color: var(--accent); font-size: 1.3rem; font-weight: 400; transition: transform 0.2s; flex-shrink: 0; }
+  .faq summary::after { content: '+'; color: var(--ambre); font-size: 1.3rem; font-weight: 400; transition: transform 0.2s; flex-shrink: 0; }
   .faq details[open] summary::after { transform: rotate(45deg); }
-  .faq details p { color: var(--dim); font-size: 0.94rem; margin-top: 12px; }
+  .faq details p { color: var(--creme-2); font-size: 0.94rem; margin-top: 12px; }
 
   /* ---------- CTA final ---------- */
-  .final { text-align: center; padding: 90px 0 100px; position: relative; }
+  .final { text-align: center; padding: 90px 0 100px; position: relative; overflow-x: clip; }
   .final::before {
     content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse 60% 55% at 50% 60%, rgba(246, 131, 42, 0.1), transparent 70%);
+    background: radial-gradient(ellipse 60% 55% at 50% 60%, rgba(252, 167, 17, 0.10), transparent 70%);
     pointer-events: none;
   }
   .final h2 { font-size: clamp(1.9rem, 4.5vw, 2.8rem); font-weight: 800; margin-bottom: 16px; position: relative; }
-  .final p { color: var(--dim); margin-bottom: 34px; font-size: 1.08rem; position: relative; }
+  .final p { color: var(--creme-2); margin-bottom: 34px; font-size: 1.08rem; position: relative; }
   .final .btn { font-size: 1.12rem; padding: 18px 40px; position: relative; }
-  .final .note { margin-top: 18px; font-size: 0.85rem; color: var(--faint); }
+  .final .note { margin-top: 18px; font-size: 0.85rem; color: var(--creme-3); }
 
-  footer { border-top: 1px solid var(--border); padding: 54px 0 44px; color: var(--dim); }
+  footer { border-top: 1px solid var(--ligne); padding: 54px 0 44px; color: var(--creme-2); }
   .footmain { text-align: center; max-width: 640px; margin: 0 auto; }
-  .footbig { font-family: 'Sora', sans-serif; font-weight: 800; font-size: clamp(1.4rem, 3.6vw, 1.7rem); color: var(--text); margin: 0 0 12px; line-height: 1.2; }
-  .footbig .hl { color: var(--accent); }
-  .footsub { color: var(--dim); font-size: 1.02rem; margin: 0; }
+  .footbig { font-weight: 800; font-size: clamp(1.4rem, 3.6vw, 1.7rem); color: var(--creme); margin: 0 0 12px; line-height: 1.2; }
+  .footbig .hl { color: var(--ambre); }
+  .footsub { color: var(--creme-2); font-size: 1.02rem; margin: 0; }
   .footlinks { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; margin: 28px 0; font-size: 0.94rem; }
-  .footlinks a { color: var(--dim); }
-  .footlinks a:hover { color: var(--accent); }
-  .footlinks .sep { color: var(--border-strong); }
-  .footbase { border-top: 1px solid var(--border); padding-top: 22px; text-align: center; font-size: 0.82rem; color: var(--faint); display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .footlinks a { color: var(--creme-2); }
+  .footlinks a:hover { color: var(--ambre); }
+  .footlinks .sep { color: var(--creme-3); }
+  .footbase { border-top: 1px solid var(--ligne); padding-top: 22px; text-align: center; font-size: 0.82rem; color: var(--creme-3); display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
 
 <header>
   <div class="wrap nav">
-    <a class="logo" href="#top"><svg width="26" height="26" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 6h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H22l-9 8v-8H8a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z" fill="none" stroke="#f6832a" stroke-width="3" stroke-linejoin="round"/><circle cx="19" cy="27" r="4" fill="#f5f5f7"/><rect x="21.6" y="13" width="2.6" height="14" rx="1.3" fill="#f5f5f7"/><path d="M24.2 13c4.5 0.5 7 2.5 8.5 5.5" stroke="#f5f5f7" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span>Sing<span class="amp">2</span>Me</span></a>
+    <a class="logo" href="#top">
+      <img class="icone" src="/dodosongs.png" width="30" height="30" alt="" />
+      <span>Dodo<span class="hl">Songs</span></span>
+    </a>
     <nav class="navlinks">
       <a href="#etapes">Comment ça marche</a>
       <a href="#fonctions">Fonctionnalités</a>
+      <a href="#partition">La partition</a>
       <a href="#onair">En concert</a>
       <a href="#tarifs">Tarifs</a>
-      <a href="#faq">Questions</a>
     </nav>
     <a class="btn" href="https://sing2me-three.vercel.app/">Ouvrir l'app</a>
   </div>
@@ -299,12 +356,12 @@
       <div class="kicker">Pour les musiciens qui jouent en vrai 🎤</div>
       <h1>Tes partitions, ton groupe, <span class="hl">ta scène.</span></h1>
       <p class="sub">
-        Sing2Me réunit tout ce qu'il faut entre la répét et le concert :
+        DodoSongs réunit tout ce qu'il faut entre la répét et le concert :
         ta bibliothèque de morceaux, tes setlists, un mode scène taillé
         pour le direct — et ton public qui suit les paroles en temps réel.
       </p>
       <div class="heroctas">
-        <a class="btn" href="https://sing2me-three.vercel.app/">Essayer Sing2Me — gratuit</a>
+        <a class="btn" href="https://sing2me-three.vercel.app/">Essayer DodoSongs — gratuit</a>
         <a class="btn ghost" href="#etapes">Voir comment ça marche</a>
       </div>
       <div class="herofacts">
@@ -367,7 +424,7 @@
   <div class="wrap">
     <div class="sechead">
       <h2>De tes vieilles partitions au concert, en trois temps</h2>
-      <p>Pas besoin de tout refaire : Sing2Me récupère ce que tu as déjà, puis t'accompagne jusqu'à la scène.</p>
+      <p>Pas besoin de tout refaire : DodoSongs récupère ce que tu as déjà, puis t'accompagne jusqu'à la scène.</p>
     </div>
     <div class="steps">
       <div class="step">
@@ -432,13 +489,31 @@
       <div class="feat">
         <span class="ico">🌙</span>
         <h3>Mode scène</h3>
-        <p>Plein écran noir, lisible à trois mètres, défilement auto à vitesse réglable, anti-veille. Conçu pour être touché le moins possible pendant que tu joues.</p>
+        <p>Plein écran nuit, lisible à trois mètres, défilement auto à vitesse réglable, anti-veille. Conçu pour être touché le moins possible pendant que tu joues.</p>
       </div>
       <div class="feat">
         <span class="ico">📱</span>
-        <h3>Partage & QR codes</h3>
-        <p>Chaque morceau, setlist ou concert se partage en un lien ou un QR code — accords pour le groupe, paroles seules pour le public. Sans application à installer.</p>
+        <h3>Page publique &amp; QR code</h3>
+        <p>Ton adresse à toi, celle de ton groupe, et un QR unique pour le public : les paroles pendant le concert, ta fiche d'artiste le reste du temps. Sans application à installer.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="partition" style="padding-top: 0;">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>Une partition qui se lit à trois mètres</h2>
+      <p>L'écran le plus regardé de l'application. Les accords en cyan, alignés au caractère près, au-dessus des paroles. Rien d'autre ne porte de couleur — en trois secondes, on sait que bleu veut dire accord.</p>
+    </div>
+    <div class="partition">
+      <div class="lab">Le temps des cerises · Traditionnel · Lam</div>
+      <div class="ln ch">Lam&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mi7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Lam</div>
+      <div class="ln">Quand nous chanterons le temps des cerises</div>
+      <div class="ln ch">Lam&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ré7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sol</div>
+      <div class="ln">Et gai rossignol et merle moqueur</div>
+      <div class="ln ch">Sol&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Do&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sol</div>
+      <div class="ln">Seront tous en fête</div>
     </div>
   </div>
 </section>
@@ -458,17 +533,22 @@
           <li>Paroles synchronisées en temps réel pendant le concert</li>
           <li>Le public envoie des ❤ — comptés morceau par morceau</li>
           <li>Pourboires par ton lien de paiement (PayPal, Lydia…)</li>
-          <li>Hors concert : ta page artiste, tes liens d'écoute, tes prochaines dates</li>
+          <li>Hors concert : ta page artiste, tes groupes, tes prochaines dates</li>
         </ul>
       </div>
       <div>
         <div class="qrcard">
           <svg class="qr" viewBox="0 0 29 29" shape-rendering="crispEdges" aria-hidden="true">
-            <rect width="29" height="29" fill="#fff"/>
-            <path fill="#16120a" d="M0 0h7v1H0zM10 0h2v1h-2zM14 0h1v1h-1zM17 0h2v1h-2zM22 0h7v1h-7zM0 1h1v1H0zM6 1h1v1H6zM9 1h1v1H9zM12 1h3v1h-3zM16 1h1v1h-1zM19 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1H0zM2 2h3v1H2zM6 2h1v1H6zM8 2h2v1H8zM13 2h1v1h-1zM15 2h3v1h-3zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1H0zM2 3h3v1H2zM6 3h1v1H6zM9 3h3v1H9zM14 3h2v1h-2zM18 3h2v1h-2zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1H0zM2 4h3v1H2zM6 4h1v1H6zM8 4h1v1H8zM11 4h2v1h-2zM15 4h1v1h-1zM17 4h1v1h-1zM19 4h2v1h-2zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1H0zM6 5h1v1H6zM9 5h2v1H9zM13 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1H0zM8 6h1v1H8zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM9 7h2v1H9zM13 7h3v1h-3zM17 7h1v1h-1zM19 7h2v1h-2zM0 8h2v1H0zM3 8h4v1H3zM8 8h3v1H8zM12 8h1v1h-1zM15 8h2v1h-2zM18 8h1v1h-1zM21 8h3v1h-3zM25 8h2v1h-2zM28 8h1v1h-1zM1 9h1v1H1zM4 9h1v1H4zM7 9h2v1H7zM11 9h1v1h-1zM14 9h1v1h-1zM16 9h2v1h-2zM19 9h1v1h-1zM23 9h2v1h-2zM26 9h1v1h-1zM0 10h2v1H0zM3 10h1v1H3zM5 10h2v1H5zM9 10h2v1H9zM12 10h2v1h-2zM17 10h1v1h-1zM20 10h2v1h-2zM24 10h1v1h-1zM26 10h3v1h-3zM2 11h1v1H2zM4 11h1v1H4zM8 11h1v1H8zM10 11h1v1h-1zM13 11h3v1h-3zM18 11h2v1h-2zM21 11h1v1h-1zM25 11h1v1h-1zM27 11h1v1h-1zM0 12h1v1H0zM3 12h3v1H3zM6 12h2v1H6zM9 12h1v1H9zM11 12h1v1h-1zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM22 12h2v1h-2zM26 12h2v1h-2zM1 13h2v1H1zM5 13h1v1H5zM7 13h2v1H7zM10 13h2v1h-2zM15 13h1v1h-1zM18 13h1v1h-1zM20 13h2v1h-2zM23 13h1v1h-1zM25 13h2v1h-2zM28 13h1v1h-1zM0 14h2v1H0zM4 14h1v1H4zM6 14h1v1H6zM8 14h1v1H8zM12 14h3v1h-3zM16 14h1v1h-1zM19 14h2v1h-2zM22 14h1v1h-1zM24 14h1v1h-1zM27 14h2v1h-2zM1 15h1v1H1zM3 15h1v1H3zM5 15h1v1H5zM9 15h2v1H9zM13 15h1v1h-1zM15 15h2v1h-2zM18 15h1v1h-1zM21 15h2v1h-2zM25 15h1v1h-1zM28 15h1v1h-1zM0 16h1v1H0zM2 16h2v1H2zM6 16h2v1H6zM10 16h1v1h-1zM12 16h1v1h-1zM14 16h2v1h-2zM17 16h2v1h-2zM20 16h1v1h-1zM23 16h2v1h-2zM26 16h2v1h-2zM1 17h1v1H1zM4 17h2v1H4zM8 17h1v1H8zM11 17h2v1h-2zM15 17h1v1h-1zM19 17h1v1h-1zM22 17h1v1h-1zM24 17h2v1h-2zM27 17h1v1h-1zM0 18h2v1H0zM3 18h1v1H3zM6 18h1v1H6zM9 18h1v1H9zM12 18h2v1h-2zM16 18h2v1h-2zM20 18h2v1h-2zM24 18h1v1h-1zM26 18h1v1h-1zM28 18h1v1h-1zM1 19h1v1H1zM4 19h1v1H4zM7 19h2v1H7zM10 19h2v1h-2zM14 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM22 19h2v1h-2zM25 19h2v1h-2zM0 20h1v1H0zM2 20h3v1H2zM6 20h1v1H6zM8 20h2v1H8zM11 20h1v1h-1zM13 20h3v1h-3zM18 20h3v1h-3zM20 20h5v1h-5zM26 20h2v1h-2zM8 21h1v1H8zM10 21h2v1h-2zM14 21h2v1h-2zM17 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM26 21h1v1h-1zM28 21h1v1h-1zM0 22h7v1H0zM8 22h2v1H8zM12 22h1v1h-1zM15 22h2v1h-2zM18 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h3v1h-3zM0 23h1v1H0zM6 23h1v1H6zM9 23h1v1H9zM11 23h2v1h-2zM14 23h1v1h-1zM17 23h2v1h-2zM20 23h1v1h-1zM24 23h2v1h-2zM27 23h1v1h-1zM0 24h1v1H0zM2 24h3v1H2zM6 24h1v1H6zM8 24h1v1H8zM10 24h2v1h-2zM13 24h2v1h-2zM16 24h1v1h-1zM19 24h2v1h-2zM22 24h4v1h-4zM28 24h1v1h-1zM0 25h1v1H0zM2 25h3v1H2zM6 25h1v1H6zM9 25h2v1H9zM12 25h1v1h-1zM15 25h2v1h-2zM18 25h1v1h-1zM21 25h1v1h-1zM23 25h1v1h-1zM25 25h2v1h-2zM0 26h1v1H0zM2 26h3v1H2zM6 26h1v1H6zM8 26h2v1H8zM11 26h2v1h-2zM14 26h2v1h-2zM17 26h2v1h-2zM20 26h2v1h-2zM24 26h1v1h-1zM26 26h2v1h-2zM0 27h1v1H0zM6 27h1v1H6zM8 27h1v1H8zM10 27h1v1h-1zM13 27h1v1h-1zM16 27h1v1h-1zM19 27h2v1h-2zM22 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM0 28h7v1H0zM9 28h2v1H9zM12 28h2v1h-2zM15 28h1v1h-1zM18 28h1v1h-1zM21 28h1v1h-1zM23 28h2v1h-2zM26 28h3v1h-3z"/>
+            <rect width="29" height="29" fill="#F4F0E9"/>
+            <path fill="#0A0F1D" d="M0 0h7v1H0zM10 0h2v1h-2zM14 0h1v1h-1zM17 0h2v1h-2zM22 0h7v1h-7zM0 1h1v1H0zM6 1h1v1H6zM9 1h1v1H9zM12 1h3v1h-3zM16 1h1v1h-1zM19 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1H0zM2 2h3v1H2zM6 2h1v1H6zM8 2h2v1H8zM13 2h1v1h-1zM15 2h3v1h-3zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1H0zM2 3h3v1H2zM6 3h1v1H6zM9 3h3v1H9zM14 3h2v1h-2zM18 3h2v1h-2zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1H0zM2 4h3v1H2zM6 4h1v1H6zM8 4h1v1H8zM11 4h2v1h-2zM15 4h1v1h-1zM17 4h1v1h-1zM19 4h2v1h-2zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1H0zM6 5h1v1H6zM9 5h2v1H9zM13 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1H0zM8 6h1v1H8zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM9 7h2v1H9zM13 7h3v1h-3zM17 7h1v1h-1zM19 7h2v1h-2zM0 8h2v1H0zM3 8h4v1H3zM8 8h3v1H8zM12 8h1v1h-1zM15 8h2v1h-2zM18 8h1v1h-1zM21 8h3v1h-3zM25 8h2v1h-2zM28 8h1v1h-1zM1 9h1v1H1zM4 9h1v1H4zM7 9h2v1H7zM11 9h1v1h-1zM14 9h1v1h-1zM16 9h2v1h-2zM19 9h1v1h-1zM23 9h2v1h-2zM26 9h1v1h-1zM0 10h2v1H0zM3 10h1v1H3zM5 10h2v1H5zM9 10h2v1H9zM12 10h2v1h-2zM17 10h1v1h-1zM20 10h2v1h-2zM24 10h1v1h-1zM26 10h3v1h-3zM2 11h1v1H2zM4 11h1v1H4zM8 11h1v1H8zM10 11h1v1h-1zM13 11h3v1h-3zM18 11h2v1h-2zM21 11h1v1h-1zM25 11h1v1h-1zM27 11h1v1h-1zM0 12h1v1H0zM3 12h3v1H3zM6 12h2v1H6zM9 12h1v1H9zM11 12h1v1h-1zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM22 12h2v1h-2zM26 12h2v1h-2zM1 13h2v1H1zM5 13h1v1H5zM7 13h2v1H7zM10 13h2v1h-2zM15 13h1v1h-1zM18 13h1v1h-1zM20 13h2v1h-2zM23 13h1v1h-1zM25 13h2v1h-2zM28 13h1v1h-1zM0 14h2v1H0zM4 14h1v1H4zM6 14h1v1H6zM8 14h1v1H8zM12 14h3v1h-3zM16 14h1v1h-1zM19 14h2v1h-2zM22 14h1v1h-1zM24 14h1v1h-1zM27 14h2v1h-2zM1 15h1v1H1zM3 15h1v1H3zM5 15h1v1H5zM9 15h2v1H9zM13 15h1v1h-1zM15 15h2v1h-2zM18 15h1v1h-1zM21 15h2v1h-2zM25 15h1v1h-1zM28 15h1v1h-1zM0 16h1v1H0zM2 16h2v1H2zM6 16h2v1H6zM10 16h1v1h-1zM12 16h1v1h-1zM14 16h2v1h-2zM17 16h2v1h-2zM20 16h1v1h-1zM23 16h2v1h-2zM26 16h2v1h-2zM1 17h1v1H1zM4 17h2v1H4zM8 17h1v1H8zM11 17h2v1h-2zM15 17h1v1h-1zM19 17h1v1h-1zM22 17h1v1h-1zM24 17h2v1h-2zM27 17h1v1h-1zM0 18h2v1H0zM3 18h1v1H3zM6 18h1v1H6zM9 18h1v1H9zM12 18h2v1h-2zM16 18h2v1h-2zM20 18h2v1h-2zM24 18h1v1h-1zM26 18h1v1h-1zM28 18h1v1h-1zM1 19h1v1H1zM4 19h1v1H4zM7 19h2v1H7zM10 19h2v1h-2zM14 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM22 19h2v1h-2zM25 19h2v1h-2zM0 20h1v1H0zM2 20h3v1H2zM6 20h1v1H6zM8 20h2v1H8zM11 20h1v1h-1zM13 20h3v1h-3zM18 20h3v1h-3zM20 20h5v1h-5zM26 20h2v1h-2zM8 21h1v1H8zM10 21h2v1h-2zM14 21h2v1h-2zM17 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM26 21h1v1h-1zM28 21h1v1h-1zM0 22h7v1H0zM8 22h2v1H8zM12 22h1v1h-1zM15 22h2v1h-2zM18 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h3v1h-3zM0 23h1v1H0zM6 23h1v1H6zM9 23h1v1H9zM11 23h2v1h-2zM14 23h1v1h-1zM17 23h2v1h-2zM20 23h1v1h-1zM24 23h2v1h-2zM27 23h1v1h-1zM0 24h1v1H0zM2 24h3v1H2zM6 24h1v1H6zM8 24h1v1H8zM10 24h2v1h-2zM13 24h2v1h-2zM16 24h1v1h-1zM19 24h2v1h-2zM22 24h4v1h-4zM28 24h1v1h-1zM0 25h1v1H0zM2 25h3v1H2zM6 25h1v1H6zM9 25h2v1H9zM12 25h1v1h-1zM15 25h2v1h-2zM18 25h1v1h-1zM21 25h1v1h-1zM23 25h1v1h-1zM25 25h2v1h-2zM0 26h1v1H0zM2 26h3v1H2zM6 26h1v1H6zM8 26h2v1H8zM11 26h2v1h-2zM14 26h2v1h-2zM17 26h2v1h-2zM20 26h2v1h-2zM24 26h1v1h-1zM26 26h2v1h-2zM0 27h1v1H0zM6 27h1v1H6zM8 27h1v1H8zM10 27h1v1h-1zM13 27h1v1h-1zM16 27h1v1h-1zM19 27h2v1h-2zM22 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM0 28h7v1H0zM9 28h2v1H9zM12 28h2v1h-2zM15 28h1v1h-1zM18 28h1v1h-1zM21 28h1v1h-1zM23 28h2v1h-2zM26 28h3v1h-3z"/>
           </svg>
           <b>🎶 Chantez avec nous !</b>
           <span>Scannez pour suivre les paroles en direct</span>
+        </div>
+        <div class="publicscreen" style="margin-top: 26px;">
+          <div class="past">Le temps des cerises</div>
+          <div class="now">J'aimerai toujours le temps des cerises</div>
+          <div class="next">C'est de ce temps-là que je garde au cœur</div>
         </div>
       </div>
     </div>
@@ -479,7 +559,7 @@
   <div class="wrap">
     <div class="sechead">
       <h2>Pensé pour la vraie vie de musicien</h2>
-      <p>Pas de compte obligatoire, pas d'abonnement, pas de mauvaise surprise au moment de brancher le jack.</p>
+      <p>Pas d'abonnement, pas de mauvaise surprise au moment de brancher le jack.</p>
     </div>
     <div class="pillars">
       <div class="pillar">
@@ -488,7 +568,7 @@
       </div>
       <div class="pillar">
         <div class="big">Gratuit</div>
-        <p>L'application est gratuite. Un compte (optionnel, sans mot de passe) synchronise ta bibliothèque entre tes appareils et avec ton groupe.</p>
+        <p>L'application est gratuite. Ton compte synchronise ta bibliothèque entre tes appareils et avec ton groupe.</p>
       </div>
       <div class="pillar">
         <div class="big">Tes données à toi</div>
@@ -502,23 +582,23 @@
   <div class="wrap">
     <div class="sechead">
       <h2>Gratuit, et illimité</h2>
-      <p>Pendant le lancement, tout Sing2Me est gratuit et illimité — statut Fondateur pour les premiers inscrits.</p>
+      <p>Pendant le lancement, tout DodoSongs est gratuit et illimité — statut Fondateur pour les premiers inscrits.</p>
     </div>
     <div class="pricing">
       <div class="pricecard">
-        <h3>Tout Sing2Me — gratuit</h3>
+        <h3>Tout DodoSongs — gratuit</h3>
         <div class="price">0 €</div>
         <ul>
           <li>Morceaux illimités, import en masse</li>
           <li>Mode scène, transposition, capo</li>
-          <li>Partages &amp; QR code</li>
+          <li>Page publique &amp; QR code</li>
           <li>Setlists illimitées</li>
           <li>Synchro cloud</li>
           <li>Groupes illimités : répertoire partagé, discussion, plan de scène</li>
         </ul>
         <div class="keep">Tes morceaux et tes groupes ne sont jamais bloqués.</div>
       </div>
-      <div class="pricecard feat">
+      <div class="pricecard mis">
         <h3>Licence Scène <span class="soon">à terme</span></h3>
         <div class="price">Pour les artistes de scène</div>
         <ul>
@@ -544,11 +624,11 @@
     <div class="faq">
       <details>
         <summary>Je dois installer quelque chose ?</summary>
-        <p>Non. Sing2Me fonctionne dans le navigateur, sur téléphone, tablette et ordinateur. Tu peux l'ajouter à ton écran d'accueil (menu du navigateur → « Ajouter à l'écran d'accueil ») pour l'ouvrir comme une application.</p>
+        <p>Non. DodoSongs fonctionne dans le navigateur, sur téléphone, tablette et ordinateur. Tu peux l'ajouter à ton écran d'accueil (menu du navigateur → « Ajouter à l'écran d'accueil ») pour l'ouvrir comme une application.</p>
       </details>
       <details>
         <summary>Je peux récupérer mes partitions existantes ?</summary>
-        <p>Oui, et en masse : tes pages de partition (page enregistrée, ou liens), tes PDF, fichiers Word, ChordPro, OnSong, ou de simples copier-coller. L'analyse repère les formats problématiques et l'IA les nettoie à la demande.</p>
+        <p>Oui, et en masse : tes pages de partition (page enregistrée, ou liens), tes PDF, fichiers Word, ChordPro, OnSong, ou de simples copier-coller. L'analyse repère les formats problématiques et l'IA les remet au propre à chaque import.</p>
       </details>
       <details>
         <summary>Ça marche à plusieurs, en groupe ?</summary>
@@ -556,7 +636,7 @@
       </details>
       <details>
         <summary>Et si je n'ai pas de réseau au concert ?</summary>
-        <p>Tout ce qui sert à jouer (partitions, setlists, mode scène) est stocké dans ton appareil et fonctionne sans aucune connexion. Seules les fonctions « public en direct » (ON AIR) ont besoin du réseau… côté public surtout.</p>
+        <p>Tout ce qui sert à jouer (partitions, setlists, mode scène) est stocké dans ton appareil et fonctionne sans aucune connexion — l'application elle-même s'ouvre hors ligne. Seules les fonctions « public en direct » (ON AIR) ont besoin du réseau… côté public surtout.</p>
       </details>
       <details>
         <summary>Combien ça coûte ?</summary>
@@ -568,9 +648,9 @@
 
 <div class="final">
   <div class="wrap">
-    <h2>Ce soir, tu joues.<br />Sing2Me s'occupe du reste.</h2>
+    <h2>Ce soir, tu joues.<br />DodoSongs s'occupe du reste.</h2>
     <p>Deux minutes pour importer ton premier morceau. Aucune carte bancaire, aucune installation.</p>
-    <a class="btn" href="https://sing2me-three.vercel.app/">🎸 Essayer Sing2Me maintenant</a>
+    <a class="btn" href="https://sing2me-three.vercel.app/">🎸 Essayer DodoSongs maintenant</a>
     <div class="note">Gratuit · sans engagement · tes données restent chez toi</div>
   </div>
 </div>
@@ -579,7 +659,7 @@
   <div class="wrap">
     <div class="footmain">
       <p class="footbig">La musique se joue <span class="hl">en vrai</span>.</p>
-      <p class="footsub">Sing2Me est là pour tout le reste — les partitions, les setlists, la scène, et ton public.</p>
+      <p class="footsub">DodoSongs est là pour tout le reste — les partitions, les setlists, la scène, et ton public.</p>
     </div>
     <div class="footlinks">
       <a href="https://sing2me-three.vercel.app/">Ouvrir l'app</a>
@@ -591,7 +671,7 @@
       <a href="mailto:vtessier6@gmail.com">Contact</a>
     </div>
     <div class="footbase">
-      <svg width="16" height="16" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 6h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H22l-9 8v-8H8a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z" fill="none" stroke="#f6832a" stroke-width="3" stroke-linejoin="round"/><circle cx="19" cy="27" r="4" fill="#f5f5f7"/><rect x="21.6" y="13" width="2.6" height="14" rx="1.3" fill="#f5f5f7"/><path d="M24.2 13c4.5 0.5 7 2.5 8.5 5.5" stroke="#f5f5f7" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg>
+      <img class="icone" src="/dodosongs.png" width="18" height="18" alt="" />
       Fait avec ❤ (et beaucoup de répéts) — du garage au festival.
     </div>
   </div>
