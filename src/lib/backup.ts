@@ -18,7 +18,7 @@
  *  3. L'export PDF, qui reste lisible par un humain mais ne se réimporte
  *     pas — il dépanne, il ne restaure pas.
  *
- * Le fichier est du JSON lisible : même sans Sing2Me, on y retrouve ses
+ * Le fichier est du JSON lisible : même sans DodoSongs, on y retrouve ses
  * paroles et ses accords. Une sauvegarde qu'on ne peut ouvrir qu'avec
  * l'outil qui l'a produite n'est pas une sauvegarde.
  */
@@ -87,7 +87,7 @@ export function readBackup(
   if (b.kind !== BACKUP_KIND) {
     return {
       ok: false,
-      raison: t('Ce fichier ne vient pas de Sing2Me.'),
+      raison: t('Ce fichier ne vient pas de DodoSongs.'),
     };
   }
   if (!b.state || typeof b.state !== 'object' || !Array.isArray(b.state.songs)) {

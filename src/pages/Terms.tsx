@@ -1,7 +1,7 @@
 /**
  * Conditions d'utilisation (version simple, lisible par un musicien).
  * Point clé juridique : les partitions importées restent la responsabilité
- * de l'utilisateur ; Sing2Me héberge des sauvegardes privées et fournit un
+ * de l'utilisateur ; DodoSongs héberge des sauvegardes privées et fournit un
  * canal de signalement/retrait aux ayants droit.
  */
 import React from 'react';
@@ -35,9 +35,9 @@ export function Terms() {
           développement de l'application.
         </p>
 
-        <h2 className="pagetitle">Ce qu'est Sing2Me</h2>
+        <h2 className="pagetitle">Ce qu'est DodoSongs</h2>
         <p>
-          Sing2Me est le compagnon des musiciens, des groupes et de leurs
+          DodoSongs est le compagnon des musiciens, des groupes et de leurs
           concerts : bibliothèque de partitions, setlists, mode scène,
           partage avec le groupe et avec le public. L'application est
           gratuite et fournie « telle quelle », sans garantie de
@@ -59,7 +59,7 @@ export function Terms() {
         <h2 className="pagetitle">Ayants droit — signalement</h2>
         <p>
           Titulaire de droits sur un contenu diffusé publiquement via
-          Sing2Me ? Écris à <a href={`mailto:${CONTACT}`}>{CONTACT}</a> en
+          DodoSongs ? Écris à <a href={`mailto:${CONTACT}`}>{CONTACT}</a> en
           indiquant le lien concerné : le contenu signalé sera retiré
           rapidement.
         </p>
@@ -76,7 +76,7 @@ export function Terms() {
 
         <h2 className="pagetitle">Esprit du service</h2>
         <p>
-          Sing2Me est fait pour aider les musiciens à jouer, répéter et
+          DodoSongs est fait pour aider les musiciens à jouer, répéter et
           partager la musique avec leur public — pas pour diffuser des
           catalogues de partitions. Tout usage manifestement contraire à
           cet esprit (revente, diffusion massive de contenus protégés…)

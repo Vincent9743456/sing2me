@@ -56,7 +56,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Cette image n\'a pas pu être lue.': 'This image could not be read.',
   'Changer la photo': 'Change the photo',
   'Chargement impossible.': 'Couldn\'t load.',
-  'Cherche un musicien qui a déjà Sing2Me (il devra accepter), ou envoie-lui un lien / email.': 'Search for a musician who already has Sing2Me (they\'ll need to accept), or send them a link / email.',
+  'Cherche un musicien qui a déjà DodoSongs (il devra accepter), ou envoie-lui un lien / email.': 'Search for a musician who already has DodoSongs (they\'ll need to accept), or send them a link / email.',
   'Chercher': 'Search',
   'Chercher le lieu sur Google, puis colle le lien ici': 'Search for the venue on Google, then paste the link here',
   'Choisir un morceau de ton répertoire et l\'ajouter au répertoire du groupe': 'Choose a song from your repertoire and add it to the band\'s repertoire',
@@ -140,8 +140,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'Nommer ce live': 'Name this live',
   'Par exemple : soirée chez Marco': 'For example: night at Marco’s',
   'Recherche de sa page publique…': 'Looking for their public page…',
-  'Ce musicien n’a pas encore de page publique Sing2Me — ou son nom d’artiste est porté par plusieurs comptes.':
-    'This musician doesn’t have a Sing2Me public page yet — or their artist name is used by several accounts.',
+  'Ce musicien n’a pas encore de page publique DodoSongs — ou son nom d’artiste est porté par plusieurs comptes.':
+    'This musician doesn’t have a DodoSongs public page yet — or their artist name is used by several accounts.',
   'Voir sa page publique': 'See their public page',
   'Copier le lien de sa page': 'Copy the link to their page',
   'Lien de sa page copié.': 'Link to their page copied.',
@@ -173,7 +173,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Joue à plusieurs : crée ton groupe, invite les autres, et partagez répertoire, setlists et discussions.': 'Play together: create your band, invite the others, and share repertoire, setlists and chat.',
   'L\'annuaire n\'est pas disponible pour le moment.': 'The directory isn\'t available right now.',
   'L\'envoi a échoué.': 'Sending failed.',
-  'L\'invitation contient le répertoire du groupe (morceaux de ses setlists). Si le musicien a un compte Sing2Me, il rejoint le groupe en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa « carte de musicien » (l\'ouvrir ici met à jour la liste manuelle).': 'The invitation includes the band’s repertoire (songs from its setlists). If the musician has a Sing2Me account, they join the band in one click and appear here with ✓. Otherwise, they can send you back their "musician card" (opening it here updates the manual list).',
+  'L\'invitation contient le répertoire du groupe (morceaux de ses setlists). Si le musicien a un compte DodoSongs, il rejoint le groupe en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa « carte de musicien » (l\'ouvrir ici met à jour la liste manuelle).': 'The invitation includes the band’s repertoire (songs from its setlists). If the musician has a DodoSongs account, they join the band in one click and appear here with ✓. Otherwise, they can send you back their "musician card" (opening it here updates the manual list).',
   'La bibliothèque est déjà à jour.': 'The library is already up to date.',
   'La fiche publique complète (bio, liens, pourboire) arrive avec les pages d\'artiste. En attendant, tu vois son nom et son instrument.': 'The full public profile (bio, links, tips) is coming with artist pages. In the meantime, you see their name and instrument.',
   'La mise à jour a échoué.': 'The update failed.',
@@ -205,7 +205,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Voir le détail': 'See the detail',
   'Matériel': 'Gear',
   'Membre du groupe': 'Band member',
-  'Membres avec compte Sing2Me :': 'Members with a Sing2Me account:',
+  'Membres avec compte DodoSongs :': 'Members with a DodoSongs account:',
   'Mes groupes': 'My bands',
   'Mettre à jour la page publique maintenant': 'Update the public page now',
   'Mode ON AIR': 'ON AIR mode',
@@ -252,7 +252,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Premier message à écrire ! Propose un morceau 🎵, une date de répét 🥁, un plan de concert 🎤 — tout le groupe le verra.': 'First message to write! Suggest a song 🎵, a rehearsal date 🥁, a gig plan 🎤 — the whole band will see it.',
   'Privé': 'Private',
   'Prochains concerts': 'Upcoming gigs',
-  'Profil Sing2Me confirmé (carte de musicien reçue)': 'Sing2Me profile confirmed (musician card received)',
+  'Profil DodoSongs confirmé (carte de musicien reçue)': 'DodoSongs profile confirmed (musician card received)',
   'Propose un morceau 🎵 — un bouton l\'importera directement pour tout le groupe.': 'Suggest a song 🎵 — a button will import it directly for the whole band.',
   'Proposer un morceau au groupe': 'Suggest a song to the band',
   'Proposer un morceau de mon répertoire': 'Suggest a song from my repertoire',
@@ -286,7 +286,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Saisis le code à 6 chiffres donné par la personne qui a lancé le direct (bœuf ou concert).': 'Enter the 6-digit code given by the person who started the live session (jam or gig).',
   'Setlist': 'Setlist',
   'Setlists du groupe': 'Band setlists',
-  'Sing2Me — version du {build}': 'Sing2Me — version {build}',
+  'DodoSongs — version du {build}': 'DodoSongs — version {build}',
   'Solo': 'Solo',
   'Statistiques des directs': 'Live session stats',
   'Streaming & réseaux': 'Streaming & socials',
@@ -362,7 +362,7 @@ export const EN_ARTISTE: Record<string, string> = {
   '❤ et messages reportés sur {n} morceau.': '❤ and messages carried over to {n} song.',
   '❤ et messages reportés sur {n} morceaux.': '❤ and messages carried over to {n} songs.',
   '⭐ Suivre {nom}': '⭐ Follow {nom}',
-  '🎵 « Téléchargez Sing2Me — votre songbook, gratuit »': '🎵 "Get Sing2Me — your free songbook"',
+  '🎵 « Téléchargez DodoSongs — votre songbook, gratuit »': '🎵 "Get DodoSongs — your free songbook"',
   '🎶 Concert en cours — profitez du moment !': '🎶 Gig in progress — enjoy the moment!',
   '🎸 Rejoindre un direct': '🎸 Join a live session',
   '💛 Pourboire : 2 € · 5 € · 10 € · libre': '💛 Tip: 2 € · 5 € · 10 € · any amount',
@@ -387,7 +387,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'avec lecteurs YouTube / Spotify': 'with YouTube / Spotify players',
   'Bouton « Suivre l’artiste »': '"Follow the artist" button',
   'alertes de tes prochains concerts': 'alerts for your upcoming gigs',
-  'Invitation à découvrir Sing2Me': 'Invitation to discover Sing2Me',
+  'Invitation à découvrir DodoSongs': 'Invitation to discover DodoSongs',
   'discrète, pause et fin seulement': 'discreet, pause and end only',
 
   // Libellés/hints des types de message (KINDS, BandChat.tsx)
@@ -400,8 +400,8 @@ export const EN_ARTISTE: Record<string, string> = {
   // Connexions sociales et consentement (b165)
   'Ou connecte-toi en un geste :': 'Or sign in with one tap:',
   'Continuer avec Apple': 'Continue with Apple',
-  'Je veux recevoir les nouveautés de Sing2Me (facultatif).':
-    'I want to receive Sing2Me news (optional).',
+  'Je veux recevoir les nouveautés de DodoSongs (facultatif).':
+    'I want to receive DodoSongs news (optional).',
   // b213 — propriété d'un groupe : qui le gère, et comment le transmettre.
   Toi: 'You',
   'un autre musicien': 'another musician',

@@ -63,7 +63,7 @@ export function Songbook() {
             <div className="sbk-cover-sub">
               {(list.length > 1
                 ? t('{n} morceaux', { n: list.length })
-                : t('{n} morceau', { n: list.length })) + ' — Sing2Me'}
+                : t('{n} morceau', { n: list.length })) + ' — DodoSongs'}
             </div>
           </div>
         )}

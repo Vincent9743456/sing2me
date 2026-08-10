@@ -1,4 +1,4 @@
-# Sing2Me — QA design (à dérouler après chaque lot)
+# DodoSongs — QA design (à dérouler après chaque lot)
 
 ## Cohérence
 - [ ] Aucune couleur hex hors tokens introduite

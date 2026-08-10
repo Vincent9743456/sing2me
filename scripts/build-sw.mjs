@@ -64,7 +64,7 @@ const empreinte = readFileSync(new URL('../public/version.txt', import.meta.url)
 const cle = `${empreinte}-${fichiers.length}-${fichiers.join('|').length}`;
 
 const source = `/* Généré par scripts/build-sw.mjs — ne pas modifier à la main. */
-const CACHE = 'sing2me-${cle}';
+const CACHE = 'dodosongs-${cle}';
 const COQUILLES = ${JSON.stringify(OBLIGATOIRES)};
 const FICHIERS = ${JSON.stringify(fichiers)};
 
@@ -94,7 +94,11 @@ self.addEventListener('activate', (e) => {
       const noms = await caches.keys();
       await Promise.all(
         noms
-          .filter((n) => n.indexOf('sing2me-') === 0 && n !== CACHE)
+          .filter(
+            (n) =>
+              (n.indexOf('dodosongs-') === 0 || n.indexOf('sing2me-') === 0) &&
+              n !== CACHE,
+          )
           .map((n) => caches.delete(n)),
       );
       await self.clients.claim();
@@ -185,5 +189,5 @@ self.addEventListener('message', (e) => {
 
 writeFileSync(join(DIST, 'sw.js'), source);
 console.log(
-  `build-sw : dist/sw.js écrit — ${fichiers.length} fichiers, cache « sing2me-${cle} »`,
+  `build-sw : dist/sw.js écrit — ${fichiers.length} fichiers, cache « dodosongs-${cle} »`,
 );

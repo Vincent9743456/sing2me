@@ -1,5 +1,5 @@
 -- ============================================================
--- Sing2Me — Pages publiques d'artiste par NOM dictable (chantier 4)
+-- DodoSongs — Pages publiques d'artiste par NOM dictable (chantier 4)
 -- Multi-locataire : chaque compte publie sa fiche sous un nom unique,
 -- ouvrable via livemyband.fr/lenom (domaine actuel pour l'instant).
 -- À exécuter dans SQL Editor de ton projet Supabase (idempotent).

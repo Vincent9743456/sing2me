@@ -24,7 +24,7 @@ export function Welcome() {
     >
       <div style={{ textAlign: 'center', marginBottom: 'var(--sp-5)' }}>
         <LogoMark size={64} />
-        <h1 style={{ margin: 'var(--sp-3) 0 var(--sp-1)' }}>Sing2Me</h1>
+        <h1 style={{ margin: 'var(--sp-3) 0 var(--sp-1)' }}>DodoSongs</h1>
         <p className="help" style={{ margin: 0 }}>
           {t('Ton songbook, tes groupes, tes concerts.')}
         </p>

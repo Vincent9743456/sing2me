@@ -1,5 +1,5 @@
 -- ============================================================
--- Sing2Me — Table du mode ON AIR (direct)
+-- DodoSongs — Table du mode ON AIR (direct)
 -- À exécuter dans SQL Editor de ton projet Supabase.
 -- Une seule ligne (id = 'live') porte l'état du direct.
 -- Seule la clé "service role" (côté serveur Vercel) y accède :

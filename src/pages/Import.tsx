@@ -613,7 +613,7 @@ export function Import() {
     // Bibliothèque vue par la boucle : l'état React ne se met pas à jour
     // pendant le parcours, on tient donc notre propre liste pour les doublons.
     const known = [...songs];
-    // Titres supprimés volontairement de Sing2Me : on ne les réimporte pas
+    // Titres supprimés volontairement de DodoSongs : on ne les réimporte pas
     // (même garde-fou que la synchro de groupe). L'utilisateur peut toujours
     // les récupérer explicitement via « 2 · Document ou lien ».
     const removedTitles = new Set(
@@ -712,7 +712,7 @@ export function Import() {
             status: 'skip',
             title: song.title,
             message: t(
-              'supprimé de Sing2Me — non réimporté (passe par « Document ou lien » pour le récupérer)',
+              'supprimé de DodoSongs — non réimporté (passe par « Document ou lien » pour le récupérer)',
             ),
           };
         } else if (existing && garbled) {
@@ -1531,11 +1531,11 @@ export function Import() {
                       <>
                         {' · '}
                         {bulkItems.filter((x) => x.status === 'skip').length > 1
-                          ? t('{n} supprimés de Sing2Me (non réimportés)', {
+                          ? t('{n} supprimés de DodoSongs (non réimportés)', {
                               n: bulkItems.filter((x) => x.status === 'skip')
                                 .length,
                             })
-                          : t('{n} supprimé de Sing2Me (non réimporté)', {
+                          : t('{n} supprimé de DodoSongs (non réimporté)', {
                               n: bulkItems.filter((x) => x.status === 'skip')
                                 .length,
                             })}

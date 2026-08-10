@@ -1,4 +1,4 @@
-# Sing2Me — seule la landing marketing (/site/) est indexable.
+# DodoSongs — seule la landing marketing (/site/) est indexable.
 # L'application et ses pages publiques (artiste, session ON AIR, liens de
 # partage) ne doivent pas être indexées (chantier 3 — paquet défensif).
 User-agent: *

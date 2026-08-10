@@ -1,4 +1,4 @@
-# Sing2Me — Design System
+# DodoSongs — Design System
 
 > Source de vérité pour toute modification d'interface.
 > **À lire avant de toucher au CSS ou aux composants.**
@@ -9,8 +9,16 @@
 
 **Conservé** : dark-first assumé (identité scène), accent unique,
 accords en cyan, rayons généreux, sobriété sans froideur.
-**Identité (b53)** : accent **orange scène** (`#f6832a`), logo « bulle
-qui chante » (bulle de parole + note), favicon partagé app + site.
+**Identité (b237)** : la charte **DodoSongs** — fond nuit `#0A0F1D`, texte
+crème `#F4F0E9`, ambre `#FCA711` pour ce qui agit, cyan `#5BD0E8` pour ce
+qui se joue. Le logo est le **dodo à la guitare**, un bloc complet posé sur
+le fond nuit dans un carré aux angles arrondis (22,5 % du côté) : on ne
+l'ouvre pas, on ne le recolore pas, on ne le met jamais dans un cercle, on
+ne lui ajoute pas d'ombre portée. Source unique `public/dodosongs.png`, les
+tailles dérivées par `scripts/build-icons.mjs`.
+*(Remplace l'identité b53 — orange scène `#f6832a` + logo « bulle qui
+chante ». Rien de b53 ne survit ; si une couleur de cette époque réapparaît
+quelque part, c'est un oubli, pas une intention.)*
 **Ajusté** : icônes SVG au lieu des emojis, échelle typographique
 formalisée, micro-labels unifiés, contrastes relevés, tokens complets.
 **Supprimé** : dialogues natifs du navigateur, couches CSS redondantes,
@@ -26,38 +34,50 @@ accumulation de cartes, animations gratuites, couleurs sans signification.
 
 ```css
 :root {
-  /* Fonds & surfaces */
-  --bg: #0a0a0e;             /* fond app */
-  --surface: #131318;        /* listes, panneaux */
-  --surface-high: #1b1b23;   /* modales, hover de surface */
-  --surface-hover: #22222c;  /* hover explicite (remplace #262631/#34343f) */
-  --stage-bg: #000;          /* mode scène uniquement */
+  /* Fonds & surfaces — le NUIT de la charte */
+  --bg: #0a0f1d;             /* nuit   — fond de l'app */
+  --surface: #121a2e;        /* nuit 2 — cartes, panneaux */
+  --surface-high: #1b2540;   /* nuit 3 — champs, surfaces hautes */
+  --surface-sunken: #0d1424; /* panneau « en creux » */
+  --surface-hover: #24304e;
+  --stage-bg: #0a0f1d;       /* mode scène : le fond nuit PUR */
+  --stage-text: #f4f0e9;
+  --stage-bar: #0a0f1d;
+  --scrim: rgba(4, 7, 14, 0.72);      /* voile des modales */
+  --scrim-soft: rgba(4, 7, 14, 0.58); /* voile des feuilles du bas */
 
-  /* Bordures */
-  --border: #24242e;
-  --border-soft: #1d1d25;
+  /* Bordures — les « lignes » : de la crème diluée, pas du gris */
+  --border: rgba(244, 240, 233, 0.1);
+  --border-soft: rgba(244, 240, 233, 0.06);
+  --border-strong: rgba(244, 240, 233, 0.18);
 
-  /* Textes */
-  --text: #f5f5f7;
-  --text-dim: #9a9aac;       /* relevé (ex-#8f8f9f) — AA sur bg et surface */
-  --text-faint: #6b6b7e;     /* placeholders, décoratif non essentiel */
-  --on-accent: #16120a;      /* texte sur fond orange scène */
+  /* Textes — la CRÈME */
+  --text: #f4f0e9;           /* crème   — texte principal, paroles */
+  --text-dim: #a7afc2;       /* crème 2 — texte secondaire */
+  --text-faint: #69728a;     /* crème 3 — légendes, décoratif (4,0:1) */
+  --on-accent: #0a0f1d;      /* du nuit SUR l'ambre — jamais du blanc */
 
-  /* Accent (une seule famille) — orange scène */
-  --accent: #f6832a;
-  --accent-strong: #ea6c12;
-  --accent-soft: rgba(246, 131, 42, 0.12);
-  --accent-dark: #8a4410;
+  /* Accent — l'AMBRE */
+  --accent: #fca711;
+  --accent-strong: #de8f00;  /* pression, survol */
+  --accent-soft: rgba(252, 167, 17, 0.14);
+  --accent-dark: #7a5200;    /* bordures d'encart */
 
   /* Fonctionnelles */
-  --chord: #62c9f2;          /* accords — jamais utilisé pour autre chose */
-  --danger: #e05555;
-  --live: #ff1f1f;           /* direct uniquement — rouge pur, ≠ accent */
-  --heart: #ffa3c0;          /* cœurs du public (rose, ≠ accent orange) */
+  --chord: #5bd0e8;          /* CYAN — les accords, et RIEN d'autre */
+  --danger: #f4677e;         /* rouge — l'erreur, le destructif */
+  --live: #fca711;           /* le direct porte l'ambre (charte) */
+  --live-soft: #ffd98a;
+  --ok: #5bd8a6;             /* vert — succès, synchronisé */
+  --ok-soft: rgba(91, 216, 166, 0.14);
+  --on-ok: #06281c;
+  --warn: #f6c662;           /* ambre pâli — jamais porté par un bouton */
+  --warn-soft: rgba(246, 198, 98, 0.14);
+  --heart: #f79bac;          /* le rouge éclairci — les cœurs du public */
 
   /* Pastilles de groupe (Library, à terme partout) */
-  --band-1: #fbbf24; --band-2: #60a5fa; --band-3: #34d399;
-  --band-4: #f472b6; --band-5: #a78bfa; --band-6: #fb923c;
+  --band-1: #fbbf24; --band-2: #60a5fa; --band-3: #5bd8a6;
+  --band-4: #f4677e; --band-5: #a78bfa; --band-6: #fb923c;
   --band-7: #22d3ee;
 }
 ```
@@ -65,14 +85,18 @@ accumulation de cartes, animations gratuites, couleurs sans signification.
 Règles :
 - **Aucune couleur hex nouvelle dans les composants.** Tout passe par un
   token ; s'il manque, on l'ajoute ici d'abord.
-- `--live` = exclusivement l'état « en direct ». `--danger` = destructif.
-  `--accent` = action/valorisation. `--chord` = accords, rien d'autre.
-- **Live = point clignotant + texte, jamais la couleur seule.** Un
-  élément « en direct » (ON AIR) s'identifie toujours par son point
-  clignotant **et** son libellé, jamais par sa seule teinte : `--live`
-  (rouge) et `--accent` (orange scène) sont proches et ne doivent pas
-  être le seul signal distinctif. Ne jamais coder un état sur la couleur
-  seule.
+- **`--chord` = les accords, et RIEN d'autre.** C'est la règle qui tient
+  toute l'identité : un utilisateur apprend en trois secondes que « bleu =
+  accord », et une seule exception ruine l'apprentissage. Corollaire : la
+  page du PUBLIC est la seule surface où le cyan n'apparaît pas — elle ne
+  montre aucun accord.
+- **Un seul bouton ambre par écran** : celui qui fait avancer. `--danger` =
+  destructif. `--warn` = un constat, jamais un bouton.
+- **Live = point clignotant + texte, jamais la couleur seule.** Le direct
+  porte l'AMBRE, comme les actions (c'est la charte). Il ne peut donc PAS se
+  distinguer par la teinte : un élément « en direct » (ON AIR) s'identifie
+  toujours par son point clignotant **et** son libellé. Ne jamais coder un
+  état sur la couleur seule.
 - **Mode clair : FAIT (b233).** Le bloc ci-dessus est dupliqué sous
   `:root[data-theme='clair']` (theme.css) — et il ne contient QUE des
   tokens. Un composant qui aurait besoin d'une règle propre au clair est

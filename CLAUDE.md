@@ -1,4 +1,4 @@
-# Sing2Me — Règles permanentes du projet
+# DodoSongs — Règles permanentes du projet
 
 ## Design & interface (obligatoire)
 
@@ -84,13 +84,21 @@
   `--rouge #F4677E` ; rayons 10 / 14 / 20 / 28 px. Typographie : DEUX
   familles, pas plus — une sans-serif pour l'interface, une monospace pour
   ce qui doit s'aligner (les accords, et rien d'autre).
-- **RÉSERVE, à lever avec Vincent** : l'APPLICATION n'a pas encore été
-  migrée. Elle s'appelle toujours Sing2Me et garde l'ancienne palette
-  (ambre `#f6832a`, cyan `#62c9f2`, fond `#0a0a0e`), qui est PROCHE mais
-  pas identique. Migrer l'app, c'est : les jetons de `theme.css` (les deux
-  thèmes), le nom dans l'i18n, le manifeste, les icônes, les e-mails, et
-  l'adresse de déploiement. Ne pas le faire à moitié : deux noms en
-  circulation est pire qu'un seul ancien.
+- **RÉSERVE LEVÉE en b237** (« le site et l'app sont modifiés. Le nouveau
+  nom est DodoSongs pour tout ») : l'application est migrée — jetons de
+  `theme.css` dans les DEUX thèmes, nom dans toute l'interface et les
+  dictionnaires, manifeste, icônes, cache du service worker, CGU, docs et
+  commentaires SQL. Plus une seule occurrence de l'ancien nom à l'écran.
+- **CE QUI NE SE RENOMME JAMAIS** : les clés `localStorage` (`sing2me/web/v1`
+  et les 48 autres). Elles ne sont vues par personne, et les renommer
+  EFFACERAIT la bibliothèque, la session et les préférences de chaque
+  utilisateur déjà installé. Même raisonnement pour les tables Supabase.
+  Le préfixe du cache du service worker, lui, a bien changé
+  (`dodosongs-…`) — mais le nettoyage continue de reconnaître les anciens
+  `sing2me-…`, sinon ils resteraient sur les téléphones pour toujours.
+- **Reste à faire un jour** : l'adresse de déploiement est encore
+  `sing2me-three.vercel.app` (c'est celle de Vercel, elle se change dans
+  leur console, pas dans le code).
 
 ## Déploiement & versions (pipeline actuel)
 

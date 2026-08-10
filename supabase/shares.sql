@@ -1,5 +1,5 @@
 -- ============================================================
--- Sing2Me — Liens de partage courts.
+-- DodoSongs — Liens de partage courts.
 -- À exécuter dans SQL Editor du projet Supabase (ré-exécutable).
 --
 -- Le contenu partagé (page publique, setlist, morceau…) est stocké

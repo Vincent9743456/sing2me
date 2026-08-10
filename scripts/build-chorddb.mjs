@@ -166,7 +166,7 @@ for (const [cleDb, entrees] of Object.entries(db.chords)) {
   if (!noms) continue;
   for (const entree of entrees) {
     const suffixe = entree.suffix;
-    // 1. Les qualités que Sing2Me reconnaît.
+    // 1. Les qualités que DodoSongs reconnaît.
     const quals = Object.entries(QUALITES)
       .filter(([, s]) => s === suffixe)
       .map(([q]) => q);

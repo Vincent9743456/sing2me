@@ -46,7 +46,7 @@ const PUBLIC_SCREEN_LABELS: { key: keyof PublicScreen; label: string; hint: stri
   { key: 'profile', label: 'Fiche artiste (photo, bio)', hint: 'hors morceau : avant, pause, fin' },
   { key: 'links', label: 'Liens streaming & réseaux', hint: 'avec lecteurs YouTube / Spotify' },
   { key: 'follow', label: 'Bouton « Suivre l’artiste »', hint: 'alertes de tes prochains concerts' },
-  { key: 'appInvite', label: 'Invitation à découvrir Sing2Me', hint: 'discrète, pause et fin seulement' },
+  { key: 'appInvite', label: 'Invitation à découvrir DodoSongs', hint: 'discrète, pause et fin seulement' },
 ];
 
 const LINK_PRESETS = [
@@ -788,7 +788,7 @@ export function Artist() {
                 )}
                 {screen.appInvite && (
                   <p className="help" style={{ textAlign: 'center' }}>
-                    {t('🎵 « Téléchargez Sing2Me — votre songbook, gratuit »')}
+                    {t('🎵 « Téléchargez DodoSongs — votre songbook, gratuit »')}
                   </p>
                 )}
                 {previewMode === 'idle' && upcomingPublic.length > 0 && (
@@ -1061,7 +1061,7 @@ export function Artist() {
           className="help"
           style={{ textAlign: 'center', opacity: 0.6, marginTop: 24 }}
         >
-          {t('Sing2Me — version du {build}', { build: APP_BUILD })}
+          {t('DodoSongs — version du {build}', { build: APP_BUILD })}
         </p>
       </div>
 

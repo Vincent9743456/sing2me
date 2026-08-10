@@ -1,4 +1,4 @@
-# 🎸 Sing2Me
+# 🎸 DodoSongs
 
 **Le compagnon intelligent des musiciens, des groupes et de leurs concerts.**
 
@@ -160,7 +160,7 @@ utilisent ton lien de paiement (PayPal.me, Lydia, Stripe…) configuré dans
 le profil — les montants pré-remplis fonctionnent avec PayPal.me.
 
 Les **partages groupe** affichent « ➕ Ajouter à ma bibliothèque » : un
-musicien qui reçoit ta setlist peut l'importer dans son propre Sing2Me en
+musicien qui reçoit ta setlist peut l'importer dans son propre DodoSongs en
 un clic — la porte d'entrée vers l'application. L'app est **installable**
 sur l'écran d'accueil (menu du navigateur → « Ajouter à l'écran
 d'accueil » / « Installer »).
@@ -233,7 +233,7 @@ ignore les morceaux déjà présents (rapprochement titre + paroles), donc
 redéposer régulièrement sa page « My tabs » suffit à rattraper les
 nouveautés.
 Elle respecte aussi les **suppressions volontaires** : un morceau supprimé
-de Sing2Me (tombstone par titre normalisé, comme pour la synchro de
+de DodoSongs (tombstone par titre normalisé, comme pour la synchro de
 groupe) n'est pas réimporté par l'import en masse, même si sa tab existe
 toujours sur UG — seul un import explicite via « 2 · Coller un lien »
 peut le faire revenir.

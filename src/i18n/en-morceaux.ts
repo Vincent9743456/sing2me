@@ -82,8 +82,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Tag :': 'Tag:',
   Retirer: 'Remove',
   'Importe tes partitions': 'Import your charts',
-  "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — Sing2Me met tout au propre.":
-    'Paste text, a link to a chart page, a PDF or a Word file — Sing2Me tidies it all up.',
+  "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — DodoSongs met tout au propre.":
+    'Paste text, a link to a chart page, a PDF or a Word file — DodoSongs tidies it all up.',
   'Importer mon premier morceau': 'Import my first song',
   'Aucun morceau ne correspond à ta recherche.': 'No song matches your search.',
   'Ajouter des morceaux au répertoire du groupe': "Add songs to the band's repertoire",
@@ -101,8 +101,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Supprimer « {title} » ?': 'Delete “{title}”?',
   "Fermer l'aperçu": 'Close preview',
   'Modifier la partition': 'Edit the chart',
-  'Sing2Me cherche la version la mieux notée de cette partition et te la propose':
-    'Sing2Me looks for the best-rated version of this chart and suggests it to you',
+  'DodoSongs cherche la version la mieux notée de cette partition et te la propose':
+    'DodoSongs looks for the best-rated version of this chart and suggests it to you',
   '★ Meilleure version ?': '★ Better version?',
   'Supprimer ce morceau': 'Delete this song',
   'Supprimer « {title} » ? Le morceau sera aussi retiré des setlists.':
@@ -248,8 +248,8 @@ export const EN_MORCEAUX: Record<string, string> = {
     '⚑ Main version: a change of key or capo carries over to the versions that were following it (those without their own setting), and is shared with the band on sync.',
   "Cette version garde ses propres tonalité et capo — la version principale n'est pas affectée.":
     "This version keeps its own key and capo — the main version isn't affected.",
-  "À l'enregistrement, Sing2Me te demandera si tes changements de partition valent pour":
-    'On save, Sing2Me will ask whether your chart changes apply to',
+  "À l'enregistrement, DodoSongs te demandera si tes changements de partition valent pour":
+    'On save, DodoSongs will ask whether your chart changes apply to',
   'cette version': 'this version',
   'seulement ou pour': 'only, or to',
   'toutes les versions': 'every version',
@@ -308,8 +308,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   '⏳ Le service demande une pause — nouvel essai dans {wait} s':
     '⏳ The service is asking for a pause — retrying in {wait}s',
   'fichier vide ou illisible': 'empty or unreadable file',
-  'supprimé de Sing2Me — non réimporté (passe par « Document ou lien » pour le récupérer)':
-    'deleted from Sing2Me — not re-imported (use “Document or link” to get it back)',
+  'supprimé de DodoSongs — non réimporté (passe par « Document ou lien » pour le récupérer)':
+    'deleted from DodoSongs — not re-imported (use “Document or link” to get it back)',
   '⚠ police PDF brouillée — décodage IA proposé': '⚠ garbled PDF font — AI decoding suggested',
   '🔧 mis à jour (accords récupérés)': '🔧 updated (chords recovered)',
   'déjà présent (« {title} »)': 'already there (“{title}”)',
@@ -393,8 +393,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   '{n} importé': '{n} imported',
   '{n} déjà présents': '{n} already there',
   '{n} déjà présent': '{n} already there',
-  '{n} supprimés de Sing2Me (non réimportés)': '{n} deleted from Sing2Me (not re-imported)',
-  '{n} supprimé de Sing2Me (non réimporté)': '{n} deleted from Sing2Me (not re-imported)',
+  '{n} supprimés de DodoSongs (non réimportés)': '{n} deleted from DodoSongs (not re-imported)',
+  '{n} supprimé de DodoSongs (non réimporté)': '{n} deleted from DodoSongs (not re-imported)',
   '{n} échecs': '{n} failed',
   '{n} échec': '{n} failed',
   'Nettoyage IA en cours': 'AI cleanup in progress',

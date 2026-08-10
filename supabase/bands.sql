@@ -1,5 +1,5 @@
 -- ============================================================
--- Sing2Me — Étape 2 des comptes : groupes réels entre comptes.
+-- DodoSongs — Étape 2 des comptes : groupes réels entre comptes.
 -- À exécuter dans SQL Editor du projet Supabase (ré-exécutable).
 --
 -- Un groupe créé dans l'app peut être « publié » dans le cloud :

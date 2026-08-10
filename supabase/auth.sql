@@ -1,5 +1,5 @@
 -- ============================================================
--- Sing2Me — Étape 1 des comptes : sauvegarde cloud de la
+-- DodoSongs — Étape 1 des comptes : sauvegarde cloud de la
 -- bibliothèque du musicien (une ligne par utilisateur).
 -- À exécuter dans SQL Editor du projet Supabase (ré-exécutable).
 --

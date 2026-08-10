@@ -83,7 +83,7 @@ export function ShareModal({
 
   /**
    * Lien « mailto » pré-rempli. Pour une invitation de groupe, le texte
-   * met en avant l'intérêt de Sing2Me pour donner envie de télécharger
+   * met en avant l'intérêt de DodoSongs pour donner envie de télécharger
    * l'appli et de créer son compte (l'adhésion vaut acceptation).
    */
   function inviteMessage(): { subject: string; body: string } {
@@ -93,18 +93,18 @@ export function ShareModal({
     if (inv) {
       // F1 : message court, complet, une seule URL en dernière position
       // (aperçu propre dans WhatsApp/SMS).
-      subject = t("{from} t'invite à rejoindre {band} sur Sing2Me", {
+      subject = t("{from} t'invite à rejoindre {band} sur DodoSongs", {
         from: inv.from,
         band: inv.band,
       });
       body = t(
-        "🎶 {from} t'invite à rejoindre {band} sur Sing2Me.\nPartitions, setlists et répéts du groupe, partagées automatiquement.\nC'est gratuit, rien à installer — clique et c'est prêt :\n{url}",
+        "🎶 {from} t'invite à rejoindre {band} sur DodoSongs.\nPartitions, setlists et répéts du groupe, partagées automatiquement.\nC'est gratuit, rien à installer — clique et c'est prêt :\n{url}",
         { from: inv.from, band: inv.band, url: url ?? '' },
       );
     } else {
-      subject = t('Un morceau partagé avec toi depuis Sing2Me 🎶');
+      subject = t('Un morceau partagé avec toi depuis DodoSongs 🎶');
       body = t(
-        "Je te partage ça — ouvre simplement ce lien, aucune appli requise :\n{url}\n\nPartagé avec Sing2Me, le songbook des musiciens : paroles, accords, transposition, mode scène. C'est gratuit — n'hésite pas à l'essayer.",
+        "Je te partage ça — ouvre simplement ce lien, aucune appli requise :\n{url}\n\nPartagé avec DodoSongs, le songbook des musiciens : paroles, accords, transposition, mode scène. C'est gratuit — n'hésite pas à l'essayer.",
         { url: url ?? '' },
       );
     }

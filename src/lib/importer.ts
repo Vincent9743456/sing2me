@@ -1,5 +1,5 @@
 /**
- * Import intelligent de partitions texte vers le format Sing2Me.
+ * Import intelligent de partitions texte vers le format DodoSongs.
  *
  * Formats reconnus automatiquement :
  * 1. « Accords au-dessus des paroles » (le plus courant)
