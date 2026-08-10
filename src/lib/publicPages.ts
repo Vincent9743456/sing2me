@@ -279,6 +279,40 @@ export async function monAdressePublique(): Promise<string> {
 }
 
 /**
+ * MA FICHE PUBLIÉE, PAR TOUS LES CHEMINS (b246).
+ *
+ * Elle sert de FILET au profil (b243) : encore faut-il la retrouver. Deux
+ * chemins, du plus sûr au plus large :
+ *  1. l'adresse réservée par CE COMPTE (`monAdressePublique`) — sans
+ *     ambiguïté possible ;
+ *  2. à défaut, une page publiée sous le même NOM D'ARTISTE. C'est le cas
+ *     qui manquait : une reconnexion avec une autre adresse e-mail crée un
+ *     autre compte, qui n'a jamais rien réservé — la fiche existe pourtant,
+ *     avec la photo et les liens dedans.
+ *
+ * `findPublicPageByArtist` refuse net si deux pages portent le nom : mieux
+ * vaut ne rien proposer que de rendre à quelqu'un le profil d'un homonyme.
+ * `parNom` dit par quel chemin on est passé — l'écran doit le DIRE, sans
+ * quoi il appellerait « ta page » une page dont on n'est pas sûr.
+ */
+export interface FichePubliee {
+  page: PublicPage;
+  parNom: boolean;
+}
+
+export async function maFichePubliee(
+  nomArtiste: string,
+): Promise<FichePubliee | null> {
+  const adresse = await monAdressePublique();
+  if (adresse !== '') {
+    const page = await fetchPublicPage(adresse);
+    return page ? { page, parNom: false } : null;
+  }
+  const page = await findPublicPageByArtist(nomArtiste);
+  return page ? { page, parNom: true } : null;
+}
+
+/**
  * Nom public AUTOMATIQUE + fiche à jour (b136 — bug signalé par Marco).
  *
  * Deux pièges réglés d'un coup :

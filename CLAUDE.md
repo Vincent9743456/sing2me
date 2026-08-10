@@ -688,6 +688,20 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   simple coup d'œil ne publie donc plus rien ; enregistrer le profil et
   passer ON AIR le font, eux, parce que ce sont des actes. (L'aperçu d'un
   GROUPE republie toujours : une fiche de groupe ne sauvegarde rien.)
+  **QUATRIÈME CAUSE — le compte lui-même** (b246, même écran renvoyé par
+  Vincent après b245). Une reconnexion avec une AUTRE adresse e-mail crée un
+  AUTRE compte : il n'a jamais rien réservé, donc `public_pages` ne rend
+  aucune ligne pour son `user_id` — et l'app conclut, à tort, qu'il n'y a
+  rien. La fiche existe pourtant, photo et liens dedans. `maFichePubliee`
+  cherche donc par COMPTE d'abord, puis par NOM D'ARTISTE
+  (`findPublicPageByArtist`, qui refuse net si deux pages portent le nom :
+  jamais le profil d'un homonyme). Deux conséquences d'écriture : la
+  bannière dit « une page publique À TON NOM » quand elle vient de ce
+  second chemin — on n'appelle pas « ta page » une page dont on n'est pas
+  sûr —, et l'aperçu ARRÊTE de dire « pas encore réservée » quand c'est
+  faux : il nomme l'adresse trouvée et explique le décalage de compte.
+  Règle générale : **un identifiant qui ne trouve rien n'est pas une preuve
+  d'absence** — c'est la version « compte » de la règle du cache ci-dessus.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre
