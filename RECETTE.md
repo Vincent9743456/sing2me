@@ -80,6 +80,8 @@ groupe, direct). Marco est le second appareil.
 | P-8 | Supprimer l'originale | La suivante monte en référence ; **jamais de morceau sans version perso en tête** — ⚠️ cicatrice b135 | 🔴 |
 | P-9 | Renommer une version | Le nom change partout | ⚪ |
 | P-10 | Modifier la partition | Choix « cette version / toutes » ; retour en haut de la partition | 🔴 |
+| P-10bis | Lire une partition importée | Les sections sont **écrites** : INTRO, COUPLET 1, REFRAIN, séparés par de l'air ; les accords ne coupent aucun mot (jamais « commen[C]t ») | 🔴 |
+| P-10ter | Vieux morceau importé AVANT b219 | Les sections reviennent aussi, à l'ouverture — et si l'appariement est incertain, **rien ne bouge** (jamais un « Refrain » posé sur un couplet) | 🟠 |
 | P-11 | Modifier un morceau marqué « à vérifier » | Le badge disparaît | 🟠 |
 | P-12 | Ajouter une note de répétition | Personnelle ou visible du groupe, signée et datée | 🟠 |
 | P-13 | Dicter une note | Texte en direct (navigateur) ou enregistrement + transcription (iPhone installé) | 🟠 |
@@ -94,7 +96,7 @@ groupe, direct). Marco est le second appareil.
 |---|---|---|---|
 | I-1 | Rechercher un morceau et l'importer | Aperçu, puis ajout à la bibliothèque | 🔴 |
 | I-2 | Coller le lien d'une page de partition | Idem | 🔴 |
-| I-3 | Coller du texte brut | Accords détectés et alignés | 🔴 |
+| I-3 | Coller du texte brut | Accords détectés et alignés **sur le début des mots** ; les en-têtes de sections du fichier sont gardés | 🔴 |
 | I-4 | Déposer un fichier .txt / ChordPro / .onsong | Contenu lu, titre repris du nom de fichier | 🔴 |
 | I-5 | Déposer un .docx | Contenu lu | 🟠 |
 | I-6 | Déposer un PDF **texte** | Accords et paroles alignés | 🔴 |
@@ -108,6 +110,7 @@ groupe, direct). Marco est le second appareil.
 | I-14 | Déposer un PDF **contenant plusieurs partitions** | Proposition « ce fichier contient sans doute N partitions », avec le choix de découper ou non | 🟠 |
 | I-15 | Refuser le découpage | Un seul morceau, marqué « à vérifier » avec la raison | 🟠 |
 | I-16 | Nettoyage IA sur un import mal formaté | Proposé **seulement** si l'analyse a vu un vrai défaut | ⚪ |
+| I-18 | Import d'un fichier plein de sections | Aucun « ⚠ » ni badge « à vérifier » à cause des seules sections — ⚠️ cicatrice b219 | 🟠 |
 | I-17 | Pied de tous les écrans d'import | Mention « tes morceaux restent à toi, tu peux tout réexporter » | ⚪ |
 
 ---
@@ -148,6 +151,7 @@ groupe, direct). Marco est le second appareil.
 | SC-6 | Défiler pendant le mode scène | La barre du bas ne remonte pas, rien ne saute — ⚠️ cicatrice b183/b184 | 🟠 |
 | SC-7 | Ajouter une note de répétition en scène | Possible sans quitter | ⚪ |
 | SC-8 | Mode scène sur un morceau seul (hors setlist) | Fonctionne aussi | 🟠 |
+| SC-9 | Sections en mode scène | Les repères (INTRO, REFRAIN…) grossissent avec le texte et restent discrets — ils ne prennent rien aux paroles | 🟠 |
 
 ---
 
@@ -223,6 +227,7 @@ groupe, direct). Marco est le second appareil.
 | H-9ter | Relancer un direct après un arrêt qui n'a pas abouti | Le direct part et RESTE actif — le bouton ne repasse pas au vert une seconde après ; un nouveau live est ouvert, l'ancien reste clos — ⚠️ cicatrice b217 | 🔴 |
 | H-9bis | Arrêter le direct quand le réseau lâche | Le bouton ne reste JAMAIS sur « ⏳ Arrêt… » : au bout de 12 s il dit pourquoi et propose « ⏹ Arrêter quand même » ; l'app reprévient le serveur toute seule — ⚠️ cicatrice b216 | 🔴 |
 | H-10bis | 📱📱 Page du spectateur pendant un direct | Elle affiche le concert — **jamais un écran noir** ; avec ou sans partition, en pause, sans réseau — ⚠️ cicatrice b215 | 🔴 |
+| H-10ter | 📱📱 Paroles côté public | Un vers par ligne, centré, **sans grille d'accords ni ligne vide en trop** ; les sections sont rappelées en petit ; une section sans paroles (l'intro) ne s'affiche pas | 🟠 |
 | H-11 | Fiche Artiste : les quatre chiffres | Cohérents avec l'historique, **jamais 0 spectateur avec des cœurs** — ⚠️ cicatrice b201/b203 | 🔴 |
 | H-12 | Concert passé rattaché à un live | Il affiche ses cœurs, mots et spectateurs — ⚠️ cicatrice b207 | 🟠 |
 | H-13 | Concert jamais joué | Aucun chiffre inventé | 🟠 |
@@ -317,18 +322,18 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 |---|---|---|
 | A. Arrivée et compte | 11 | 6 |
 | B. Bibliothèque | 16 | 6 |
-| C. Partition et versions | 15 | 5 |
-| D. Import | 17 | 6 |
+| C. Partition et versions | 17 | 6 |
+| D. Import | 18 | 6 |
 | E. Setlists | 15 | 5 |
-| F. Mode scène | 8 | 3 |
+| F. Mode scène | 9 | 3 |
 | G. Groupes | 15 | 5 |
-| H. Concerts et direct | 20 | 10 |
+| H. Concerts et direct | 21 | 10 |
 | I. Historique et chiffres | 15 | 5 |
 | J. Profil et page publique | 8 | 1 |
 | J bis. Réglages et données | 4 | 1 |
 | K. Sauvegarde et récupération | 9 | 3 |
 | L. Transversal | 8 | 2 |
-| **Total** | **161** | **58** |
+| **Total** | **166** | **59** |
 
 **Suggestion d'ordre** : commence par les 🔴 de H (concerts et direct) et
 de G (groupes) — c'est là que sont la plupart des cicatrices récentes et

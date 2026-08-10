@@ -6,13 +6,18 @@
 import React from 'react';
 
 import { t } from '../i18n';
-import { parseContent, ParsedLine } from '../lib/chordpro';
+import { parseContent, ParsedLine, stripChords } from '../lib/chordpro';
 import { Spelling, transposeContent } from '../lib/chords';
 import { repairChordedLyrics } from '../lib/textRepair';
 import { Song, SongNote, ViewMode } from '../types';
 
 export function ChordLine({ line }: { line: ParsedLine }) {
   const hasChords = line.segments.some((s) => s.chord !== null);
+  // En-tête de section (b219) : le repère de lecture que l'import
+  // reconnaissait puis jetait. Ni parole ni accord — sa propre ligne.
+  if (line.section != null) {
+    return <div className="songsection">{line.section}</div>;
+  }
   if (
     line.segments.length === 1 &&
     line.segments[0].chord === null &&
@@ -87,19 +92,11 @@ export function SongBody({
   if (showChords) {
     content = transposeContent(content, shift, preferFlat);
   } else {
-    content = content.replace(/\[([^\]\n]+)\]/g, '');
+    // Une seule fonction prépare les « paroles seules » (b219) : la vue
+    // paroles d'ici et ce qui part vers le public sortent du même moule.
+    content = stripChords(content);
   }
-  let lines = parseContent(content);
-  if (!showChords) {
-    // en « paroles seules », on retire les lignes qui n'étaient que des grilles
-    const srcLines = song.lyrics.split('\n');
-    lines = lines.filter((l, i) => {
-      const wasGrid =
-        (srcLines[i] ?? '').includes('[') &&
-        l.segments.every((s) => s.text.trim() === '');
-      return !wasGrid;
-    });
-  }
+  const lines = parseContent(content);
 
   // « Structure » = notes générales libres (plus de découpage par
   // sections ni d'accords par partie).

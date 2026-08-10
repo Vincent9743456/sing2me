@@ -13,6 +13,7 @@ import { t } from '../i18n';
 import { stripChords } from '../lib/chordpro';
 import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
+import { PublicLyrics } from '../components/PublicLyrics';
 import { PublicNameCard } from '../components/PublicNameCard';
 import { cachedPublicName } from '../lib/publicPages';
 import { getValidSession } from '../lib/auth';
@@ -614,19 +615,19 @@ export function Artist() {
                   </>
                 )}
                 {screen.lyrics ? (
-                  <div
-                    className="livelyrics"
+                  <PublicLyrics
+                    text={
+                      sampleLyrics ||
+                      t(
+                        'Les paroles du morceau joué\ns’affichent ici, en direct,\nvers après vers…',
+                      )
+                    }
                     style={{
                       fontSize: '0.95rem',
                       maxHeight: 180,
                       overflow: 'hidden',
                     }}
-                  >
-                    {sampleLyrics ||
-                      t(
-                        'Les paroles du morceau joué\ns’affichent ici, en direct,\nvers après vers…',
-                      )}
-                  </div>
+                  />
                 ) : (
                   <p style={{ textAlign: 'center' }}>
                     {t('🎶 Concert en cours — profitez du moment !')}

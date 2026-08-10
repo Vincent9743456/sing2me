@@ -1000,6 +1000,22 @@ textarea.mono {
   white-space: pre-wrap;
   margin-bottom: 2px;
 }
+/* En-tête de section dans la partition (b219) : Intro, Couplet 1, Refrain.
+   Un REPÈRE, pas un titre — il ne prend rien au contraste des paroles ni
+   des accords (règle 6 du design system) ; c'est l'air au-dessus qui
+   sépare, pas la couleur. */
+.songsection {
+  color: var(--text-dim);
+  /* En `em` : le mode scène grossit toute la partition, le repère suit. */
+  font-size: 0.72em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin: var(--sp-4) 0 var(--sp-1);
+}
+.songsection:first-child {
+  margin-top: 0;
+}
 .notesbox {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -1774,6 +1790,9 @@ textarea.mono {
     color: #000;
     font-weight: 800;
   }
+  .songbook .songsection {
+    color: #333;
+  }
   .songbook .stnote {
     display: none; /* notes de répét : hors du carnet imprimé */
   }
@@ -2104,12 +2123,29 @@ textarea.mono {
   font-size: 1.6rem;
   margin: 0 0 4px;
 }
-.livelyrics {
-  white-space: pre-wrap;
+/* Paroles du PUBLIC (b219) — un composant, trois écrans : le direct, la
+   setlist parcourue, l'aperçu de la fiche artiste. Chaque vers est sa propre
+   ligne (le bloc `pre-wrap` d'avant traînait les espaces d'alignement des
+   accords, qui décalaient le texte centré). */
+.publyrics {
   text-align: center;
   font-size: 1.18rem;
   line-height: 1.75;
   margin-top: 22px;
+}
+.publyrics .pl-gap {
+  height: 0.9em;
+}
+.publyrics .pl-section {
+  color: var(--text-faint);
+  font-size: 0.68em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  margin: var(--sp-4) 0 var(--sp-1);
+}
+.publyrics .pl-section:first-child {
+  margin-top: 0;
 }
 
 /* ---------- Barre d'interaction du public (b172) ----------

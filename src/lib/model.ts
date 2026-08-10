@@ -9,6 +9,7 @@ import {
   transposeContent,
   transposeKeyName,
 } from './chords';
+import { ligneDeSection, sectionDeLaLigne } from './sections';
 import {
   decodeHtmlEntities,
   fixGlyphSpaces,
@@ -159,6 +160,63 @@ export function retireVersionSolo(song: Song): Song {
       (v.bandId ?? '') === ANCIEN_CONTEXTE_SOLO ? { ...v, bandId: '' } : v,
     ),
   };
+}
+
+/**
+ * b219 — LES SECTIONS REVIENNENT DANS LES PAROLES.
+ *
+ * L'import reconnaissait « Refrain », s'en servait pour bâtir le résumé de
+ * structure… puis effaçait le mot des paroles. Depuis que « Structure » est
+ * devenu un bloc de notes libres, plus aucun écran ne l'affichait : toute la
+ * bibliothèque déjà importée est un pavé continu.
+ *
+ * On le repose — mais SEULEMENT quand c'est certain. `structure` a été
+ * construite à partir des mêmes blocs que `lyrics`, dans le même ordre, et
+ * chaque ligne porte la suite d'accords de son bloc : si les comptes
+ * coïncident ET que chaque suite d'accords recalculée retombe sur celle qui
+ * est enregistrée, l'appariement n'est pas une hypothèse. Au moindre écart,
+ * on ne touche à rien : mieux vaut un pavé qu'un « Refrain » posé sur un
+ * couplet. Idempotente (un bloc déjà titré fait renoncer).
+ */
+function reposerLesSections(
+  lyrics: string,
+  structure: StructureRow[] | undefined,
+): string {
+  if (!Array.isArray(structure) || structure.length === 0) return lyrics;
+  if (lyrics.trim() === '') return lyrics;
+  const blocs = lyrics.split(/\n{2,}/);
+  if (blocs.length !== structure.length) return lyrics;
+  const labels: string[] = [];
+  for (let i = 0; i < blocs.length; i++) {
+    const label = (structure[i].label ?? '').trim();
+    // Le libellé doit faire partie du vocabulaire des sections, sinon il
+    // s'afficherait comme une parole (« Section : », « Partie B : »).
+    if (label === '' || sectionDeLaLigne(ligneDeSection(label)) === null) {
+      return lyrics;
+    }
+    // Déjà titré : ne rien empiler.
+    if (sectionDeLaLigne(blocs[i].split('\n')[0] ?? '') !== null) return lyrics;
+    if (extractChordSequence(blocs[i]) !== (structure[i].chords ?? '')) {
+      return lyrics;
+    }
+    labels.push(label);
+  }
+  return blocs.map((b, i) => `${ligneDeSection(labels[i])}\n${b}`).join('\n\n');
+}
+
+export function restaureSectionsDansParoles(song: Song): Song {
+  const lyrics = reposerLesSections(song.lyrics, song.structure);
+  const versions = Array.isArray(song.versions)
+    ? song.versions.map((v) => {
+        const l = reposerLesSections(v.lyrics ?? '', v.structure);
+        return l === (v.lyrics ?? '') ? v : { ...v, lyrics: l };
+      })
+    : song.versions;
+  const versionsChangees =
+    Array.isArray(song.versions) &&
+    versions.some((v, i) => v !== song.versions[i]);
+  if (lyrics === song.lyrics && !versionsChangees) return song;
+  return { ...song, lyrics, versions };
 }
 
 /** Notes visibles dans un contexte de groupe : générales + celles du groupe. */
@@ -1004,6 +1062,10 @@ export function migrateSong(raw: unknown): Song {
       .join('\n');
     base = { ...base, structureNotes: fromComments };
   }
+
+  // b219 : les en-têtes de sections reviennent dans les paroles quand
+  // l'appariement avec la structure enregistrée est certain.
+  base = restaureSectionsDansParoles(base);
 
   // b211 : plus de « version Solo » — celles qui existent redeviennent des
   // versions personnelles ordinaires (avant l'invariant ci-dessous, pour

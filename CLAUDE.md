@@ -451,6 +451,37 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **Un crochet vit AVANT les gardes** : tout `useEffect`/`useMemo` écrit
   au-dessus d'un `if (x === null) return …` doit se lire comme si l'état
   n'existait pas encore (`x?.id ?? ''`), dépendances comprises.
+- **Ce qui est RECONNU doit être GARDÉ** (b219) : l'import repérait les
+  sections (« Refrain », « [Couplet 2] »), s'en servait pour bâtir le résumé
+  de structure… puis effaçait le mot des paroles. Comme « Structure » est
+  devenu un bloc de notes libres, plus aucun écran ne le montrait : toute la
+  bibliothèque était un pavé continu. Les en-têtes vivent maintenant DANS les
+  paroles, en clair (« Refrain : »), **jamais entre crochets** — ici les
+  crochets sont des accords, et `[Coda]`, `[Couplet 1]`, `[Final]`
+  commencent par C, C et F : ils seraient transposés. Vocabulaire à UN seul
+  endroit (`src/lib/sections.ts`), lu par l'import (tolérant : une ligne
+  « Refrain » nue est un en-tête) et par l'affichage (exigeant : crochets,
+  parenthèses ou deux-points obligatoires, sinon une parole qui dirait
+  « Solo » deviendrait un titre).
+- **Un accord se pose au DÉBUT d'un mot** (b219) : la fusion accords/paroles
+  alignait à la colonne exacte, dans une police à chasse fixe que la
+  partition d'origine ne respecte pas toujours — d'où « commen[C]t faire » et
+  « un coup d[A7]'je t'aime ». On recale sur la frontière de mot la plus
+  proche à 3 caractères près (et un accord posé sur une espace appartient au
+  mot qui suit) ; au-delà, c'est un vrai mélisme et on n'y touche pas. Le
+  prompt de nettoyage IA porte la même règle.
+- **Le public lit, il ne déchiffre pas** (b219) : un seul composant
+  (`PublicLyrics`) et une seule préparation (`stripChords`) pour les trois
+  écrans où quelqu'un LIT des paroles. Une ligne qui n'était que des accords
+  disparaît au lieu de laisser un blanc ; les espaces de fin de ligne partent
+  (dans un texte centré, ils décalent le vers) ; un en-tête sans une seule
+  parole en dessous ne s'affiche pas.
+- **Une migration de contenu se PROUVE avant de s'appliquer** (b219) : pour
+  reposer les sections sur la bibliothèque déjà importée, on ne se contente
+  pas de compter les blocs — on recalcule la suite d'accords de chaque bloc
+  et on exige qu'elle retombe sur celle qui est enregistrée dans `structure`.
+  Au moindre écart, on ne touche à rien : mieux vaut un pavé qu'un
+  « Refrain » posé sur un couplet.
 - **Un live CLOS ne se rallume pas** (b217) : la clôture efface son code de
   salon, donc rallumer la même ligne donne un direct que plus personne ne
   retrouve — le lanceur le premier, qui le sondait par ce code et lisait

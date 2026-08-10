@@ -1,6 +1,7 @@
 /**
  * Parseur du format [Accord]paroles pour l'affichage.
  */
+import { sectionDeLaLigne } from './sections';
 
 export interface ChordSegment {
   chord: string | null;
@@ -13,6 +14,9 @@ export interface ParsedLine {
   /** Ligne d'accords « brute » (sans crochets) : intro / grille de mesures
    *  du type « |Em D G| » — à afficher telle quelle, en couleur d'accord. */
   plainChords?: boolean;
+  /** En-tête de section (« Refrain », « Couplet 2 ») : ni parole ni accord,
+   *  un repère de lecture. Absent sur toutes les autres lignes. */
+  section?: string;
 }
 
 const CHORD_RE = /\[([^\]\n]+)\]/g;
@@ -48,6 +52,16 @@ export function isPlainChordLine(line: string): boolean {
 }
 
 export function parseLine(line: string): ParsedLine {
+  // Un en-tête de section se lit AVANT tout : « Coda : » et « Final : »
+  // commencent par une note, ils passeraient pour des accords.
+  const section = sectionDeLaLigne(line);
+  if (section !== null) {
+    return {
+      segments: [{ chord: null, text: section }],
+      chordsOnly: false,
+      section,
+    };
+  }
   const segments: ChordSegment[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -88,12 +102,45 @@ export function parseContent(content: string): ParsedLine[] {
   return content.split('\n').map(parseLine);
 }
 
-/** Retire tous les accords [X] (pour un partage « paroles seules »). */
+/**
+ * PAROLES SEULES — ce que lit le public (page du QR, vue « paroles »,
+ * partage). Les accords partent, mais une ligne qui n'était QUE des accords
+ * s'en va aussi : elle laissait sinon un blanc au milieu de la chanson, et
+ * l'intro (« |Em D G| ») ouvrait le texte sur une ligne vide.
+ *
+ * Les en-têtes de sections restent : ils disent au spectateur où il en est.
+ * Les blancs sont normalisés (jamais deux d'affilée, aucun en tête ni en
+ * queue) et les espaces de fin de ligne retirés — dans un texte centré, ils
+ * décalent visiblement le vers.
+ */
 export function stripChords(content: string): string {
-  return content
-    .replace(/\[([^\]\n]+)\]/g, '')
-    .split('\n')
-    .map((l) => l.replace(/\s+$/g, ''))
-    .filter((l, i, arr) => !(l.trim() === '' && (arr[i - 1] ?? '').trim() === ''))
-    .join('\n');
+  const brut: string[] = [];
+  for (const src of content.split('\n')) {
+    if (sectionDeLaLigne(src) !== null) {
+      brut.push(src.trim());
+      continue;
+    }
+    if (isPlainChordLine(src)) continue;
+    const l = src.replace(/\[([^\]\n]+)\]/g, '').replace(/\s+$/g, '');
+    // Il ne restait que des accords sur cette ligne.
+    if (l.trim() === '' && src.trim() !== '') continue;
+    brut.push(l);
+  }
+  // Un en-tête sans une seule parole en dessous n'apprend rien à qui LIT :
+  // l'intro n'était qu'une grille d'accords, elle vient de disparaître.
+  const utiles = brut.filter((l, i) => {
+    if (sectionDeLaLigne(l) === null) return true;
+    for (let j = i + 1; j < brut.length; j++) {
+      if (sectionDeLaLigne(brut[j]) !== null) return false;
+      if (brut[j].trim() !== '') return true;
+    }
+    return false;
+  });
+  const out: string[] = [];
+  for (const l of utiles) {
+    if (l.trim() === '' && (out[out.length - 1] ?? '').trim() === '') continue;
+    out.push(l);
+  }
+  while (out.length > 0 && (out[out.length - 1] ?? '').trim() === '') out.pop();
+  return out.join('\n');
 }
