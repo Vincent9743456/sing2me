@@ -59,6 +59,26 @@ export function SongDeleteSheet({
     );
   }
 
+  // Proposition écartée : elle sort de tout, sauf du répertoire du groupe.
+  // On dit OÙ elle reste, sinon « écarter » ressemble à « supprimer ».
+  if (sort.mode === 'ecarte') {
+    return (
+      <ConfirmSheet
+        title={t('Écarter « {title} » ?', { title: titre })}
+        message={t(
+          'Cette proposition quittera tes idées. {groupe} l’a toujours à son répertoire : tu la retrouveras là, avec « ↩ Reprendre », le jour où tu changes d’avis.',
+          { groupe: nomDuGroupe(sort.bandId) },
+        )}
+        confirmLabel={t('Écarter')}
+        onConfirm={() => {
+          deleteSong(song.id);
+          onDeleted?.();
+        }}
+        onClose={onClose}
+      />
+    );
+  }
+
   // Morceau du répertoire d'un groupe : il ne disparaît pas, il retourne
   // d'où il vient — les Idées. On le DIT, sinon la promesse est fausse.
   if (sort.mode === 'idee') {

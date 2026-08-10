@@ -321,6 +321,21 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     chemins de suppression (fiche, ligne, aperçu, éditeur) passent par elle,
     sinon un écran finirait par promettre « supprimé » là où l'app garde une
     proposition ;
+  - **une PROPOSITION de groupe s'ÉCARTE, elle ne se supprime pas** (b240,
+    demande de Vincent : « qu'un morceau proposé dans le répertoire du
+    Groupe, s'il n'est pas accepté par un membre, puisse être récupéré
+    facilement »). C'était le dernier cul-de-sac : décliner posait une
+    pierre tombale, et le groupe — dont les données n'ont pas bougé d'un
+    pouce — n'avait AUCUN moyen de reproposer le morceau. La porte se
+    fermait des deux côtés à la fois. Écarter (`Song.declined`) la sort des
+    Idées et de partout ailleurs, SAUF du répertoire du groupe qui l'a
+    proposée : elle y attend, marquée « ↩ Écarté », avec un « ↩ Reprendre »
+    qui la ramène « à valider » (reprendre n'est pas accepter). Aucune
+    pierre tombale — c'est elle qui rendrait la reprise impossible. Une idée
+    SANS groupe, elle, se supprime pour de bon. Corollaires : la pastille
+    « 💡 Idées » ne compte pas les écartées (règle 11), et le bouton de la
+    fiche dit « Écarter cette proposition » — le mot doit annoncer l'effet,
+    sinon on croit avoir supprimé ;
   - un morceau supprimé n'est jamais réimporté par l'import en masse
     (tombstones) ;
   - navigation : les boutons ← des pages vont vers un parent explicite

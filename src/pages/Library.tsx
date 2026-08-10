@@ -192,6 +192,7 @@ export function Library() {
   const {
     songs,
     acceptSong,
+    restoreSong,
     bands,
     setlists,
     saveSong,
@@ -271,7 +272,9 @@ export function Library() {
   );
   const [showIdeas, setShowIdeas] = useState(false);
   const ideaCount = useMemo(
-    () => songs.filter((s) => s.idea === true).length,
+    // Les propositions ÉCARTÉES (b240) n'y sont pas : la pastille compte
+    // EXACTEMENT ce que l'écran montrera (règle 11).
+    () => songs.filter((s) => s.idea === true && s.declined !== true).length,
     [songs],
   );
   // Nouveautés : partitions ajoutées dans la semaine (repérage rapide)
@@ -415,7 +418,7 @@ export function Library() {
       .filter((s) => {
         // Vue « Idées » : la réserve à travailler — y compris les morceaux
         // proposés par un groupe, qui arrivent désormais ici (b174).
-        if (showIdeas) return s.idea === true;
+        if (showIdeas) return s.idea === true && s.declined !== true;
         if (showCheck) return s.needsCheck !== undefined;
         /*
          * Dans le RÉPERTOIRE D'UN GROUPE, ce que ce groupe vient de proposer
@@ -429,6 +432,14 @@ export function Library() {
          * attendent leur tour comme avant.
          */
         if (bandFilter !== null && bandFilter !== '' && s.idea === true) {
+          /*
+           * Y COMPRIS CE QUE J'AI ÉCARTÉ (b240, demande de Vincent) : « qu'un
+           * morceau proposé dans le répertoire du Groupe, s'il n'est pas
+           * accepté, puisse être récupéré facilement ». Le répertoire du
+           * groupe est le SEUL endroit où une proposition écartée reste
+           * visible — et c'est justement là qu'on la cherche, puisque c'est
+           * là qu'elle est chez celui qui l'a proposée.
+           */
           return (s.pendingBandId ?? '') === bandFilter;
         }
         // Vue par défaut « Tous les morceaux » : ce qu'on joue vraiment. Les
@@ -520,13 +531,18 @@ export function Library() {
                           {/* Dans le répertoire du groupe qui propose, répéter
                               son nom n'apprend rien : ce qu'il faut lire,
                               c'est qu'il reste un geste à faire (b203). */}
-                          {bandFilter !== null &&
-                          bandFilter === (song.pendingBandId ?? '')
-                            ? t('📥 À valider')
-                            : `${t('📥 Proposé par')} ${
-                                bands.find((b) => b.id === song.pendingBandId)
-                                  ?.name || t('ton groupe')
-                              }`}
+                          {song.declined === true
+                            ? /* Court : le bouton « ↩ Reprendre » juste à
+                                 côté dit déjà quoi en faire, et une
+                                 sous-ligne longue étrangle le titre. */
+                              t('↩ Écarté')
+                            : bandFilter !== null &&
+                                bandFilter === (song.pendingBandId ?? '')
+                              ? t('📥 À valider')
+                              : `${t('📥 Proposé par')} ${
+                                  bands.find((b) => b.id === song.pendingBandId)
+                                    ?.name || t('ton groupe')
+                                }`}
                           {song.artist !== '' ? ` · ${song.artist}` : ''}
                         </div>
                       ) : song.needsCheck ? (
@@ -584,23 +600,40 @@ export function Library() {
                         <Icon name="message" size={12} /> {song.fanMessages.length}
                       </span>
                     )}
-                    {(song.pendingBandId ?? '') !== '' && (
-                      <button
-                        className="btn small"
-                        title={t('Accepter « {title} » dans ta bibliothèque', {
-                          title: song.title || t('ce morceau'),
-                        })}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Accepter = entrer en bibliothèque ET dans le
-                          // répertoire du groupe (b205). La règle vit dans
-                          // le store, comme celle des setlists.
-                          acceptSong(song.id);
-                        }}
-                      >
-                        {t('✓ Accepter')}
-                      </button>
-                    )}
+                    {(song.pendingBandId ?? '') !== '' &&
+                      (song.declined === true ? (
+                        /* Écartée : un seul geste pour la ravoir (b240). Elle
+                           redevient « à valider », elle n'entre pas d'office
+                           en bibliothèque — reprendre n'est pas accepter. */
+                        <button
+                          className="btn ghost small"
+                          title={t('Remettre « {title} » dans tes propositions', {
+                            title: song.title || t('ce morceau'),
+                          })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            restoreSong(song.id);
+                          }}
+                        >
+                          {t('↩ Reprendre')}
+                        </button>
+                      ) : (
+                        <button
+                          className="btn small"
+                          title={t('Accepter « {title} » dans ta bibliothèque', {
+                            title: song.title || t('ce morceau'),
+                          })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Accepter = entrer en bibliothèque ET dans le
+                            // répertoire du groupe (b205). La règle vit dans
+                            // le store, comme celle des setlists.
+                            acceptSong(song.id);
+                          }}
+                        >
+                          {t('✓ Accepter')}
+                        </button>
+                      ))}
                     {/* ▶ Scène directement sur la ligne (demande de Marco,
                         sa priorité) : jouer un morceau était à deux gestes —
                         ouvrir le « ⋯ », puis choisir. C'est l'action la plus

@@ -29,6 +29,8 @@ export type SortDuMorceau =
   | { mode: 'supprime' }
   /** Morceau du répertoire d'un groupe : il retourne dans les Idées. */
   | { mode: 'idee'; bandId: string }
+  /** Proposition d'un groupe : elle est ÉCARTÉE, pas effacée. */
+  | { mode: 'ecarte'; bandId: string }
   /** Programmé dans une setlist du groupe : on ne le supprime pas. */
   | { mode: 'refus'; bandId: string; setlist: string };
 
@@ -66,11 +68,13 @@ export function sortDuMorceau(song: Song, setlists: Setlist[]): SortDuMorceau {
       setlist: programmee.name,
     };
   }
-  // DÉJÀ une proposition : supprimer veut alors dire « je n'en veux pas ».
-  // C'est la seule façon de décliner, et la règle ci-dessous ne doit pas la
-  // confisquer — sinon une idée ne pourrait plus JAMAIS quitter la
-  // bibliothèque, et le geste ne ferait plus rien du tout.
-  if (song.idea === true) return { mode: 'supprime' };
+  // DÉJÀ une proposition : la décliner ne l'EFFACE pas (b240). Une vraie
+  // suppression poserait une pierre tombale, et le groupe — dont les
+  // données n'ont pas bougé d'un pouce — n'aurait alors aucun moyen de la
+  // reproposer : la porte se refermerait des deux côtés à la fois. Elle est
+  // donc ÉCARTÉE : hors des Idées, hors de tout, sauf du répertoire du
+  // groupe, où elle attend un « ↩ Reprendre ».
+  if (song.idea === true) return { mode: 'ecarte', bandId: groupes[0] };
   return { mode: 'idee', bandId: groupes[0] };
 }
 
@@ -85,7 +89,31 @@ export function remisEnIdee(song: Song, bandId: string): Song {
   return {
     ...song,
     idea: true,
+    declined: undefined,
     pendingBandId: bandId,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * La proposition écartée. Elle garde tout — c'est ce qui permet de la
+ * reprendre telle quelle, hors ligne et sans rien demander au groupe.
+ */
+export function ecartee(song: Song, bandId: string): Song {
+  return {
+    ...song,
+    idea: true,
+    declined: true,
+    pendingBandId: bandId,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/** L'inverse : elle redevient une proposition ordinaire, à valider. */
+export function reprise(song: Song): Song {
+  return {
+    ...song,
+    declined: undefined,
     updatedAt: new Date().toISOString(),
   };
 }
