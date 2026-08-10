@@ -178,6 +178,8 @@ groupe, direct). Marco est le second appareil.
 | N° | Cas | Ce qu'on doit voir | Prio |
 |---|---|---|---|
 | G-1 | Créer un groupe | Bouton de validation visible ; le groupe apparaît | 🔴 |
+| G-1bis | Groupe → Modifier → « Masquer ce groupe au public » | Il disparaît des identités publiques (onglet Artiste ET panneau ON AIR) : **impossible de lancer un direct à son nom** ; son adresse est retirée | 🔴 |
+| G-1ter | Groupe visible → adresse publique | Le créateur peut la réserver et la changer ; un membre la voit sans pouvoir la modifier | 🟠 |
 | G-2 | Inviter par lien / e-mail | Lien copiable, envoyable | 🔴 |
 | G-3 | 📱📱 Marco accepte l'invitation | Il arrive **directement dans le groupe**, répertoire visible | 🔴 |
 | G-4 | Ajouter un morceau au répertoire du groupe | Il part chez les autres membres | 🔴 |
@@ -268,6 +270,10 @@ groupe, direct). Marco est le second appareil.
 |---|---|---|---|
 | A-12 | Créer le profil artiste | Nom, photo, bio, liens | 🔴 |
 | A-13 | Aperçu « ce que voit le public » | Conforme à la vraie page | 🟠 |
+| A-13bis | Adresse publique : deux comptes au même nom d'artiste | Le premier garde `vincent`, le second se voit proposer `vincent2` ; impossible d'enregistrer un nom déjà pris — ⚠️ cicatrice b227 | 🔴 |
+| A-13ter | Direct lancé, ouvrir `/monadresse` | On tombe sur MON concert, jamais celui d'un homonyme — ⚠️ cicatrice b227 | 🔴 |
+| A-13quater | Direct du groupe : `/legroupe` ET `/monnom` | Les deux mènent au MÊME concert (le miroir remonte au détenteur) | 🔴 |
+| A-13quinquies | Transmettre le groupe à un membre | `/legroupe` montre désormais la page du NOUVEAU détenteur, sans rien avoir à refaire | 🟠 |
 | A-14 | Ouvrir sa page publique | Elle s'ouvre **dans l'app**, avec un retour — ⚠️ cicatrice b187 | 🟠 |
 | A-15 | Lien de pourboire | Visible du public | 🟠 |
 | A-16 | Réglages de visibilité de la fiche | Respectés sur la page publique | ⚪ |

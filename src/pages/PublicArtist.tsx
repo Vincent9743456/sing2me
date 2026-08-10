@@ -9,7 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { LogoMark } from '../components/Logo';
 import { TipBox } from '../components/TipBox';
 import { t } from '../i18n';
-import { fetchLiveForArtist } from '../lib/live';
+import { fetchLiveForPage } from '../lib/live';
 import { Live } from './Live';
 import { fetchPublicPage } from '../lib/publicPages';
 import { ArtistProfile } from '../types';
@@ -76,13 +76,16 @@ export function PublicArtist({ name }: { name: string }) {
   // le spectateur RESTE sur cette adresse, qui est celle de l'artiste. On
   // regarde en boucle s'il est en train de jouer — donc un concert qui
   // s'arrête et repart est retrouvé tout seul, sans rescanner le QR.
+  // On veille le direct par l'ADRESSE, pas par le nom affiché (b227) : le nom
+  // n'est pas unique, l'adresse l'est. Cinq Vincent tombaient sinon sur le
+  // même concert.
   const performer = profile?.name ?? '';
   useEffect(() => {
-    if (performer === '') return;
+    if (name === '') return;
     let cancelled = false;
     const look = async () => {
       try {
-        const live = await fetchLiveForArtist(performer);
+        const live = await fetchLiveForPage(name);
         if (!cancelled) setLiveNow(live != null && live.mode === 'concert');
       } catch {
         // Réseau perdu : on garde ce qu'on affichait déjà.
@@ -94,12 +97,12 @@ export function PublicArtist({ name }: { name: string }) {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [performer]);
+  }, [name]);
 
   // En concert : les paroles, ici même. Le direct est désigné par le NOM de
   // l'artiste, jamais par une session.
   if (liveNow && performer !== '') {
-    return <Live artistName={performer} />;
+    return <Live artistName={performer} page={name} />;
   }
 
   if (profile === undefined) {

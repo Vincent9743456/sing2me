@@ -96,6 +96,7 @@ function initialRole(): 'public' | 'musicien' {
 export function Live({
   code = '',
   artistName = '',
+  page = '',
   onKeep,
 }: {
   code?: string;
@@ -106,6 +107,8 @@ export function Live({
    * session, lui, mourait avec la session.
    */
   artistName?: string;
+  /** Adresse publique d'où l'on vient (b227) : clé UNIQUE du direct. */
+  page?: string;
   /** App seulement : « Garder ce morceau » (copie perso en Idée) — voir
    *  lib/keepSong. L'entrée publique légère ne passe rien (pas de store). */
   onKeep?: (song: NonNullable<LiveState['song']>) => string;
@@ -207,7 +210,7 @@ export function Live({
     async function tick() {
       try {
         // Appel de SUIVI : position (morceau courant) + statut.
-        const s = await fetchLive(joinCode, artistName);
+        const s = await fetchLive(joinCode, artistName, page);
         if (cancelled) return;
         setState(s);
         stateIdRef.current = s.id;
@@ -228,7 +231,7 @@ export function Live({
         if (s.setlistCount !== lastSetlistCount.current) {
           lastSetlistCount.current = s.setlistCount;
           if (s.setlistCount > 0) {
-            const list = await fetchLiveSetlist(joinCode, artistName);
+            const list = await fetchLiveSetlist(joinCode, artistName, page);
             if (!cancelled && list.length > 0) {
               setBrowseSetlist(list);
               saveCachedSetlist(list);
@@ -362,7 +365,7 @@ export function Live({
     setBrowseOpen(true);
     // Repli réseau : si rien en cache, on tente une récupération (best-effort).
     if (browseSetlist === null) {
-      const list = await fetchLiveSetlist(joinCode, artistName);
+      const list = await fetchLiveSetlist(joinCode, artistName, page);
       if (list.length > 0) {
         setBrowseSetlist(list);
         saveCachedSetlist(list);

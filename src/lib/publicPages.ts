@@ -24,6 +24,12 @@ export function publicPagesAvailable(): boolean {
 export interface PublicPage {
   name: string;
   profile: ArtistProfile;
+  /**
+   * Adresse vers laquelle ce miroir pointe (b227) — renseignée seulement
+   * pour l'adresse d'un GROUPE. Un groupe n'a pas de page à lui : son
+   * adresse montre celle de son détenteur, et suit le transfert.
+   */
+  miroirDe?: string | null;
 }
 
 /* Cache LOCAL du nom public de CE compte : le QR unique (panneau ON AIR)
@@ -81,9 +87,47 @@ export async function findPublicPageByArtist(
   }
 }
 
-/** Fiche publique d'un artiste par son nom dictable (lecture anonyme). */
+/**
+ * Fiche publique par nom dictable (lecture anonyme).
+ *
+ * Passe par `resolve_public_name` (b227), qui connaît DEUX sortes d'adresses :
+ * celle d'un artiste, et celle d'un GROUPE — un MIROIR vers la page de son
+ * détenteur. La fonction est `security definer` parce qu'un spectateur n'a
+ * aucun droit sur la table des groupes, et n'en aura pas : elle ne rend que
+ * du public.
+ */
 export async function fetchPublicPage(name: string): Promise<PublicPage | null> {
   if (!publicPagesAvailable() || name === '') return null;
+  try {
+    const res = await fetch(`${sbUrl()}/rest/v1/rpc/resolve_public_name`, {
+      method: 'POST',
+      headers: {
+        apikey: anon(),
+        authorization: `Bearer ${anon()}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ p_name: name }),
+    });
+    if (!res.ok) return anciennePageParNom(name);
+    const rows = await res.json();
+    const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    if (!row) return null;
+    return {
+      name: row.nom ?? name,
+      profile: (row.profil ?? {}) as ArtistProfile,
+      miroirDe: row.miroir_de ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Repli : la RPC n'existe pas encore (`supabase/public.sql` pas rejoué). On
+ * lit la table directement — le miroir de groupe ne marchera pas, mais une
+ * page d'artiste s'ouvre comme avant. Jamais d'écran mort pour un spectateur.
+ */
+async function anciennePageParNom(name: string): Promise<PublicPage | null> {
   try {
     const res = await fetch(
       `${sbUrl()}/rest/v1/public_pages?name=eq.${encodeURIComponent(
@@ -94,8 +138,9 @@ export async function fetchPublicPage(name: string): Promise<PublicPage | null> 
     if (!res.ok) return null;
     const rows = await res.json();
     const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
-    if (!row) return null;
-    return { name: row.name, profile: (row.profile ?? {}) as ArtistProfile };
+    return row
+      ? { name: row.name, profile: (row.profile ?? {}) as ArtistProfile }
+      : null;
   } catch {
     return null;
   }
@@ -240,5 +285,105 @@ export async function claimPublicPage(
         ? 'Nom invalide ou réservé — 3 à 30 lettres/chiffres.'
         : `La réservation a échoué (${res.status}).`,
     );
+  }
+}
+
+/* ============================================================
+ * L'ADRESSE MIROIR D'UN GROUPE (b227, décision de Vincent).
+ *
+ * Un groupe n'a pas de QR à lui — le QR est celui de l'artiste, et c'est
+ * l'artiste qui décide, au lancement, si le public voit son nom ou celui du
+ * groupe. Mais le groupe a une ADRESSE, qui MONTRE la page de son détenteur.
+ *
+ * Le détenteur n'est stocké nulle part ici : il est lu à la volée sur
+ * `cloud_bands.owner`, la colonne que `transfer_band` met à jour. Transmettre
+ * le groupe déplace donc le miroir tout seul — il n'y a rien à
+ * resynchroniser, donc rien qui puisse se désynchroniser.
+ * ============================================================ */
+
+/** L'adresse de CE groupe publié, ou '' s'il n'en a pas. */
+export async function fetchBandPageName(cloudId: string): Promise<string> {
+  if (!publicPagesAvailable() || cloudId === '') return '';
+  try {
+    const res = await fetch(
+      `${sbUrl()}/rest/v1/band_pages?band_id=eq.${encodeURIComponent(
+        cloudId,
+      )}&select=name&limit=1`,
+      { headers: { apikey: anon(), authorization: `Bearer ${anon()}` } },
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (Array.isArray(rows) && rows[0]?.name) || '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Réserve (ou renomme) l'adresse d'un groupe. Réservée au DÉTENTEUR : la
+ * politique RLS le vérifie côté base, on ne se contente pas d'un test
+ * d'interface.
+ */
+export async function claimBandPage(
+  s: AuthSession,
+  cloudId: string,
+  name: string,
+): Promise<void> {
+  if (!publicPagesAvailable()) {
+    throw new Error('La synchronisation cloud doit être configurée.');
+  }
+  const err = publicNameError(name);
+  if (err) throw new Error(err);
+  // Renommer = supprimer l'ancienne ligne (le nom est la clé) puis écrire.
+  const ancien = await fetchBandPageName(cloudId);
+  if (ancien !== '' && ancien !== name) await releaseBandPage(s, cloudId);
+  const res = await fetch(`${sbUrl()}/rest/v1/band_pages`, {
+    method: 'POST',
+    headers: {
+      apikey: anon(),
+      authorization: `Bearer ${s.accessToken}`,
+      'content-type': 'application/json',
+      prefer: 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify({
+      name,
+      band_id: cloudId,
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  if (res.status === 409) {
+    throw new Error('Ce nom est déjà pris — choisis-en un autre.');
+  }
+  if (!res.ok) {
+    throw new Error(
+      res.status === 400
+        ? 'Nom invalide ou réservé — 3 à 30 lettres/chiffres.'
+        : res.status === 403
+          ? 'Seul le créateur du groupe peut changer son adresse.'
+          : `La réservation a échoué (${res.status}).`,
+    );
+  }
+}
+
+/**
+ * Retire l'adresse d'un groupe — appelée quand on le MASQUE au public :
+ * masquer un groupe et lui laisser une adresse publique serait un mensonge.
+ * Best-effort : un échec ne bloque jamais le masquage côté application.
+ */
+export async function releaseBandPage(
+  s: AuthSession,
+  cloudId: string,
+): Promise<void> {
+  if (!publicPagesAvailable() || cloudId === '') return;
+  try {
+    await fetch(
+      `${sbUrl()}/rest/v1/band_pages?band_id=eq.${encodeURIComponent(cloudId)}`,
+      {
+        method: 'DELETE',
+        headers: { apikey: anon(), authorization: `Bearer ${s.accessToken}` },
+      },
+    );
+  } catch {
+    /* hors ligne : l'adresse partira au prochain passage */
   }
 }

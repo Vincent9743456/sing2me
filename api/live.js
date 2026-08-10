@@ -183,7 +183,61 @@ async function closeLive(base, row) {
 const LIVE_COLS =
   'id,join_code,status,mode,song,artist,hearts,band_song,concert,setlist_count,setlist_name,updated_at,band_id,started_by,owner_id,started_at,last_song_at,session_id';
 
-/** Résout le live visé par la requête GET (code / id / band / défaut). */
+/**
+ * À QUI APPARTIENT UNE ADRESSE PUBLIQUE (b227).
+ *
+ * Renvoie `{ ownerId, nom }` — l'identifiant du COMPTE derrière `/lenom`, et
+ * son nom d'affichage (gardé pour le repli sur les vieux directs, qui n'ont
+ * pas d'`owner_id`).
+ *
+ * Deux sortes d'adresses, une seule porte : celle d'un artiste
+ * (`public_pages`), et celle d'un GROUPE (`band_pages`), qui est un MIROIR
+ * vers son détenteur — lu à la volée sur `cloud_bands.owner`, la colonne que
+ * `transfer_band` met à jour. Transmettre le groupe déplace donc le miroir
+ * sans qu'aucune donnée n'ait à être recopiée.
+ */
+async function proprietaireDeLAdresse(base, nomPublic) {
+  const enc = encodeURIComponent;
+  const nom = String(nomPublic).slice(0, 30).toLowerCase();
+  if (!/^[a-z0-9]{3,30}$/.test(nom)) return null;
+  try {
+    const r = await fetch(
+      `${base}/rest/v1/public_pages?name=eq.${enc(nom)}&select=user_id,profile&limit=1`,
+      { headers: sbHeaders() },
+    );
+    if (r.ok) {
+      const rows = await r.json();
+      const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
+      if (row) {
+        return { ownerId: row.user_id ?? '', nom: row.profile?.name ?? '' };
+      }
+    }
+    // Adresse de groupe : on remonte au détenteur.
+    const rb = await fetch(
+      `${base}/rest/v1/band_pages?name=eq.${enc(nom)}&select=band_id&limit=1`,
+      { headers: sbHeaders() },
+    );
+    if (!rb.ok) return null;
+    const bandes = await rb.json();
+    const bande = Array.isArray(bandes) && bandes[0] ? bandes[0] : null;
+    if (!bande?.band_id) return null;
+    const rc = await fetch(
+      `${base}/rest/v1/cloud_bands?id=eq.${enc(bande.band_id)}&select=owner,name&limit=1`,
+      { headers: sbHeaders() },
+    );
+    if (!rc.ok) return null;
+    const cb = await rc.json();
+    const groupe = Array.isArray(cb) && cb[0] ? cb[0] : null;
+    if (!groupe?.owner) return null;
+    // Le nom d'affichage utile au repli est celui du GROUPE : c'est lui que
+    // porte un direct lancé au nom du groupe.
+    return { ownerId: groupe.owner, nom: groupe.name ?? '' };
+  } catch {
+    return null;
+  }
+}
+
+/** Résout le live visé par la requête GET (code / id / band / page / défaut). */
 async function resolveLive(base, q) {
   const enc = encodeURIComponent;
   let url = null;
@@ -200,6 +254,40 @@ async function resolveLive(base, q) {
       .slice(0, 20);
     if (ids.length === 0) return null;
     url = `${base}/rest/v1/lives?band_id=in.(${ids.map(enc).join(',')})&status=neq.off&select=${LIVE_COLS}&order=started_at.desc&limit=1`;
+  } else if (q?.page) {
+    /**
+     * ADRESSE PUBLIQUE → LE DIRECT DE CE COMPTE-LÀ (b227).
+     *
+     * Avant, `/sonnom` cherchait le direct par NOM AFFICHÉ. Or un nom
+     * d'affichage n'est pas unique : rien n'empêche cinq Vincent. Les cinq
+     * avaient bien cinq adresses distinctes — l'unicité de `public_pages`
+     * tient — mais tombaient tous sur le MÊME concert, le plus récent. La
+     * promesse « une adresse, la tienne » se brisait une couche plus bas.
+     *
+     * On résout donc par COMPTE (`owner_id`, b192), qui ne change jamais.
+     * Le repli par nom reste pour les directs lancés avant b192, qui n'ont
+     * pas d'`owner_id` : on ne casse pas un historique pour un correctif.
+     */
+    const proprio = await proprietaireDeLAdresse(base, q.page);
+    if (!proprio) return null;
+    if (proprio.ownerId !== '') {
+      const parCompte = await fetch(
+        `${base}/rest/v1/lives?owner_id=eq.${enc(proprio.ownerId)}&status=neq.off` +
+          `&select=${LIVE_COLS}&order=started_at.desc&limit=1`,
+        { headers: sbHeaders() },
+      );
+      if (parCompte.ok) {
+        const rows = await parCompte.json();
+        if (Array.isArray(rows) && rows[0]) return rows[0];
+      }
+    }
+    // Repli : un direct d'avant b192, reconnu à son nom.
+    const nom = String(proprio.nom).slice(0, 120).replace(/[%_,()"]/g, '').trim();
+    if (nom === '') return null;
+    url =
+      `${base}/rest/v1/lives?status=neq.off&select=${LIVE_COLS}` +
+      `&or=(artist->>name.ilike.${enc(nom)},started_by.ilike.${enc(nom)})` +
+      `&owner_id=is.null&order=started_at.desc&limit=1`;
   } else if (q?.artist) {
     // Page publique d'un artiste : SON live actif.
     //

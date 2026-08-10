@@ -313,6 +313,37 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     chez tout le monde). Même filtre sur les morceaux archivés du repli.
     **Supprimer un live est LOCAL** (`prefs.hiddenLives`) : rien n'est
     effacé côté serveur, les autres membres gardent le leur ;
+  - **une adresse publique, un COMPTE — et le groupe est un MIROIR** (b227,
+    décisions de Vincent). Le nom de PROFIL reste libre (cinq Vincent peuvent
+    tous s'appeler Vincent : on n'impose à personne de changer de nom
+    d'artiste). L'ADRESSE, elle, est unique : `public_pages.name` est unique
+    EN BASE, le premier arrivé garde le nom nu, les suivants reçoivent
+    `vincent2`, `vincent3`… et peuvent en choisir un autre — jamais un déjà
+    pris. **Un groupe n'a PAS de QR à lui** : le QR est celui de l'artiste,
+    et c'est l'artiste qui décide au lancement si le public voit son nom ou
+    celui du groupe — on ne revient pas là-dessus. Mais le groupe a une
+    ADRESSE MIROIR (`band_pages`), qui montre la page de son DÉTENTEUR, lu à
+    la volée sur `cloud_bands.owner` : transmettre le groupe déplace le
+    miroir tout seul, sans aucune donnée à recopier — donc rien qui puisse se
+    désynchroniser. Les deux adresses vivent dans le MÊME espace de noms
+    (déclencheur SQL croisé) : un nom pris par un artiste ne peut pas être
+    repris par un groupe.
+    **Et le direct se résout par le COMPTE, plus par le nom affiché** : le
+    nom d'affichage n'est pas unique, donc cinq Vincent avaient bien cinq
+    adresses distinctes mais tombaient tous sur le même concert — la promesse
+    « une adresse, la tienne » se brisait une couche plus bas.
+    `/api/live?page=` remonte l'adresse jusqu'au compte (`lives.owner_id`,
+    b192) ; la recherche par nom ne survit qu'en repli, pour les directs
+    d'avant b192. Cas d'usage validé : un direct de Zakoustiks lancé par
+    Vincent se trouve depuis `/zakoustiks` (miroir) COMME depuis `/vincent`
+    (QR) — c'est le même `owner_id`.
+  - **un groupe peut être MASQUÉ au public** (b227, demande de Vincent) :
+    « un groupe que je fais à l'occasion avec un pote n'a pas vocation à être
+    exposé ». Masqué (`Band.hiddenFromPublic`), il disparaît des identités
+    publiques, son adresse miroir est RETIRÉE, et **on ne peut plus lancer de
+    direct à son nom** — sans cette dernière règle, masquer ne servirait à
+    rien : un seul concert suffirait à l'exposer. C'est un choix PERSONNEL
+    (c'est ma page publique), jamais partagé avec les autres membres.
   - **mon QR est unique, mon choix au lancement décide de ce que voit le
     public** (b183) : le passage en direct réserve/rafraîchit ma fiche
     publique avec MON profil, jamais celui du groupe (sinon un concert de

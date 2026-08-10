@@ -453,7 +453,11 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
       // Portée « mon groupe » : on tague le direct avec le cloudId du groupe
       // qui joue (vide en solo → n'apparaît chez aucun autre membre) et le nom
       // de la personne qui lance (affiché dans la bannière des membres).
-      const liveBand = who === 'solo' ? null : bands.find((x) => x.id === who);
+      // Un groupe masqué ne peut pas porter un direct (b227) : si le réglage
+      // pointait encore vers lui (masqué après coup), on repart en solo
+      // plutôt que de l'exposer.
+      const choisi = who === 'solo' ? null : bands.find((x) => x.id === who);
+      const liveBand = choisi?.hiddenFromPublic === true ? null : choisi;
       await pushLive(prefs.liveKey, {
         status: next,
         mode,
@@ -602,11 +606,16 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                       ? t('{name} (solo)', { name: artist.name })
                       : t('Moi (solo)')}
                   </option>
-                  {bands.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name || t('Groupe sans nom')}
-                    </option>
-                  ))}
+                  {/* Masqué au public = pas de direct à son nom (b227).
+                      Sinon le masquer ne servirait à rien : un seul concert
+                      suffirait à l'exposer. */}
+                  {bands
+                    .filter((b) => b.hiddenFromPublic !== true)
+                    .map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name || t('Groupe sans nom')}
+                      </option>
+                    ))}
                 </select>
               </div>
             )}
