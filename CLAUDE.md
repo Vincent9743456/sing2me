@@ -476,6 +476,11 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   gagne, PAR OBJET, sur `updatedAt` (`mergeById`) — à égalité le local gagne.
   Ne pas construire de résolution de conflit : il faudrait le MÊME objet
   modifié sur DEUX appareils pendant la même fenêtre hors ligne.
+  **Ce qui attend se DIT** (b222) : « ↑ N modifications en attente » sur le
+  bloc du compte, compté au rendu depuis le dernier envoi réussi (gardé dans
+  `sing2me/dernierEnvoi`, sinon le compteur repartirait de zéro à chaque
+  lancement et annoncerait toute la bibliothèque). Sans envoi réussi connu,
+  on n'annonce RIEN plutôt qu'un chiffre faux.
 - **L'IA met en forme CHAQUE import** (b220, décision Vincent) : ce qui
   était un bouton, à la main et seulement sur un import déjà cassé, est
   devenu automatique — à l'unité comme en masse. **Jamais bloquant** :

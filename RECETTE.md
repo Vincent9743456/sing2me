@@ -309,6 +309,7 @@ c'est couvert par les tests automatiques (suite `backup`).*
 | T-6 | Coupure réseau en pleine utilisation | Aucun écran mort ; message sans jargon | 🔴 |
 | T-6bis | **Mode avion, app lancée depuis l'écran d'accueil** | Elle s'ouvre : bibliothèque, setlists, mode scène. Seuls le direct et la synchro sont indisponibles — ⚠️ cicatrice b221 | 🔴 |
 | T-6ter | Modifier un morceau hors ligne, puis retrouver du réseau | La modification part toute seule au retour du réseau, sans avoir à retoucher quoi que ce soit | 🔴 |
+| T-6quinquies | Modifier trois morceaux hors ligne | « ↑ 3 modifications en attente » sur le bloc du compte ; le chiffre retombe à zéro dès l'envoi, et ne réapparaît pas au relancement | 🟠 |
 | T-6quater | Réglages → « ↻ Recharger l'application » | L'app revient à neuf ; morceaux, setlists et réglages intacts | 🟠 |
 | T-7 | Version affichée en bas de l'onglet Artiste | Correspond à la dernière livraison | ⚪ |
 | T-8 | `/version.txt` en ligne | Même numéro | ⚪ |
@@ -347,8 +348,8 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 | J. Profil et page publique | 8 | 1 |
 | J bis. Réglages et données | 4 | 1 |
 | K. Sauvegarde et récupération | 9 | 3 |
-| L. Transversal | 11 | 4 |
-| **Total** | **181** | **67** |
+| L. Transversal | 12 | 4 |
+| **Total** | **182** | **67** |
 
 **Suggestion d'ordre** : commence par les 🔴 de H (concerts et direct) et
 de G (groupes) — c'est là que sont la plupart des cicatrices récentes et
