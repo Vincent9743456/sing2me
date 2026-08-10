@@ -527,6 +527,14 @@ export const EN_MORCEAUX: Record<string, string> = {
 
   // b223 — ce que verra le public, sur la fiche d'un morceau
   'Vue du public': 'Audience view',
+  '↩ Écarté': '↩ Set aside',
+  '↩ Reprendre': '↩ Take it back',
+  'Remettre « {title} » dans tes propositions': 'Put “{title}” back in your suggestions',
+  'Écarter cette proposition': 'Set this suggestion aside',
+  'Écarter « {title} » ?': 'Set “{title}” aside?',
+  'Cette proposition quittera tes idées. {groupe} l’a toujours à son répertoire : tu la retrouveras là, avec « ↩ Reprendre », le jour où tu changes d’avis.':
+    'This suggestion will leave your ideas. {groupe} still has it in their repertoire: you’ll find it there, with “↩ Take it back”, the day you change your mind.',
+  'Écarter': 'Set aside',
   '« {title} » est au programme': '“{title}” is on the setlist',
   'Ce morceau est dans la setlist « {setlist} » de {groupe}. Tant qu’il y est, tu ne peux pas le supprimer : le programme engage les autres musiciens, pas seulement toi.':
     'This song is on {groupe}’s “{setlist}” setlist. While it’s there you can’t delete it: the setlist commits the other musicians, not just you.',

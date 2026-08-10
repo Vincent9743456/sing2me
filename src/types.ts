@@ -148,6 +148,24 @@ export interface Song {
    */
   pendingBandId?: string;
   /**
+   * PROPOSITION ÉCARTÉE (b240, demande de Vincent).
+   *
+   * « Qu'un morceau proposé dans le répertoire du Groupe, s'il n'est pas
+   * accepté par un membre, puisse — dans le cas où le membre l'ait
+   * supprimé — être récupéré facilement. »
+   *
+   * Écarter n'est pas supprimer : le morceau quitte les Idées et n'apparaît
+   * plus nulle part… SAUF dans le répertoire du groupe qui l'a proposé, où
+   * il attend un « ↩ Reprendre ». C'est le seul état qui rende la
+   * proposition récupérable sans rien demander à personne : une vraie
+   * suppression pose une pierre tombale, et le groupe — dont les données
+   * n'ont pas bougé — n'a alors AUCUN moyen de la reproposer.
+   *
+   * Ne veut rien dire sans `pendingBandId`, qui dit de quel groupe il
+   * s'agit. Personnel — jamais partagé.
+   */
+  declined?: boolean;
+  /**
    * Par défaut, tout morceau est jouable en Solo. true = déqualifié
    * manuellement du répertoire solo (l'utilisateur estime ne pas pouvoir
    * le jouer seul). Personnel — jamais inclus dans les partages.

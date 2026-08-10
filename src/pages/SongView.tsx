@@ -880,7 +880,10 @@ export function SongView({
           style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
           onClick={() => setDelSongOpen(true)}
         >
-          <Icon name="trash" size={15} /> {t('Supprimer ce morceau')}
+          <Icon name="trash" size={15} />{' '}
+          {song.idea === true && (song.pendingBandId ?? '') !== ''
+            ? t('Écarter cette proposition')
+            : t('Supprimer ce morceau')}
         </button>
         {delSongOpen && (
           <SongDeleteSheet
