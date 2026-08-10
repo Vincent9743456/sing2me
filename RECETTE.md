@@ -120,6 +120,9 @@ groupe, direct). Marco est le second appareil.
 | I-25 | Morceau douteux issu d'un import en masse | Dans la bibliothèque : badge « 🔎 À vérifier », et dans son menu ⋯ « ↩ Revenir à ma partition d'origine » | 🟠 |
 | I-26 | Revenir à la partition d'origine | Les paroles ET la version active reviennent ; le badge disparaît | 🟠 |
 | I-27 | Enchaîner beaucoup d'imports | Au-delà du plafond, un message calme (« reprends dans un moment ») — jamais une erreur technique, et les morceaux déjà importés restent | 🟠 |
+| I-28 | Réglages → « Recaler les accords sur les mots » | Le nombre exact est annoncé AVANT ; après, « Rien à corriger ». Marche en mode avion | 🔴 |
+| I-29 | Recalage : ce qui ne doit pas bouger | Titres, artistes, notes, cœurs, setlists, idées : intacts. Une grille d'accords et un mélisme restent en place | 🔴 |
+| I-30 | Réglages → « Remettre en forme à l'IA » | Confirmation d'abord, progression ensuite, arrêt possible en cours de route — ce qui est repris reste repris | 🟠 |
 | I-17 | Pied de tous les écrans d'import | Mention « tes morceaux restent à toi, tu peux tout réexporter » | ⚪ |
 
 ---
@@ -332,7 +335,7 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 | A. Arrivée et compte | 11 | 6 |
 | B. Bibliothèque | 16 | 6 |
 | C. Partition et versions | 17 | 6 |
-| D. Import | 27 | 10 |
+| D. Import | 30 | 12 |
 | E. Setlists | 15 | 5 |
 | F. Mode scène | 9 | 3 |
 | G. Groupes | 15 | 5 |
@@ -342,7 +345,7 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 | J bis. Réglages et données | 4 | 1 |
 | K. Sauvegarde et récupération | 9 | 3 |
 | L. Transversal | 8 | 2 |
-| **Total** | **175** | **63** |
+| **Total** | **178** | **65** |
 
 **Suggestion d'ordre** : commence par les 🔴 de H (concerts et direct) et
 de G (groupes) — c'est là que sont la plupart des cicatrices récentes et

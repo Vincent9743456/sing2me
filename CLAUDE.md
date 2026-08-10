@@ -468,6 +468,16 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   Corollaire : la partition d'AVANT l'IA (`song.beforeAi`) n'est conservée
   QUE sur les morceaux marqués « à vérifier » — la garder partout doublerait
   le poids de la bibliothèque en localStorage.
+- **Un correctif d'import doit pouvoir RATTRAPER l'existant** (b220, demande
+  de Vincent : « appliquer ce correctif à mon répertoire comme s'il venait
+  d'être importé »). Réglages → « Reprendre mes partitions », en DEUX passes
+  séparées parce qu'elles n'ont ni le même coût ni le même risque : le
+  **recalage** (`recalerAccordsEnLigne`) est du calcul pur — hors ligne,
+  gratuit, rejouable, aucun modèle ne touche aux paroles — et il traite la
+  moitié du problème ; la **mise en forme IA** ne sert qu'à ce que le calcul
+  ne sait pas faire (retrouver des sections jamais marquées). Toujours
+  proposer la passe gratuite en premier, avec son chiffre exact. Les deux ne
+  touchent QUE paroles, structure, tonalité et capo.
 - **Tout appel payant a un plafond** (b220, demande de Vincent) : un geste
   délibéré devenu automatique est un geste bouclable. `server/ratelimit.js`
   compte par appelant, par heure ET par jour, sur `/api/ai` comme sur

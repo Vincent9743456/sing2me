@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { TopBar } from '../components/ui';
+import { ProgressBar, TopBar } from '../components/ui';
 import { SongBody } from '../components/SongBody';
 import { extractDocxText } from '../lib/docx';
 import { extractPdfPages } from '../lib/pdf';
@@ -99,33 +99,6 @@ export function extractUgLinks(input: string): string[] {
 }
 
 /** Barre de progression du traitement en masse. */
-function ProgressBar({
-  done,
-  total,
-  label,
-}: {
-  done: number;
-  total: number;
-  label: string;
-}) {
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  return (
-    <div aria-live="polite">
-      <div
-        className={`progressbar ${done >= total ? 'done' : ''}`}
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={total}
-        aria-valuenow={done}
-      >
-        <div style={{ width: `${Math.max(pct, 2)}%` }} />
-      </div>
-      <p className="help" style={{ textAlign: 'center', marginTop: 2 }}>
-        {label} : {done}/{total}
-      </p>
-    </div>
-  );
-}
 
 export function Import() {
   const { songs, deleted, saveSong } = useStore();
