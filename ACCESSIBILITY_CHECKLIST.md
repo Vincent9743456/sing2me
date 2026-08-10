@@ -1,4 +1,4 @@
-# Sing2Me — Checklist accessibilité
+# DodoSongs — Checklist accessibilité
 
 À vérifier après chaque lot (items critiques *) :
 

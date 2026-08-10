@@ -1,4 +1,4 @@
-# Sing2Me — Feuille de route design
+# DodoSongs — Feuille de route design
 
 Travail par lots courts, réversibles, sans jamais toucher à la logique
 métier pour une raison esthétique. Après chaque lot :

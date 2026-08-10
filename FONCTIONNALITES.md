@@ -1,4 +1,4 @@
-# Sing2Me — Tout ce que fait l'application
+# DodoSongs — Tout ce que fait l'application
 
 *Visite guidée, écran par écran. Établi en lisant le code — chaque bouton
 cité existe vraiment. Version b209, 9 août 2026.*
@@ -365,7 +365,7 @@ Photo, nom, bio, liens, lien de pourboire. Puis **quatre portes** :
 
 Deux catégories, distinguées à l'écran :
 
-- **Membres avec compte Sing2Me** — leur nom vient de leur compte.
+- **Membres avec compte DodoSongs** — leur nom vient de leur compte.
 - **Autres musiciens saisis à la main** — un nom, un instrument.
 
 Actions : **Inviter par lien / email** · **Ajouter un musicien** à la main ·
@@ -553,7 +553,7 @@ bas la **version de l'application** — utile pour savoir si tu es à jour.
 |---|---|
 | **Langue** | Automatique (celle du téléphone), français ou anglais |
 | **📄 Exporter la bibliothèque en PDF** | Un carnet complet de toutes tes partitions, imprimable |
-| **💾 Enregistrer une sauvegarde** | Un fichier que tu gardes chez toi. Il se relit **même sans Sing2Me** : c'est du texte, tes paroles et tes accords sont dedans |
+| **💾 Enregistrer une sauvegarde** | Un fichier que tu gardes chez toi. Il se relit **même sans DodoSongs** : c'est du texte, tes paroles et tes accords sont dedans |
 | **↩︎ Restaurer une sauvegarde** | Ajoute ce qui manque et garde la version la plus récente de ce qui existe des deux côtés. Restaurer une vieille sauvegarde **ne peut pas effacer** le travail d'hier |
 | **Réinitialiser** | Efface au choix : profil, groupes, morceaux, setlists, concerts. Confirmation explicite |
 | **📊 Tableau de bord** | Réservé aux fondateurs : comptes, usage, coût des IA |

@@ -990,7 +990,7 @@ export function BandEdit({ id }: { id: string }) {
         )}
         {cloudMembers.length > 0 && (
           <>
-            <p className="help">{t('Membres avec compte Sing2Me :')}</p>
+            <p className="help">{t('Membres avec compte DodoSongs :')}</p>
             {cloudMembers.map((m) => (
               <div
                 key={m.user_id}
@@ -1084,7 +1084,7 @@ export function BandEdit({ id }: { id: string }) {
             {m.verified === true && (
               <span
                 title={t(
-                  'Profil Sing2Me confirmé (carte de musicien reçue)',
+                  'Profil DodoSongs confirmé (carte de musicien reçue)',
                 )}
                 style={{ color: 'var(--accent)', flexShrink: 0 }}
               >
@@ -1205,7 +1205,7 @@ export function BandEdit({ id }: { id: string }) {
         </div>
         <p className="help">
           {t(
-            "L'invitation contient le répertoire du groupe (morceaux de ses setlists). Si le musicien a un compte Sing2Me, il rejoint le groupe en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa « carte de musicien » (l'ouvrir ici met à jour la liste manuelle).",
+            "L'invitation contient le répertoire du groupe (morceaux de ses setlists). Si le musicien a un compte DodoSongs, il rejoint le groupe en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa « carte de musicien » (l'ouvrir ici met à jour la liste manuelle).",
           )}
         </p>
         {editSaved && !editDirty && (
@@ -1231,7 +1231,7 @@ export function BandEdit({ id }: { id: string }) {
         <Modal title={t('Ajouter un membre')} onClose={() => setAddOpen(false)}>
           <p className="help" style={{ marginTop: 0 }}>
             {t(
-              'Cherche un musicien qui a déjà Sing2Me (il devra accepter), ou envoie-lui un lien / email.',
+              'Cherche un musicien qui a déjà DodoSongs (il devra accepter), ou envoie-lui un lien / email.',
             )}
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -1524,7 +1524,7 @@ export function BandEdit({ id }: { id: string }) {
           ) : memberPage === null ? (
             <p className="help" style={{ textAlign: 'center' }}>
               {t(
-                'Ce musicien n’a pas encore de page publique Sing2Me — ou son nom d’artiste est porté par plusieurs comptes.',
+                'Ce musicien n’a pas encore de page publique DodoSongs — ou son nom d’artiste est porté par plusieurs comptes.',
               )}
             </p>
           ) : (

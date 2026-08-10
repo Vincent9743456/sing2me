@@ -51,7 +51,7 @@ export const EN_COMMUN: Record<string, string> = {
     'This file cannot be read — it may have been truncated.',
   'Ce fichier ne contient pas de sauvegarde.':
     'This file does not contain a backup.',
-  'Ce fichier ne vient pas de Sing2Me.': 'This file does not come from Sing2Me.',
+  'Ce fichier ne vient pas de DodoSongs.': 'This file does not come from DodoSongs.',
   'Cette sauvegarde est incomplète — ses morceaux sont illisibles.':
     'This backup is incomplete — its songs cannot be read.',
   'Sauvegarde en ligne incohérente — ta bibliothèque locale a été conservée.':

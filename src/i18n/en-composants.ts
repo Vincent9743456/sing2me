@@ -16,7 +16,7 @@ export const EN_COMPOSANTS: Record<string, string> = {
   'Son répertoire arrive dans ta bibliothèque. Tes propres morceaux restent à toi.':
     'Its repertoire is arriving in your library. Your own songs stay yours.',
   'Voir le groupe': 'View band',
-  'Bienvenue sur Sing2Me 🎶': 'Welcome to Sing2Me 🎶',
+  'Bienvenue sur DodoSongs 🎶': 'Welcome to DodoSongs 🎶',
   'Commence par importer un morceau — colle un texte, un lien de partition, un PDF ou un fichier Word.':
     'Start by importing a song — paste text, a chart link, a PDF, or a Word file.',
   'Importer mon premier morceau': 'Import my first song',
@@ -28,8 +28,8 @@ export const EN_COMPOSANTS: Record<string, string> = {
   "Fermer l'aide": 'Close hint',
 
   // InstallHint.tsx
-  'Installer Sing2Me': 'Install Sing2Me',
-  'Installe Sing2Me': 'Install Sing2Me',
+  'Installer DodoSongs': 'Install DodoSongs',
+  'Installe DodoSongs': 'Install DodoSongs',
   'Touche Partager, puis « Sur l’écran d’accueil » — accès direct, plein écran.':
     'Tap Share, then “Add to Home Screen” — direct access, full screen.',
   'Un accès direct depuis ton écran d’accueil, en plein écran.':

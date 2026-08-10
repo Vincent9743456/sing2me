@@ -1008,7 +1008,7 @@ export function Library() {
                     {t('Importe tes partitions')}
                   </div>
                   {t(
-                    "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — Sing2Me met tout au propre.",
+                    "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — DodoSongs met tout au propre.",
                   )}
                   <div className="spacer" />
                   <button
@@ -1340,7 +1340,7 @@ function SongPreview({
           className="btn ai small"
           onClick={() => setUgOpen(true)}
           title={t(
-            'Sing2Me cherche la version la mieux notée de cette partition et te la propose',
+            'DodoSongs cherche la version la mieux notée de cette partition et te la propose',
           )}
         >
           {t('★ Meilleure version ?')}

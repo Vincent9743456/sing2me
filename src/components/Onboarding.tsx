@@ -239,7 +239,7 @@ export function Onboarding() {
         >
           <Icon name="x" size={16} />
         </button>
-        <div className="onbtitle">{t('Bienvenue sur Sing2Me 🎶')}</div>
+        <div className="onbtitle">{t('Bienvenue sur DodoSongs 🎶')}</div>
         <p className="help" style={{ marginTop: 4 }}>
           {t(
             'Commence par importer un morceau — colle un texte, un lien de partition, un PDF ou un fichier Word.',

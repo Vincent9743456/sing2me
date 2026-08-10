@@ -935,7 +935,7 @@ export function AccountSection() {
           onChange={(e) => setConsent(e.target.checked)}
         />
         <span>
-          {t('Je veux recevoir les nouveautés de Sing2Me (facultatif).')}
+          {t('Je veux recevoir les nouveautés de DodoSongs (facultatif).')}
         </span>
       </label>
       {(localError ?? account.error) && (

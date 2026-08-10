@@ -1,4 +1,4 @@
-# Sing2Me — Inventaire des composants
+# DodoSongs — Inventaire des composants
 
 Statuts : ✅ conserver · 🔧 corriger · 🔀 fusionner · ➕ créer · ❌ supprimer
 

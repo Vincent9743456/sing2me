@@ -1,58 +1,74 @@
 /* ============================================================
-   Sing2Me — design épuré, sombre, pensé pour la scène.
+   DodoSongs — design épuré, sombre, pensé pour la scène.
    Une seule couleur d'accent (ambre), beaucoup d'air, zéro bruit.
    ============================================================ */
 
 :root {
+  /* ============================================================
+     DodoSongs — jetons de la charte d'identité (août 2026), au pipette
+     près. Le fond nuit, le texte crème, l'ambre pour ce qui agit, le cyan
+     pour ce qui se joue. Deux règles qui ne souffrent aucune exception :
+       · le CYAN est réservé aux ACCORDS ;
+       · un seul bouton ambre par écran, celui qui fait avancer.
+     ============================================================ */
   /* Fonds & surfaces */
-  --bg: #0a0a0e;
-  --surface: #131318;
-  --surface-high: #1b1b23;
-  /* Panneau « en creux » : nuance de noir entre le fond et les cartes,
-     pour regrouper visuellement (encarts de setlists par groupe). */
-  --surface-sunken: #0e0e13;
-  --surface-hover: #22222c;
-  --stage-bg: #000;
-  /* Mode scène : sa propre paire, parce qu'il ne suit pas les surfaces de
-     l'app — c'est un écran de pupitre, pas une page. */
-  --stage-text: #fff;
-  --stage-bar: #000;
+  --bg: #0a0f1d;            /* nuit   */
+  --surface: #121a2e;       /* nuit 2 — cartes, panneaux */
+  --surface-high: #1b2540;  /* nuit 3 — champs, surfaces hautes */
+  /* Panneau « en creux » : nuance entre le fond et les cartes, pour
+     regrouper visuellement (encarts de setlists par groupe). */
+  --surface-sunken: #0d1424;
+  --surface-hover: #24304e;
+  /* Mode scène : « tout disparaît sauf ce qui se joue », sur le fond nuit
+     pur (charte §6). Sa propre paire, parce qu'il ne suit pas les surfaces
+     de l'app — c'est un écran de pupitre, pas une page. */
+  --stage-bg: #0a0f1d;
+  --stage-text: #f4f0e9;
+  --stage-bar: #0a0f1d;
   /* Voiles des modales et des feuilles du bas. */
-  --scrim: rgba(0, 0, 0, 0.66);
-  --scrim-soft: rgba(0, 0, 0, 0.55);
-  /* Bordures */
-  --border: #24242e;
-  --border-soft: #1d1d25;
-  --border-strong: #34343f;
+  --scrim: rgba(4, 7, 14, 0.72);
+  --scrim-soft: rgba(4, 7, 14, 0.58);
+  /* Bordures — les « lignes » de la charte : de la crème très diluée, pas
+     un gris. C'est ce qui garde la parenté avec le fond nuit. */
+  --border: rgba(244, 240, 233, 0.1);
+  --border-soft: rgba(244, 240, 233, 0.06);
+  --border-strong: rgba(244, 240, 233, 0.18);
   /* Textes */
-  --text: #f5f5f7;
-  --text-dim: #9a9aac;
-  --text-faint: #6b6b7e;
-  --on-accent: #16120a;
-  /* Accent — orange scène */
-  --accent: #f6832a;
-  --accent-strong: #ea6c12;
-  --accent-soft: rgba(246, 131, 42, 0.12);
-  --accent-dark: #8a4410;
+  --text: #f4f0e9;          /* crème   */
+  --text-dim: #a7afc2;      /* crème 2 */
+  --text-faint: #69728a;    /* crème 3 */
+  --on-accent: #0a0f1d;     /* du nuit SUR l'ambre — jamais du blanc */
+  /* Accent — l'ambre de la charte */
+  --accent: #fca711;
+  --accent-strong: #de8f00;
+  --accent-soft: rgba(252, 167, 17, 0.14);
+  --accent-dark: #7a5200;
   /* Fonctionnelles */
-  --chord: #62c9f2;
-  --danger: #e05555;
-  --live: #ff1f1f;
-  --live-soft: #ffb4b4;
-  --ok: #34d399;
-  --ok-soft: rgba(52, 211, 153, 0.14);
+  --chord: #5bd0e8;         /* cyan — les accords, et RIEN d'autre */
+  --danger: #f4677e;        /* rouge de la charte — l'erreur */
+  /* Le direct porte l'AMBRE (charte : « ambre — actions, accent, état
+     LIVE »). Il ne se distingue donc jamais par la couleur seule : c'est le
+     mot « LIVE » et le point qui bat qui le disent, comme l'exige la charte
+     comme le design system. */
+  --live: #fca711;
+  --live-soft: #ffd98a;
+  --ok: #5bd8a6;            /* vert — succès, synchronisé */
+  --ok-soft: rgba(91, 216, 166, 0.14);
   --on-ok: #06281c;
   /* Avertissement : ni une erreur (--danger, on a perdu quelque chose), ni
-     un succès. « L'import a douté, jette un œil. » Ambre chaud, lisible sur
-     fond sombre sans hurler comme le rouge. */
-  --warn: #f5c451;
-  --warn-soft: rgba(245, 196, 81, 0.14);
-  --heart: #ffa3c0;
+     un succès. « L'import a douté, jette un œil. » Un ambre PÂLI, dérivé de
+     l'accent : proche assez pour rester de la famille, distinct assez pour
+     ne pas se confondre avec une action — et jamais porté par un bouton. */
+  --warn: #f6c662;
+  --warn-soft: rgba(246, 198, 98, 0.14);
+  /* Les cœurs du public : le rouge de la charte, éclairci. Rose, jamais
+     ambre — ce n'est ni une action ni une erreur. */
+  --heart: #f79bac;
   /* Pastilles de groupe */
   --band-1: #fbbf24;
   --band-2: #60a5fa;
-  --band-3: #34d399;
-  --band-4: #f472b6;
+  --band-3: #5bd8a6;
+  --band-4: #f4677e;
   --band-5: #a78bfa;
   --band-6: #fb923c;
   --band-7: #22d3ee;
@@ -93,50 +109,48 @@
    ≥ 4.5:1 sur --surface, y compris en texte blanc sur l'accent).
    ============================================================ */
 :root[data-theme='clair'] {
-  /* Fonds & surfaces — un blanc CHAUD, jamais un blanc d'écran de bureau */
-  --bg: #f4f2ee;
-  /* Les surfaces ne sont pas TOUTES blanches : « high » (modales, feuilles)
-     garde un cran d'élévation au-dessus des listes, sinon les dégradés et
-     les panneaux posés sur une carte deviennent invisibles. */
-  --surface: #fdfcfa;
+  /* Fonds & surfaces — le papier, c'est la CRÈME de la charte. Les deux
+     thèmes sont donc le même couple, retourné : nuit sur crème d'un côté,
+     crème sur nuit de l'autre. */
+  --bg: #f4f0e9;
+  --surface: #fbf9f5;
   --surface-high: #ffffff;
-  --surface-sunken: #eceae4;
-  --surface-hover: #e9e6e0;
+  --surface-sunken: #ebe6dc;
+  --surface-hover: #e6e0d4;
   /* Le mode scène n'a PAS de version claire (b235, décision de Vincent) :
      y entrer bascule toute l'app en sombre, et ça ne se défait qu'à la main
      depuis la bibliothèque. Les trois tokens de scène ne sont donc pas
      redéfinis ici — s'ils l'étaient malgré tout, on aurait un pupitre blanc
      en plein concert. */
-  --scrim: rgba(28, 25, 20, 0.42);
-  --scrim-soft: rgba(28, 25, 20, 0.32);
-  /* Bordures */
-  --border: #ddd9d1;
-  --border-soft: #e9e5dd;
-  --border-strong: #c3bdb1;
+  --scrim: rgba(10, 15, 29, 0.42);
+  --scrim-soft: rgba(10, 15, 29, 0.32);
+  /* Bordures : du NUIT dilué, symétrique des lignes de crème du sombre. */
+  --border: rgba(10, 15, 29, 0.13);
+  --border-soft: rgba(10, 15, 29, 0.08);
+  --border-strong: rgba(10, 15, 29, 0.24);
   /* Textes */
-  --text: #17161a;
-  --text-dim: #55535d;
-  --text-faint: #706d7a;
-  /* Blanc SUR l'ambre : à cette valeur d'accent, c'est le sens qui donne
-     le meilleur contraste (l'inverse du sombre, où l'ambre est clair). */
+  --text: #0a0f1d;
+  --text-dim: #4c5566;
+  --text-faint: #616a80;
+  /* Blanc SUR l'ambre : à cette valeur d'accent, c'est le sens qui donne le
+     meilleur contraste (l'inverse du sombre, où l'ambre est clair). */
   --on-accent: #ffffff;
-  /* Accent — le même orange scène, descendu jusqu'à être lisible sur blanc
-     ET porter du texte blanc : les deux usages existent dans l'app. */
-  --accent: #b45309;
-  --accent-strong: #94430a;
-  --accent-soft: rgba(180, 83, 9, 0.1);
-  --accent-dark: #dda56c;
-  /* Fonctionnelles */
-  --chord: #0e6d93;
-  --danger: #c62828;
-  --live: #d61f1f;
-  --live-soft: #8f1d1d;
+  /* Les teintes de la charte, DESCENDUES jusqu'à tenir sur du papier —
+     jamais remplacées : c'est le même ambre, le même cyan, le même vert. */
+  --accent: #9a6700;
+  --accent-strong: #7f5500;
+  --accent-soft: rgba(154, 103, 0, 0.1);
+  --accent-dark: #d9ab63;
+  --chord: #0e6a80;
+  --danger: #c0304a;
+  --live: #9a6700;
+  --live-soft: #7f5500;
   --ok: #0d7a53;
   --ok-soft: rgba(13, 122, 83, 0.12);
   --on-ok: #ffffff;
   --warn: #8a6100;
   --warn-soft: rgba(138, 97, 0, 0.12);
-  --heart: #c2185b;
+  --heart: #b81b52;
   /* Pastilles de groupe */
   --band-1: #a16207;
   --band-2: #1d4ed8;
@@ -146,8 +160,8 @@
   --band-6: #c2410c;
   --band-7: #0e7490;
   /* Ombres : portées par la lumière, pas par le noir */
-  --shadow: 0 10px 30px rgba(30, 27, 22, 0.14);
-  --shadow-soft: 0 4px 14px rgba(30, 27, 22, 0.1);
+  --shadow: 0 10px 30px rgba(10, 15, 29, 0.14);
+  --shadow-soft: 0 4px 14px rgba(10, 15, 29, 0.1);
 }
 
 * {
@@ -172,7 +186,7 @@ body {
 body {
   background-image: radial-gradient(
     1200px 500px at 50% -220px,
-    rgba(246, 131, 42, 0.05),
+    color-mix(in srgb, var(--accent) 5%, transparent),
     transparent 70%
   );
 }
@@ -298,7 +312,7 @@ h3 {
   margin-left: 4px;
   border-radius: 999px;
   background: var(--live);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 0.66rem;
   font-weight: 800;
   line-height: 1;
@@ -314,7 +328,7 @@ h3 {
   padding: 0 4px;
   border-radius: 999px;
   background: var(--live);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 0.62rem;
   font-weight: 800;
   line-height: 16px;
@@ -342,7 +356,7 @@ button {
   cursor: pointer;
   background: linear-gradient(180deg, var(--accent), var(--accent-strong));
   color: var(--on-accent);
-  box-shadow: 0 2px 10px rgba(246, 131, 42, 0.18);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 18%, transparent);
   transition:
     transform var(--transition),
     box-shadow var(--transition),
@@ -351,7 +365,7 @@ button {
 }
 .btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(246, 131, 42, 0.26);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 26%, transparent);
 }
 .btn:active {
   transform: translateY(0);
@@ -374,9 +388,12 @@ button {
   border-color: var(--border-strong);
 }
 .btn.danger {
-  background: linear-gradient(180deg, #e35d5d, #d34747);
-  color: #fff;
-  box-shadow: 0 2px 10px rgba(224, 85, 85, 0.2);
+  background: var(--danger);
+  color: var(--on-accent);
+  box-shadow: none;
+}
+.btn.danger:hover {
+  background: color-mix(in srgb, var(--danger) 82%, var(--bg));
 }
 /* Bouton « IA » : orange visible (fonctionnalités assistées). */
 .btn.ai {
@@ -517,7 +534,7 @@ textarea.mono {
   z-index: 9;
   border-radius: var(--radius-pill);
   padding: 12px 18px;
-  box-shadow: 0 8px 22px rgba(246, 131, 42, 0.4);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 @media (min-width: 900px) {
   .libfab {
@@ -1358,7 +1375,7 @@ textarea.mono {
   margin-bottom: 12px;
   border: 1px solid var(--danger);
   border-radius: var(--radius);
-  background: rgba(224, 85, 85, 0.12);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
   font-weight: 600;
 }
 .recbanner.starting {
@@ -2073,7 +2090,8 @@ textarea.mono {
 .onair.on {
   border-color: var(--live);
   background: var(--live);
-  color: #fff;
+  /* Le direct est AMBRE (charte) : du nuit dessus, jamais du blanc. */
+  color: var(--on-accent);
   animation: onairblink 1.1s ease-in-out infinite;
 }
 @keyframes onairblink {
@@ -2081,14 +2099,14 @@ textarea.mono {
   100% {
     background: var(--live);
     box-shadow:
-      0 6px 24px rgba(255, 69, 69, 0.45),
-      0 0 0 4px rgba(255, 69, 69, 0.2);
+      0 6px 24px color-mix(in srgb, var(--live) 45%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--live) 20%, transparent);
   }
   50% {
-    background: color-mix(in srgb, var(--live) 62%, #000);
+    background: color-mix(in srgb, var(--live) 62%, var(--bg));
     box-shadow:
-      0 6px 24px rgba(255, 69, 69, 0.2),
-      0 0 0 4px rgba(255, 69, 69, 0.06);
+      0 6px 24px color-mix(in srgb, var(--live) 20%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--live) 6%, transparent);
   }
 }
 .onair.pause {
@@ -2100,7 +2118,7 @@ textarea.mono {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--on-accent);
   animation: pulse 1.4s ease-in-out infinite;
 }
 @keyframes pulse {
@@ -2523,14 +2541,14 @@ h2.pagetitle {
   color: var(--on-accent);
   font-weight: 750;
   text-decoration: none;
-  box-shadow: 0 2px 10px rgba(246, 131, 42, 0.18);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 18%, transparent);
   transition:
     transform var(--transition),
     box-shadow var(--transition);
 }
 .tipbtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(246, 131, 42, 0.28);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 .tipbtn.free {
   background: none;
@@ -3056,7 +3074,7 @@ h2.pagetitle {
   flex: 1;
 }
 .onairhearts {
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 800;
   margin-left: 2px;
 }

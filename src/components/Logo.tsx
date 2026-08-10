@@ -1,46 +1,40 @@
 /**
- * Logo Sing2Me : la « bulle qui chante » — une bulle de parole (le partage,
- * le public) d'où sort une note (la musique). Identité commune app + site +
- * favicon.
+ * L'ICÔNE DODOSONGS — le dodo à la guitare (charte d'août 2026).
+ *
+ * C'est un BLOC COMPLET : le dodo et sa guitare sont posés sur le fond nuit,
+ * dans un carré aux angles arrondis. On ne l'ouvre pas, on ne la recolore
+ * pas, on ne l'incline pas, on ne lui ajoute pas d'ombre portée, et on ne la
+ * met jamais dans un cercle — la composition est calée sur un carré.
+ *
+ * D'où une IMAGE et non un SVG dessiné à la main : ce fichier ne peut pas
+ * diverger de l'icône de la charte, puisqu'il en est un redimensionnement
+ * (`scripts/build-icons.mjs`, à partir de `public/dodosongs.png`).
+ *
+ * Version 128 px : l'icône est affichée entre 16 et 64 px, y compris sur la
+ * page du spectateur, qui a un budget de poids. La grande vit dans le
+ * manifeste et le favicon.
  */
 import React from 'react';
 
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
-    <svg
+    <img
+      src="/dodosongs-128.png"
       width={size}
       height={size}
-      viewBox="0 0 48 48"
-      role="img"
-      aria-label="Sing2Me"
-    >
-      <path
-        d="M8 6h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H22l-9 8v-8H8a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z"
-        fill="none"
-        stroke="var(--accent, #f6832a)"
-        strokeWidth="3"
-        strokeLinejoin="round"
-      />
-      <circle cx="19" cy="27" r="4" fill="currentColor" />
-      <rect x="21.6" y="13" width="2.6" height="14" rx="1.3" fill="currentColor" />
-      <path
-        d="M24.2 13c4.5 0.5 7 2.5 8.5 5.5"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
+      alt="DodoSongs"
+      style={{ display: 'block', flexShrink: 0 }}
+    />
   );
 }
 
-/** Marque complète : icône + nom (le « 2 » en accent). */
+/** Marque complète : icône + nom (« Songs » en accent). */
 export function Brand({ size = 26 }: { size?: number }) {
   return (
     <span className="brandline">
       <LogoMark size={size} />
       <span className="brandname">
-        Sing<b>2</b>Me
+        Dodo<b>Songs</b>
       </span>
     </span>
   );

@@ -1,5 +1,5 @@
 -- ============================================================
--- Sing2Me — Schéma Supabase (version 2 : espace collaboratif)
+-- DodoSongs — Schéma Supabase (version 2 : espace collaboratif)
 -- À exécuter dans SQL Editor de ton projet Supabase.
 --
 -- Modèle : un « groupe » (band) rassemble des musiciens.

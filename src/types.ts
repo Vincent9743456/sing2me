@@ -1,5 +1,5 @@
 /**
- * Sing2Me — modèle de données.
+ * DodoSongs — modèle de données.
  * Les accords sont écrits entre crochets dans les paroles : "[Am]Sous le ciel".
  *
  * La structure du morceau (intro / couplet / refrain…) est un résumé en tête
@@ -269,7 +269,7 @@ export interface BandMember {
   instrument: string;
   /** Photo de profil (annuaire) du membre, si disponible. */
   photo?: string;
-  /** true = le nom vient de la carte de musicien Sing2Me du membre */
+  /** true = le nom vient de la carte de musicien DodoSongs du membre */
   verified?: boolean;
   /** Invité mais pas encore accepté : profil « en attente d'acceptation ». */
   pending?: boolean;
@@ -471,7 +471,7 @@ export interface PublicScreen {
   links: boolean;
   /** Bouton « Suivre l'artiste » */
   follow: boolean;
-  /** Invitation à découvrir Sing2Me (pause / fin de concert) */
+  /** Invitation à découvrir DodoSongs (pause / fin de concert) */
   appInvite: boolean;
 }
 
