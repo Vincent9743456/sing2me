@@ -77,6 +77,12 @@ export interface SectionHeader {
   label: string;
   /** Numéro écrit dans le fichier, ou '' (l'import tient un compteur). */
   num: string;
+  /**
+   * Le fichier l'a MARQUÉ comme un titre (crochets, parenthèses ou
+   * deux-points). Un en-tête nu (« Solo » seul) est bien plus fragile :
+   * ce peut être une parole. L'import s'en sert pour trancher.
+   */
+  decore: boolean;
 }
 
 /**
@@ -89,7 +95,11 @@ export function lireEnTeteDeSection(ligne: string): SectionHeader | null {
   if (!m) return null;
   const label = canonicalSection(m[2]);
   if (label === '') return null;
-  return { label, num: m[3] ?? '' };
+  return {
+    label,
+    num: m[3] ?? '',
+    decore: m[1] !== undefined || m[4] !== undefined,
+  };
 }
 
 /**

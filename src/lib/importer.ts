@@ -41,17 +41,29 @@ export function isChordLine(line: string): boolean {
 /* Recalage des accords sur les mots                                    */
 /* ------------------------------------------------------------------ */
 
-/** Caractère faisant partie d'un mot (lettres accentuées et apostrophes). */
+/** Caractère faisant partie d'un mot. L'apostrophe et le trait d'union
+ *  SÉPARENT : « d'Amsterdam » a deux attaques, et un accord posé sur
+ *  l'apostrophe appartient à ce qui suit. */
 function estLettre(c: string): boolean {
-  return /[0-9A-Za-zÀ-ÖØ-öø-ÿ'’]/.test(c);
+  return /[0-9A-Za-zÀ-ÖØ-öø-ÿ]/.test(c);
+}
+
+/** Attaque de mot : une lettre précédée d'autre chose. */
+function estAttaque(s: string, i: number): boolean {
+  return estLettre(s[i]) && (i === 0 || !estLettre(s[i - 1]));
 }
 
 /**
- * Écart maximal toléré pour rapatrier un accord sur un début de mot. Au-delà,
- * l'accord tombe vraiment au milieu du mot (mélisme, syllabe tenue) et on le
- * laisse où il est.
+ * Écart maximal toléré pour rapatrier un accord sur une attaque de mot quand
+ * le mot est LONG. Au-delà, l'accord tombe vraiment en cours de mot (mélisme,
+ * syllabe tenue) et on le laisse où il est.
  */
 const TOLERANCE_RECALAGE = 3;
+
+/** Au-delà de cette longueur, un mot peut légitimement porter un changement
+ *  d'accord en son milieu. En deçà, un accord planté dedans est un décalage
+ *  de mise en page, jamais une intention. */
+const MOT_LONG = 8;
 
 /**
  * Un accord écrit au-dessus des paroles est aligné à la COLONNE près, dans
@@ -67,29 +79,42 @@ const TOLERANCE_RECALAGE = 3;
  */
 export function recalerSurUnMot(lyric: string, col: number): number {
   if (col <= 0 || col >= lyric.length) return col;
-  // Accord posé sur une espace : il appartient au mot qui suit
-  // (« cou,[G] sur » se lit « cou, [G]sur »). Au-delà de la tolérance,
-  // l'espace est un vrai silence et l'accord y reste.
-  if (/\s/.test(lyric[col])) {
-    let suivant = col;
-    while (suivant < lyric.length && /\s/.test(lyric[suivant])) suivant++;
-    return suivant < lyric.length && suivant - col <= TOLERANCE_RECALAGE
-      ? suivant
-      : col;
+  if (estAttaque(lyric, col)) return col;
+
+  let avant = -1;
+  for (let i = col - 1; i >= 0; i--) {
+    if (estAttaque(lyric, i)) {
+      avant = i;
+      break;
+    }
   }
-  if (!estLettre(lyric[col]) || !estLettre(lyric[col - 1])) return col;
-  let debut = col;
-  while (debut > 0 && estLettre(lyric[debut - 1])) debut--;
-  let apres = col;
-  while (apres < lyric.length && estLettre(lyric[apres])) apres++;
-  while (apres < lyric.length && !estLettre(lyric[apres])) apres++;
-  const enArriere = col - debut <= TOLERANCE_RECALAGE ? col - debut : Infinity;
-  const enAvant =
-    apres < lyric.length && apres - col <= TOLERANCE_RECALAGE
-      ? apres - col
-      : Infinity;
-  if (enArriere === Infinity && enAvant === Infinity) return col;
-  return enArriere <= enAvant ? debut : apres;
+  let apres = -1;
+  for (let i = col + 1; i < lyric.length; i++) {
+    if (estAttaque(lyric, i)) {
+      apres = i;
+      break;
+    }
+  }
+
+  // Accord posé sur une espace : il appartient au mot qui SUIT — jamais à
+  // celui qu'on vient de quitter (« cou,[G] sur » se lit « cou, [G]sur »).
+  // Au-delà de la tolérance, l'espace est une tenue et l'accord y reste.
+  if (/\s/.test(lyric[col])) {
+    return apres >= 0 && apres - col <= TOLERANCE_RECALAGE ? apres : col;
+  }
+
+  // Mot court : on recale toujours vers l'attaque la plus proche.
+  let court = false;
+  if (estLettre(lyric[col]) && avant >= 0) {
+    let fin = col;
+    while (fin < lyric.length && estLettre(lyric[fin])) fin++;
+    court = fin - avant <= MOT_LONG;
+  }
+  const seuil = court ? Infinity : TOLERANCE_RECALAGE;
+  const dAvant = avant >= 0 && col - avant <= seuil ? col - avant : Infinity;
+  const dApres = apres >= 0 && apres - col <= seuil ? apres - col : Infinity;
+  if (dAvant === Infinity && dApres === Infinity) return col;
+  return dAvant <= dApres ? avant : apres;
 }
 
 export function mergeChordLyric(chordLine: string, lyricLine: string): string {
@@ -305,6 +330,21 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
     zone.lines.push(text);
   }
 
+  /**
+   * En-tête de section à la ligne i — ou null.
+   *
+   * Un en-tête SANS décoration (« Solo » nu, sans crochets, parenthèses ni
+   * deux-points) qui suit une ligne d'accords n'est pas un titre : c'est LA
+   * PAROLE que ces accords surmontent. « Je marche solo dans la nuit / Am
+   *  F / Solo » découpait le morceau en deux et le mot disparaissait.
+   */
+  function enTeteA(i: number) {
+    const h = lireEnTeteDeSection(lines[i] ?? '');
+    if (!h) return null;
+    if (h.decore) return h;
+    return i > 0 && isChordLine(lines[i - 1] ?? '') ? null : h;
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const marker = markers.get(i);
     if (marker === 'soc') openZone('Refrain', '');
@@ -312,7 +352,7 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
     else if (marker === 'eoc' || marker === 'eov') current = null;
 
     const line = lines[i];
-    const header = lireEnTeteDeSection(line);
+    const header = enTeteA(i);
     if (header) {
       openZone(header.label, header.num);
       continue;
@@ -328,7 +368,7 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
       const nextUsable =
         next.trim() !== '' &&
         !isChordLine(next) &&
-        !SECTION_HEADER_RE.test(next) &&
+        enTeteA(i + 1) === null &&
         !markers.has(i + 1);
       if (nextUsable) {
         appendLine(mergeChordLyric(line, next));

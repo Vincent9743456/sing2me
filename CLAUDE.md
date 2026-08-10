@@ -466,10 +466,19 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **Un accord se pose au DÉBUT d'un mot** (b219) : la fusion accords/paroles
   alignait à la colonne exacte, dans une police à chasse fixe que la
   partition d'origine ne respecte pas toujours — d'où « commen[C]t faire » et
-  « un coup d[A7]'je t'aime ». On recale sur la frontière de mot la plus
-  proche à 3 caractères près (et un accord posé sur une espace appartient au
-  mot qui suit) ; au-delà, c'est un vrai mélisme et on n'y touche pas. Le
-  prompt de nettoyage IA porte la même règle.
+  « un coup d[A7]'je t'aime ». On recale sur l'attaque de mot la plus proche :
+  un mot de 8 lettres ou moins ramène TOUJOURS l'accord à son début (dedans,
+  c'est un décalage de mise en page, jamais une intention) ; au-delà, on ne
+  rattrape que 3 caractères d'écart — un vrai mélisme reste où il est.
+  L'apostrophe et le trait d'union SÉPARENT (« d'[D]Amsterdam »), et un accord
+  posé sur une espace appartient au mot qui SUIT, jamais à celui qu'on quitte.
+  Le prompt de nettoyage IA porte la même règle.
+- **Un en-tête NU qui suit une ligne d'accords est une PAROLE** (b219) : dans
+  « Je marche solo dans la nuit / Am    F / Solo », le mot « Solo » est la
+  parole que ces accords surmontent — pas un titre de section. L'import le
+  prenait pour un en-tête, coupait le morceau en deux et EFFAÇAIT le mot.
+  Un en-tête sans décoration (ni crochets, ni parenthèses, ni deux-points) ne
+  compte donc pas quand la ligne du dessus est une ligne d'accords.
 - **Le public lit, il ne déchiffre pas** (b219) : un seul composant
   (`PublicLyrics`) et une seule préparation (`stripChords`) pour les trois
   écrans où quelqu'un LIT des paroles. Une ligne qui n'était que des accords

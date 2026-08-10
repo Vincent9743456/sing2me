@@ -111,6 +111,7 @@ groupe, direct). Marco est le second appareil.
 | I-15 | Refuser le découpage | Un seul morceau, marqué « à vérifier » avec la raison | 🟠 |
 | I-16 | Nettoyage IA sur un import mal formaté | Proposé **seulement** si l'analyse a vu un vrai défaut | ⚪ |
 | I-18 | Import d'un fichier plein de sections | Aucun « ⚠ » ni badge « à vérifier » à cause des seules sections — ⚠️ cicatrice b219 | 🟠 |
+| I-19 | Partition où une PAROLE dit « Solo » (ou « Final », « Coda ») sous une ligne d'accords | Elle reste une parole : ni titre de section, ni mot effacé — ⚠️ cicatrice b219 | 🟠 |
 | I-17 | Pied de tous les écrans d'import | Mention « tes morceaux restent à toi, tu peux tout réexporter » | ⚪ |
 
 ---
@@ -323,7 +324,7 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 | A. Arrivée et compte | 11 | 6 |
 | B. Bibliothèque | 16 | 6 |
 | C. Partition et versions | 17 | 6 |
-| D. Import | 18 | 6 |
+| D. Import | 19 | 6 |
 | E. Setlists | 15 | 5 |
 | F. Mode scène | 9 | 3 |
 | G. Groupes | 15 | 5 |
@@ -333,7 +334,7 @@ Pour éviter de signaler comme KO ce qui n'existe pas :
 | J bis. Réglages et données | 4 | 1 |
 | K. Sauvegarde et récupération | 9 | 3 |
 | L. Transversal | 8 | 2 |
-| **Total** | **166** | **59** |
+| **Total** | **167** | **59** |
 
 **Suggestion d'ordre** : commence par les 🔴 de H (concerts et direct) et
 de G (groupes) — c'est là que sont la plupart des cicatrices récentes et
