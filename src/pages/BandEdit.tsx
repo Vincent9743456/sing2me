@@ -705,6 +705,18 @@ export function BandEdit({ id }: { id: string }) {
   const mesNoms = [prefs.userName, artist.name].filter(
     (n) => (n ?? '').trim() !== '',
   );
+  /**
+   * Le créateur porte MON nom d'artiste… mais pas mon compte (b256). Le
+   * serveur fait autorité sur les deux : si les identifiants diffèrent, ce
+   * n'est pas moi, quoi que disent les noms (b249).
+   */
+  const compteDifferentAuMemeNom =
+    band.owned === false &&
+    owner !== null &&
+    myId !== '' &&
+    owner.userId !== myId &&
+    mesNoms.some((n) => memePersonne(n, owner.name));
+
   const estMoi = (m: { name: string; userId?: string }): boolean => {
     // 1. L'identifiant de compte tranche (b249) — dans les deux sens.
     if ((m.userId ?? '') !== '' && myId !== '') return m.userId === myId;
@@ -940,6 +952,27 @@ export function BandEdit({ id }: { id: string }) {
                 </span>
               )}
             </div>
+
+            {/* CRÉÉ PAR UN COMPTE À MON NOM, MAIS PAS LE MIEN (b256, constat
+                de Vincent : « non, c'est le groupe que j'ai créé moi »).
+                L'écran disait alors deux choses contradictoires — « créé par
+                tessier vincent » ET « Membre du groupe » — sans jamais
+                expliquer laquelle des deux était en cause. C'est le cas de
+                b246 vu du côté des groupes : une reconnexion avec une autre
+                adresse e-mail crée un AUTRE compte, qui n'a rien créé.
+                On le DIT, avec l'adresse en cours : c'est le seul fait qui
+                permette de comprendre, et d'agir. */}
+            {compteDifferentAuMemeNom && (
+              <p
+                className="help"
+                style={{ color: 'var(--warn)', textAlign: 'center' }}
+              >
+                {t(
+                  'Ce groupe a été créé par un compte différent du tien, au même nom d’artiste. Tu es connecté avec {email} : c’est peut-être une autre adresse que celle d’origine.',
+                  { email: account?.email ?? '' },
+                )}
+              </p>
+            )}
 
             {/* Trois grandes portes. */}
             <button
