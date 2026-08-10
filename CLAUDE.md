@@ -828,6 +828,24 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   Corollaire : la DÉCISION (dissoudre un groupe à moi / quitter un groupe
   rejoint) vit à UN endroit (`src/lib/deleteband.ts`), textes compris — la
   liste et la fiche du groupe l'appliquent, elles ne la réécrivent pas.
+- **LE CRÉATEUR EST UN MUSICIEN, ET IL N'EST NULLE PART DANS LA TABLE**
+  (b255, constat de Vincent : « affichage du nombre de musiciens différent
+  chez Damien et chez moi »). `cloud_band_members` ne contient QUE ceux qui
+  ont rejoint — le créateur est désigné à part (`cloud_bands.owner`). Un
+  membre voyait donc « 1 musicien » pour un groupe qui en compte trois, alors
+  que son écran nommait le créateur juste au-dessus (« créé par tessier
+  vincent ») : il l'affichait sans le compter. `musiciensDuGroupe`
+  (`src/lib/model.ts`) rassemble les TROIS sources dans cet ordre de
+  confiance — comptes du serveur, créateur, lignes locales qu'aucun compte ne
+  représente — et dédoublonne par `memeMusicien`. Utilisée par la fiche ET
+  par la liste : deux écrans qui comptent chacun de leur côté finissent
+  toujours par annoncer deux nombres.
+  **Le total INCLUT les invités en attente** (« le groupe c'est 3 musiciens
+  dont un en attente d'acceptation », Vincent) : annoncer 2 quand on en a
+  invité 3 fait douter du compte. On dit donc le total, puis « dont N en
+  attente », et l'invité figure dans la liste, marqué. Une ligne CONFIRMÉE
+  l'emporte sur une invitation en attente quand les deux désignent la même
+  personne.
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre

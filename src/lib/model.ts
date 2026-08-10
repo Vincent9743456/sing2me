@@ -800,6 +800,76 @@ export function memePersonne(a: string, b: string): boolean {
 }
 
 /**
+ * LES MUSICIENS D'UN GROUPE — LE MÊME COMPTE POUR TOUT LE MONDE (b255,
+ * constat de Vincent : « affichage du nombre de musiciens différent chez
+ * Damien et chez moi »).
+ *
+ * Le CRÉATEUR n'est jamais inscrit dans `cloud_band_members` — c'est le
+ * serveur qui le désigne, à part. Un membre qui a rejoint ne voyait donc que
+ * lui-même et les autres membres : « 1 musicien » chez Damien, pour un groupe
+ * qui en compte trois. Son écran nommait pourtant le créateur juste au-dessus
+ * (« créé par tessier vincent ») — il l'affichait sans le compter.
+ *
+ * On rassemble donc les trois sources, dans cet ordre de confiance : les
+ * comptes du serveur, le créateur, puis les lignes locales qu'aucun compte ne
+ * représente (musiciens notés à la main, invitations pas encore acceptées).
+ * `memeMusicien` évite les doublons — identifiant de compte d'abord.
+ */
+export interface MusicienAffiche {
+  name: string;
+  photo?: string;
+  userId?: string;
+  instrument?: string;
+  /** Invité, pas encore accepté : compté, mais annoncé comme tel. */
+  pending?: boolean;
+}
+
+export function musiciensDuGroupe(
+  band: Band,
+  comptes: { user_id: string; name: string; photo?: string; instrument?: string }[],
+  createur?: { userId?: string; name: string; photo?: string },
+): MusicienAffiche[] {
+  const out: MusicienAffiche[] = [];
+  const ajouter = (m: MusicienAffiche) => {
+    if ((m.name ?? '').trim() === '' && (m.userId ?? '') === '') return;
+    const vu = out.find((x) => memeMusicien(x, m));
+    if (!vu) {
+      out.push(m);
+      return;
+    }
+    // Une ligne CONFIRMÉE l'emporte sur une invitation en attente, et une
+    // photo connue sur une pastille grise.
+    if (m.pending !== true) vu.pending = undefined;
+    if ((vu.photo ?? '') === '' && (m.photo ?? '') !== '') vu.photo = m.photo;
+  };
+  for (const c of comptes) {
+    ajouter({
+      name: c.name ?? '',
+      photo: c.photo,
+      userId: c.user_id,
+      instrument: c.instrument,
+    });
+  }
+  if (createur && (createur.name ?? '').trim() !== '') {
+    ajouter({
+      name: createur.name,
+      photo: createur.photo,
+      userId: createur.userId,
+    });
+  }
+  for (const m of band.members ?? []) {
+    ajouter({
+      name: m.name ?? '',
+      photo: m.photo,
+      userId: m.userId,
+      instrument: m.instrument,
+      pending: m.pending === true ? true : undefined,
+    });
+  }
+  return out;
+}
+
+/**
  * CEUX AVEC QUI JE JOUE DÉJÀ (b253, demande de Vincent : « quand il y aura
  * 126 Vincent, ce sera plus pratique pour Marco de créer un nouveau groupe
  * avec moi »).

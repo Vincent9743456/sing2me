@@ -167,6 +167,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Cette personne est déjà sur DodoSongs :': 'This person is already on DodoSongs:',
   'déjà avec toi dans {groupe}': 'already with you in {groupe}',
   'Supprimer {nom}': 'Delete {nom}',
+  ', dont {n} en attente': ', {n} of them pending',
   'déjà avec toi dans {groupes}': 'already with you in {groupes}',
   'Ces musiciens sont déjà sur DodoSongs :': 'These musicians are already on DodoSongs:',
   'Elle recevra l’invitation dans son application : rien à envoyer.':
