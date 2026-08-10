@@ -144,6 +144,25 @@ export function PublicArtist({ name }: { name: string }) {
     );
   }
 
+  // PAGE RENDUE INVISIBLE PAR SON PROPRIÉTAIRE (b262). La ligne existe —
+  // l'adresse reste réservée, et le QR retrouve un direct — mais la fiche
+  // n'est plus en ligne. On le dit sobrement : ni « introuvable » (ce serait
+  // faux), ni un écran vide.
+  if (profile.masquee === true) {
+    return (
+      <div className="public">
+        <RetourSiPossible />
+        <div className="card" style={{ textAlign: 'center' }}>
+          <LogoMark size={80} />
+          <h1 style={{ margin: '10px 0 4px' }}>{t('Page non disponible')}</h1>
+          <p className="help">
+            {t('Cette page a été rendue privée par son propriétaire.')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="public">
       <RetourSiPossible />

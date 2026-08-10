@@ -689,6 +689,25 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   lu dans `main.tsx`) : effacer puis recharger dans la même foulée laisse
   les composants encore montés réécrire des clés (le store enregistre en
   différé). Aucun SQL à exécuter — tout passe par les cascades existantes.
+- **UNE PAGE INVISIBLE N'EST PAS UNE PAGE CACHÉE** (b262, demande de
+  Vincent). Le réglage « Rendre ma page publique invisible » (Réglages,
+  `prefs.pagePubliqueMasquee`, décoché par défaut) ne masque RIEN à
+  l'affichage : il republie une fiche VIDE (`ficheMasquee`), marquée
+  `masquee`. Photo, bio, liens, pourboire ne sont alors nulle part en ligne
+  — sinon n'importe qui lisant la réponse du serveur récupérerait tout. La
+  LIGNE reste : elle réserve l'adresse (sinon un autre la prendrait) et
+  laisse le QR retrouver un direct en cours — un concert ne s'arrête pas
+  parce que la fiche est privée, ce que voit le public pendant le direct
+  venant de l'état du live. Le réglage AGIT tout de suite (republication
+  immédiate) et ne se coche pas si le serveur n'a pas suivi : une case
+  cochée qui n'aurait rien retiré serait un mensonge sur une question de
+  vie privée.
+  **Et la fiche publiée SUIT le profil effacé** (même constat de Vincent :
+  après une réinitialisation, sa page contenait encore photo, liens et
+  pourboire — c'est même ce que la bannière de récupération lui proposait de
+  rendre). Le filet de b243 protège d'une perte ACCIDENTELLE ; une
+  réinitialisation est délibérée. Réinitialiser « Profil artiste » vide donc
+  aussi la fiche en ligne, en gardant l'adresse.
 - **UN BROUILLON D'ÉCRAN NE DOIT JAMAIS SURVIVRE À SA SOURCE** (b243, perte
   de données signalée par Vincent : « je me suis déconnecté et reconnecté,
   j'ai perdu les informations de profil, photo, liens… »). L'écran Artiste

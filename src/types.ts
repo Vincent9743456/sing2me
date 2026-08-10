@@ -232,6 +232,12 @@ export type ViewMode = 'complete' | 'paroles';
 
 
 export interface Prefs {
+  /**
+   * Ma page publique est-elle en ligne ? VISIBLE par défaut (b262) — c'est
+   * l'intérêt du QR. Cochée, elle rend la fiche indisponible : rien de
+   * personnel ne reste sur le serveur.
+   */
+  pagePubliqueMasquee?: boolean;
   /** Vue par défaut du musicien (profil) */
   defaultView: ViewMode;
   /** Nom du musicien (signe les notes de répétition) */
@@ -559,6 +565,22 @@ export interface ArtistProfile {
   bio: string;
   photo: string;
   links: ArtistLink[];
+  /**
+   * PAGE PUBLIQUE RENDUE INVISIBLE (b262, demande de Vincent : « prévoir
+   * dans les réglages que la page publique puisse ne pas être disponible en
+   * ligne à la demande de l'utilisateur »).
+   *
+   * Ce drapeau n'apparaît QUE dans la fiche publiée, et il y arrive SEUL :
+   * quand l'artiste choisit l'invisibilité, on ne publie pas un profil
+   * qu'on masquerait à l'affichage — on ne publie RIEN. Photo, bio, liens
+   * et pourboire ne sont alors nulle part en ligne. « Invisible » doit
+   * vouloir dire absent, pas caché derrière un écran.
+   *
+   * La LIGNE, elle, reste : elle réserve l'adresse (sinon quelqu'un d'autre
+   * la prendrait) et permet au QR de retrouver un direct en cours — un
+   * concert n'a pas à s'arrêter parce que la fiche est privée.
+   */
+  masquee?: boolean;
   /** Lien de pourboire (PayPal.me, Lydia, Stripe Payment Link…) */
   tipUrl: string;
   /** Mon matériel (instruments, amplis, câbles…) — jamais public */
