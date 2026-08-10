@@ -31,6 +31,11 @@ import { t } from '../i18n';
 
 export function PublicPagePeek({
   titre,
+  /**
+   * `null` = on cherche encore l'adresse (b245). La distinction compte :
+   * annoncer « pas encore réservée » pendant qu'on interroge le serveur, ce
+   * n'est pas une nuance d'affichage — c'est dire le contraire de la vérité.
+   */
   adresse,
   /** Rafraîchit la fiche AVANT de la relire — pour que l'aperçu montre
    *  l'état du jour et pas celui du dernier enregistrement. */
@@ -40,7 +45,7 @@ export function PublicPagePeek({
   onClose,
 }: {
   titre: string;
-  adresse: string;
+  adresse: string | null;
   publier?: () => Promise<void>;
   sansAdresse?: string;
   onClose: () => void;
@@ -49,11 +54,13 @@ export function PublicPagePeek({
   const [page, setPage] = useState<PublicPage | null | undefined>(undefined);
   const [qr, setQr] = useState<string>('');
 
-  const lien = adresse !== '' ? `${location.origin}/${adresse}` : '';
+  const lien =
+    adresse !== null && adresse !== '' ? `${location.origin}/${adresse}` : '';
 
   useEffect(() => {
     let annule = false;
     void (async () => {
+      if (adresse === null) return; // recherche en cours : on n'affiche rien
       if (adresse === '') {
         setPage(null);
         return;
@@ -122,7 +129,11 @@ export function PublicPagePeek({
 
   return (
     <Modal title={titre} onClose={onClose}>
-      {adresse === '' ? (
+      {adresse === null ? (
+        <p className="help" style={{ marginTop: 0 }}>
+          {t('Recherche de l’adresse…')}
+        </p>
+      ) : adresse === '' ? (
         <p className="help" style={{ marginTop: 0 }}>
           {sansAdresse ?? t('Pas encore d’adresse publique.')}
         </p>

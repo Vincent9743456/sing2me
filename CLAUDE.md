@@ -670,6 +670,24 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   qu'une fois qu'on sait ce que le cloud contient, et seulement si le champ
   est TOUJOURS vide à ce moment-là. Cela vaut pour le nom d'artiste comme
   pour `prefs.userName`.
+  **TROISIÈME CAUSE — le filet lui-même** (b245, écran envoyé par Vincent :
+  « Ta page publique n'est pas encore réservée », alors qu'elle l'était).
+  `sing2me/publicName` est un CACHE, pas une vérité : il se vide (nouvelle
+  installation, données du site effacées, autre appareil) sans que l'adresse
+  ait bougé côté serveur. Deux écrans le prenaient au mot — l'aperçu
+  « Page publique / QR », et `ProfilRestore`, qui n'avait alors AUCUNE fiche
+  publiée à comparer. Le sauvetage de b243 devenait impossible exactement le
+  jour où il servait. Règle : **un cache local ne conclut jamais à l'absence**
+  — il accélère la réponse quand il est plein, et on demande au serveur quand
+  il est vide (`monAdressePublique`, qui le recale au passage : le QR du
+  panneau ON AIR et la carte du lien public en profitent).
+  **Et « consulter n'écrit rien » vaut AUSSI pour les écritures indirectes** :
+  l'aperçu de la page d'artiste republiait la fiche « pour montrer l'état du
+  jour ». Or cette fiche EST le filet — la republier avec un profil qu'on
+  vient justement de perdre écraserait la dernière copie qui restait. Un
+  simple coup d'œil ne publie donc plus rien ; enregistrer le profil et
+  passer ON AIR le font, eux, parce que ce sont des actes. (L'aperçu d'un
+  GROUPE republie toujours : une fiche de groupe ne sauvegarde rien.)
 - **Une liste de champs écrite à la main finit TOUJOURS par en oublier
   un** (b202 ; troisième récidive après b195 et b197). Un réglage ajouté
   aujourd'hui n'existe pas dans la liste écrite hier : il s'enregistre

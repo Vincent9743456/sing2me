@@ -45,8 +45,6 @@ export function BandPublicPeek({
     };
   }, [band.cloudId]);
 
-  if (adresse === null) return null;
-
   return (
     <PublicPagePeek
       titre={t('Page publique de {nom}', { nom: band.name || t('ce groupe') })}

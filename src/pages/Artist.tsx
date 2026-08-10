@@ -16,7 +16,7 @@ import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
 import { PublicLyrics } from '../components/PublicLyrics';
 import { PublicNameCard } from '../components/PublicNameCard';
-import { cachedPublicName } from '../lib/publicPages';
+import { monAdressePublique } from '../lib/publicPages';
 import { getValidSession } from '../lib/auth';
 import {
   ensurePublicPage,
@@ -115,6 +115,25 @@ export function Artist() {
   }));
   const [share, setShare] = useState(false);
   const [saved, setSaved] = useState(false);
+  /**
+   * MON ADRESSE PUBLIQUE (b245). `null` tant qu'on la cherche : le cache
+   * local se vide sans que l'adresse bouge côté serveur, et l'aperçu
+   * annonçait alors « pas encore réservée » à quelqu'un qui en avait une
+   * (écran envoyé par Vincent). On la demande à l'ouverture de l'écran — donc
+   * elle est prête avant qu'on appuie, et le cache est recalé pour tout le
+   * reste de l'app (QR du panneau ON AIR, carte du lien public).
+   */
+  const [adressePublique, setAdressePublique] = useState<string | null>(null);
+  useEffect(() => {
+    let annule = false;
+    void (async () => {
+      const nom = await monAdressePublique();
+      if (!annule) setAdressePublique(nom);
+    })();
+    return () => {
+      annule = true;
+    };
+  }, []);
   // Vue par défaut = profil mis en forme (ce que voit le public) ; « Modifier »
   // ouvre le formulaire complet. Profil vide → « Créer le profil artiste ».
   const [editing, setEditing] = useState(false);
@@ -1114,19 +1133,20 @@ export function Artist() {
           page telle que le public doit la voir »). Ce bouton n'ouvrait qu'un
           QR et une rangée de raccourcis d'envoi — on ne pouvait donc pas
           vérifier ce qu'un spectateur voit. L'aperçu montre maintenant la
-          page RÉELLEMENT publiée, relue depuis le serveur après
-          rafraîchissement, et rendue par le composant de la vraie page. Le QR
-          reste, en grand et enregistrable ; les raccourcis e-mail et WhatsApp
-          sont partis (« n'ont pas d'utilité »). */}
+          page RÉELLEMENT publiée, relue depuis le serveur et rendue par le
+          composant de la vraie page. Le QR reste, en grand et enregistrable ;
+          les raccourcis e-mail et WhatsApp sont partis (« n'ont pas
+          d'utilité »). */}
       {share && (
         <PublicPagePeek
           titre={t('Page publique de {nom}', { nom: draft.name })}
-          adresse={cachedPublicName()}
-          publier={async () => {
-            const s = await getValidSession();
-            if (!s) return;
-            await ensurePublicPage(s, await profilAPublier(draft, bands));
-          }}
+          adresse={adressePublique}
+          /* Aucune publication ici (b245) — extension de la règle b243
+             « un bouton qui CONSULTE n'écrit rien ». La fiche publiée est le
+             FILET de récupération du profil : la republier pour un simple
+             coup d'œil, avec un profil qu'on vient justement de perdre,
+             écraserait la dernière copie qui restait. Le profil enregistré
+             et le passage ON AIR la republient, eux — ce sont des actes. */
           sansAdresse={t(
             'Ta page publique n’est pas encore réservée. Enregistre ton profil : l’adresse se crée toute seule, à partir de ton nom d’artiste.',
           )}

@@ -468,6 +468,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Cette adresse ouvre la page du groupe. Pendant un direct du groupe, elle mène au concert — comme ton QR.':
     'This address opens the band’s page. During a band show it leads to the gig — just like your QR.',
   'Pas encore d’adresse publique.': 'No public address yet.',
+  'Recherche de l’adresse…': 'Looking up the address…',
   'QR code de ta page publique': 'QR code for your public page',
   '⤓ Enregistrer le QR': '⤓ Save the QR',
   '↗ Partager': '↗ Share',

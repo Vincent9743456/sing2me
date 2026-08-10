@@ -7,7 +7,7 @@
  * écriture réservée au propriétaire (auth.uid() = user_id). Best-effort :
  * si Supabase n'est pas configuré, tout renvoie null sans jamais planter.
  */
-import { AuthSession } from './auth';
+import { AuthSession, getValidSession } from './auth';
 import { miniature } from './photo';
 import { normalizePublicName, publicNameError } from './publicName';
 import { ArtistProfile, Band, PublicBand, PublicMember } from '../types';
@@ -243,6 +243,38 @@ export async function fetchMyPublicName(
     return row?.name ?? null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * MON ADRESSE PUBLIQUE, EN INSISTANT (b245, écran envoyé par Vincent : « Ta
+ * page publique n'est pas encore réservée » alors qu'elle l'était).
+ *
+ * `cachedPublicName()` est un CACHE, pas une vérité : il se vide (nouvelle
+ * installation, données du site effacées, appareil différent) sans que
+ * l'adresse ait bougé d'un pouce côté serveur. Deux écrans le prenaient
+ * pourtant pour argent comptant — l'aperçu « Page publique / QR » annonçait
+ * une adresse inexistante, et le filet de récupération du profil (b243)
+ * n'avait alors AUCUNE fiche publiée à comparer : le sauvetage devenait
+ * silencieusement impossible, exactement le jour où il servait.
+ *
+ * On demande donc au serveur quand le cache est muet, et on le RECALE au
+ * passage : tout ce qui lit `cachedPublicName()` ensuite (le QR du panneau
+ * ON AIR, la carte du lien public) en profite. Hors ligne ou sans compte on
+ * rend '' — on n'invente jamais une adresse.
+ */
+export async function monAdressePublique(): Promise<string> {
+  const local = cachedPublicName();
+  if (local !== '') return local;
+  if (!publicPagesAvailable()) return '';
+  try {
+    const s = await getValidSession();
+    if (!s) return '';
+    const nom = (await fetchMyPublicName(s)) ?? '';
+    if (nom !== '') rememberPublicName(nom);
+    return nom;
+  } catch {
+    return '';
   }
 }
 
