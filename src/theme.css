@@ -3733,3 +3733,41 @@ a.pg-musicien:hover .pg-nom,
 a.pg-musicien:focus-visible .pg-nom {
   text-decoration: underline;
 }
+
+/* ------------------------------------------------------------------
+   LIGNE BALAYABLE (b254) — la corbeille se RÉVÈLE, elle ne traîne pas
+   sur la ligne. Voir src/components/SwipeRow.tsx.
+   ------------------------------------------------------------------ */
+.swiperow {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-s);
+}
+.swiperow-body {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+  will-change: transform;
+  /* Le navigateur garde le défilement vertical ; on ne lui prend que
+     l'horizontal, sinon un balayage déclenche le « retour » du système. */
+  touch-action: pan-y;
+}
+.swiperow-trash {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 88px;
+  border: 0;
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  background: var(--danger);
+  color: var(--on-accent);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.swiperow-trash:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -4px;
+}

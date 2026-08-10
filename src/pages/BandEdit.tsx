@@ -17,6 +17,7 @@ import { ShareModal } from '../components/ShareModal';
 import { Field, Modal, SaveBar, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
+import { detacherDuCloud, texteSuppression } from '../lib/deleteband';
 import { findPublicPageByArtist, PublicPage } from '../lib/publicPages';
 import {
   announceBandSong,
@@ -665,18 +666,10 @@ export function BandEdit({ id }: { id: string }) {
    *  app ; mes copies personnelles des morceaux restent. */
   async function dissolveOrLeave() {
     if (!band) return;
-    const cid = band.cloudId;
-    if (cid) {
-      try {
-        const s = await getValidSession();
-        if (s) {
-          if (isOwner) await deleteCloudBand(s, cid);
-          else await removeBandMember(s, cid, s.userId);
-        }
-      } catch {
-        // best-effort : la suppression locale a lieu de toute façon
-      }
-    }
+    // La décision (dissoudre / quitter) vit dans `lib/deleteband.ts` depuis
+    // b254 : la liste des groupes l'applique à l'identique, et deux portes
+    // vers la même action ne peuvent pas se mettre à diverger.
+    await detacherDuCloud(band);
     deleteBand(band.id);
     navigate(isOwner ? '/artist' : '/bands');
   }
@@ -1901,25 +1894,9 @@ export function BandEdit({ id }: { id: string }) {
       )}
       {confirmDel && (
         <ConfirmSheet
-          title={
-            isOwner
-              ? t('Supprimer le groupe « {nom} » ?', {
-                  nom: band.name || t('ce groupe'),
-                })
-              : t('Quitter le groupe « {nom} » ?', {
-                  nom: band.name || t('ce groupe'),
-                })
-          }
-          message={
-            isOwner
-              ? t(
-                  'Le groupe sera dissous pour tous les membres (chacun garde ses copies personnelles des morceaux).',
-                )
-              : t(
-                  'Tu quittes ce groupe. Tes copies personnelles des morceaux restent dans ta bibliothèque.',
-                )
-          }
-          confirmLabel={isOwner ? t('Supprimer le groupe') : t('Quitter le groupe')}
+          title={texteSuppression(band).titre}
+          message={texteSuppression(band).message}
+          confirmLabel={texteSuppression(band).libelle}
           danger
           onConfirm={() => void dissolveOrLeave()}
           onClose={() => setConfirmDel(false)}
