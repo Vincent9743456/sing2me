@@ -16,7 +16,7 @@ Statuts : ✅ conserver · 🔧 corriger · 🔀 fusionner · ➕ créer · ❌ 
 | SongBody / ChordLine / StructureBlock | SongBody.tsx | 🔧 | En-têtes métier par vue (phase 2) ; sinon conserver |
 | PublicLyrics | PublicLyrics.tsx | ✅ | **Seule façon d'afficher des paroles à quelqu'un qui LIT** (b219) : direct, setlist parcourue par le spectateur, aperçus. Ne jamais réécrire un bloc `pre-wrap` centré à la main |
 | PublicEye / PublicPreview | PublicPreview.tsx | ✅ | « 👁 Vue du public » (b223) : l'œil vit dans la rangée d'actions de la fiche morceau — **visible sur la partition, jamais dans un pli** — et bascule la partition sur ce que liront les spectateurs, avec de quoi le corriger. Un seul chemin — ne pas en ouvrir un deuxième depuis le panneau ON AIR ; absent du mode scène et du direct |
-| ChordDiagram / ChordSheet | ChordDiagram.tsx | ✅ | Diagramme de manche en SVG pur (b225) — `currentColor`, aucun asset, aucune dépendance. Les positions viennent de `src/lib/chordshapes.ts` ; ne jamais y coder un libellé, il ne parle aucune langue |
+| ChordDiagram / ChordSheet | ChordDiagram.tsx | ✅ | Diagramme de manche en SVG pur (b225) — `currentColor`, aucun asset, aucune dépendance. Les positions viennent de `src/lib/chorddb.ts` (table relevée, MIT, figée dans le dépôt) via `chordshapes.ts` ; ne jamais y coder un libellé, ce module ne parle aucune langue, et ne jamais compléter la table par du calcul |
 | OnAirButton / OnAirProvider | OnAir.tsx | 🔧 | CSS consolidé (3 couches → 1) ; panneau : sections |
 | AutoScroll (hook) | AutoScroll.tsx | ✅ | |
 | AutoScrollFab | AutoScroll.tsx | 🔀 | Fusionner avec les commandes ⇣ du mode scène (un composant, deux rendus) |

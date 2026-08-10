@@ -658,20 +658,30 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   la vraie basse reste la plus grave et l'accord sonne comme avant. Une forme
   qui ne peut pas porter la basse (empan de main dépassé, moins de trois
   cordes qui sonnent) est ÉCARTÉE, jamais ramenée à l'accord de base.
-- **Un doigté INJOUABLE est aussi faux qu'un doigté faux** (b228, signalement
-  de Vincent : « l'index en barré, le pouce derrière le manche, il ne reste
-  que trois doigts »). b225 vérifiait l'HARMONIE — les bonnes notes — et
-  jamais l'ERGONOMIE : le G6 sorti du gabarit de Mi donnait 3-5-5-4-5-3, juste
-  sur le papier, impossible à la main. Deux mesures cumulées : les gabarits
-  déplaçables sont RAMENÉS aux familles que tout le monde joue en barré
-  (majeur, mineur, 7, m7, maj7, sus4, sus2), et TOUT ce qui sort du module
-  passe par `estJouable` — comptage STRICT et volontairement pessimiste, où
-  seul l'index couvre plusieurs cordes. Les familles rares (6, m6, 9, dim,
-  aug…) n'ont plus que leur position ouverte quand la table en a une ; sinon
-  l'accord ne s'ouvre pas. **Ne pas raffiner le comptage pour gagner des
-  positions** : chaque assouplissement rouvre la porte à une position que
-  personne ne joue, et ce module n'a pas à en trouver le maximum — il a à
-  n'en montrer aucune qui soit fausse.
+- **Les positions d'accords sont LUES, jamais inventées** (b229, arbitrage de
+  Vincent : « trop dangereux de les inventer »). b225 CALCULAIT les doigtés à
+  partir de gabarits déplaçables : l'idée paraissait élégante, elle vérifiait
+  l'harmonie — les bonnes notes — et jamais l'ergonomie. D'où un G6 barré
+  case 3 qui demande quatre doigts au-dessus du barré alors qu'il n'en reste
+  que trois (signalement de Vincent). b228 avait colmaté en refusant
+  l'injouable ; c'était un pansement sur une méthode, pas une méthode.
+  `src/lib/chorddb.ts` est désormais une table de positions RELEVÉES par des
+  guitaristes — doigt par doigt, barré compris — tirée de `chords-db` (David
+  Rubert, MIT), filtrée puis FIGÉE dans le dépôt (32 Ko, 629 accords).
+  Régénération : `node scripts/build-chorddb.mjs guitar.json`, jamais au build.
+  Trois choses à ne pas défaire :
+  1. **la table reste commitée** — aucune dépendance, aucun réseau, l'app
+     dessine un accord en mode avion ;
+  2. **la source est filtrée, pas recopiée** : le générateur écarte les
+     positions dont les notes ne font pas l'accord annoncé (7 entrées
+     fausses, dont un « C#aug » qui sonne si-fa#-do#) et celles qui
+     dépasseraient quatre doigts. Une donnée relevée par des humains a ses
+     coquilles ; deux garde-fous indépendants valent mieux qu'une confiance
+     aveugle ;
+  3. **un accord absent de la table n'ouvre RIEN.** On ne complète pas les
+     trous par du calcul — c'est exactement ce qui a produit le G6.
+  La licence MIT et la ligne de copyright voyagent en tête du fichier généré :
+  ne pas les retirer.
 - **Un groupe se masque et se démasque DEPUIS LA LISTE** (b228, demande de
   Vincent) : un réglage rangé derrière « Modifier » n'existe pas. L'œil est
   sur la ligne du groupe (onglet Groupes), un appui dans chaque sens, et
