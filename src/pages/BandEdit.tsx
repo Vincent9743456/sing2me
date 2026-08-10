@@ -23,6 +23,7 @@ import {
   CloudMember,
   deleteCloudBand,
   DirectoryPerson,
+  createBandInvite,
   ensureCloudBand,
   BandDeparture,
   BandOwner,
@@ -177,6 +178,16 @@ export function BandEdit({ id }: { id: string }) {
   // Étape « prénom de l'invité » avant de partager le lien.
   const [invitePrompt, setInvitePrompt] = useState(false);
   const [pendingName, setPendingName] = useState('');
+  /**
+   * L'INVITATION EN COURS (b251) : un jeton NOMINATIF et à usage unique,
+   * créé pour cette personne-là. Le lien ne porte plus le jeton du groupe,
+   * qui était permanent et utilisable par quiconque le recevait.
+   */
+  const [inviteLink, setInviteLink] = useState<{
+    token: string;
+    name: string;
+  } | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
   const [lastMsg, setLastMsg] = useState<{ text: string; at: string } | null>(
     null,
@@ -307,7 +318,59 @@ export function BandEdit({ id }: { id: string }) {
       // On demande d'abord le prénom de l'invité (pour l'afficher « en
       // attente »), puis on partage le lien.
       setPendingName('');
+      setInviteLink(null);
+      setInviteError(null);
       setInvitePrompt(true);
+    }
+  }
+
+  /**
+   * CRÉE L'INVITATION NOMINATIVE (b251, demande de Vincent : « il faut que
+   * cette invitation soit nominative et que personne d'autre ne puisse
+   * utiliser ce lien »).
+   *
+   * Le lien portait le jeton DU GROUPE : un seul, permanent, réutilisable à
+   * l'infini par quiconque le recevait — un transfert de message suffisait à
+   * faire entrer un inconnu dans le répertoire partagé. On demande donc au
+   * serveur une invitation POUR CETTE PERSONNE, qui expire et se referme sur
+   * le premier compte qui l'utilise.
+   *
+   * Si le serveur ne sait pas la créer, on REFUSE : produire quand même un
+   * lien ouvert reviendrait à contourner la règle en silence.
+   */
+  async function creerInvitation() {
+    if (!band) return;
+    const nm = pendingName.trim();
+    if (nm === '') return;
+    setInviteBusy(true);
+    setInviteError(null);
+    try {
+      const cid = cloudRef?.cloudId ?? band.cloudId ?? '';
+      const s = await getValidSession();
+      if (!s || cid === '') throw new Error(t('Connexion requise'));
+      const token = await createBandInvite(s, cid, nm);
+      setInviteLink({ token, name: nm });
+      // La ligne « en attente » n'a pas d'identifiant : par lien, on ne sait
+      // pas encore qui viendra. Elle en recevra un à l'adhésion (b249/b250).
+      if (!band.members.some((m) => memeMusicien(m, { name: nm }))) {
+        saveBand({
+          ...band,
+          members: [
+            ...band.members,
+            { id: makeId(), name: nm, instrument: '', pending: true },
+          ],
+        });
+      }
+      setInvitePrompt(false);
+      setInvite(true);
+    } catch (e) {
+      setInviteError(
+        e instanceof Error && e.message !== ''
+          ? t('Invitation impossible : {raison}', { raison: e.message })
+          : t('Invitation impossible.'),
+      );
+    } finally {
+      setInviteBusy(false);
     }
   }
 
@@ -423,10 +486,12 @@ export function BandEdit({ id }: { id: string }) {
         from: prefs.userName || artist.name || t('Un musicien'),
         bandId: band.id,
         cloudId: cloudRef?.cloudId,
-        token: cloudRef?.token,
+        // Jeton NOMINATIF et à usage unique (b251) — jamais celui du groupe.
+        token: inviteLink?.token,
+        for: inviteLink?.name,
       },
     };
-  }, [band, prefs.userName, artist.name, cloudRef]);
+  }, [band, prefs.userName, artist.name, cloudRef, inviteLink]);
 
   const publicPayload = useMemo<SharePayload | null>(() => {
     if (!band || band.name.trim() === '') return null;
@@ -1370,31 +1435,17 @@ export function BandEdit({ id }: { id: string }) {
             onChange={(e) => setPendingName(e.target.value)}
           />
           <div className="spacer" />
+          {inviteError !== null && (
+            <p className="help" style={{ color: 'var(--danger)' }}>
+              {inviteError}
+            </p>
+          )}
           <button
             className="btn block"
-            onClick={() => {
-              const nm = pendingName.trim();
-              // Invitation par LIEN : on ne sait pas encore qui viendra, la
-              // ligne n'a donc pas d'identifiant — elle en recevra un à
-              // l'adhésion. Même rapprochement que partout ailleurs, pour ne
-              // pas créer un deuxième « Marco » à côté du premier.
-              if (
-                nm !== '' &&
-                !band.members.some((m) => memeMusicien(m, { name: nm }))
-              ) {
-                saveBand({
-                  ...band,
-                  members: [
-                    ...band.members,
-                    { id: makeId(), name: nm, instrument: '', pending: true },
-                  ],
-                });
-              }
-              setInvitePrompt(false);
-              setInvite(true);
-            }}
+            disabled={inviteBusy || pendingName.trim() === ''}
+            onClick={() => void creerInvitation()}
           >
-            {t("Obtenir le lien d'invitation")}
+            {inviteBusy ? '…' : t("Obtenir le lien d'invitation")}
           </button>
           <button
             className="btn ghost block"

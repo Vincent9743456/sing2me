@@ -638,7 +638,10 @@ export interface SharePayload {
     from: string;
     bandId?: string;
     cloudId?: string;
+    /** Jeton NOMINATIF et à usage unique de CETTE invitation (b251). */
     token?: string;
+    /** Nom de la personne invitée — le lien n'est valable que pour elle. */
+    for?: string;
   };
   /** Carte de musicien : réponse à une invitation de groupe */
   member?: { bandId: string; bandName: string; name: string; instrument: string };

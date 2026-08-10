@@ -163,6 +163,10 @@ export const EN_ARTISTE: Record<string, string> = {
   'Rien pour ce concert : il n’a pas encore été joué, ou le direct n’a pas été rattaché à ce concert au lancement.':
     'Nothing for this gig yet: it has not been played, or the live was not linked to it at launch.',
   'Invitation impossible.': 'Couldn\'t send the invitation.',
+  'Invitation impossible : {raison}': 'Invitation failed: {raison}',
+  'Connexion requise': 'You need to be signed in',
+  'Cette invitation est nominative : elle a été créée pour {nom}, et ne peut servir qu’une fois.':
+    'This invitation is personal: it was created for {nom}, and can only be used once.',
   'Invitations reçues': 'Invitations received',
   'Inviter': 'Invite',
   'Inviter dans « {nom} »': 'Invite to "{nom}"',

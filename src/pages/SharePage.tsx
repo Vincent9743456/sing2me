@@ -309,6 +309,16 @@ export function SharePage({
               band: payload.invite.band,
             })}
           </h1>
+          {/* L'invitation est NOMINATIVE (b251) : on le dit à celui qui
+              l'ouvre, sinon un lien transféré ressemble à un lien public. */}
+          {(payload.invite.for ?? '') !== '' && (
+            <p className="help" style={{ margin: 0 }}>
+              {t(
+                'Cette invitation est nominative : elle a été créée pour {nom}, et ne peut servir qu’une fois.',
+                { nom: payload.invite.for ?? '' },
+              )}
+            </p>
+          )}
           <div
             className="hstack"
             style={{
