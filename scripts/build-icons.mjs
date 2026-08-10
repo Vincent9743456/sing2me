@@ -12,6 +12,10 @@
  *   · dodosongs-128.png       — l'icône dans l'app (barres, pieds de page),
  *                               légère parce que la page du spectateur la
  *                               charge aussi ;
+ *   · dodosongs-256.png       — les emplois GRANDS (portail de connexion,
+ *                               page introuvable) : au-delà de 64 px à
+ *                               l'écran, la 128 se voit pixelisée sur un
+ *                               écran à haute densité ;
  *   · icon-192 / icon-512     — manifeste PWA, fond nuit opaque ;
  *   · icon-maskable-512       — même chose, mais l'illustration réduite à
  *                               80 % au centre : Android recadre les icônes
@@ -168,6 +172,7 @@ if (src.largeur !== src.hauteur) throw new Error('la source doit être carrée')
 
 const sorties = [
   ['public/dodosongs-128.png', 128, { opaque: false, part: 1 }],
+  ['public/dodosongs-256.png', 256, { opaque: false, part: 1 }],
   ['public/apple-touch-icon.png', 180, { opaque: true, part: 1 }],
   ['public/icon-192.png', 192, { opaque: true, part: 1 }],
   ['public/icon-512.png', 512, { opaque: true, part: 1 }],

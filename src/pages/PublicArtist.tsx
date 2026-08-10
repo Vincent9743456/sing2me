@@ -129,7 +129,7 @@ export function PublicArtist({ name }: { name: string }) {
     return (
       <div className="public">
         <div className="card" style={{ textAlign: 'center' }}>
-          <LogoMark size={40} />
+          <LogoMark size={80} />
           <h1 style={{ margin: '10px 0 4px' }}>{t('Page introuvable')}</h1>
           <p className="help">
             {t('Aucun artiste ni groupe ne correspond à « {name} ».', { name })}
@@ -187,7 +187,7 @@ export function PublicArtist({ name }: { name: string }) {
           className="ctabanner"
           href={location.origin + location.pathname.replace(/[^/]*$/, '')}
         >
-          <LogoMark size={22} /> {t('Découvrez')} <strong>DodoSongs</strong>{' '}
+          <LogoMark size={44} /> {t('Découvrez')} <strong>DodoSongs</strong>{' '}
           {t('— votre songbook, gratuit')}
         </a>
         <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
