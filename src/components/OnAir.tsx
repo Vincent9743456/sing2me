@@ -45,8 +45,7 @@ import {
   groupesPublics,
   profilAPublier,
   publierFichesGroupes,
-  fetchMyPublicName,
-  rememberPublicName,
+  monAdressePublique,
 } from '../lib/publicPages';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -585,14 +584,8 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
       // PERMANENTE de l'artiste — sa page publique /sonnom, qui file toute
       // seule aux paroles quand il est en direct. JAMAIS le code de salon
       // (il change à chaque session) : le même QR imprimé sert à vie.
-      let name = cachedPublicName();
-      if (name === '') {
-        const s = await getValidSession();
-        if (s) {
-          name = (await fetchMyPublicName(s)) ?? '';
-          if (name !== '') rememberPublicName(name);
-        }
-      }
+      // Cache d'abord, serveur si le cache est muet (b245, `monAdressePublique`).
+      const name = await monAdressePublique();
       const url = name !== '' ? `${location.origin}/${name}` : liveUrl();
       setQrUrl(url);
       setQr(await QRCode.toDataURL(url, { width: 440, margin: 1 }));

@@ -18,7 +18,7 @@
  */
 import React, { useEffect, useState } from 'react';
 
-import { fetchPublicPage, cachedPublicName } from '../lib/publicPages';
+import { fetchPublicPage, monAdressePublique } from '../lib/publicPages';
 import { t } from '../i18n';
 import { ArtistProfile } from '../types';
 
@@ -64,7 +64,11 @@ export function ProfilRestore({
   useEffect(() => {
     let annule = false;
     void (async () => {
-      const nom = cachedPublicName();
+      // On DEMANDE l'adresse au serveur si le cache local est muet (b245) :
+      // un cache vidé (réinstallation, données du site effacées) faisait
+      // croire qu'il n'y avait pas de fiche publiée, donc rien à récupérer —
+      // le filet disparaissait au moment précis où il servait.
+      const nom = await monAdressePublique();
       if (nom === '') {
         if (!annule) setChamps(null);
         return;
