@@ -109,7 +109,7 @@ export function Follow({ code = '' }: { code?: string } = {}) {
             <br />
             <span className="help">
               {t(
-                "Dès qu'il active « 📡 Synchroniser le groupe » (panneau ON AIR) et ouvre un morceau, il s'affichera ici — dans ta vue, transposé dans sa tonalité.",
+                "Dès qu'il active « 📡 Synchroniser le groupe » (panneau Live) et ouvre un morceau, il s'affichera ici — dans ta vue, transposé dans sa tonalité.",
               )}
             </span>
           </div>

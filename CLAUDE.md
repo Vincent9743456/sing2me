@@ -1127,6 +1127,21 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   entrée publique comprise — elle en était dépourvue, d'où l'écran noir
   au lieu d'un message. Un spectateur en plein concert n'a aucun moyen de
   diagnostiquer quoi que ce soit.
+- **LE DIRECT S'APPELLE « LIVE », PLUS « ON AIR »** (b257-b258, Vincent :
+  « il n'y a plus de mode on air, maintenant c'est le mode live »). Le bouton
+  dit GO LIVE, l'onglet dit Live : rien de ce que l'utilisateur lit ne peut
+  porter un troisième nom. Plus AUCUNE occurrence visible — ni dans l'app
+  (les deux langues), ni dans la landing, ni dans `robots.txt`. Le bloc de
+  réglage « Mode ON AIR » du profil artiste a disparu avec : depuis b192 il
+  n'y avait plus rien à saisir, donc plus rien à expliquer.
+  Ce qui NE change PAS, et qu'on ne renomme pas : le code (`OnAir.tsx`,
+  `prefs.liveKey`, `sing2me/onair`, la classe CSS `.onair`), les clés
+  localStorage et les commentaires d'historique — renommer du code déjà
+  écrit, c'est du bruit dans le diff, et les clés de stockage ne se
+  renomment JAMAIS. Le mot reste donc dans les fichiers, jamais à l'écran.
+  Test de non-régression : `b258.mjs` parcourt dix écrans, panneau du direct
+  ouvert, en français ET en anglais — un audit du code ne prouve pas ce que
+  l'utilisateur lit.
 - Textes UI en français, ton chaleureux, tutoiement.
 - **Bilingue (b156) — le français reste la langue SOURCE du code.**
   Toute chaîne d'INTERFACE s'écrit en français dans le code et passe par

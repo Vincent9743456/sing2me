@@ -149,7 +149,7 @@ export function Remote({ setlistId }: { setlistId: string }) {
         )}
         <p className="help" style={{ textAlign: 'center', marginTop: 14 }}>
           {t(
-            'Re-taper le morceau en cours le désélectionne. Le direct public se pilote avec le bouton ON AIR en haut à droite.',
+            'Re-taper le morceau en cours le désélectionne. Le direct public se pilote avec le bouton GO LIVE en haut à droite.',
           )}
         </p>
       </div>

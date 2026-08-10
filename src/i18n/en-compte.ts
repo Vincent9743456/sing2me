@@ -23,7 +23,7 @@ export const EN_COMPTE: Record<string, string> = {
   'Connecte-toi d’abord (onglet Artiste) pour réserver ton nom.': 'Sign in first (Artist tab) to reserve your name.',
   'Connecte-toi ou crée ton compte (gratuit)': 'Sign in or create your account (free)',
   'Connexion OU création de compte — le lien magique fait les deux': 'Sign in OR create an account — the magic link does both',
-  'Contenu trop volumineux pour un QR code — utilise le lien ci-dessous. (Astuce : avec la clé On Air renseignée et la version en ligne, le lien devient court et le QR revient.)': 'Content too large for a QR code — use the link below. (Tip: with the On Air key set and the online version, the link becomes short and the QR comes back.)',
+  'Contenu trop volumineux pour un QR code — utilise le lien ci-dessous. (Astuce : avec la version en ligne, le lien devient court et le QR revient.)': 'Content too large for a QR code — use the link below. (Tip: with the online version, the link becomes short and the QR comes back.)',
   'Continuer avec Facebook': 'Continue with Facebook',
   'Continuer avec Google': 'Continue with Google',
   'Copier le code': 'Copy the code',

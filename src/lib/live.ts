@@ -106,7 +106,7 @@ export interface LiveMessage {
 }
 
 const OFFLINE_MSG =
-  "Le mode ON AIR nécessite la version en ligne de l'application (Vercel).";
+  "Le mode Live nécessite la version en ligne de l'application (Vercel).";
 
 /**
  * Délai maximum d'un appel au direct (b216). Sans lui, `fetch` peut rester
