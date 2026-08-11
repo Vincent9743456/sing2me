@@ -389,7 +389,8 @@ function SongPicker({
         type="text"
         placeholder={t('Rechercher dans mon répertoire…')}
         value={q}
-        autoFocus
+        /* Pas d'autoFocus (b269) : même écran, même raison — la liste des
+           morceaux est ce qu'on est venu voir. */
         onChange={(e) => setQ(e.target.value)}
       />
       <div className="spacer" />
