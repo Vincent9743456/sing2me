@@ -446,8 +446,10 @@ export const EN_ARTISTE: Record<string, string> = {
     'Faded bands are hidden from the audience: they do not appear on your public page and cannot carry a live. One tap on the eye, in the Bands tab, makes them visible.',
   'Ce groupe est masqué au public : il n’a pas d’adresse, et aucun direct ne peut être lancé à son nom. Retire le masquage depuis l’onglet Groupes pour lui en donner une.':
     'This band is hidden from the audience: it has no address, and no live can run under its name. Remove the hiding from the Bands tab to give it one.',
-  'Ce groupe n’a pas encore d’adresse publique. Le créateur peut lui en donner une depuis « Modifier ».':
-    'This band has no public address yet. The creator can give it one from “Edit”.',
+  'Le nom de ce groupe ne permet pas d’en tirer une adresse (il faut au moins 3 lettres ou chiffres). Donne-lui-en une depuis « Modifier ».':
+    'This band’s name cannot produce an address (3 letters or digits minimum). Give it one from “Edit”.',
+  'Ce groupe n’a pas encore d’adresse publique. Son créateur peut lui en donner une.':
+    'This band has no public address yet. Its creator can give it one.',
   'Cette adresse montre la page de celui qui tient le groupe — c’est le même concert que ton QR pendant un direct.':
     'This address shows the page of whoever holds the band — it is the same concert as your QR during a live.',
   'La page n’a pas pu être chargée. Elle existe peut-être quand même : réessaie avec du réseau.':
