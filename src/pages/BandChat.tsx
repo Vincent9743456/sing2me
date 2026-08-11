@@ -398,7 +398,9 @@ function SongPicker({
         <p className="help">
           {songs.some((s) => s.idea !== true)
             ? t('Aucun morceau ne correspond à ta recherche.')
-            : t("Ton répertoire est vide — ajoute d'abord un morceau.")}
+            : t(
+                'Ta bibliothèque est vide — importe un morceau depuis l’onglet Morceaux, il sera ensuite proposé ici.',
+              )}
         </p>
       ) : (
         <div className="list">

@@ -348,12 +348,28 @@ export function SongCollector({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        {/* DIRE D'OÙ VIENNENT CES MORCEAUX (b270, demande de Vincent).
+            Cet écran ne cherche RIEN sur Internet : il pioche dans la
+            bibliothèque de celui qui l'ouvre. Sans le dire, on laisse croire
+            à une recherche de partitions — et quelqu'un qui n'y trouve pas
+            son titre en conclut qu'il n'existe pas, alors qu'il ne l'a
+            simplement pas encore importé. On nomme donc l'endroit où ça se
+            passe : l'onglet Morceaux (règle 1 — chaque objet a une seule
+            maison, et c'est celle-là). Une MENTION, pas un bouton : ouvrir
+            un deuxième chemin vers l'import serait la règle 3 à l'envers. */}
+        <p className="help" style={{ margin: '8px 0 0' }}>
+          {t(
+            'Ces morceaux sont ceux de ta bibliothèque. Pour en importer de nouveaux, ferme cet écran et passe par l’onglet Morceaux.',
+          )}
+        </p>
       </div>
       <div className="pickerfull-list">
         {filtered.length === 0 ? (
           <p className="help" style={{ textAlign: 'center' }}>
             {library.length === 0
-              ? t('Ta bibliothèque est vide — importe des morceaux d’abord.')
+              ? t(
+                  'Ta bibliothèque est vide — importe un morceau depuis l’onglet Morceaux, il sera ensuite proposé ici.',
+                )
               : t('Aucun morceau ne correspond.')}
           </p>
         ) : (
