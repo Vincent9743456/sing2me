@@ -138,7 +138,6 @@ export const EN_COMPTE: Record<string, string> = {
   '▶ Reprendre': '▶ Resume',
   '☁ Connecté': '☁ Signed in',
   '☁ Synchronisation indisponible pour le moment — tes données restent enregistrées sur cet appareil, rien n\'est perdu.': '☁ Sync unavailable right now — your data stays saved on this device, nothing is lost.',
-  '✉️ Email': '✉️ Email',
   '✓ Code copié !': '✓ Code copied!',
   '✓ En ligne : {addr}': '✓ Live at: {addr}',
   '✓ Lien copié !': '✓ Link copied!',
