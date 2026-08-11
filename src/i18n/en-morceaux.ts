@@ -417,8 +417,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Mes groupes': 'My bands',
   'déjà au répertoire': 'already in the repertoire',
   'Rechercher un titre, un artiste…': 'Search a title, an artist…',
-  'Ta bibliothèque est vide — importe des morceaux d’abord.':
-    'Your library is empty — import some songs first.',
+  'Ces morceaux sont ceux de ta bibliothèque. Pour en importer de nouveaux, ferme cet écran et passe par l’onglet Morceaux.':
+    'These songs are the ones in your library. To import new ones, close this screen and go to the Songs tab.',
+  'Ta bibliothèque est vide — importe un morceau depuis l’onglet Morceaux, il sera ensuite proposé ici.':
+    'Your library is empty — import a song from the Songs tab and it will show up here.',
   'Aucun morceau ne correspond.': 'No song matches.',
 
   // ---------- NoteModal.tsx ----------
