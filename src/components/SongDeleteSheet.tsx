@@ -66,7 +66,7 @@ export function SongDeleteSheet({
       <ConfirmSheet
         title={t('Écarter « {title} » ?', { title: titre })}
         message={t(
-          'Cette proposition quittera tes idées. {groupe} l’a toujours à son répertoire : tu la retrouveras là, avec « ↩ Reprendre », le jour où tu changes d’avis.',
+          'Cette proposition quittera ta liste. {groupe} l’a toujours à son répertoire : tu la retrouveras là, avec « ↩ Reprendre », le jour où tu changes d’avis.',
           { groupe: nomDuGroupe(sort.bandId) },
         )}
         confirmLabel={t('Écarter')}
@@ -86,7 +86,7 @@ export function SongDeleteSheet({
       <ConfirmSheet
         title={t('Retirer « {title} » de tes morceaux ?', { title: titre })}
         message={t(
-          'Il vient du répertoire de {groupe} : il ne sera pas effacé, il retournera dans tes Idées, en proposition. Tu pourras le reprendre quand tu veux.',
+          'Il vient du répertoire de {groupe} : il ne sera pas effacé, il retournera dans tes propositions. Tu pourras le reprendre quand tu veux.',
           { groupe: nomDuGroupe(sort.bandId) },
         )}
         confirmLabel={t('Remettre en proposition')}

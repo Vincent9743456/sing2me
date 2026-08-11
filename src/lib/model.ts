@@ -1428,11 +1428,30 @@ export function migrateSong(raw: unknown): Song {
   // historiques au chargement (on garde la plus récemment modifiée).
   base = dedupeBandVersions(base);
 
-  // b174 : une proposition de groupe vit désormais dans les IDÉES. Les
+  // b174 : une proposition de groupe vit dans la boîte de réception. Les
   // propositions reçues AVANT ce lot n'ont pas le drapeau — on le pose au
   // chargement, sinon elles resteraient mêlées aux morceaux qu'on joue.
   if ((base.pendingBandId ?? '') !== '' && base.idea !== true) {
     base = { ...base, idea: true };
+  }
+
+  /**
+   * FIN DES « IDÉES » PERSONNELLES (b274, arbitrage de Vincent). Un morceau
+   * marqué en attente qui ne vient NI d'un groupe NI d'un bœuf était une
+   * étagère personnelle : il rejoint la bibliothèque, où il aurait toujours
+   * dû être. Rien n'est effacé — c'est le drapeau qui tombe, pas le morceau.
+   *
+   * Les copies rapportées d'un bœuf AVANT b274 n'ont pas encore `keptAtJam` :
+   * elles sont donc libérées elles aussi. C'est le bon sens de l'erreur —
+   * un morceau qu'on retrouve dans sa bibliothèque ne se perd pas, alors
+   * qu'un morceau resté en attente d'une décision qui ne viendra jamais, si.
+   */
+  if (
+    base.idea === true &&
+    (base.pendingBandId ?? '') === '' &&
+    base.keptAtJam !== true
+  ) {
+    base = { ...base, idea: false };
   }
 
   const { notes: _legacyNotes, ...clean } = base as Song & { notes?: string };

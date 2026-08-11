@@ -67,14 +67,14 @@ export const EN_MORCEAUX: Record<string, string> = {
   '📥 À valider': '📥 To approve',
   'Partitions ajoutées dans la semaine': 'Charts added this week',
   '✨ Nouveautés ({n})': '✨ New ({n})',
-  'Morceaux importés non encore validés — réserve à travailler':
+  'Ce qu’un groupe te propose, et ce que tu as gardé à un bœuf':
     'Imported songs not yet confirmed — work-in-progress stash',
-  '💡 Idées ({n})': '💡 Ideas ({n})',
+  '📥 Propositions ({n})': '📥 Proposals ({n})',
   'Répertoires :': 'Repertoires:',
   'Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)':
     'Repertoire playable solo (every song by default, unless disqualified from its page)',
-  'Réserve à travailler : jouables partout, mais pas encore validées dans la bibliothèque — ouvre un morceau pour le valider ✓ ou le supprimer.':
-    'Work-in-progress stash: playable anywhere, but not yet confirmed in the library — open a song to confirm ✓ it or delete it.',
+  'Ce qu’on te propose : le répertoire d’un groupe, ou un morceau gardé à un bœuf. Jouables partout — ouvre-en un pour l’accepter ✓ ou l’écarter.':
+    'What others suggest: a band’s repertoire, or a song you kept at a jam. Playable anywhere — open one to accept ✓ or set it aside.',
   'Partitions ajoutées cette semaine — {n} morceaux.': 'Charts added this week — {n} songs.',
   'Partitions ajoutées cette semaine — {n} morceau.': 'Charts added this week — {n} song.',
   'Filtre actif :': 'Active filter:',
@@ -128,8 +128,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Mode scène — la setlist entière (le public peut la suivre)':
     'Stage mode — the whole setlist (the audience can follow along)',
   'Mode scène (plein écran)': 'Stage mode (full screen)',
-  'Idée à travailler': 'Idea to work on',
-  'Jouable partout, mais pas encore validée dans ta bibliothèque.':
+  'Proposition à valider': 'Idea to work on',
+  'Jouable partout, mais pas encore entrée dans ta bibliothèque.':
     'Playable anywhere, but not yet confirmed in your library.',
   '✓ Valider dans la bibliothèque': '✓ Confirm in the library',
   'Déqualifié du répertoire solo — cliquer pour le requalifier':
@@ -281,7 +281,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   'La recherche a échoué.': 'The search failed.',
   'Le nettoyage IA a échoué.': 'The AI cleanup failed.',
   'Ajouté comme nouvelle version de « {title} »': 'Added as a new version of “{title}”',
-  ' — idée validée ✓': ' — idea confirmed ✓',
+  ' — proposition validée ✓': ' — proposal accepted ✓',
   '{name} (ni partition ni lien de page de partition)': '{name} (neither a chart nor a chart-page link)',
   'Non retenus : {list}': 'Not kept: {list}',
   // Chantier « Reprise de répertoire » : découpage d'un recueil et filet.
@@ -326,7 +326,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   'tonalité {key}': 'key {key}',
   '✅ Analyse : rien à corriger.': '✅ Analysis: nothing to fix.',
   'ℹ Tu as déjà « {title} »': 'ℹ You already have “{title}”',
-  ' (dans tes idées)': ' (in your ideas)',
+  ' (en proposition)': ' (a proposal)',
   ' : cet import le rejoindra comme nouvelle version — aucun doublon.':
     ' : this import will join it as a new version — no duplicate.',
   'Aperçu de la partition': 'Chart preview',
@@ -335,11 +335,6 @@ export const EN_MORCEAUX: Record<string, string> = {
     '✨ The analysis suggests an AI cleanup — fix the format',
   "L'IA réécrit la partition au format standard (accords [Am] dans les paroles, sections nommées) pour régler les points ⚠ ci-dessus. Version en ligne + clé IA requises.":
     'The AI rewrites the chart in the standard format (chords [Am] in the lyrics, named sections) to fix the ⚠ points above. Online version + AI key required.',
-  'Jouable tout de suite, mais rangé dans les idées à travailler':
-    'Playable right away, but filed under ideas to work on',
-  'Garder comme idée — à travailler avant validation': 'Keep as an idea — to work on before confirming',
-  "Une « idée » est jouable immédiatement (concert, demande du public…) mais reste dans ta réserve jusqu'à ce que tu la valides dans la bibliothèque.":
-    'An “idea” is playable right away (a gig, an audience request…) but stays in your stash until you confirm it in the library.',
   'Ajouter à ma bibliothèque': 'Add to my library',
   'Ajouter un morceau': 'Add a song',
   'Rechercher un morceau': 'Search a song',
@@ -386,7 +381,6 @@ export const EN_MORCEAUX: Record<string, string> = {
   '{n} lien détecté{cap}.': '{n} link detected{cap}.',
   ' (plafond atteint)': ' (cap reached)',
   'Tout ajouter à ma bibliothèque': 'Add it all to my library',
-  'Tout garder comme idées — à travailler': 'Keep it all as ideas — to work on',
   'Import en cours': 'Import in progress',
   'Arrêter après le morceau en cours': 'Stop after the current song',
   '{n} importés': '{n} imported',
@@ -405,7 +399,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   "✨ Nettoyer à l'IA les {n} partition au format problématique":
     '✨ AI-clean the {n} chart with a problematic format',
   "L'IA ne touche que les morceaux marqués ⚠ — les autres restent tels quels. Chaque morceau garde son titre, son artiste et son statut (bibliothèque ou idée).":
-    'The AI only touches songs marked ⚠ — the others stay as they are. Every song keeps its title, its artist and its status (library or idea).',
+    'The AI only touches songs marked ⚠ — the others stay as they are. Every song keeps its title and its artist.',
 
   // ---------- SongPicker.tsx ----------
   'Retirer « {title} » du répertoire de {band} ? Le morceau sortira du répertoire du groupe pour TOUS les membres — chacun garde la partition dans sa bibliothèque personnelle.':
@@ -505,8 +499,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Mise en forme des partitions': 'Formatting the charts',
   'Mise en forme terminée': 'Formatting done',
   '✨ Reprendre la mise en forme': '✨ Resume formatting',
-  'Chaque morceau garde son titre, son artiste et son statut (bibliothèque ou idée). Les partitions où la mise en forme laisse un doute sont marquées « à vérifier » : tu les retrouves d’un geste dans ta bibliothèque, avec la possibilité de revenir à la version d’origine.':
-    'Every song keeps its title, artist and status (library or idea). Charts where the formatting leaves a doubt are flagged “needs a check”: you find them in one gesture in your library, and you can go back to the original version.',
+  'Chaque morceau garde son titre et son artiste. Les partitions où la mise en forme laisse un doute sont marquées « à vérifier » : tu les retrouves d’un geste dans ta bibliothèque, avec la possibilité de revenir à la version d’origine.':
+    'Every song keeps its title and artist. Charts where the formatting leaves a doubt are flagged “needs a check”: you find them in one gesture in your library, and you can go back to the original version.',
   '↩ Revenir à ma partition d’origine': '↩ Back to my original chart',
   ' · ✨ mis en forme': ' · ✨ formatted',
   'Revenir à la version d’origine': 'Back to the original version',
@@ -534,7 +528,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Remettre « {title} » dans tes propositions': 'Put “{title}” back in your suggestions',
   'Écarter cette proposition': 'Set this suggestion aside',
   'Écarter « {title} » ?': 'Set “{title}” aside?',
-  'Cette proposition quittera tes idées. {groupe} l’a toujours à son répertoire : tu la retrouveras là, avec « ↩ Reprendre », le jour où tu changes d’avis.':
+  'Cette proposition quittera ta liste. {groupe} l’a toujours à son répertoire : tu la retrouveras là, avec « ↩ Reprendre », le jour où tu changes d’avis.':
     'This suggestion will leave your ideas. {groupe} still has it in their repertoire: you’ll find it there, with “↩ Take it back”, the day you change your mind.',
   'Écarter': 'Set aside',
   '« {title} » est au programme': '“{title}” is on the setlist',
@@ -544,8 +538,8 @@ export const EN_MORCEAUX: Record<string, string> = {
     'Take it off the setlist first, then come back here.',
   'J’ai compris': 'Got it',
   'Retirer « {title} » de tes morceaux ?': 'Remove “{title}” from your songs?',
-  'Il vient du répertoire de {groupe} : il ne sera pas effacé, il retournera dans tes Idées, en proposition. Tu pourras le reprendre quand tu veux.':
-    'It comes from {groupe}’s repertoire: it won’t be erased, it goes back to your Ideas as a suggestion. You can take it back whenever you want.',
+  'Il vient du répertoire de {groupe} : il ne sera pas effacé, il retournera dans tes propositions. Tu pourras le reprendre quand tu veux.':
+    'It comes from {groupe}’s repertoire: it won’t be erased, it goes back to your proposals. You can take it back whenever you want.',
   'Remettre en proposition': 'Move back to suggestions',
   'Passer toute l’app en clair': 'Switch the whole app to light',
   'Repasser toute l’app en sombre': 'Switch the whole app back to dark',

@@ -23,9 +23,9 @@ export const EN_ARTISTE: Record<string, string> = {
   'Ajouter un musicien': 'Add a musician',
   'Ajouter une photo': 'Add a photo',
   'Ajoutée au répertoire du groupe.': 'Added to the band\'s repertoire.',
-  'Ajoutée au répertoire du groupe — elle arrivera dans tes Idées.':
+  'Ajoutée au répertoire du groupe — elle arrivera dans tes propositions.':
     'Added to the band’s repertoire — it’ll land in your Ideas.',
-  'Ajoutée au répertoire du groupe — elle t’attend dans tes Idées.':
+  'Ajoutée au répertoire du groupe — elle t’attend dans tes propositions.':
     'Added to the band’s repertoire — it’s waiting in your Ideas.',
   'Ajoutée au répertoire du groupe — tu avais déjà ce morceau : c’est une version de plus dessus.':
     'Added to the band’s repertoire — you already had this song, so it’s one more version on it.',

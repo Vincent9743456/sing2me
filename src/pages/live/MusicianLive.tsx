@@ -179,7 +179,7 @@ export default function MusicianLive({
             ))}
           </div>
           {/* Bœuf : garder une copie PERSONNELLE du morceau en cours
-              (arrive en « Idée » — jamais partagée, décision Vincent). */}
+              (arrive dans les propositions — jamais partagée, b110). */}
           {onKeep && (
             <div style={{ textAlign: 'center', margin: '10px 0' }}>
               <button

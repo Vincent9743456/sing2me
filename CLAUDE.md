@@ -341,6 +341,25 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     « 💡 Idées » ne compte pas les écartées (règle 11), et le bouton de la
     fiche dit « Écarter cette proposition » — le mot doit annoncer l'effet,
     sinon on croit avoir supprimé ;
+  - **PLUS D'« IDÉES » : DES PROPOSITIONS, ET RIEN D'AUTRE** (b274, arbitrage
+    de Vincent : « on abandonne le concept d'idée à tous les niveaux »). Le
+    mot recouvrait deux choses sans rapport : une BOÎTE DE RÉCEPTION (ce qui
+    arrive du dehors et attend une décision — avec ses boutons, sa pastille,
+    sa fin) et une ÉTAGÈRE personnelle (« à travailler »), qui n'avait, elle,
+    aucune fin. La pastille comptait donc « 3 choses à traiter » ET « 12
+    morceaux que je jouerai peut-être un jour » — exactement ce que la règle
+    11 interdit. Il ne reste que la boîte, et elle n'a que DEUX entrées : le
+    répertoire d'un GROUPE (`pendingBandId`) et un morceau gardé à un BŒUF
+    (`keptAtJam`, posé par `keepSong`). L'option « garder comme idée » de
+    l'import a disparu — un morceau qu'on importe entre dans la bibliothèque.
+    Le CHAMP `Song.idea` garde son nom (il vit dans le localStorage de tous
+    les installés) mais change de sens : « proposition en attente ». Migration
+    au chargement : une attente sans groupe ni bœuf redevient un morceau
+    ordinaire — le drapeau tombe, jamais le morceau. Les copies de bœuf
+    d'AVANT b274 n'ayant pas encore `keptAtJam` sont libérées elles aussi :
+    c'est le bon sens de l'erreur, un morceau retrouvé dans sa bibliothèque
+    ne se perd pas, alors qu'un morceau resté en attente d'une décision qui
+    ne viendra jamais, si.
   - un morceau supprimé n'est jamais réimporté par l'import en masse
     (tombstones) ;
   - navigation : les boutons ← des pages vont vers un parent explicite
