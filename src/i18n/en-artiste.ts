@@ -140,7 +140,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Nommer ce live': 'Name this live',
   'Par exemple : soirée chez Marco': 'For example: night at Marco’s',
   'Recherche de sa page publique…': 'Looking for their public page…',
-  'Ce musicien n’a pas encore de page publique DodoSongs — ou son nom d’artiste est porté par plusieurs comptes.':
+  'Ce musicien n’a pas encore de page publique. Elle se crée toute seule à sa première ouverture de l’application — s’il vient de s’inscrire, elle apparaîtra ici sous peu.':
     'This musician doesn’t have a DodoSongs public page yet — or their artist name is used by several accounts.',
   'Voir sa page publique': 'See their public page',
   'Copier le lien de sa page': 'Copy the link to their page',

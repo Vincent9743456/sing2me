@@ -77,6 +77,41 @@ export function rememberPublicName(name: string): void {
  *
  * Lecture anonyme d'une page déjà publique : rien de nouveau n'est exposé.
  */
+/**
+ * LA PAGE D'UN MUSICIEN SE TROUVE PAR SON COMPTE (b276, cas de Vincent : la
+ * fiche de Chris annonçait « pas encore de page publique »).
+ *
+ * Chercher par NOM était le dernier endroit qui violait la règle de b249 —
+ * un musicien est son compte, pas son nom. Il suffisait que sa ligne de
+ * membre dise « chris.lamfung » et son profil « Chris L. » pour qu'on ne
+ * trouve rien, page ou pas. La recherche par nom reste, en second, pour les
+ * lignes de musicien qui n'ont pas encore d'identifiant (saisie à la main,
+ * invitation par lien).
+ */
+export async function findPublicPageByUser(
+  userId: string,
+): Promise<PublicPage | null> {
+  const id = (userId ?? '').trim();
+  if (!publicPagesAvailable() || id === '') return null;
+  try {
+    const res = await fetch(
+      `${sbUrl()}/rest/v1/public_pages?user_id=eq.${encodeURIComponent(
+        id,
+      )}&select=name,profile&limit=1`,
+      { headers: { apikey: anon(), authorization: `Bearer ${anon()}` } },
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    return {
+      name: rows[0].name,
+      profile: (rows[0].profile ?? {}) as ArtistProfile,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function findPublicPageByArtist(
   artistName: string,
 ): Promise<PublicPage | null> {
@@ -314,6 +349,9 @@ export async function reserverAdresseArtiste(
   artist: ArtistProfile,
   bands: Band[],
   masquee = false,
+  /** Repli quand le profil n'a pas encore de nom (b276) : le nom d'usage,
+   *  puis le début de l'e-mail — la même source que l'annuaire. */
+  repli = '',
 ): Promise<string> {
   if (!publicPagesAvailable()) return '';
   const cache = cachedPublicName();
@@ -324,11 +362,24 @@ export async function reserverAdresseArtiste(
       rememberPublicName(deja);
       return deja;
     }
-    if (normalizePublicName(artist.name ?? '') === '') return '';
-    return (
-      (await ensurePublicPage(s, await profilAPublier(artist, bands, masquee))) ??
-      ''
-    );
+    /**
+     * TOUTE INSCRIPTION A SA PAGE (b276, demande de Vincent). b271 exigeait
+     * un nom d'artiste : quelqu'un qui crée son compte et rejoint un groupe
+     * sans jamais ouvrir l'onglet Artiste n'avait donc AUCUNE adresse — et
+     * sa fiche, chez ses camarades de groupe, affichait « pas encore de page
+     * publique ». On dérive donc l'adresse du premier nom qu'on a, exactement
+     * comme l'annuaire le fait déjà pour être trouvable.
+     *
+     * On ne touche JAMAIS au profil local pour autant (cicatrice b244) : le
+     * repli sert à l'ADRESSE et au nom de la fiche PUBLIÉE, pas au nom
+     * d'artiste, que lui seul décide.
+     */
+    const nom = (artist.name ?? '').trim() !== '' ? artist.name : repli.trim();
+    if (normalizePublicName(nom) === '') return '';
+    const fiche = await profilAPublier(artist, bands, masquee);
+    const aPublier =
+      (fiche.name ?? '').trim() === '' ? { ...fiche, name: nom } : fiche;
+    return (await ensurePublicPage(s, aPublier)) ?? '';
   } catch {
     return '';
   }
