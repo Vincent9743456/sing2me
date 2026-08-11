@@ -28,15 +28,19 @@ import { useStore } from '../store';
 import { Song } from '../types';
 
 /**
- * Types de message saisis librement dans le fil. La proposition de chanson
- * n'en fait PAS partie : elle se fait uniquement en associant un morceau du
- * répertoire (bouton dédié) — le fil garde alors une annonce 🎵 automatique.
+ * ÉCRIRE, C'EST ÉCRIRE (b266, constat de Vincent : « les 3 boutons Discussion
+ * / Répét / Concert ne servent à rien »). Il fallait choisir une étiquette
+ * AVANT de taper son message, alors qu'elle ne changeait rien : ni tri, ni
+ * filtre, ni notification, ni rappel — juste une pastille de plus en tête de
+ * message, et une décision à prendre pour dire « on répète jeudi ? ». Un
+ * groupe de deux musiciens n'a pas besoin d'un classeur.
+ *
+ * Ce qui NE change PAS : le type reste dans la donnée (`BandMessage.kind`) et
+ * les messages DÉJÀ envoyés gardent leur pastille — 🥁 et 🎤 continuent donc
+ * de s'afficher dans l'historique du groupe. On retire un choix à faire, pas
+ * une donnée déjà écrite : la table est partagée avec les autres membres, qui
+ * ne mettront pas tous leur app à jour le même jour.
  */
-const KINDS: { kind: BandMessageKind; label: string; hint: string }[] = [
-  { kind: 'message', label: '💬 Discussion', hint: 'organisation, questions…' },
-  { kind: 'repet', label: '🥁 Répét', hint: 'proposer une date, un lieu' },
-  { kind: 'concert', label: '🎤 Concert', hint: 'plan, date, matériel' },
-];
 
 const BADGES: Record<BandMessageKind, string> = {
   message: '💬',
@@ -71,7 +75,6 @@ export function BandChat({ id }: { id: string }) {
   const [messages, setMessages] = useState<BandMessage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState('');
-  const [kind, setKind] = useState<BandMessageKind>('message');
   const [busy, setBusy] = useState(false);
   const [pickOpen, setPickOpen] = useState(false);
   const [myId, setMyId] = useState('');
@@ -141,11 +144,10 @@ export function BandChat({ id }: { id: string }) {
       if (!s) throw new Error(t('Connexion requise.'));
       await postBandMessage(s, cloudIdRef.current, {
         author,
-        kind,
+        kind: 'message',
         text: text.trim(),
       });
       setText('');
-      setKind('message');
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("L'envoi a échoué."));
@@ -318,28 +320,10 @@ export function BandChat({ id }: { id: string }) {
         >
           🎵 {t('Proposer un morceau de mon répertoire')}
         </button>
-        <div className="chips" style={{ marginBottom: 8 }}>
-          {KINDS.map((k) => (
-            <button
-              key={k.kind}
-              className={`chip ${kind === k.kind ? '' : 'off'}`}
-              title={t(k.hint)}
-              onClick={() => setKind(k.kind)}
-            >
-              {t(k.label)}
-            </button>
-          ))}
-        </div>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={
-            kind === 'repet'
-              ? t('Ex. Répét jeudi 20h chez Marco ?')
-              : kind === 'concert'
-                ? t('Ex. Fête de la musique — on répond avant vendredi ?')
-                : t('Ton message au groupe…')
-          }
+          placeholder={t('Ton message au groupe…')}
           style={{ minHeight: 70 }}
         />
         <button
