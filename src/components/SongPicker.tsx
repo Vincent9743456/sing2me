@@ -337,7 +337,13 @@ export function SongCollector({
         <h2>{title}</h2>
         <input
           type="text"
-          autoFocus
+          /* PAS d'autoFocus (b269, constat de Vincent : « l'apparition de
+             l'écran bloque tout »). On vient ici pour VOIR son répertoire et
+             cocher des morceaux ; le clavier s'ouvrait pourtant tout seul et
+             recouvrait la liste — il ne restait que trois lignes visibles,
+             et le bouton d'ajout partait sous les touches. La recherche
+             sert quand la liste est longue : c'est un geste, pas un
+             préalable. Même raison qu'en b152 pour la modale de note. */
           placeholder={t('Rechercher un titre, un artiste…')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
