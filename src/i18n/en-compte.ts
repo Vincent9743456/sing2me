@@ -97,6 +97,7 @@ export const EN_COMPTE: Record<string, string> = {
   'Recherche de la meilleure version…': 'Searching for the best version…',
   'Rejoindre 📡': 'Join 📡',
   'Remplacer ma partition actuelle': 'Replace my current sheet',
+  '✓ Lien renvoyé': '✓ Link sent again',
   'Renvoyer le lien': 'Resend the link',
   'Republier ma fiche': 'Republish my page',
   'Récupération de la partition…': 'Fetching the sheet…',
