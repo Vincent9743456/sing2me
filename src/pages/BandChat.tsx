@@ -457,7 +457,7 @@ function ChezMoi({ text, bandId }: { text: string; bandId: string }) {
   if (!mien) {
     return (
       <div className="help" style={{ marginTop: 4 }}>
-        {t('Ajoutée au répertoire du groupe — elle arrivera dans tes Idées.')}
+        {t('Ajoutée au répertoire du groupe — elle arrivera dans tes propositions.')}
       </div>
     );
   }
@@ -466,7 +466,7 @@ function ChezMoi({ text, bandId }: { text: string; bandId: string }) {
     <div style={{ marginTop: 4 }}>
       <div className="help">
         {mien.idea === true
-          ? t('Ajoutée au répertoire du groupe — elle t’attend dans tes Idées.')
+          ? t('Ajoutée au répertoire du groupe — elle t’attend dans tes propositions.')
           : surMonMorceau
             ? t(
                 'Ajoutée au répertoire du groupe — tu avais déjà ce morceau : c’est une version de plus dessus.',

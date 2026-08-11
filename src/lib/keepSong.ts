@@ -1,6 +1,6 @@
 /**
  * « Garder ce morceau » (bœuf, multi-live b121) : copie PERSONNELLE du
- * morceau diffusé, ajoutée en « Idée » — jamais partagée ni synchronisée
+ * morceau diffusé, déposée dans les PROPOSITIONS — jamais partagée ni synchronisée
  * vers un groupe. Module APP SEULEMENT : il touche au store et au modèle,
  * il ne doit JAMAIS être importé par l'entrée publique légère (budget
  * spectateur < 100 Ko). L'app l'injecte dans la page Live via la prop
@@ -42,7 +42,8 @@ export function makeKeepSong(store: {
         structure: [],
       })),
       idea: true,
+      keptAtJam: true,
     });
-    return 'Gardé dans tes Idées';
+    return 'Gardé dans tes propositions';
   };
 }

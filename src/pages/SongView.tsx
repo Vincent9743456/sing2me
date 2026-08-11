@@ -388,11 +388,11 @@ export function SongView({
             }}
           >
             <span style={{ flex: 1 }}>
-              💡 <strong>{t('Idée à travailler')}</strong>
+              📥 <strong>{t('Proposition à valider')}</strong>
               <br />
               <span className="help">
                 {t(
-                  'Jouable partout, mais pas encore validée dans ta bibliothèque.',
+                  'Jouable partout, mais pas encore entrée dans ta bibliothèque.',
                 )}
               </span>
             </span>

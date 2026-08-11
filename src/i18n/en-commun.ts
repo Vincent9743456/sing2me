@@ -63,7 +63,7 @@ export const EN_COMMUN: Record<string, string> = {
   Réinitialiser: 'Reset',
   'Choisis ce que tu veux effacer sur ce compte. C’est définitif — la suppression vaut aussi sur tes autres appareils.':
     'Choose what to erase on this account. This is permanent — the deletion also applies to your other devices.',
-  'Bibliothèque, idées et propositions. Les morceaux des répertoires de groupe reviendront en propositions 📥.':
+  'Bibliothèque et propositions. Les morceaux des répertoires de groupe reviendront en propositions 📥.':
     'Library, ideas and proposals. Songs from band repertoires will come back as proposals 📥.',
   'Toutes les setlists (solo et groupes), avec leur sono & scène.':
     'All setlists (solo and bands), with their sound & stage setup.',

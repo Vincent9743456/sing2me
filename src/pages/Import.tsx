@@ -440,7 +440,7 @@ export function Import() {
    * normal, et hérite du filet de sécurité (raison du doute) comme
    * n'importe quel import.
    */
-  function onImportMulti(asIdea: boolean) {
+  function onImportMulti() {
     if (!multi) return;
     let crees = 0;
     let doutes = 0;
@@ -448,7 +448,6 @@ export function Import() {
       const outcome = importText(d.text, d.title || 'Morceau importé');
       const song = outcome.song;
       if (d.title !== '') song.title = d.title;
-      if (asIdea) song.idea = true;
       const doute = raisonDeVerifier(d.text, outcome);
       if (doute !== '') {
         song.needsCheck = { reason: doute };
@@ -475,7 +474,7 @@ export function Import() {
     navigate('/');
   }
 
-  function onImport(asIdea: boolean) {
+  function onImport() {
     if (text.trim() === '' || !previewLocal) return;
     // La mise en forme de l'IA est retenue par défaut (b220) ; en cas de
     // gros doute, la partition d'AVANT est gardée avec le morceau pour
@@ -489,21 +488,20 @@ export function Import() {
     );
     if (title.trim() !== '') song.title = title.trim();
     if (artist.trim() !== '') song.artist = artist.trim();
-    if (asIdea) song.idea = true;
     // Détection de doublon (titre / artiste / paroles) : si le morceau
     // existe déjà — Idée comprise (b132) — on l'ajoute comme NOUVELLE
     // VERSION plutôt que de créer un doublon dans la bibliothèque.
     const twin = findSameSong(songs, song.title, song.lyrics, song.artist);
     if (twin) {
       let merged = addSongAsVersion(twin, song, 'Version importée');
-      // « Ajouter à ma bibliothèque » sur un jumeau resté en Idée : le
-      // geste vaut validation — l'idée entre dans la bibliothèque.
-      const validated = !asIdea && merged.idea === true;
+      // Importer un morceau qui n'était encore qu'une PROPOSITION vaut
+      // validation : on l'a réimporté, donc on le joue (b274).
+      const validated = merged.idea === true;
       if (validated) merged = { ...merged, idea: false };
       saveSong(merged);
       toast.show(
         t('Ajouté comme nouvelle version de « {title} »', { title: twin.title }) +
-          (validated ? t(' — idée validée ✓') : ''),
+          (validated ? t(' — proposition validée ✓') : ''),
       );
       navigate(`/song/${merged.id}`);
       return;
@@ -584,7 +582,7 @@ export function Import() {
   }
 
   /** Import en masse : fichiers puis liens, ajoutés à la chaîne. */
-  async function onBulkImport(asIdea: boolean) {
+  async function onBulkImport() {
     if (bulkTotal === 0 || bulkRunning) return;
     setError(null);
     bulkCancel.current = false;
@@ -802,7 +800,6 @@ export function Import() {
             }
           }
         } else {
-          if (asIdea) song.idea = true;
           // Filet : la raison du doute reste sur le morceau, pour qu'il se
           // retrouve d'un geste dans « à vérifier ».
           const doute = raisonDeVerifier(raw, res);
@@ -999,14 +996,14 @@ export function Import() {
             {duplicate && (
               <div style={{ marginTop: 8 }}>
                 {t('ℹ Tu as déjà « {title} »', { title: duplicate.title })}
-                {duplicate.idea === true ? t(' (dans tes idées)') : ''}
+                {duplicate.idea === true ? t(' (en proposition)') : ''}
                 {t(' : cet import le rejoindra comme nouvelle version — aucun doublon.')}
               </div>
             )}
           </div>
         )}
         {/* Aperçu de la partition telle qu'elle sera enregistrée : on la
-            montre AVANT de l'ajouter à la bibliothèque ou aux idées. */}
+            montre AVANT de l'ajouter à la bibliothèque. */}
         {preview && preview.song.lyrics.trim() !== '' && (
           <div className="card importpreview">
             <div className="help" style={{ marginBottom: 6 }}>
@@ -1082,25 +1079,16 @@ export function Import() {
             <div className="spacer" />
           </>
         )}
-        <button
-          className="btn ghost block"
-          onClick={() => onImport(true)}
-          disabled={text.trim() === ''}
-          title={t('Jouable tout de suite, mais rangé dans les idées à travailler')}
-        >
-          {t('Garder comme idée — à travailler avant validation')}
-        </button>
-        <p className="help" style={{ textAlign: 'center' }}>
-          {t(
-            "Une « idée » est jouable immédiatement (concert, demande du public…) mais reste dans ta réserve jusqu'à ce que tu la valides dans la bibliothèque.",
-          )}
-        </p>
+        {/* L'option « garder comme idée » a disparu (b274, arbitrage de
+            Vincent). Un morceau qu'on importe, on l'importe : il entre dans
+            la bibliothèque. Ce qui reste en attente d'une décision vient du
+            DEHORS — un groupe, un bœuf — et rien d'autre. */}
         {/* Action principale COLLANTE : visible même en défilant la longue
             partition (elle se cale au-dessus de la barre d'onglets). */}
         <div className="stickyaction">
           <button
             className="btn block"
-            onClick={() => onImport(false)}
+            onClick={() => onImport()}
             disabled={text.trim() === ''}
           >
             {t('Ajouter à ma bibliothèque')}
@@ -1247,7 +1235,7 @@ export function Import() {
               {multi.songs.length > 8 ? ' …' : ''}
             </p>
             <div className="rowactions" style={{ flexWrap: 'wrap' }}>
-              <button className="btn" onClick={() => onImportMulti(false)}>
+              <button className="btn" onClick={() => onImportMulti()}>
                 {t('Créer {n} morceaux', { n: multi.songs.length })}
               </button>
               <button
@@ -1442,19 +1430,11 @@ export function Import() {
               <>
                 <button
                   className="btn block"
-                  onClick={() => void onBulkImport(false)}
+                  onClick={() => void onBulkImport()}
                   disabled={bulkTotal === 0}
                 >
                   {t('Tout ajouter à ma bibliothèque')}
                   {bulkTotal > 0 ? ` (${bulkTotal})` : ''}
-                </button>
-                <div className="spacer" />
-                <button
-                  className="btn ghost block"
-                  onClick={() => void onBulkImport(true)}
-                  disabled={bulkTotal === 0}
-                >
-                  {t('Tout garder comme idées — à travailler')}
                 </button>
               </>
             ) : (
@@ -1594,7 +1574,7 @@ export function Import() {
                   </button>
                   <p className="help">
                     {t(
-                      'Chaque morceau garde son titre, son artiste et son statut (bibliothèque ou idée). Les partitions où la mise en forme laisse un doute sont marquées « à vérifier » : tu les retrouves d’un geste dans ta bibliothèque, avec la possibilité de revenir à la version d’origine.',
+                      'Chaque morceau garde son titre et son artiste. Les partitions où la mise en forme laisse un doute sont marquées « à vérifier » : tu les retrouves d’un geste dans ta bibliothèque, avec la possibilité de revenir à la version d’origine.',
                     )}
                   </p>
                 </>

@@ -814,7 +814,7 @@ export function Library() {
           <>
             <div className="spacer" />
             {/* Rangée 1 — VUES particulières (état des morceaux) :
-                tout / propositions / nouveautés / idées. */}
+                tout / répertoires de groupe / nouveautés / propositions. */}
             <div className="chips filterchips scrollrow">
               <button
                 className={`chip ${bandFilter === null && !showIdeas && !showNew ? '' : 'off'}`}
@@ -829,7 +829,7 @@ export function Library() {
               </button>
               {/* La puce « 📥 Propositions » a été retirée (b203, décision
                   Vincent : « Proposition n'est pas utile »). Elle doublait
-                  les Idées, où les propositions vivent depuis b174 — et
+                  les propositions, où elles vivent depuis b174 — et
                   elles apparaissent maintenant dans le répertoire du groupe
                   qui les a proposées, là où on les cherche vraiment. */}
               {newCount > 0 && (
@@ -862,12 +862,12 @@ export function Library() {
                   {t('🔎 À vérifier ({n})', { n: checkCount })}
                 </button>
               )}
-              {/* La puce « 💡 Idées » a QUITTÉ ce pli (b225, demande de
+              {/* La puce « 📥 Propositions » a QUITTÉ ce pli (b225, demande de
                   Vincent) : elle est le seul filtre qui CACHE des morceaux —
-                  une idée n'apparaît nulle part ailleurs. La ranger derrière
+                  une proposition n'apparaît nulle part ailleurs. La ranger derrière
                   « Filtrer » revenait à masquer une partie de la
                   bibliothèque sans le dire. Elle vit maintenant au-dessus de
-                  la liste, et seulement quand il y a des idées. */}
+                  la liste, et seulement quand il y en a. */}
             </div>
             {/* Rangée 2 — RÉPERTOIRES (identification par groupe / solo) :
                 fonction différente, rendue évidente par le libellé et la
@@ -987,13 +987,13 @@ export function Library() {
           </>
         )}
         </div>
-        {/* 💡 IDÉES — À L'ÉCRAN, PAS DERRIÈRE « FILTRER » (b225, demande de
-            Vincent). C'est le seul filtre qui CACHE des morceaux : une idée
-            n'apparaît nulle part ailleurs dans la bibliothèque. La ranger
-            dans un pli, c'était masquer une partie du répertoire sans le
-            dire — et obliger à deux gestes pour retrouver ce qu'on vient
-            d'importer. Le bouton n'existe QUE s'il y a des idées : l'écran
-            reste « recherche + liste » pour tous les autres. */}
+        {/* 📥 PROPOSITIONS — À L'ÉCRAN, PAS DERRIÈRE « FILTRER » (b225,
+            demande de Vincent ; renommé en b274). C'est le seul filtre qui
+            CACHE des morceaux : une proposition n'apparaît nulle part
+            ailleurs dans la bibliothèque. La ranger dans un pli, c'était
+            masquer une partie du répertoire sans le dire. Le bouton n'existe
+            QUE s'il y en a : l'écran reste « recherche + liste » pour tous
+            les autres. */}
         {ideaCount > 0 && (
           /* De l'air en dessous (b241, constat de Vincent : « ils sont
              collés, ce n'est pas joli ») : cette rangée sort de la barre
@@ -1009,7 +1009,7 @@ export function Library() {
               className={`chip ${showIdeas ? '' : 'off'}`}
               aria-pressed={showIdeas}
               title={t(
-                'Morceaux importés non encore validés — réserve à travailler',
+                'Ce qu’un groupe te propose, et ce que tu as gardé à un bœuf',
               )}
               onClick={() => {
                 setShowIdeas(!showIdeas);
@@ -1018,7 +1018,7 @@ export function Library() {
                 setShowCheck(false);
               }}
             >
-              {t('💡 Idées ({n})', { n: ideaCount })}
+              {t('📥 Propositions ({n})', { n: ideaCount })}
             </button>
             {showIdeas && (
               <button
@@ -1035,7 +1035,7 @@ export function Library() {
         {showIdeas && (
           <p className="help" style={{ margin: '6px 0 0' }}>
             {t(
-              'Réserve à travailler : jouables partout, mais pas encore validées dans la bibliothèque — ouvre un morceau pour le valider ✓ ou le supprimer.',
+              'Ce qu’on te propose : le répertoire d’un groupe, ou un morceau gardé à un bœuf. Jouables partout — ouvre-en un pour l’accepter ✓ ou l’écarter.',
             )}
           </p>
         )}

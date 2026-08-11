@@ -50,7 +50,7 @@ const RESET_CHOICES: {
     key: 'songs',
     label: 'Morceaux',
     detail:
-      'Bibliothèque, idées et propositions. Les morceaux des répertoires de groupe reviendront en propositions 📥.',
+      'Bibliothèque et propositions. Les morceaux des répertoires de groupe reviendront en propositions 📥.',
   },
   {
     key: 'setlists',
@@ -470,7 +470,7 @@ export function Settings() {
             <h2 className="pagetitle">{t('Reprendre mes partitions')}</h2>
             <p className="help" style={{ marginTop: 0 }}>
               {t(
-                'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs, setlists et idées restent tels quels.',
+                'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs et setlists restent tels quels.',
               )}
             </p>
             {bilan.accords > 0 && (

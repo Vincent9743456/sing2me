@@ -161,7 +161,7 @@ export const EN_COMPTE: Record<string, string> = {
 
   // Settings.tsx — reprendre mes partitions (b220)
   'Reprendre mes partitions': 'Redo my charts',
-  'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs, setlists et idées restent tels quels.':
+  'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs et setlists restent tels quels.':
     'Apply to your library what importing now does on its own. Nothing else is touched: titles, artists, notes, hearts, setlists and ideas stay as they are.',
   '🎯 Recaler les accords sur les mots': '🎯 Snap chords back onto words',
   '1 accord tombe au milieu d’un mot — gratuit et hors ligne':

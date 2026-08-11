@@ -132,11 +132,29 @@ export interface Song {
    */
   mySetup?: { instrument: string; notes: string };
   /**
-   * true = « idée » : morceau importé mais pas encore validé dans la
-   * bibliothèque (réserve à travailler — ex. partition récupérée en plein
-   * concert à la demande du public). Jouable partout ; validé d'un clic.
+   * true = PROPOSITION en attente de validation (b274, arbitrage de Vincent :
+   * « on abandonne le concept d'idée à tous les niveaux »).
+   *
+   * Le mot recouvrait deux choses sans rapport : une boîte de réception (ce
+   * qui arrive du dehors et attend une décision — avec ses boutons, sa
+   * pastille, sa fin) et une étagère personnelle (« à travailler »), qui
+   * n'avait, elle, aucune fin. La pastille comptait donc « 3 choses à
+   * traiter » ET « 12 morceaux que je jouerai peut-être un jour ».
+   *
+   * Il ne reste que la boîte, et elle n'a que DEUX entrées : le répertoire
+   * d'un groupe (`pendingBandId`) et un morceau gardé à un bœuf
+   * (`keptAtJam`). Rien d'autre ne peut poser ce drapeau.
+   *
+   * Le CHAMP garde son nom : il vit dans le localStorage de tous les
+   * utilisateurs installés, et une clé de stockage ne se renomme jamais.
    */
   idea?: boolean;
+  /**
+   * Copie personnelle rapportée d'un bœuf (b110). Marque l'autre entrée de
+   * la boîte de réception : sans elle, on ne saurait pas la distinguer d'une
+   * ancienne « idée » personnelle au moment de la migration.
+   */
+  keptAtJam?: boolean;
   /**
    * Proposition de groupe en attente d'acceptation. Quand un autre membre
    * ajoute un morceau au répertoire du groupe, il arrive chez moi marqué
