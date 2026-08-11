@@ -20,7 +20,9 @@
  * le capo. Titre, artiste, notes de répétition, cœurs, setlists, statut
  * (idée ou bibliothèque) : rien n'y touche.
  */
+import { meritteUneMiseEnForme } from './aiFormat';
 import { accordsARecaler, recalerAccordsEnLigne } from './importer';
+import { sectionDeLaLigne } from './sections';
 import { Song, SongVersion } from '../types';
 
 /** Combien d'accords ce morceau (toutes versions) a-t-il à recaler ? */
@@ -51,6 +53,51 @@ export function bilanRecalage(songs: Song[]): BilanRecalage {
     }
   }
   return { morceaux, accords };
+}
+
+/**
+ * QUI GAGNERAIT À UNE MISE EN FORME ? (b265, question de Vincent : « ces
+ * boutons ne valent que pour les morceaux importés avant la mise à jour ?
+ * ils disparaissent après ? »)
+ *
+ * Le bouton du recalage savait déjà se taire — il compte un défaut RÉEL, et
+ * annonce « rien à corriger » quand il n'y a rien. Celui de l'IA, lui,
+ * affichait la même phrase pour tout le monde, y compris un compte neuf qui
+ * n'a rien importé, et repassait TOUS les morceaux à chaque lancement — au
+ * prix d'appels payants et de « à vérifier » reposés sur des partitions déjà
+ * saines.
+ *
+ * On a d'abord pensé MARQUER les morceaux déjà remis en forme. Mauvaise
+ * piste : rien n'est écrit sur les bibliothèques existantes, donc le compteur
+ * serait parti sur un mensonge (« tout est à refaire ») ou sur une amnistie
+ * générale (« tout est fait »), au choix. On compte donc ce qui se VOIT,
+ * comme le recalage : une partition qu'aucune section ne découpe. C'est
+ * exactement le travail de cette passe — « retrouver les sections d'une
+ * partition qui n'en portait aucune marque » —, ça se recalcule à chaque
+ * affichage, et ça retombe tout seul à zéro une fois le travail fait.
+ *
+ * Lecture EXIGEANTE des sections (`sectionDeLaLigne`), la même qu'à
+ * l'affichage : un « Refrain » nu, que l'écran ne montre pas comme un titre,
+ * laisse bien le musicien devant un pavé continu — donc il compte.
+ */
+
+/** En dessous, il n'y a rien à découper : c'est un couplet, pas un morceau. */
+export const LIGNES_MINIMUM = 8;
+
+export function meriteDesSections(lyrics: string): boolean {
+  const texte = lyrics ?? '';
+  if (!meritteUneMiseEnForme(texte)) return false;
+  let utiles = 0;
+  for (const ligne of texte.split('\n')) {
+    if (sectionDeLaLigne(ligne) !== null) return false;
+    if (ligne.trim() !== '') utiles++;
+  }
+  return utiles >= LIGNES_MINIMUM;
+}
+
+/** Les morceaux que la mise en forme IA a une raison de reprendre. */
+export function aRemettreEnForme(songs: Song[]): Song[] {
+  return songs.filter((s) => meriteDesSections(s.lyrics));
 }
 
 /**
