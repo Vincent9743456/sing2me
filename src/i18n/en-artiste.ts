@@ -227,6 +227,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'Mode Live': 'Live mode',
   'Mode scène': 'Stage mode',
   'Modifier': 'Edit',
+  'Photo, nom, présentation, liens, adresse publique':
+    'Photo, name, bio, links, public address',
   'Modifier le groupe': 'Edit the band',
   'Modifier le groupe (photo, nom…)': 'Edit the band (photo, name…)',
   'Moi': 'Me',
