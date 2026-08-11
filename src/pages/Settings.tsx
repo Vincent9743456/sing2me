@@ -18,9 +18,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAccount } from '../components/Account';
 import { DeleteAccount } from '../components/DeleteAccount';
 import { ConfirmSheet, useToast } from '../components/Feedback';
-import { fusionMiseEnForme, meritteUneMiseEnForme } from '../lib/aiFormat';
+import { fusionMiseEnForme } from '../lib/aiFormat';
 import { importText } from '../lib/importer';
-import { bilanRecalage, recalerMorceau } from '../lib/reprise';
+import { aRemettreEnForme, bilanRecalage, recalerMorceau } from '../lib/reprise';
 import { aiCleanText } from '../lib/ug';
 import { Icon } from '../components/Icon';
 import { AccordionNav, ProgressBar, TopBar } from '../components/ui';
@@ -155,6 +155,13 @@ export function Settings() {
   const [demandeIA, setDemandeIA] = useState(false);
   const arretReprise = useRef(false);
   const bilan = bilanRecalage(songs);
+  /**
+   * Les deux compteurs se calculent AU RENDU, sur la vraie bibliothèque
+   * (b265) : un bouton annonce donc exactement ce qu'il fera, et s'efface
+   * quand il n'a plus rien à faire — un compte neuf ne voit pas cette
+   * section du tout, elle réapparaît le jour où elle sert.
+   */
+  const aRemettre = aRemettreEnForme(songs);
 
   /**
    * Passe 1 — le recalage. Du calcul pur : instantané, hors ligne, sans un
@@ -188,7 +195,10 @@ export function Settings() {
     setDemandeIA(false);
     arretReprise.current = false;
     setRepriseEnCours(true);
-    const liste = songs.filter((s) => meritteUneMiseEnForme(s.lyrics));
+    // EXACTEMENT la liste annoncée par le bouton (b265) : avant, la passe
+    // repassait toute la bibliothèque, donc elle coûtait des appels payants
+    // sur des partitions saines et pouvait leur reposer un « à vérifier ».
+    const liste = aRemettre;
     let done = 0;
     let doutes = 0;
     setRepriseIA({ done, total: liste.length, doutes });
@@ -449,68 +459,86 @@ export function Settings() {
           )}
         </p>
 
-        <div className="spacer" />
-        <h2 className="pagetitle">{t('Reprendre mes partitions')}</h2>
-        <p className="help" style={{ marginTop: 0 }}>
-          {t(
-            'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs, setlists et idées restent tels quels.',
-          )}
-        </p>
-        <AccordionNav
-          title={t('🎯 Recaler les accords sur les mots')}
-          sub={
-            bilan.accords === 0
-              ? t('Rien à corriger — tes accords sont déjà bien posés')
-              : bilan.accords === 1
-                ? t('1 accord tombe au milieu d’un mot — gratuit et hors ligne')
-                : bilan.morceaux === 1
-                  ? t(
-                      '{a} accords tombent au milieu d’un mot, dans 1 morceau — gratuit et hors ligne',
-                      { a: bilan.accords },
-                    )
-                  : t(
-                      '{a} accords tombent au milieu d’un mot, dans {m} morceaux — gratuit et hors ligne',
-                      { a: bilan.accords, m: bilan.morceaux },
-                    )
-          }
-          onClick={() => {
-            if (bilan.accords > 0) recalerTout();
-          }}
-        />
-        <AccordionNav
-          title={t('✨ Remettre en forme à l’IA')}
-          sub={t(
-            'Comme si tu réimportais chaque morceau : sections nommées, mise en page reprise',
-          )}
-          onClick={() => setDemandeIA(true)}
-        />
-        {repriseIA && (
-          <ProgressBar
-            done={repriseIA.done}
-            total={repriseIA.total}
-            label={
-              repriseEnCours ? t('Reprise en cours') : t('Reprise terminée')
-            }
-          />
-        )}
-        {repriseEnCours && (
-          <button
-            className="btn ghost block"
-            onClick={() => {
-              arretReprise.current = true;
-            }}
-          >
-            {t('Arrêter la reprise')}
-          </button>
-        )}
-        {repriseIA !== null && !repriseEnCours && repriseIA.doutes > 0 && (
-          <p className="help" style={{ color: 'var(--warn)' }}>
-            🔎{' '}
-            {t(
-              '{n} partitions sont marquées « à vérifier » : retrouve-les dans tes morceaux, avec le choix de revenir à la version d’origine.',
-              { n: repriseIA.doutes },
+        {/* SECTION QUI SE LÈVE TOUTE SEULE (b265) : elle n'apparaît que
+            s'il y a réellement quelque chose à reprendre — ou tant qu'une
+            reprise est en cours / vient de finir, sinon sa barre de
+            progression disparaîtrait sous les yeux au moment où le compteur
+            retombe à zéro. */}
+        {(bilan.accords > 0 || aRemettre.length > 0 || repriseIA !== null) && (
+          <>
+            <div className="spacer" />
+            <h2 className="pagetitle">{t('Reprendre mes partitions')}</h2>
+            <p className="help" style={{ marginTop: 0 }}>
+              {t(
+                'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs, setlists et idées restent tels quels.',
+              )}
+            </p>
+            {bilan.accords > 0 && (
+              <AccordionNav
+                title={t('🎯 Recaler les accords sur les mots')}
+                sub={
+                  bilan.accords === 1
+                    ? t(
+                        '1 accord tombe au milieu d’un mot — gratuit et hors ligne',
+                      )
+                    : bilan.morceaux === 1
+                      ? t(
+                          '{a} accords tombent au milieu d’un mot, dans 1 morceau — gratuit et hors ligne',
+                          { a: bilan.accords },
+                        )
+                      : t(
+                          '{a} accords tombent au milieu d’un mot, dans {m} morceaux — gratuit et hors ligne',
+                          { a: bilan.accords, m: bilan.morceaux },
+                        )
+                }
+                onClick={recalerTout}
+              />
             )}
-          </p>
+            {aRemettre.length > 0 && (
+              <AccordionNav
+                title={t('✨ Remettre en forme à l’IA')}
+                sub={
+                  aRemettre.length === 1
+                    ? t(
+                        '1 partition n’a aucune section repérée — l’IA retrouve couplets et refrains',
+                      )
+                    : t(
+                        '{n} partitions n’ont aucune section repérée — l’IA retrouve couplets et refrains',
+                        { n: aRemettre.length },
+                      )
+                }
+                onClick={() => setDemandeIA(true)}
+              />
+            )}
+            {repriseIA && (
+              <ProgressBar
+                done={repriseIA.done}
+                total={repriseIA.total}
+                label={
+                  repriseEnCours ? t('Reprise en cours') : t('Reprise terminée')
+                }
+              />
+            )}
+            {repriseEnCours && (
+              <button
+                className="btn ghost block"
+                onClick={() => {
+                  arretReprise.current = true;
+                }}
+              >
+                {t('Arrêter la reprise')}
+              </button>
+            )}
+            {repriseIA !== null && !repriseEnCours && repriseIA.doutes > 0 && (
+              <p className="help" style={{ color: 'var(--warn)' }}>
+                🔎{' '}
+                {t(
+                  '{n} partitions sont marquées « à vérifier » : retrouve-les dans tes morceaux, avec le choix de revenir à la version d’origine.',
+                  { n: repriseIA.doutes },
+                )}
+              </p>
+            )}
+          </>
         )}
 
         <div className="spacer" />
@@ -753,11 +781,25 @@ export function Settings() {
       )}
       {demandeIA && (
         <ConfirmSheet
-          title={t('Remettre en forme toute la bibliothèque ?')}
+          /* Le compte annoncé ici est CELUI qui sera traité (b265) : la
+             feuille disait « toute la bibliothèque » et affichait le nombre
+             total de morceaux, alors que la passe en filtrait déjà une
+             partie. On promet ce qu'on fait, y compris dans le bouton. */
+          title={
+            aRemettre.length === 1
+              ? t('Remettre en forme 1 partition ?')
+              : t('Remettre en forme {n} partitions ?', {
+                  n: aRemettre.length,
+                })
+          }
           message={t(
-            'Chaque morceau repasse par l’IA, un par un. Tu peux arrêter en cours de route : ce qui est repris reste repris. Quand la mise en forme laisse un doute, le morceau est marqué « à vérifier » et tu pourras revenir à sa version d’origine.',
+            'Seules les partitions qu’aucune section ne découpe sont reprises, une par une. Tu peux arrêter en cours de route : ce qui est repris reste repris. Quand la mise en forme laisse un doute, le morceau est marqué « à vérifier » et tu pourras revenir à sa version d’origine.',
           )}
-          confirmLabel={t('Reprendre les {n} morceaux', { n: songs.length })}
+          confirmLabel={
+            aRemettre.length === 1
+              ? t('Reprendre 1 morceau')
+              : t('Reprendre les {n} morceaux', { n: aRemettre.length })
+          }
           onConfirm={() => void reprendreALIA()}
           onClose={() => setDemandeIA(false)}
         />

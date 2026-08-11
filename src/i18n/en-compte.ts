@@ -165,8 +165,6 @@ export const EN_COMPTE: Record<string, string> = {
   'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs, setlists et idées restent tels quels.':
     'Apply to your library what importing now does on its own. Nothing else is touched: titles, artists, notes, hearts, setlists and ideas stay as they are.',
   '🎯 Recaler les accords sur les mots': '🎯 Snap chords back onto words',
-  'Rien à corriger — tes accords sont déjà bien posés':
-    'Nothing to fix — your chords already sit right',
   '1 accord tombe au milieu d’un mot — gratuit et hors ligne':
     '1 chord lands inside a word — free and offline',
   '{a} accords tombent au milieu d’un mot, dans 1 morceau — gratuit et hors ligne':
@@ -175,16 +173,20 @@ export const EN_COMPTE: Record<string, string> = {
   '{a} accords tombent au milieu d’un mot, dans {m} morceaux — gratuit et hors ligne':
     '{a} chords land inside a word, across {m} songs — free and offline',
   '✨ Remettre en forme à l’IA': '✨ Reformat with AI',
-  'Comme si tu réimportais chaque morceau : sections nommées, mise en page reprise':
-    'As if you re-imported every song: sections named, layout redone',
+  '1 partition n’a aucune section repérée — l’IA retrouve couplets et refrains':
+    '1 chart has no section marked — the AI finds verses and choruses',
+  '{n} partitions n’ont aucune section repérée — l’IA retrouve couplets et refrains':
+    '{n} charts have no section marked — the AI finds verses and choruses',
   'Reprise en cours': 'Redoing',
   'Reprise terminée': 'Redo done',
   'Arrêter la reprise': 'Stop',
   '{n} partitions sont marquées « à vérifier » : retrouve-les dans tes morceaux, avec le choix de revenir à la version d’origine.':
     '{n} charts are flagged “needs a check”: find them in your songs, with the option to go back to the original version.',
-  'Remettre en forme toute la bibliothèque ?': 'Reformat the whole library?',
-  'Chaque morceau repasse par l’IA, un par un. Tu peux arrêter en cours de route : ce qui est repris reste repris. Quand la mise en forme laisse un doute, le morceau est marqué « à vérifier » et tu pourras revenir à sa version d’origine.':
-    'Every song goes through the AI, one by one. You can stop along the way: what is done stays done. When the formatting leaves a doubt, the song is flagged “needs a check” and you can go back to its original version.',
+  'Remettre en forme 1 partition ?': 'Reformat 1 chart?',
+  'Remettre en forme {n} partitions ?': 'Reformat {n} charts?',
+  'Seules les partitions qu’aucune section ne découpe sont reprises, une par une. Tu peux arrêter en cours de route : ce qui est repris reste repris. Quand la mise en forme laisse un doute, le morceau est marqué « à vérifier » et tu pourras revenir à sa version d’origine.':
+    'Only the charts that no section breaks up are redone, one by one. You can stop along the way: what is done stays done. When the formatting leaves a doubt, the song is flagged “needs a check” and you can go back to its original version.',
+  'Reprendre 1 morceau': 'Redo 1 song',
   'Reprendre les {n} morceaux': 'Redo all {n} songs',
   '{n} partitions corrigées.': '{n} charts fixed.',
   '{n} partition corrigée.': '{n} chart fixed.',
