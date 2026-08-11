@@ -811,6 +811,8 @@ export function AccountSection() {
   const [sent, setSent] = useState(false);
   // Code de connexion (app installée : le lien ouvre Safari, pas l'app).
   const [code, setCode] = useState('');
+  /** Confirmation d'un renvoi (b277) : sans elle, le bouton ne dit rien. */
+  const [renvoye, setRenvoye] = useState(false);
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   /**
@@ -998,13 +1000,26 @@ export function AccountSection() {
               disabled={busy}
               onClick={() => {
                 setBusy(true);
+                setLocalError(null);
+                setRenvoye(false);
                 account
                   .sendMagicLink(email.trim())
-                  .catch(() => undefined)
+                  .then(() => setRenvoye(true))
+                  // UN RENVOI MUET NE SERT À RIEN (b277, constat de Vincent :
+                  // « je n'ai pas reçu de magic link »). Ce bouton avalait
+                  // TOUTES les erreurs : plafond d'envoi atteint, adresse
+                  // refusée, service d'e-mail non configuré — on ne voyait
+                  // rien, et on attendait un message qui n'était jamais parti.
+                  // Le premier envoi, lui, disait déjà la vérité.
+                  .catch((e: unknown) =>
+                    setLocalError(
+                      e instanceof Error ? e.message : t("L'envoi a échoué."),
+                    ),
+                  )
                   .finally(() => setBusy(false));
               }}
             >
-              {t('Renvoyer le lien')}
+              {busy ? '…' : renvoye ? t('✓ Lien renvoyé') : t('Renvoyer le lien')}
             </button>
             <button
               className="btn ghost small"
