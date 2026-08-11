@@ -19,7 +19,11 @@ import React, { useEffect, useState } from 'react';
 
 import { PublicPagePeek } from './PublicPagePeek';
 import { getValidSession } from '../lib/auth';
-import { fetchBandPageName, publierFicheGroupe } from '../lib/publicPages';
+import {
+  ensureBandPage,
+  fetchBandPageName,
+  publierFicheGroupe,
+} from '../lib/publicPages';
 import { useStore } from '../store';
 import { t } from '../i18n';
 import { Band } from '../types';
@@ -37,7 +41,15 @@ export function BandPublicPeek({
   useEffect(() => {
     let annule = false;
     void (async () => {
-      const nom = await fetchBandPageName(band.cloudId ?? '');
+      // L'adresse se crée toute seule d'après le nom du groupe (b271) : cet
+      // écran ne dit plus « pas encore d'adresse — le créateur peut lui en
+      // donner une », il la MONTRE. On lit d'abord (un membre voit l'adresse
+      // sans pouvoir la réserver), on ne réserve qu'à défaut.
+      let nom = await fetchBandPageName(band.cloudId ?? '');
+      if (nom === '' && band.owned === true && band.hiddenFromPublic !== true) {
+        const s = await getValidSession();
+        if (s) nom = await ensureBandPage(s, band);
+      }
       if (!annule) setAdresse(nom);
     })();
     return () => {
@@ -58,9 +70,13 @@ export function BandPublicPeek({
           ? t(
               'Ce groupe est masqué au public : il n’a pas d’adresse, et aucun direct ne peut être lancé à son nom. Retire le masquage depuis l’onglet Groupes pour lui en donner une.',
             )
-          : t(
-              'Ce groupe n’a pas encore d’adresse publique. Le créateur peut lui en donner une depuis « Modifier ».',
-            )
+          : band.owned === true
+            ? t(
+                'Le nom de ce groupe ne permet pas d’en tirer une adresse (il faut au moins 3 lettres ou chiffres). Donne-lui-en une depuis « Modifier ».',
+              )
+            : t(
+                'Ce groupe n’a pas encore d’adresse publique. Son créateur peut lui en donner une.',
+              )
       }
       onClose={onClose}
     />

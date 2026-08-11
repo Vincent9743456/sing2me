@@ -296,6 +296,44 @@ export async function monAdressePublique(): Promise<string> {
  * `parNom` dit par quel chemin on est passé — l'écran doit le DIRE, sans
  * quoi il appellerait « ta page » une page dont on n'est pas sûr.
  */
+/**
+ * L'ADRESSE DE L'ARTISTE, SANS ATTENDRE (b271, « idem pour la page artiste »).
+ *
+ * Elle était déjà dérivée du nom d'artiste (b136), mais seulement au moment
+ * d'ENREGISTRER son profil ou de passer en direct. Quelqu'un qui remplit son
+ * nom à l'inscription et ne rouvre jamais l'écran Artiste n'avait donc pas
+ * d'adresse — et pas de QR à donner.
+ *
+ * Appelée APRÈS la fusion de connexion, jamais avant (cicatrice b244 : une
+ * écriture automatique posée avant la fusion estampille un profil vide et
+ * part écraser le cloud). Et elle ne REPUBLIE rien quand l'adresse existe
+ * déjà : c'est une réservation, pas une sauvegarde.
+ */
+export async function reserverAdresseArtiste(
+  s: AuthSession,
+  artist: ArtistProfile,
+  bands: Band[],
+  masquee = false,
+): Promise<string> {
+  if (!publicPagesAvailable()) return '';
+  const cache = cachedPublicName();
+  if (cache !== '') return cache;
+  try {
+    const deja = (await fetchMyPublicName(s)) ?? '';
+    if (deja !== '') {
+      rememberPublicName(deja);
+      return deja;
+    }
+    if (normalizePublicName(artist.name ?? '') === '') return '';
+    return (
+      (await ensurePublicPage(s, await profilAPublier(artist, bands, masquee))) ??
+      ''
+    );
+  } catch {
+    return '';
+  }
+}
+
 export interface FichePubliee {
   page: PublicPage;
   parNom: boolean;
@@ -438,6 +476,60 @@ export async function fetchBandPageName(cloudId: string): Promise<string> {
  * politique RLS le vérifie côté base, on ne se contente pas d'un test
  * d'interface.
  */
+/**
+ * L'ADRESSE D'UN GROUPE SE CRÉE TOUTE SEULE (b271, demande de Vincent : « la
+ * page publique d'un groupe doit être créée automatiquement d'après le nom du
+ * groupe ; l'utilisateur peut la modifier après »).
+ *
+ * Exactement ce que `ensurePublicPage` fait déjà pour un artiste depuis b136 :
+ * on dérive l'adresse du nom, et si elle est prise on essaie « nom2 »,
+ * « nom3 »… Passé cinq essais on renonce — le créateur gardera la main dans
+ * la carte « Adresse publique du groupe ».
+ *
+ * Trois refus nets :
+ *  · un groupe MASQUÉ n'en reçoit pas (b227 : masquer retire l'adresse ; lui
+ *    en redonner une à la première synchro annulerait le masquage) ;
+ *  · seul le DÉTENTEUR réserve — la politique RLS refuserait de toute façon,
+ *    autant ne pas frapper à la porte ;
+ *  · un nom qui ne donne rien d'utilisable (« ID », « ♪ ») n'est pas déformé
+ *    pour entrer de force : on n'invente pas une adresse que personne ne
+ *    reconnaîtrait.
+ *
+ * Le cache ne retient que la PRÉSENCE d'une adresse, jamais son absence
+ * (règle de b245) : il évite de redemander au serveur à chaque synchro, et il
+ * ne peut pas faire conclure « pas d'adresse » à tort.
+ */
+const adressesDeGroupe = new Map<string, string>();
+
+export async function ensureBandPage(
+  s: AuthSession,
+  band: Band,
+): Promise<string> {
+  const cloudId = band.cloudId ?? '';
+  if (!publicPagesAvailable() || cloudId === '') return '';
+  const connue = adressesDeGroupe.get(cloudId);
+  if (connue !== undefined && connue !== '') return connue;
+  const existante = await fetchBandPageName(cloudId);
+  if (existante !== '') {
+    adressesDeGroupe.set(cloudId, existante);
+    return existante;
+  }
+  if (band.owned !== true || band.hiddenFromPublic === true) return '';
+  const base = normalizePublicName(band.name ?? '');
+  if (base === '' || publicNameError(base) !== null) return '';
+  for (let i = 0; i < 5; i++) {
+    const candidat = i === 0 ? base : `${base}${i + 1}`.slice(0, 30);
+    if (publicNameError(candidat) !== null) continue;
+    try {
+      await claimBandPage(s, cloudId, candidat);
+      return candidat;
+    } catch {
+      /* déjà pris (ou refusé) : on tente le suivant */
+    }
+  }
+  return '';
+}
+
 export async function claimBandPage(
   s: AuthSession,
   cloudId: string,
@@ -477,6 +569,7 @@ export async function claimBandPage(
           : `La réservation a échoué (${res.status}).`,
     );
   }
+  adressesDeGroupe.set(cloudId, name);
 }
 
 /**
@@ -489,6 +582,7 @@ export async function releaseBandPage(
   cloudId: string,
 ): Promise<void> {
   if (!publicPagesAvailable() || cloudId === '') return;
+  adressesDeGroupe.delete(cloudId);
   try {
     await fetch(
       `${sbUrl()}/rest/v1/band_pages?band_id=eq.${encodeURIComponent(cloudId)}`,
@@ -749,7 +843,9 @@ export async function publierFicheGroupe(
     return;
   }
   try {
-    if ((await fetchBandPageName(cloudId)) === '') return;
+    // Réserve l'adresse au passage si le groupe n'en a pas (b271) : publier
+    // une fiche qui n'a nulle part où vivre n'aurait aucun sens.
+    if ((await ensureBandPage(s, band)) === '') return;
     await fetch(
       `${sbUrl()}/rest/v1/band_pages?band_id=eq.${encodeURIComponent(cloudId)}`,
       {

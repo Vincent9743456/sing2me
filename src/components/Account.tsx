@@ -57,6 +57,10 @@ import {
 } from '../lib/bandSync';
 import { migrateSong } from '../lib/model';
 import {
+  ensureBandPage,
+  reserverAdresseArtiste,
+} from '../lib/publicPages';
+import {
   compteLocal,
   noterCompteLocal,
   oublierCachesDuCompte,
@@ -306,6 +310,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       for (const band of st.bands) {
         const cid = band.cloudId;
         if (!cid) continue;
+        // Adresse du groupe, dérivée de son nom (b271). Idempotente et
+        // mémorisée : un seul appel réseau par groupe et par lancement.
+        void ensureBandPage(valid, band).catch(() => {
+          /* jamais bloquant pour la synchro du répertoire */
+        });
         try {
           const cloudData = sanitizeBand(await pullBandLibrary(valid, cid));
           const removals = (st.bandRemovals ?? [])
@@ -473,6 +482,25 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             store.saveArtist({ ...apres.artist, name: donne });
           }
         }
+        /**
+         * ADRESSE PUBLIQUE, RÉSERVÉE TOUTE SEULE (b271, demande de Vincent).
+         * Après la fusion — jamais avant (cicatrice b244) — et seulement si
+         * ce compte n'en a pas déjà une : on ne republie rien ici, c'est une
+         * réservation, pas une sauvegarde.
+         */
+        void (async () => {
+          try {
+            const st = JSON.parse(stateRef.current) as SyncState;
+            await reserverAdresseArtiste(
+              valid,
+              st.artist,
+              st.bands,
+              st.prefs?.pagePubliqueMasquee === true,
+            );
+          } catch {
+            // sans adresse, la carte « Ton lien public » reste disponible
+          }
+        })();
         // Répertoires de groupes (étape 2b), après la bibliothèque perso
         void syncBands(valid);
         // Groupes cloud orphelins (supprimés localement, y compris avant que
