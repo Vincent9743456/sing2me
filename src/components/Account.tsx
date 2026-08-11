@@ -49,10 +49,12 @@ import {
 } from '../lib/bands';
 import {
   applyBandData,
+  appliquerIdentite,
   BandData,
   bandDataEqual,
   emptyBandData,
   exportBandData,
+  identiteDuGroupe,
   mergeBandData,
 } from '../lib/bandSync';
 import { migrateSong } from '../lib/model';
@@ -68,7 +70,7 @@ import {
 import { compterEnAttente, etatVide, mergeStates, SyncState } from '../lib/sync';
 import { navigate } from '../router';
 import { AppState, useStore } from '../store';
-import { emptyBand, makeId } from '../types';
+import { Band, emptyBand, makeId } from '../types';
 import { t } from '../i18n';
 import { Field } from './ui';
 
@@ -82,15 +84,23 @@ import { Field } from './ui';
  */
 
 /** Valide la forme d'une bibliothèque de groupe venant du cloud. */
+/**
+ * On ÉTALE, on ne RECONSTRUIT pas (cicatrice b202, quatrième récidive —
+ * découverte en ajoutant l'identité du groupe, b273).
+ *
+ * Cette fonction listait les champs À LA MAIN : `band`, ajoutée aujourd'hui,
+ * n'existait pas dans la liste écrite hier, donc la photo du groupe partait
+ * bien du créateur, arrivait bien du serveur… et était jetée ici, en silence,
+ * juste avant la fusion. Invisible au test si on ne regarde que l'envoi.
+ *
+ * Le rôle de cette fonction est de GARANTIR les tableaux, pas de décider ce
+ * qui a le droit d'exister : tout le reste passe tel quel.
+ */
 function sanitizeBand(raw: unknown): BandData {
   if (!raw || typeof raw !== 'object') return emptyBandData();
-  const r = raw as {
-    songs?: unknown;
-    setlists?: unknown;
-    removed?: unknown;
-    removedNotes?: unknown;
-  };
+  const r = raw as Partial<BandData> & Record<string, unknown>;
   return {
+    ...r,
     songs: Array.isArray(r.songs) ? (r.songs as BandData['songs']) : [],
     setlists: Array.isArray(r.setlists)
       ? (r.setlists as BandData['setlists'])
@@ -306,6 +316,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       const st = JSON.parse(stateRef.current) as SyncState;
       let songs = st.songs;
       let setlists = st.setlists;
+      // Identités de groupe reçues (b273) : la photo et le nom écrits par le
+      // créateur, appliqués chez les membres à la fin du tour.
+      const identites = new Map<string, Band>();
       let changed = false;
       for (const band of st.bands) {
         const cid = band.cloudId;
@@ -330,8 +343,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             band.id,
             removals,
             noteRemovals,
+            // Le créateur PUBLIE l'identité du groupe ; un membre ne
+            // l'exporte jamais, sinon deux applications se la disputeraient.
+            band.owned === true ? identiteDuGroupe(band) : undefined,
           );
           const merged = mergeBandData(cloudData, localData);
+          if (merged.band) {
+            const maj = appliquerIdentite(band, merged.band);
+            if (maj) identites.set(band.id, maj);
+          }
           const skipKeys = new Set(
             (st.deleted ?? [])
               .map((tomb) => tomb.key)
@@ -360,8 +380,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           // groupe injoignable : on réessaiera au prochain cycle
         }
       }
-      if (changed) {
-        hydrateRef.current({ ...st, songs, setlists } as AppState);
+      if (changed || identites.size > 0) {
+        const bands = st.bands.map((b) => identites.get(b.id) ?? b);
+        hydrateRef.current({ ...st, songs, setlists, bands } as AppState);
       }
     } finally {
       bandSyncBusy.current = false;

@@ -934,6 +934,24 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   d'accord pour tout champ de `SyncState` : `mergeStates`
   (`src/lib/sync.ts`), `fromCloud` et l'objet poussé au cloud (les deux
   dans `src/components/Account.tsx`).
+- **L'IDENTITÉ D'UN GROUPE VOYAGE AVEC SON RÉPERTOIRE** (b273, constat de
+  Vincent : « Gaëlle que j'ai invitée ne voit pas la photo du groupe »). Elle
+  n'était partagée NULLE PART : `cloud_bands` ne porte que le nom, et un
+  membre n'a même pas le droit d'y lire (la politique RLS ne connaît que le
+  propriétaire — d'où la fonction `band_owner`). La photo restait donc sur le
+  téléphone de celui qui l'avait choisie. Elle passe désormais par le blob du
+  répertoire partagé (`BandData.band`), le canal que les membres partagent
+  déjà : aucune ligne de SQL à exécuter. Seul le CRÉATEUR l'exporte
+  (`identiteDuGroupe`), les autres ne font que l'appliquer
+  (`appliquerIdentite`) ; ce qui est PERSONNEL — `hiddenFromPublic` — n'en
+  fait jamais partie, et un nom vide n'écrase jamais celui qu'on connaît.
+  **Quatrième récidive de b202 au passage** : `sanitizeBand` RECONSTRUISAIT le
+  blob champ par champ, donc `band`, ajoutée le jour même, était jetée en
+  silence entre le serveur et la fusion — la photo partait bien et
+  n'arrivait jamais. Cette fonction garantit les TABLEAUX, elle ne décide pas
+  de ce qui a le droit d'exister : `{...r}` d'abord, gardes ensuite. Pour tout
+  nouveau champ de `BandData`, quatre endroits doivent s'accorder :
+  `exportBandData`, `mergeBandData`, `bandDataEqual` et `sanitizeBand`.
 - **Compte obligatoire (décision Vincent, b120)** : sans session locale,
   l'app musicien n'affiche qu'un portail de connexion épuré (Welcome).
   Le test est LOCAL (session en localStorage) — un compte déjà connecté
