@@ -3577,6 +3577,21 @@ h2.pagetitle {
 .embedbox.video {
   aspect-ratio: 16 / 9;
 }
+/* Le cadre d'un lecteur audio fait la hauteur de ce que le lecteur DESSINE
+   (b267). Sur un écran étroit, Spotify sert toujours sa version compacte —
+   152 px — même si on lui en donne 352 : le reste était du vide, devenu une
+   plaque crème depuis qu'on prête un fond aux documents étrangers (b263). La
+   version haute n'existe qu'à partir de 640 px, et seulement pour ce qui est
+   une LISTE (album, playlist, page d'artiste) : un titre seul reste compact
+   partout. */
+.embedbox.audio {
+  height: 152px;
+}
+@media (min-width: 640px) {
+  .embedbox.audio.haute {
+    height: 352px;
+  }
+}
 
 /* ---- Barre de progression (import en masse, nettoyage IA) ---- */
 .progressbar {
