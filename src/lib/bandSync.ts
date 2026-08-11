@@ -14,6 +14,8 @@ import { findSameSong } from './importer';
 import { bandKeysMatch, songKey } from './normalizeTitle';
 import { removeVersion, versionForBand } from './model';
 import {
+  ArtistLink,
+  Band,
   makeId,
   Setlist,
   Song,
@@ -84,7 +86,32 @@ export interface RemovedEntry {
   at: string;
 }
 
+/**
+ * L'IDENTITÉ DU GROUPE, TELLE QUE SON CRÉATEUR L'A ÉCRITE (b273, constat de
+ * Vincent : « Gaëlle que j'ai invitée ne voit pas la photo du groupe »).
+ *
+ * Elle n'était PARTAGÉE NULLE PART : `cloud_bands` ne porte que le nom, et
+ * un membre n'a même pas le droit d'y lire (la politique RLS ne connaît que
+ * le propriétaire — c'est pour ça que `band_owner` est une fonction). La
+ * photo restait donc sur le téléphone de celui qui l'avait choisie, et
+ * chaque membre voyait un rond gris.
+ *
+ * Elle voyage avec le RÉPERTOIRE, le canal que les membres partagent déjà :
+ * pas une ligne de SQL à exécuter, et le lot marche pour tout le monde dès la
+ * mise à jour. Seul le CRÉATEUR l'écrit (son application est la seule à
+ * l'exporter) ; les autres ne font que l'appliquer. Ce qui est PERSONNEL —
+ * masquer le groupe au public, par exemple — n'en fait jamais partie.
+ */
+export interface SharedBand {
+  name: string;
+  photo: string;
+  bio: string;
+  links: ArtistLink[];
+}
+
 export interface BandData {
+  /** Identité écrite par le créateur (b273) — absente des vieux blobs. */
+  band?: SharedBand;
   songs: SharedSong[];
   setlists: SharedSetlist[];
   /** Notes de répétition supprimées (par id) — la suppression vaut
@@ -122,8 +149,11 @@ export function exportBandData(
   removals: RemovedEntry[] = [],
   /** Notes supprimées localement (id + date) */
   noteRemovals: RemovedEntry[] = [],
+  /** Identité du groupe — fournie SEULEMENT par son créateur (b273). */
+  identite?: SharedBand,
 ): BandData {
   const out: BandData = {
+    ...(identite ? { band: identite } : {}),
     songs: [],
     setlists: [],
     removed: removals.slice(-300),
@@ -233,7 +263,46 @@ function removalFor(
   return undefined;
 }
 
+/** L'identité que publie le CRÉATEUR (les autres n'en exportent aucune). */
+export function identiteDuGroupe(band: Band): SharedBand {
+  return {
+    name: band.name ?? '',
+    photo: band.photo ?? '',
+    bio: band.bio ?? '',
+    links: (band.links ?? []).filter((l) => (l.url ?? '') !== ''),
+  };
+}
+
+/**
+ * Ce que l'identité reçue change dans MON groupe — `null` si rien.
+ *
+ * On ne recopie que ce que le créateur écrit : le masquage au public, lui,
+ * est un choix PERSONNEL (b227) et ne doit jamais voyager. Et on ne remonte
+ * jamais le temps : une identité plus vieille que la mienne est ignorée.
+ */
+export function appliquerIdentite(band: Band, part: SharedBand): Band | null {
+  // Le créateur EST la source : son application n'applique jamais, elle
+  // publie. Sans cette garde, sa propre photo lui reviendrait en boucle.
+  if (band.owned === true) return null;
+  // Un nom vide n'écrase rien : mieux vaut garder celui qu'on connaît que
+  // d'afficher un groupe sans nom parce qu'un blob est arrivé incomplet.
+  const nom = part.name !== '' ? part.name : (band.name ?? '');
+  const change =
+    (band.name ?? '') !== nom ||
+    (band.photo ?? '') !== part.photo ||
+    (band.bio ?? '') !== part.bio ||
+    JSON.stringify(band.links ?? []) !== JSON.stringify(part.links);
+  if (!change) return null;
+  // `hiddenFromPublic` et le reste ne bougent pas : ce sont MES choix.
+  return { ...band, name: nom, photo: part.photo, bio: part.bio, links: part.links };
+}
+
 export function mergeBandData(cloud: BandData, local: BandData): BandData {
+  // Identité du groupe (b273). Pas d'arbitrage à faire : SEUL le créateur en
+  // exporte une, donc `local.band` n'est renseignée que dans SON application
+  // — et c'est elle qui fait autorité. Chez un membre, elle est absente et
+  // celle du cloud passe telle quelle.
+  const identite = local.band ?? cloud.band;
   // Retraits : union, le plus récent gagne par titre.
   const removed = new Map<string, RemovedEntry>();
   for (const r of [...(cloud.removed ?? []), ...(local.removed ?? [])]) {
@@ -304,6 +373,7 @@ export function mergeBandData(cloud: BandData, local: BandData): BandData {
     return !r || s.updatedAt > r.at;
   });
   return {
+    ...(identite ? { band: identite } : {}),
     songs: keptSongs.map((s) => ({
       ...s,
       notes: s.notes.filter((n) => !removedNotes.has(n.id)),
@@ -321,6 +391,9 @@ export function mergeBandData(cloud: BandData, local: BandData): BandData {
 export function bandDataEqual(a: BandData, b: BandData): boolean {
   const norm = (d: BandData) =>
     JSON.stringify({
+      // Cicatrice b202 : tout champ de `BandData` doit être comparé ICI en
+      // plus d'être fusionné, sinon il s'écrit puis n'est jamais renvoyé.
+      band: d.band ?? null,
       songs: [...d.songs].sort((x, y) => x.key.localeCompare(y.key)),
       setlists: [...d.setlists].sort((x, y) => x.id.localeCompare(y.id)),
       removed: [...(d.removed ?? [])].sort((x, y) =>
