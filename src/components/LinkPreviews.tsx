@@ -28,10 +28,23 @@ export function youtubeEmbed(url: string): string | null {
   return m ? `https://www.youtube-nocookie.com/embed/${m[1]}` : null;
 }
 
-/** URL d'intégration Spotify (track / album / artist / playlist). */
+/**
+ * URL d'intégration Spotify (track / album / artist / playlist).
+ *
+ * LA HAUTEUR EST CELLE DU LECTEUR, PAS CELLE QU'ON ESPÈRE (b267, constat de
+ * Vincent : « il y a du blanc en dessous »). Sur un écran étroit, Spotify
+ * dessine TOUJOURS son lecteur compact — 152 px — quelle que soit la hauteur
+ * qu'on lui donne : réserver 352 px pour une page d'artiste laissait 200 px
+ * vides. Ça ne se voyait pas tant que le fond restait transparent ; depuis
+ * qu'on prête un fond clair aux documents étrangers (b263), ce vide est une
+ * grande plaque crème.
+ *
+ * `haute` dit donc si CE contenu a une version haute, et le CSS ne la sert
+ * qu'à partir de 640 px de large, là où Spotify la dessine vraiment.
+ */
 export function spotifyEmbed(
   url: string,
-): { src: string; height: number } | null {
+): { src: string; haute: boolean } | null {
   const m =
     /open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|artist|playlist)\/([\w]{8,40})/.exec(
       url,
@@ -41,7 +54,7 @@ export function spotifyEmbed(
     // `utm_source=generator` = format d'embed Spotify actuel ; sans lui, le
     // lecteur reste noir/vide.
     src: `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator`,
-    height: m[1] === 'track' ? 152 : 352,
+    haute: m[1] !== 'track',
   };
 }
 
@@ -54,8 +67,16 @@ export function LinkPreviews({
 }) {
   const valid = links.filter((l) => l.url.trim() !== '');
   if (valid.length === 0) return null;
-  const yt = valid.map((l) => youtubeEmbed(l.url)).find((x) => x !== null);
-  const sp = valid.map((l) => spotifyEmbed(l.url)).find((x) => x != null);
+  /**
+   * TOUS les liens qui savent se lire, dans l'ordre où l'artiste les a
+   * écrits (b267, demande de Vincent : « si un 3ᵉ lien est ajouté par
+   * l'utilisateur, il devient lui aussi visible »). Avant, on ne gardait que
+   * le PREMIER YouTube et le PREMIER Spotify : une deuxième vidéo restait une
+   * puce, sans qu'on sache pourquoi.
+   */
+  const lecteurs = valid
+    .map((l) => ({ l, yt: youtubeEmbed(l.url), sp: spotifyEmbed(l.url) }))
+    .filter((x) => x.yt !== null || x.sp !== null);
 
   return (
     <div className="linkpreviews">
@@ -68,27 +89,31 @@ export function LinkPreviews({
           ))}
         </div>
       )}
-      {yt && (
-        <div className="embedbox video">
-          <iframe
-            src={yt}
-            title={t('Vidéo YouTube')}
-            allow="encrypted-media; picture-in-picture"
-            allowFullScreen
-            loading="lazy"
-          />
-        </div>
-      )}
-      {sp && (
-        <div className="embedbox" style={{ height: sp.height }}>
-          <iframe
-            src={sp.src}
-            title={t('Écoute Spotify')}
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-            style={{ borderRadius: 12 }}
-          />
-        </div>
+      {lecteurs.map(({ l, yt, sp }) =>
+        yt !== null ? (
+          <div className="embedbox video" key={l.id}>
+            <iframe
+              src={yt}
+              title={t('Vidéo YouTube')}
+              allow="encrypted-media; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+            />
+          </div>
+        ) : (
+          <div
+            className={`embedbox audio${sp!.haute ? ' haute' : ''}`}
+            key={l.id}
+          >
+            <iframe
+              src={sp!.src}
+              title={t('Écoute Spotify')}
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              style={{ borderRadius: 12 }}
+            />
+          </div>
+        ),
       )}
     </div>
   );
