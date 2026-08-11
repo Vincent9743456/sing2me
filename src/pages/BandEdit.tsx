@@ -9,7 +9,7 @@ import { BandPublicPeek } from '../components/BandPublicPeek';
 import { BandPublicCard } from '../components/BandPublicCard';
 
 import { useAccount } from '../components/Account';
-import { ConfirmSheet, MenuSheet, useToast } from '../components/Feedback';
+import { ConfirmSheet, useToast } from '../components/Feedback';
 import { GearEditor } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { LinkPreviews } from '../components/LinkPreviews';
@@ -152,7 +152,6 @@ export function BandEdit({ id }: { id: string }) {
   // que « Valider » (barre de validation) n'est pas pressé.
   const [editDraft, setEditDraft] = useState<Band | null>(null);
   const [editSaved, setEditSaved] = useState(false);
-  const [headerMenu, setHeaderMenu] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   // Fiche d'un membre ouverte au clic (null = fermée). Pour MOI → onglet Artiste.
   const [viewMember, setViewMember] = useState<{
@@ -820,18 +819,6 @@ export function BandEdit({ id }: { id: string }) {
       <TopBar
         title={band.name || 'Groupe'}
         onBack={() => (editing ? stopEditing() : navigate('/bands'))}
-        right={
-          !editing ? (
-            <button
-              className="btn icon"
-              title="Plus"
-              aria-label="Plus d'actions"
-              onClick={() => setHeaderMenu(true)}
-            >
-              <Icon name="more" size={20} />
-            </button>
-          ) : undefined
-        }
       />
       <div className="page">
         {/* Un musicien a quitté CE groupe (b142) : signalé haut et clair,
@@ -1051,6 +1038,45 @@ export function BandEdit({ id }: { id: string }) {
                     ? t('Masqué au public — pas d’adresse')
                     : t('Ce que voit quelqu’un qui tape son adresse')}
                 </div>
+              </div>
+              <span className="chev" aria-hidden="true">
+                ›
+              </span>
+            </button>
+
+            {/* MODIFIER ET SUPPRIMER, SUR LA PAGE (b272, constat de Vincent :
+                « le bouton permettant la modification / suppression est peu
+                visible (les ⋯) »). Ces deux actions sont les seules qu'on
+                vienne chercher sur la fiche d'un groupe une fois qu'il
+                tourne ; les cacher derrière trois points, c'est les rendre
+                introuvables. Le menu « ⋯ » disparaît avec : ses trois
+                entrées existent maintenant sur la page — dont la page
+                publique, déjà juste au-dessus. Deux chemins vers la même
+                action, c'est exactement ce que la règle 3 interdit. */}
+            <button className="bigrow" onClick={() => startEditing()}>
+              <span className="i" aria-hidden="true">
+                ✏️
+              </span>
+              <div className="grow" style={{ minWidth: 0 }}>
+                <div className="ti">{t('Modifier le groupe')}</div>
+                <div className="su">
+                  {t('Photo, nom, présentation, liens, adresse publique')}
+                </div>
+              </div>
+              <span className="chev" aria-hidden="true">
+                ›
+              </span>
+            </button>
+
+            <button className="bigrow" onClick={() => setConfirmDel(true)}>
+              <span className="i" aria-hidden="true">
+                {isOwner ? '🗑' : '🚪'}
+              </span>
+              <div className="grow" style={{ minWidth: 0 }}>
+                <div className="ti" style={{ color: 'var(--danger)' }}>
+                  {texteSuppression(band).libelle}
+                </div>
+                <div className="su">{texteSuppression(band).message}</div>
               </div>
               <span className="chev" aria-hidden="true">
                 ›
@@ -1916,30 +1942,6 @@ export function BandEdit({ id }: { id: string }) {
             })();
           }}
           onClose={() => setTransferTo(null)}
-        />
-      )}
-      {headerMenu && (
-        <MenuSheet
-          title={band.name || t('Groupe')}
-          items={[
-            {
-              label: t('Modifier le groupe'),
-              icon: 'edit',
-              onClick: () => startEditing(),
-            },
-            {
-              label: t('Page publique / QR'),
-              icon: 'qr',
-              onClick: () => setShare(true),
-            },
-            {
-              label: isOwner ? t('Supprimer le groupe') : t('Quitter le groupe'),
-              icon: isOwner ? 'trash' : 'x',
-              danger: true,
-              onClick: () => setConfirmDel(true),
-            },
-          ]}
-          onClose={() => setHeaderMenu(false)}
         />
       )}
       {confirmDel && (
