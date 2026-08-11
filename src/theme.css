@@ -19,11 +19,6 @@
      regrouper visuellement (encarts de setlists par groupe). */
   --surface-sunken: #0d1424;
   --surface-hover: #24304e;
-  /* Fond PRÊTÉ à un document étranger (lecteur YouTube/Spotify intégré).
-     Il ne suit PAS le thème, et c'est voulu : un document qu'on n'écrit pas
-     dessine toujours son texte en NOIR par défaut, en clair comme en
-     sombre. Voir `.embedbox iframe`. */
-  --embed-canvas: #f4f0e9;
   /* Ce que le clavier recouvre en bas (b264), publié par `lib/clavier.ts`.
      0 par défaut : sans la mesure, l'app se comporte comme avant. */
   --clavier: 0px;
@@ -3554,43 +3549,33 @@ h2.pagetitle {
   width: 100%;
   height: 100%;
   border: 0;
-  /* b263 : un lecteur intégré est un document ÉTRANGER. On ne peut ni le
-     styler ni savoir qu'il a échoué (autre origine). Le jour où Spotify est
-     tombé, sa page d'erreur est apparue dans la fiche de Vincent en NOIR sur
-     le fond nuit : mesuré, un document sans style reçoit un canvas
-     TRANSPARENT et du texte noir. `color-scheme` sur l'iframe n'y change
-     rien — il ne traverse pas la frontière d'origine (vérifié, ne pas
-     réessayer).
-     La seule prise qui reste est le fond qu'on lui PRÊTE. On le pose donc en
-     crème… mais seulement au bout de 4 s : sinon chaque lecteur ferait
-     clignoter la page en clair pendant son chargement. Un lecteur qui
-     s'affiche recouvre ce fond — on ne voit le crème que si rien n'est venu.
-     (Le mode « animations réduites » raccourcit la durée, jamais le délai :
-     le fond arrive quand même.) */
-  animation: embed-canvas 0.35s linear 4s forwards;
+  /* UN CADRE QUI NE SE VOIT PAS QUAND IL EST TROP GRAND (b275, constat de
+     Vincent : « toujours un problème d'affichage avec la zone blanche — le
+     plus simple est peut-être de la colorier de la même couleur que
+     l'arrière-plan »).
+     b263 prêtait un fond CRÈME aux documents étrangers pour qu'une page
+     d'erreur y reste lisible. Le prix était trop élevé : dès que le lecteur
+     dessine moins haut que son cadre, ce fond devient une grande plaque
+     claire au milieu de la fiche. Et c'est le cas ORDINAIRE, pas le cas rare.
+     On lui rend donc la surface de l'app : s'il reste un écart, il ne se voit
+     pas. Contrepartie assumée : le jour où un lecteur affiche une page
+     d'erreur sans style, son texte noir sera peu lisible sur le fond nuit —
+     un incident rare, contre un défaut permanent. */
+  background: var(--surface);
 }
-@keyframes embed-canvas {
-  to {
-    background: var(--embed-canvas);
-  }
-}
+
 .embedbox.video {
   aspect-ratio: 16 / 9;
 }
-/* Le cadre d'un lecteur audio fait la hauteur de ce que le lecteur DESSINE
-   (b267). Sur un écran étroit, Spotify sert toujours sa version compacte —
-   152 px — même si on lui en donne 352 : le reste était du vide, devenu une
-   plaque crème depuis qu'on prête un fond aux documents étrangers (b263). La
-   version haute n'existe qu'à partir de 640 px, et seulement pour ce qui est
-   une LISTE (album, playlist, page d'artiste) : un titre seul reste compact
-   partout. */
+/* Le cadre d'un lecteur audio fait la hauteur de ce que le lecteur DESSINE :
+   152 px, la version compacte, et c'est tout (b267, corrigé en b275).
+   b267 réservait 352 px à partir de 640 px de large, en supposant que
+   Spotify y dessinerait sa version haute. Faux : sur un écran de 1553 px, il
+   sert toujours le lecteur compact — d'où 200 px de vide sur ordinateur. On
+   ne suppose donc plus rien sur ce qu'un service tiers décide de dessiner :
+   on prend la seule hauteur qu'il garantit. */
 .embedbox.audio {
   height: 152px;
-}
-@media (min-width: 640px) {
-  .embedbox.audio.haute {
-    height: 352px;
-  }
 }
 
 /* ---- Barre de progression (import en masse, nettoyage IA) ---- */

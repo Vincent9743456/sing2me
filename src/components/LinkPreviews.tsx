@@ -31,20 +31,16 @@ export function youtubeEmbed(url: string): string | null {
 /**
  * URL d'intégration Spotify (track / album / artist / playlist).
  *
- * LA HAUTEUR EST CELLE DU LECTEUR, PAS CELLE QU'ON ESPÈRE (b267, constat de
- * Vincent : « il y a du blanc en dessous »). Sur un écran étroit, Spotify
- * dessine TOUJOURS son lecteur compact — 152 px — quelle que soit la hauteur
- * qu'on lui donne : réserver 352 px pour une page d'artiste laissait 200 px
- * vides. Ça ne se voyait pas tant que le fond restait transparent ; depuis
- * qu'on prête un fond clair aux documents étrangers (b263), ce vide est une
- * grande plaque crème.
+ * PAS DE HAUTEUR À DEVINER (b267, corrigé en b275). Spotify dessine son
+ * lecteur COMPACT — 152 px — quelle que soit la hauteur qu'on lui donne et
+ * quelle que soit la largeur de l'écran : b267 croyait qu'une version haute
+ * apparaissait au-delà de 640 px, la capture de Vincent sur un écran de
+ * 1553 px dit le contraire. Réserver plus laissait 200 px de vide.
  *
- * `haute` dit donc si CE contenu a une version haute, et le CSS ne la sert
- * qu'à partir de 640 px de large, là où Spotify la dessine vraiment.
+ * On ne suppose donc plus rien sur ce qu'un service tiers décide de
+ * dessiner : le CSS prend la seule hauteur qu'il garantit.
  */
-export function spotifyEmbed(
-  url: string,
-): { src: string; haute: boolean } | null {
+export function spotifyEmbed(url: string): { src: string } | null {
   const m =
     /open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|artist|playlist)\/([\w]{8,40})/.exec(
       url,
@@ -54,7 +50,6 @@ export function spotifyEmbed(
     // `utm_source=generator` = format d'embed Spotify actuel ; sans lui, le
     // lecteur reste noir/vide.
     src: `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator`,
-    haute: m[1] !== 'track',
   };
 }
 
@@ -101,10 +96,7 @@ export function LinkPreviews({
             />
           </div>
         ) : (
-          <div
-            className={`embedbox audio${sp!.haute ? ' haute' : ''}`}
-            key={l.id}
-          >
+          <div className="embedbox audio" key={l.id}>
             <iframe
               src={sp!.src}
               title={t('Écoute Spotify')}
