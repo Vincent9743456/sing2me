@@ -18,7 +18,11 @@ import { Field, Modal, SaveBar, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import { detacherDuCloud, texteSuppression } from '../lib/deleteband';
-import { findPublicPageByArtist, PublicPage } from '../lib/publicPages';
+import {
+  findPublicPageByArtist,
+  findPublicPageByUser,
+  PublicPage,
+} from '../lib/publicPages';
 import {
   announceBandSong,
   CloudMember,
@@ -158,6 +162,8 @@ export function BandEdit({ id }: { id: string }) {
     name: string;
     instrument?: string;
     photo?: string;
+    /** Son compte (b249) : c'est LUI qui retrouve sa page, pas son nom. */
+    userId?: string;
   } | null>(null);
   // Page publique du musicien affiché (b173) : undefined = on cherche
   // encore, null = il n'en a pas (ou son nom est porté par plusieurs
@@ -170,7 +176,11 @@ export function BandEdit({ id }: { id: string }) {
     let cancelled = false;
     setMemberPage(undefined);
     void (async () => {
-      const page = await findPublicPageByArtist(viewMember.name);
+      // Par le COMPTE d'abord — exact, insensible au nom affiché (b276) ;
+      // par le nom seulement pour une ligne qui n'a pas d'identifiant.
+      const page =
+        (await findPublicPageByUser(viewMember.userId ?? '')) ??
+        (await findPublicPageByArtist(viewMember.name));
       if (!cancelled) setMemberPage(page);
     })();
     return () => {
@@ -1738,6 +1748,7 @@ export function BandEdit({ id }: { id: string }) {
                       name: m.name,
                       instrument: m.instrument,
                       photo: photoOf(m),
+                      userId: m.userId,
                     });
                   }
                 }}
@@ -1819,7 +1830,7 @@ export function BandEdit({ id }: { id: string }) {
           ) : memberPage === null ? (
             <p className="help" style={{ textAlign: 'center' }}>
               {t(
-                'Ce musicien n’a pas encore de page publique DodoSongs — ou son nom d’artiste est porté par plusieurs comptes.',
+                'Ce musicien n’a pas encore de page publique. Elle se crée toute seule à sa première ouverture de l’application — s’il vient de s’inscrire, elle apparaîtra ici sous peu.',
               )}
             </p>
           ) : (

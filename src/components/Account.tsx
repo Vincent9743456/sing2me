@@ -517,6 +517,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
               st.artist,
               st.bands,
               st.prefs?.pagePubliqueMasquee === true,
+              // Même repli que l'annuaire (b276) : sans nom d'artiste, un
+              // compte tout neuf a quand même une adresse et une fiche.
+              st.prefs?.userName || (valid.email ?? '').split('@')[0] || '',
             );
           } catch {
             // sans adresse, la carte « Ton lien public » reste disponible
