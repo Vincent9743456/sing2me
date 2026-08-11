@@ -97,8 +97,6 @@ export const EN_ARTISTE: Record<string, string> = {
   'Espace du groupe': 'Band space',
   'Espace du groupe : discussion, répéts, concerts': 'Band space: chat, rehearsals, gigs',
   'Espace du groupe — discussion, répéts, concerts': 'Band space — chat, rehearsals, gigs',
-  'Ex. Fête de la musique — on répond avant vendredi ?': 'E.g. Summer festival — shall we reply before Friday?',
-  'Ex. Répét jeudi 20h chez Marco ?': 'E.g. Rehearsal Thursday 8pm at Marco\'s?',
   'Exporter en PDF': 'Export as PDF',
   'Fermer': 'Close',
   'Fiche musicien': 'Musician profile',
@@ -405,12 +403,6 @@ export const EN_ARTISTE: Record<string, string> = {
   'discrète, pause et fin seulement': 'discreet, pause and end only',
 
   // Libellés/hints des types de message (KINDS, BandChat.tsx)
-  '💬 Discussion': '💬 Chat',
-  'organisation, questions…': 'planning, questions…',
-  '🥁 Répét': '🥁 Rehearsal',
-  'proposer une date, un lieu': 'suggest a date, a place',
-  '🎤 Concert': '🎤 Gig',
-  'plan, date, matériel': 'plan, date, gear',
   // Connexions sociales et consentement (b165)
   'Ou connecte-toi en un geste :': 'Or sign in with one tap:',
   'Continuer avec Apple': 'Continue with Apple',
