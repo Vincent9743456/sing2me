@@ -111,18 +111,25 @@ export function ShareModal({
     return { subject, body };
   }
 
-  function mailtoHref(): string {
-    const { subject, body } = inviteMessage();
-    return `mailto:?subject=${encodeURIComponent(
-      subject,
-    )}&body=${encodeURIComponent(body)}`;
-  }
-
-  /** Lien WhatsApp pré-rempli (un seul champ : accroche + message). */
-  function whatsappHref(): string {
-    const { subject, body } = inviteMessage();
-    return `https://wa.me/?text=${encodeURIComponent(`${subject}\n\n${body}`)}`;
-  }
+  /**
+   * UN SEUL BOUTON (b268, Vincent : « le bouton partager suffit », en
+   * invitant quelqu'un qui n'a pas l'application).
+   *
+   * Il y en avait quatre — Partager, Copier le lien, Email, WhatsApp — pour
+   * une seule et même chose : faire parvenir ce lien à quelqu'un. La feuille
+   * du système fait déjà tout ça, avec les applications que la personne
+   * utilise VRAIMENT, et elle sait copier. Même arbitrage qu'en b242 pour la
+   * page publique, où e-mail et WhatsApp étaient déjà partis.
+   *
+   * Le raccourci WhatsApp avait en plus un défaut à lui : il ouvrait wa.me
+   * dans un onglet, et depuis l'app installée sur iPhone, cette vue-là ne
+   * laisse aucun retour (b187).
+   *
+   * Sans feuille de partage (ordinateur), le même bouton COPIE — et il le
+   * dit avant, pas après : un bouton annonce ce qu'il fait.
+   */
+  const partageNatif =
+    typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   return (
     <Modal title={title} onClose={onClose}>
@@ -141,43 +148,25 @@ export function ShareModal({
         )}
         {url && (
           <>
-            <div className="hstack" style={{ gap: 8, justifyContent: 'center' }}>
-              {typeof navigator !== 'undefined' &&
-                typeof navigator.share === 'function' && (
-                  <button
-                    className="btn"
-                    onClick={() => {
-                      const { subject, body } = inviteMessage();
-                      void navigator
-                        .share({ title: subject, text: body })
-                        .catch(() => {
-                          /* partage annulé */
-                        });
-                    }}
-                  >
-                    {t('📤 Partager')}
-                  </button>
-                )}
-              <button className="btn ghost" onClick={copy}>
-                {copied ? t('✓ Lien copié !') : t('Copier le lien')}
-              </button>
-              <a
-                className="btn ghost"
-                href={mailtoHref()}
-                style={{ textDecoration: 'none' }}
-              >
-                {t('✉️ Email')}
-              </a>
-              <a
-                className="btn ghost"
-                href={whatsappHref()}
-                target="_blank"
-                rel="noreferrer"
-                style={{ textDecoration: 'none' }}
-              >
-                💬 WhatsApp
-              </a>
-            </div>
+            <button
+              className="btn block"
+              onClick={() => {
+                if (!partageNatif) {
+                  void copy();
+                  return;
+                }
+                const { subject, body } = inviteMessage();
+                void navigator.share({ title: subject, text: body }).catch(() => {
+                  /* partage annulé */
+                });
+              }}
+            >
+              {copied
+                ? t('✓ Lien copié !')
+                : partageNatif
+                  ? t('📤 Partager')
+                  : t('Copier le lien')}
+            </button>
             <div className="linkbox">{url}</div>
             <p className="help" style={{ textAlign: 'center' }}>
               {t(
