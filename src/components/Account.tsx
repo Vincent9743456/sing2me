@@ -284,6 +284,64 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
    * juste au-dessus.
    */
   const invitedRef = useRef(false);
+  /**
+   * SYNCHRO PERSO MULTI-APPAREILS (b287, signalé par Vincent : une modif faite
+   * sur l'ordi n'apparaissait pas sur l'iPhone). Avant, la bibliothèque perso
+   * n'était tirée du cloud QU'au démarrage — l'intervalle et le retour au
+   * premier plan ne rappelaient que `syncBands` (les groupes) ou ne faisaient
+   * que POUSSER. Un appareil déjà ouvert restait donc sur son état de
+   * lancement. Pire : `pushCloud` remplace toute la ligne (aucune fusion
+   * serveur), donc un appareil à l'état périmé qui poussait ÉCRASAIT le
+   * travail plus récent d'un autre.
+   *
+   * `persoSyncBusy` sérialise les opérations perso (un seul pull/merge/push à
+   * la fois, comme `bandSyncBusy` pour les groupes). `dernierCloud` retient
+   * l'`updated_at` du cloud déjà intégré : il distingue une vraie nouveauté
+   * d'un autre appareil (→ rafraîchir l'écran) de sa propre poussée (→ ne rien
+   * refaire), ce qui évite toute boucle.
+   */
+  const persoSyncBusy = useRef(false);
+  const dernierCloud = useRef('');
+  /**
+   * Tire la bibliothèque perso et la fusionne (par objet, dernier écrit gagne)
+   * avec l'état local. Ne pousse ni n'hydrate : l'appelant décide. La ceinture
+   * de b137 s'applique aussi ici (une fusion ne VIDE jamais une biblio pleine).
+   */
+  const fusionnerPerso = useCallback(async (valid: AuthSession) => {
+    const cloud = await pullCloud(valid);
+    const local = JSON.parse(stateRef.current) as SyncState;
+    const merged = cloud ? mergeStates(local, fromCloud(cloud.data)) : local;
+    const videe =
+      (local.songs?.length ?? 0) > 0 && (merged.songs?.length ?? 0) === 0;
+    return {
+      cloudTs: cloud?.updatedAt ?? '',
+      neuf: cloud !== null && (cloud.updatedAt ?? '') !== dernierCloud.current,
+      etat: videe ? local : merged,
+    };
+  }, []);
+  /**
+   * RATTRAPAGE (lecture seule) : ce qu'un AUTRE appareil a modifié dans la
+   * biblio perso. Ne pousse pas — le débounce s'en charge quand c'est nous
+   * qui avons changé. Ne rafraîchit l'écran QUE si le cloud a du neuf (sinon
+   * on relancerait le débounce en boucle).
+   */
+  const rattraperPerso = useCallback(
+    async (valid: AuthSession) => {
+      if (persoSyncBusy.current) return;
+      persoSyncBusy.current = true;
+      try {
+        const { cloudTs, neuf, etat } = await fusionnerPerso(valid);
+        if (!neuf) return;
+        dernierCloud.current = cloudTs;
+        hydrateRef.current(etat as AppState);
+      } catch {
+        /* réseau : on réessaiera au prochain cycle */
+      } finally {
+        persoSyncBusy.current = false;
+      }
+    },
+    [fusionnerPerso],
+  );
 
   /*
    * Ce qui MONTE dans le cloud (b202). Cette liste oubliait deux choses, et
@@ -553,7 +611,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         // les tombstones posés se propagent au prochain cycle.
         aEcrire = dedupeExamples(aEcrire);
         hydrateRef.current(aEcrire as AppState);
-        await pushCloud(valid, aEcrire);
+        // Repère de départ pour le rattrapage multi-appareils (b287) : notre
+        // propre poussée ne doit pas passer ensuite pour une nouveauté.
+        dernierCloud.current = await pushCloud(valid, aEcrire);
         if (cancelled) return;
         // Noté APRÈS l'envoi : un compte marqué dont le cloud n'aurait rien
         // reçu ferait perdre ces données au changement suivant.
@@ -763,10 +823,26 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   /** L'envoi lui-même, appelable par le débounce ET par le retour du réseau. */
   const envoyer = useCallback(async () => {
     if (!readyRef.current) return;
+    // Un rattrapage tient le verrou : on repasse très vite (le drapeau
+    // `aEnvoyer` reste levé, donc rien n'est perdu).
+    if (persoSyncBusy.current) {
+      window.setTimeout(() => void envoyer(), 500);
+      return;
+    }
+    persoSyncBusy.current = true;
     try {
       const valid = await getValidSession();
       if (!valid) return;
-      await pushCloud(valid, JSON.parse(stateRef.current));
+      // FUSIONNER AVANT DE POUSSER (b287) : `pushCloud` remplace toute la
+      // ligne (aucune fusion serveur). Sans ce pull+merge, un appareil à
+      // l'état périmé écraserait le travail plus récent d'un autre. Le cloud
+      // a-t-il du neuf d'un autre appareil ? Alors on l'affiche aussi.
+      const { cloudTs, neuf, etat } = await fusionnerPerso(valid);
+      if (neuf) {
+        dernierCloud.current = cloudTs;
+        hydrateRef.current(etat as AppState);
+      }
+      dernierCloud.current = await pushCloud(valid, etat);
       aEnvoyer.current = false;
       noterEnvoi(new Date().toISOString());
       setStatus('ok');
@@ -775,9 +851,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       // Hors ligne ou serveur muet : rien n'est perdu, tout est en local.
       // Le drapeau reste levé, le prochain retour de réseau réessaiera.
       setStatus('error');
+    } finally {
+      persoSyncBusy.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncBands, noterEnvoi]);
+  }, [syncBands, noterEnvoi, fusionnerPerso]);
 
   // À chaque modification : pousser (debounce 3 s), best-effort.
   useEffect(() => {
@@ -796,30 +874,47 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
    */
   useEffect(() => {
     if (!session) return;
-    const reprendre = () => {
-      if (!aEnvoyer.current) return;
-      if (typeof navigator.onLine === 'boolean' && !navigator.onLine) return;
+    const horsLigne = () =>
+      typeof navigator.onLine === 'boolean' && !navigator.onLine;
+    const pousserEnAttente = () => {
+      if (!aEnvoyer.current || horsLigne()) return;
       void envoyer();
     };
-    const auPremierPlan = () => {
-      if (document.visibilityState === 'visible') reprendre();
+    // Rattrape ce qu'un AUTRE appareil a changé (b287) — c'est ce qui
+    // manquait : sans ça, l'iPhone restait sur son état de lancement.
+    const rattraper = () => {
+      if (horsLigne()) return;
+      void (async () => {
+        const valid = await getValidSession();
+        if (valid) await rattraperPerso(valid);
+      })();
     };
-    window.addEventListener('online', reprendre);
+    const auRetour = () => {
+      pousserEnAttente();
+      rattraper();
+    };
+    const auPremierPlan = () => {
+      if (document.visibilityState === 'visible') auRetour();
+    };
+    window.addEventListener('online', auRetour);
     document.addEventListener('visibilitychange', auPremierPlan);
     return () => {
-      window.removeEventListener('online', reprendre);
+      window.removeEventListener('online', auRetour);
       document.removeEventListener('visibilitychange', auPremierPlan);
     };
-  }, [session?.userId, envoyer]);
+  }, [session?.userId, envoyer, rattraperPerso]);
 
-  // Cycle régulier : récupère ce que les autres membres ont modifié
+  // Cycle régulier : récupère ce que les autres appareils (biblio perso) ET
+  // les autres membres (répertoires de groupe) ont modifié.
   useEffect(() => {
     if (!session) return;
     const id = window.setInterval(() => {
       if (!readyRef.current || document.visibilityState !== 'visible') return;
       void (async () => {
         const valid = await getValidSession();
-        if (valid) void syncBands(valid);
+        if (!valid) return;
+        await rattraperPerso(valid);
+        void syncBands(valid);
       })();
     }, 90000);
     return () => window.clearInterval(id);

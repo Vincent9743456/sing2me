@@ -507,10 +507,21 @@ export async function pullCloud(
   return row ? { data: row.data, updatedAt: row.updated_at } : null;
 }
 
+/**
+ * Écrit la bibliothèque perso. Renvoie l'horodatage écrit (`updated_at`), qui
+ * sert de repère « dernier état du cloud que JE connais » côté appelant (b287)
+ * — sans lui, un rattrapage ne saurait pas distinguer la nouveauté d'un autre
+ * appareil de sa propre poussée, et re-hydraterait en boucle.
+ *
+ * ATTENTION : cet upsert REMPLACE toute la ligne (pas de fusion côté serveur).
+ * L'appelant DOIT fusionner le cloud dans `data` avant d'appeler, sinon un
+ * appareil à l'état périmé écrase le travail plus récent d'un autre.
+ */
 export async function pushCloud(
   s: AuthSession,
   data: unknown,
-): Promise<void> {
+): Promise<string> {
+  const updatedAt = new Date().toISOString();
   const res = await fetch(`${supabaseUrl()}/rest/v1/user_library`, {
     method: 'POST',
     headers: {
@@ -524,7 +535,7 @@ export async function pushCloud(
     body: JSON.stringify({
       id: s.userId,
       data,
-      updated_at: new Date().toISOString(),
+      updated_at: updatedAt,
     }).replace(/\\u0000/g, ''),
   });
   if (!res.ok) {
@@ -534,4 +545,5 @@ export async function pushCloud(
         (detail !== '' ? ` — ${detail}` : ''),
     );
   }
+  return updatedAt;
 }
