@@ -143,6 +143,7 @@ function SetlistPicker({
 }
 import { announceBandSong } from '../lib/bands';
 import { LiveBanner } from '../components/LiveBanner';
+import { SwipeRow } from '../components/SwipeRow';
 import { spellingForKey, transposeKeyName } from '../lib/chords';
 import { songKey } from '../lib/importer';
 import {
@@ -219,8 +220,6 @@ export function Library() {
   const account = useAccount();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
-  /** Morceau qu'on s'apprête à retirer du répertoire affiché (b278). */
-  const [rowRetrait, setRowRetrait] = useState<string | null>(null);
   /**
    * Le groupe DONT on regarde le répertoire — `null` partout ailleurs. C'est
    * lui qui décide si « Retirer du répertoire » a un sens : hors de cette
@@ -527,12 +526,20 @@ export function Library() {
       .filter((bid) => bid !== bandFilter)
       .map((bid) => bands[bandIndex.get(bid) ?? 0]?.name?.trim() || t('Groupe sans nom'));
 
+  /* GLISSER VERS LA GAUCHE POUR RÉVÉLER LA CORBEILLE (b279, demande de
+     Vincent) — le même geste que sur la liste des groupes (b254), donc
+     appris une seule fois. La corbeille n'AGIT pas : elle ouvre la feuille
+     qui demande l'intention (retirer du répertoire, ou supprimer). */
   const renderRow = (song: (typeof filtered)[number]) => (
+    <SwipeRow
+      key={song.id}
+      label={song.title || t('ce morceau')}
+      onDelete={() => setRowDelete(song)}
+    >
                   <div
                     className={`row ${selectedId === song.id ? 'selected' : ''} ${
                       (song.pendingBandId ?? '') !== '' ? 'proposal' : ''
                     }`}
-                    key={song.id}
                     onClick={() => {
                       openWithContext(song);
                       if (isSplitScreen()) setSelectedId(song.id);
@@ -684,6 +691,7 @@ export function Library() {
                       <Icon name="more" size={20} />
                     </button>
                   </div>
+    </SwipeRow>
   );
 
   // Badge du bouton « Filtrer » : nombre de filtres actifs (une vue
@@ -1170,39 +1178,6 @@ export function Library() {
         <SetlistPicker songId={pickerFor} onClose={() => setPickerFor(null)} />
       )}
 
-      {/* Le retrait s'ANNONCE (règle 10 : jamais une boîte du téléphone) :
-          il vaut pour tous les membres, et il ne touche pas la bibliothèque
-          — c'est exactement ce que le musicien a besoin de lire avant. */}
-      {rowRetrait !== null &&
-        groupeAffiche !== null &&
-        (() => {
-          const s = songs.find((x) => x.id === rowRetrait);
-          if (!s) return null;
-          const txt = texteRetrait(s, groupeAffiche);
-          return (
-            <ConfirmSheet
-              title={txt.titre}
-              message={txt.message}
-              confirmLabel={txt.libelle}
-              danger
-              onConfirm={() => {
-                saveSong(retireDuRepertoire(s, groupeAffiche.id));
-                recordBandRemoval(
-                  groupeAffiche.id,
-                  songKey(s.title, s.artist),
-                );
-                setRowRetrait(null);
-                toast.show(
-                  t('« {title} » retiré du répertoire — il reste chez toi.', {
-                    title: s.title || t('Ce morceau'),
-                  }),
-                );
-              }}
-              onClose={() => setRowRetrait(null)}
-            />
-          );
-        })()}
-
       {/* Menu « ⋯ » d'un morceau : 4 actions maximum. */}
       {rowMenu && (
         <MenuSheet
@@ -1223,28 +1198,6 @@ export function Library() {
               icon: 'plus',
               onClick: () => setRowAssign(rowMenu.id),
             },
-            /* RETIRER DU RÉPERTOIRE, LÀ OÙ ON LE CHERCHE (b278, demande de
-               Vincent). Le geste n'existait que dans « Ajouter à… », où il
-               fallait comprendre qu'on DÉCOCHE un groupe déjà coché — un
-               écran qui s'appelle « Ajouter » n'est pas l'endroit où l'on
-               cherche à retirer. L'entrée n'apparaît QUE dans la vue d'un
-               répertoire de groupe : ailleurs, elle n'aurait pas de sens
-               (quel groupe ?) et allongerait le menu pour rien. */
-            ...(groupeAffiche &&
-            (() => {
-              const s = songs.find((x) => x.id === rowMenu.id);
-              return s ? auRepertoire(s, groupeAffiche.id) : false;
-            })()
-              ? [
-                  {
-                    label: t('Retirer du répertoire de {band}', {
-                      band: groupeAffiche.name || t('ce groupe'),
-                    }),
-                    icon: 'x' as const,
-                    onClick: () => setRowRetrait(rowMenu.id),
-                  },
-                ]
-              : []),
             // Toute mention qui réclame une action doit pouvoir être levée
             // d'un geste (règle 11, b212) : « À vérifier » n'avait aucune
             // sortie — elle survivait même au remplacement de la partition
@@ -1293,6 +1246,7 @@ export function Library() {
       {rowDelete && (
         <SongDeleteSheet
           song={rowDelete}
+          band={groupeAffiche}
           onDeleted={() => {
             if (selectedId === rowDelete.id) setSelectedId(null);
           }}
