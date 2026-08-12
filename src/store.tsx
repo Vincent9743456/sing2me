@@ -357,7 +357,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const deleteSong = useCallback((songId: string) => {
     setState((prev) => {
       const song = prev.songs.find((s) => s.id === songId);
-      const sort = song ? sortDuMorceau(song, prev.setlists) : { mode: 'supprime' as const };
+      const sort = song
+        ? sortDuMorceau(song, prev.setlists, prev.bands)
+        : { mode: 'supprime' as const };
       // Programmé dans une setlist du GROUPE : on ne touche à rien. Le
       // retirer du programme engage les autres musiciens, pas seulement moi.
       if (sort.mode === 'refus') return prev;

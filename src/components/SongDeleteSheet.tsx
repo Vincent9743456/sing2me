@@ -59,7 +59,9 @@ export function SongDeleteSheet({
   /** On a demandé l'intention et l'utilisateur a choisi « supprimer ». */
   const [suppression, setSuppression] = useState(false);
   const [retrait, setRetrait] = useState(false);
-  const sort = sortDuMorceau(song, setlists);
+  // Avec MES groupes (b281) : un rattachement orphelin ne doit pas faire
+  // passer un morceau personnel pour un morceau de répertoire.
+  const sort = sortDuMorceau(song, setlists, bands);
   const titre = song.title || t('ce morceau');
   const nomDuGroupe = (id: string) =>
     bands.find((b) => b.id === id)?.name || t('ton groupe');
