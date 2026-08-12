@@ -6,7 +6,7 @@ import { LiveBanner } from '../components/LiveBanner';
 import React, { useEffect, useState } from 'react';
 
 import { useAccount } from '../components/Account';
-import { ConfirmSheet } from '../components/Feedback';
+import { ConfirmSheet, useToast } from '../components/Feedback';
 import { Icon } from '../components/Icon';
 import { SwipeRow } from '../components/SwipeRow';
 import { useNotifications } from '../components/Notifications';
@@ -24,6 +24,11 @@ import {
   respondInvite,
 } from '../lib/bands';
 import { detacherDuCloud, texteSuppression } from '../lib/deleteband';
+import {
+  appliquerMasquage,
+  ECHEC_MASQUAGE,
+  groupeMasque,
+} from '../lib/masquagegroupe';
 import { musiciensDuGroupe } from '../lib/model';
 import { creatorMember } from '../lib/model';
 import { navigate } from '../router';
@@ -34,6 +39,33 @@ export function Bands() {
   const { bands, artist, prefs, saveBand, savePrefs, deleteBand } = useStore();
   const account = useAccount();
   const notifications = useNotifications();
+  const toast = useToast();
+
+  /**
+   * L'ŒIL DE LA LIGNE AGIT EN LIGNE (b282). Le drapeau local part d'abord —
+   * c'est lui qui interdit déjà le direct au nom du groupe, et il ne doit
+   * dépendre d'aucun réseau. La page publique suit dans la foulée ; si elle
+   * ne suit pas, on le DIT.
+   */
+  function basculerMasquage(band: Band) {
+    const masque = band.hiddenFromPublic !== true;
+    saveBand(groupeMasque(band, masque));
+    void (async () => {
+      const { ok } = await appliquerMasquage(
+        band,
+        masque,
+        bands,
+        artist,
+        prefs.pagePubliqueMasquee === true,
+      );
+      if (!ok) {
+        toast.show(t(ECHEC_MASQUAGE));
+        // Rejoué à la prochaine synchro : un réglage de vie privée n'attend
+        // pas un enregistrement de profil qui ne viendra peut-être jamais.
+        savePrefs({ ...prefs, ficheARepublier: true });
+      }
+    })();
+  }
   const [creating, setCreating] = useState(false);
   /** Groupe dont la suppression est demandée, en attente de confirmation. */
   const [aSupprimer, setASupprimer] = useState<Band | null>(null);
@@ -380,13 +412,7 @@ export function Bands() {
                       ? { color: 'var(--text-faint)' }
                       : {}),
                   }}
-                  onClick={() =>
-                    saveBand(
-                      band.hiddenFromPublic === true
-                        ? { ...band, hiddenFromPublic: undefined }
-                        : { ...band, hiddenFromPublic: true },
-                    )
-                  }
+                  onClick={() => basculerMasquage(band)}
                 >
                   {band.hiddenFromPublic === true ? '🙈' : '👁'}
                 </button>
