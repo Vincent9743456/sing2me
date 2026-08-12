@@ -53,6 +53,19 @@ export function SongEdit({ id }: { id: string | null }) {
   const isNew = existing === undefined;
   // Groupe de la version en cours d'édition (pour le bandeau de contexte).
   const editBand = bands.find((b) => b.id === versionBandId);
+  /**
+   * La version est-elle VRAIMENT rattachée à un groupe connu (b288, incohérence
+   * signalée par Vincent) ? Un `bandId` peut désigner un groupe qui n'existe
+   * plus localement (groupe quitté, ou identifiant local remplacé au retour
+   * dans le groupe, b185) : c'est un rattachement ORPHELIN, exactement comme
+   * en b281. La bannière le prenait pour « version du groupe / partagée » alors
+   * que le sélecteur — qui ne connaît que les groupes réels — affichait « Moi
+   * seul ». On tranche sur le groupe RÉSOLU : pas de groupe connu = version
+   * personnelle, partout dans ce bandeau. On ne répare PAS la donnée (un
+   * appareil qui n'a pas encore synchronisé ses groupes verrait à tort un vrai
+   * groupe comme orphelin — même prudence qu'en b281).
+   */
+  const versionGroupe = editBand != null;
   const editBandColor = [
     'var(--band-1)',
     'var(--band-2)',
@@ -260,7 +273,7 @@ export function SongEdit({ id }: { id: string | null }) {
         {/* Bandeau : rappelle CE QUE tu modifies et si c'est partagé. */}
         <div
           className="versionbanner"
-          style={versionBandId ? { borderLeftColor: editBandColor } : undefined}
+          style={versionGroupe ? { borderLeftColor: editBandColor } : undefined}
         >
           <div className="vb-main">
             <div className="vb-title">
@@ -268,7 +281,7 @@ export function SongEdit({ id }: { id: string | null }) {
                 {t('Tu modifies :')}{' '}
                 {editingOriginal
                   ? t('la version de référence')
-                  : versionBandId
+                  : versionGroupe
                     ? t('version du groupe {band}', {
                         band: editBand?.name || t('sans nom'),
                       })
@@ -278,7 +291,7 @@ export function SongEdit({ id }: { id: string | null }) {
               </span>
               {editingOriginal ? (
                 <span className="vb-ref">{t('⭐ référence')}</span>
-              ) : versionBandId ? (
+              ) : versionGroupe ? (
                 <span className="vb-shared">{t('partagée')}</span>
               ) : (
                 <span className="vb-solo">{t('perso')}</span>
@@ -291,7 +304,7 @@ export function SongEdit({ id }: { id: string | null }) {
                       'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres versions (tonalité/capo se répercutent).',
                     )
                   : t('Version maîtresse, personnelle : la base de ce morceau.')
-                : versionBandId
+                : versionGroupe
                   ? t(
                       'À l’enregistrement, tes changements partent vers tous les membres du groupe.',
                     )
