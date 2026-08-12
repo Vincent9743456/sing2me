@@ -236,6 +236,19 @@ create index if not exists live_messages_owner on live_messages (owner_id);
 -- Séances de mesure : même rattachement (compteur de spectateurs).
 alter table live_sessions add column if not exists owner_id uuid;
 
+-- b284 : `live_sessions` a été créée AVANT que ces colonnes n'entrent dans
+-- son `create table` plus haut. Or `create table if not exists` est un no-op
+-- sur une table déjà présente (cicatrice b195/b202) : sur la base de prod,
+-- `artist_name` n'a jamais été ajoutée, et la lecture des statistiques
+-- (`server/live-stats.js`, `server/souvenir.js`) échouait en 400
+-- « column live_sessions.artist_name does not exist » (constaté 12/08/26).
+-- On garantit CHAQUE colonne, jamais un bloc partiel : une seule oubliée
+-- fait retomber la fonction sur un repli silencieux.
+alter table live_sessions add column if not exists artist_name text not null default '';
+alter table live_sessions add column if not exists started_at timestamptz not null default now();
+alter table live_sessions add column if not exists ended_at timestamptz;
+alter table live_sessions add column if not exists uniques int not null default 0;
+
 -- ------------------------------------------------------------
 -- b195 : les colonnes de BASE du livre d'or.
 --
