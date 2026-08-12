@@ -703,6 +703,25 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   jamais un morceau de groupe qui n'en porte pas), enterre les surplus par
   tombstone (pour propager le retrait entre appareils), et est IDEMPOTENT
   (sans doublon, no-op — rejouable au chargement et à chaque fusion).
+- **LA BIBLIO PERSO SE RATTRAPE ENTRE APPAREILS, ET LA POUSSÉE FUSIONNE
+  D'ABORD** (b287, signalé par Vincent : une modif faite sur l'ordi
+  n'apparaissait pas sur l'iPhone). Deux causes : (1) la bibliothèque perso
+  n'était tirée du cloud QU'au démarrage — l'intervalle et le retour au
+  premier plan ne rappelaient que `syncBands` (les groupes) ou ne faisaient
+  que POUSSER ; un appareil déjà ouvert restait donc figé sur son état de
+  lancement. (2) `pushCloud` remplace TOUTE la ligne `user_library` (aucune
+  fusion serveur, `resolution=merge-duplicates` sur la ligne entière), donc un
+  appareil à l'état périmé qui poussait ÉCRASAIT le travail plus récent d'un
+  autre. Correctifs dans `AccountProvider` : `rattraperPerso` (pull+merge+
+  hydrate, lecture seule) est appelé au retour au premier plan, au retour
+  réseau et sur le cycle de 90 s, à côté de `syncBands` ; et `envoyer`
+  FUSIONNE le cloud avant de pousser (`fusionnerPerso`), pour ne jamais
+  écraser du plus récent. Deux repères évitent la boucle : `persoSyncBusy`
+  sérialise (comme `bandSyncBusy`), et `dernierCloud` retient l'`updated_at`
+  déjà intégré (distingue la nouveauté d'un autre appareil de sa propre
+  poussée — d'où `pushCloud` qui renvoie désormais son horodatage). La fusion
+  reste dernier-écrit-gagne PAR OBJET sur `updatedAt` : pas de résolution de
+  conflit à réinventer.
 - **DEUX COMPTES NE FUSIONNENT PAS** (b259, question de Vincent : « j'ai créé
   2 comptes avec 2 mails différents… j'ai l'impression qu'ils fusionnent.
   Comment empêcher cela ? »). Il avait raison, et c'était STRUCTUREL :
