@@ -681,6 +681,28 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 
 - Local-first : localStorage est la source ; le cloud est une copie.
   Jamais de fonctionnalité qui exige le réseau pour jouer.
+- **LE CONTENU D'EXEMPLE SE SÈME UNE SEULE FOIS, À LA CRÉATION DU COMPTE**
+  (b286, signalé par Vincent : « j'ai plein de "Ma première setlist" »). Deux
+  morceaux d'exemple (tag `Exemple`) + une setlist « …(exemple) », posés
+  exactement une fois, jamais régénérés, et dont la suppression est
+  DÉFINITIVE. L'ancien seed s'exécutait au montage, pendant la course de
+  synchro : quand la biblio semblait vide, il ré-injectait les exemples à
+  identifiants NEUFS, et la fusion par id les EMPILAIT (d'où les « Ma
+  première setlist » en série). Le seul instant certain où un compte n'a
+  jamais eu de bibliothèque, c'est quand sa ligne cloud n'existe pas encore
+  (`pullCloud` renvoie `null`) : le seed vit donc dans la synchro initiale
+  d'`AccountProvider`, LU sur le cloud, jamais deviné par un délai. Le premier
+  envoi crée la ligne, qui n'est plus jamais nulle → aucun re-seed même si
+  l'utilisateur supprime tout. Le seed local de `store.tsx` ne sert plus
+  qu'aux déploiements SANS cloud (`!authAvailable()`). Trois garde-fous
+  intangibles : **jamais chez un invité** (compte créé sur invitation d'un
+  groupe — `invitedRef`, posé AVANT `joinBand`, plus fiable que
+  `pendingInvite` qui s'efface trop tôt ; ses premiers morceaux sont ceux du
+  groupe) ; **jamais sur un lien public** (`#/s/…`, `#/p/…`) ; **`dedupeExamples`
+  (`src/seed.ts`) ne touche QUE le contenu d'exemple** (tag / nom obligatoires,
+  jamais un morceau de groupe qui n'en porte pas), enterre les surplus par
+  tombstone (pour propager le retrait entre appareils), et est IDEMPOTENT
+  (sans doublon, no-op — rejouable au chargement et à chaque fusion).
 - **DEUX COMPTES NE FUSIONNENT PAS** (b259, question de Vincent : « j'ai créé
   2 comptes avec 2 mails différents… j'ai l'impression qu'ils fusionnent.
   Comment empêcher cela ? »). Il avait raison, et c'était STRUCTUREL :

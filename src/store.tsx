@@ -33,7 +33,14 @@ import {
   removeVersion,
   versionForBand,
 } from './lib/model';
-import { exampleSetlist, exampleSongs, SEED_KEY, SEED_VERSION } from './seed';
+import {
+  dedupeExamples,
+  exampleSetlist,
+  exampleSongs,
+  SEED_KEY,
+  SEED_VERSION,
+} from './seed';
+import { authAvailable } from './lib/auth';
 import {
   ArtistProfile,
   Band,
@@ -141,7 +148,10 @@ function loadState(): AppState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<AppState>;
-      return withEmbeddedLiveKey({
+      // Effondre d'emblée les doublons de contenu d'exemple (b286) : un ancien
+      // bug les a empilés chez certains ; on les nettoie au chargement, et les
+      // tombstones posés se propagent à la fusion suivante.
+      return dedupeExamples(withEmbeddedLiveKey({
         // migration automatique de l'ancien modèle à sections
         songs: (Array.isArray(parsed.songs) ? parsed.songs : []).map(migrateSong),
         // Coquilles vides laissées par le défaut corrigé en b146 : on les
@@ -175,7 +185,7 @@ function loadState(): AppState {
         bandRemovals: Array.isArray(parsed.bandRemovals)
           ? parsed.bandRemovals
           : [],
-      });
+      }));
     }
   } catch {
     // stockage illisible : on repart des données de démo
@@ -216,6 +226,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
    *     connecté, on laisse donc à la synchro le temps de parler.
    */
   useEffect(() => {
+    // AVEC UN CLOUD, C'EST LA SYNCHRO QUI SÈME (b286). Le seul instant où l'on
+    // est CERTAIN qu'un compte n'a jamais eu de bibliothèque, c'est quand sa
+    // ligne cloud n'existe pas encore — ce que seul le premier sync sait
+    // (`AccountProvider`). Semer ici, au montage, avant que la synchro n'ait
+    // parlé, c'était la cause des « Ma première setlist » en série : la course
+    // injectait les exemples par-dessus une biblio qui arrivait juste après,
+    // et la fusion par id (exemples ré-identifiés à neuf) les empilait.
+    // Ce seed local ne sert donc plus qu'aux déploiements SANS cloud.
+    if (authAvailable()) return;
     let seeded = false;
     try {
       seeded = localStorage.getItem(SEED_KEY) !== null;

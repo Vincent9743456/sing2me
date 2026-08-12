@@ -5,7 +5,8 @@
  * traditionnel) — arrangements d'accords libres. Marqueur : tag « Exemple ».
  */
 import { migrateSong } from './lib/model';
-import { emptySetlist, makeId, Setlist, Song } from './types';
+import { normalizeTitle } from './lib/normalizeTitle';
+import { emptySetlist, makeId, Setlist, Song, Tombstone } from './types';
 
 export const EXAMPLE_TAG = 'Exemple';
 /** Version du seed (le drapeau localStorage la mémorise). */
@@ -95,4 +96,87 @@ export function exampleSetlist(songIds: string[]): Setlist {
       versionId: '',
     })),
   };
+}
+
+/** Une setlist d'exemple se reconnaît à son nom (voir `exampleSetlist`). */
+export function estSetlistExemple(sl: { name: string }): boolean {
+  return /\(exemple\)/i.test(sl.name);
+}
+
+/** Un morceau d'exemple porte le tag `Exemple`. */
+export function estMorceauExemple(s: { tags?: string[] }): boolean {
+  return (s.tags ?? []).includes(EXAMPLE_TAG);
+}
+
+/**
+ * EFFONDRE LES DOUBLONS DE CONTENU D'EXEMPLE (b286, signalé par Vincent :
+ * « j'ai plein de "Ma première setlist" »).
+ *
+ * Une ancienne course de synchro pouvait ré-injecter les exemples à
+ * identifiants NEUFS ; la fusion par id les empilait au lieu de les
+ * reconnaître. On garde AU PLUS une setlist d'exemple et un morceau d'exemple
+ * PAR TITRE ; les surplus sont ENTERRÉS (tombstone par id), sans quoi la
+ * fusion d'un autre appareil les ferait revenir.
+ *
+ * Trois garde-fous :
+ *  · on ne touche JAMAIS au contenu non-exemple (tag / nom obligatoires) ;
+ *  · on ne RECRÉE jamais rien — zéro exemple reste zéro (une suppression
+ *    volontaire est définitive) ;
+ *  · IDEMPOTENT : sans doublon, l'objet est renvoyé tel quel (aucun tombstone
+ *    ajouté), donc rejouable à chaque chargement et à chaque fusion sans
+ *    gonfler la liste des suppressions.
+ */
+export function dedupeExamples<
+  S extends {
+    songs: Song[];
+    setlists: Setlist[];
+    deleted?: Tombstone[];
+  },
+>(state: S): S {
+  // Setlists d'exemple : garder la première, enterrer les autres.
+  const setlistsExemple = state.setlists.filter(estSetlistExemple);
+  const setlistsMortes = setlistsExemple.slice(1).map((sl) => sl.id);
+
+  // Morceaux d'exemple : garder un par titre, enterrer les autres.
+  const gardeParTitre = new Map<string, string>();
+  const chansonsMortes: string[] = [];
+  for (const s of state.songs) {
+    if (!estMorceauExemple(s)) continue;
+    const t = normalizeTitle(s.title);
+    if (gardeParTitre.has(t)) chansonsMortes.push(s.id);
+    else gardeParTitre.set(t, s.id);
+  }
+
+  if (setlistsMortes.length === 0 && chansonsMortes.length === 0) return state;
+
+  const morts = new Set([...setlistsMortes, ...chansonsMortes]);
+  // Un item qui pointait un morceau d'exemple enterré est redirigé vers celui
+  // gardé pour le même titre — sinon la setlist gardée perdrait ses morceaux.
+  const remap = new Map<string, string>();
+  for (const s of state.songs) {
+    if (morts.has(s.id) && estMorceauExemple(s)) {
+      const garde = gardeParTitre.get(normalizeTitle(s.title));
+      if (garde) remap.set(s.id, garde);
+    }
+  }
+
+  const now = new Date().toISOString();
+  return {
+    ...state,
+    songs: state.songs.filter((s) => !morts.has(s.id)),
+    setlists: state.setlists
+      .filter((sl) => !morts.has(sl.id))
+      .map((sl) => ({
+        ...sl,
+        items: sl.items.map((it) =>
+          remap.has(it.songId)
+            ? { ...it, songId: remap.get(it.songId) as string }
+            : it,
+        ),
+      })),
+    deleted: [
+      ...(state.deleted ?? []),
+      ...[...morts].map((id) => ({ id, at: now })),
+    ],
+  } as S;
 }
