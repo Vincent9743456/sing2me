@@ -40,12 +40,20 @@ export function SwipeRow({
   onDelete,
   label,
   className = 'row',
+  onClick,
 }: {
   children: React.ReactNode;
   onDelete: () => void;
   /** Ce que la corbeille supprimera — annoncé aux lecteurs d'écran. */
   label: string;
   className?: string;
+  /**
+   * Ce que fait la ligne quand on la touche (b280). Il vit ICI et pas dans
+   * un div enfant : une ligne emboîtée dans une autre double son
+   * rembourrage et sa bordure. Ignoré quand le volet est ouvert — sinon on
+   * ouvrirait l'élément en voulant simplement refermer la corbeille.
+   */
+  onClick?: () => void;
 }) {
   const [decalage, setDecalage] = useState(0);
   const [ouvert, setOuvert] = useState(false);
@@ -112,6 +120,13 @@ export function SwipeRow({
         style={{
           transform: `translateX(-${decalage}px)`,
           transition: depart.current ? 'none' : 'transform 160ms ease',
+        }}
+        onClick={() => {
+          if (ouvert) {
+            fermer();
+            return;
+          }
+          onClick?.();
         }}
         onContextMenu={(e) => {
           // Clic droit / appui long du navigateur : même effet, sans menu.

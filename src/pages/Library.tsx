@@ -535,17 +535,19 @@ export function Library() {
       key={song.id}
       label={song.title || t('ce morceau')}
       onDelete={() => setRowDelete(song)}
+      /* La CLASSE va au corps du balayage, pas à un div de plus (b280) :
+         emboîter une deuxième `.row` doublait le rembourrage et la bordure,
+         et faisait rétrécir la ligne intérieure à la largeur de son
+         contenu — la régression signalée par Vincent. */
+      className={`row ${selectedId === song.id ? 'selected' : ''} ${
+        (song.pendingBandId ?? '') !== '' ? 'proposal' : ''
+      }`}
+      onClick={() => {
+        openWithContext(song);
+        if (isSplitScreen()) setSelectedId(song.id);
+        else navigate(`/song/${song.id}`);
+      }}
     >
-                  <div
-                    className={`row ${selectedId === song.id ? 'selected' : ''} ${
-                      (song.pendingBandId ?? '') !== '' ? 'proposal' : ''
-                    }`}
-                    onClick={() => {
-                      openWithContext(song);
-                      if (isSplitScreen()) setSelectedId(song.id);
-                      else navigate(`/song/${song.id}`);
-                    }}
-                  >
                     <div className="grow" style={{ minWidth: 0 }}>
                       <div className="title">{song.title || t('(sans titre)')}</div>
                       {(song.pendingBandId ?? '') !== '' ? (
@@ -690,7 +692,6 @@ export function Library() {
                     >
                       <Icon name="more" size={20} />
                     </button>
-                  </div>
     </SwipeRow>
   );
 
