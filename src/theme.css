@@ -2466,6 +2466,12 @@ h2.pagetitle {
     border-radius: var(--radius);
     background: var(--surface);
   }
+  /* La boîte du balayage suit l'arrondi de sa ligne (b283) : les deux
+     valeurs doivent rester d'accord, sinon le rouge de la corbeille dépasse
+     aux coins. */
+  .list .swiperow {
+    --swipe-radius: var(--radius);
+  }
   .list .row:hover {
     background: var(--surface-high);
     border-color: var(--border);
@@ -3803,14 +3809,33 @@ a.pg-musicien:focus-visible .pg-nom {
    LIGNE BALAYABLE (b254) — la corbeille se RÉVÈLE, elle ne traîne pas
    sur la ligne. Voir src/components/SwipeRow.tsx.
    ------------------------------------------------------------------ */
+/* LE ROUGE DE LA CORBEILLE NE DOIT SE VOIR QUE QUAND ON L'A DEMANDÉ (b283,
+   constat de Vincent : « pb de format avec le rouge qui se voit sur la page
+   morceau sur ordi et sur téléphone / tablette »).
+
+   Deux fuites géométriques, mesurées avant correction :
+    · en GRILLE (≥ 720 px), la boîte s'étire à la hauteur de la plus haute
+      ligne de la rangée, pas le corps : 146 px contre 81 px mesurés, soit
+      65 px de rouge sous les lignes courtes — d'où les blocs rouges. La
+      boîte est donc un conteneur flex, et le corps s'y étire ;
+    · l'arrondi de la boîte (10 px) ne suivait pas celui du corps, que
+      `.list .row` porte à 14 px en grille : le rouge dépassait aux quatre
+      coins, en fin liseré. Un seul jeton (`--swipe-radius`) pour les deux.
+
+   Et la ceinture : au repos la corbeille n'est pas peinte du tout. Aucune
+   géométrie, présente ou future, ne peut alors laisser passer du rouge. */
 .swiperow {
+  --swipe-radius: var(--radius-s);
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius-s);
+  border-radius: var(--swipe-radius);
+  display: flex;
 }
 .swiperow-body {
   position: relative;
   z-index: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   background: var(--bg);
   will-change: transform;
   /* Le navigateur garde le défilement vertical ; on ne lui prend que
@@ -3822,7 +3847,7 @@ a.pg-musicien:focus-visible .pg-nom {
   inset: 0 0 0 auto;
   width: 88px;
   border: 0;
-  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  border-radius: 0 var(--swipe-radius) var(--swipe-radius) 0;
   background: var(--danger);
   color: var(--on-accent);
   font-size: 1.3rem;
@@ -3831,6 +3856,13 @@ a.pg-musicien:focus-visible .pg-nom {
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+.swiperow.revele .swiperow-trash {
+  opacity: 1;
+  pointer-events: auto;
 }
 .swiperow-trash:focus-visible {
   outline: 2px solid var(--text);

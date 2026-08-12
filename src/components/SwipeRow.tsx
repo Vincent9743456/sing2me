@@ -99,8 +99,16 @@ export function SwipeRow({
     setDecalage(0);
   };
 
+  /**
+   * Le rouge n'est peint que lorsqu'on le révèle (b283). Pendant le geste
+   * `ouvert` est encore faux alors que le corps a déjà commencé à glisser :
+   * c'est le DÉCALAGE qui fait foi, sinon on découvrirait un fond vide sous
+   * le doigt.
+   */
+  const revele = ouvert || decalage > 0;
+
   return (
-    <div className="swiperow">
+    <div className={`swiperow${revele ? ' revele' : ''}`}>
       <button
         type="button"
         className="swiperow-trash"
