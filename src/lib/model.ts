@@ -1455,51 +1455,19 @@ export function migrateSong(raw: unknown): Song {
   }
 
   /**
-   * INVARIANT : LE HAUT NIVEAU REFLÈTE LA VERSION ACTIVE (b290, signalé par
-   * Vincent : dans une partition « originale », le mode scène affichait la
-   * version du GROUPE — sans capo).
+   * RÉPARATION RETIRÉE (b291) — elle réécrivait des capos/accords légitimes.
    *
-   * `song.key`, `song.capo`, `song.lyrics`… ne sont qu'un MIROIR de la version
-   * active (`activeVersionId`). Toutes les écritures le garantissent
-   * (`switchVersion`, `setSongCapo`, `bakeDraft`→`syncActiveVersion`), donc au
-   * repos ils sont TOUJOURS égaux — sauf quand un traitement a changé la
-   * version active sans resynchroniser. Deux fuites réelles :
-   *  · la réinitialisation d'`activeVersionId` plus haut (version de groupe
-   *    devenue introuvable — b185, ou dédoublonnage `dedupeBandVersions`)
-   *    remettait bien l'originale en active, mais laissait `capo`/`lyrics`/
-   *    `key` sur l'ancien contenu de groupe ;
-   *  · `dedupeBandVersions`/`ensureOriginalVersion` peuvent retirer la version
-   *    active, laissant `activeVersionId` pendant.
-   * Le mode scène, le direct et la vue publique lisent le haut niveau : ils
-   * montraient donc le contenu du groupe (sans capo) à la place de l'originale.
-   *
-   * On réaligne ICI, après TOUTES les réparations de versions : `activeVersionId`
-   * pointe une version existante, et le haut niveau est recopié depuis elle.
-   * No-op sur une donnée saine (ils sont déjà égaux), réparation sur une donnée
-   * désynchronisée. `updatedAt` n'est PAS touché : une réparation silencieuse
-   * n'a pas à gagner la fusion de synchro (chaque appareil la refait au
-   * chargement), comme les réparations de b248/b249.
+   * b290 recopiait le haut niveau (`capo`/`lyrics`/`key`) depuis la version
+   * active au chargement, en supposant que la version active était toujours la
+   * SOURCE et le haut niveau un simple miroir. FAUX pour au moins un chemin :
+   * certaines écritures mettent à jour le haut niveau sans resynchroniser
+   * l'objet version (constaté après signalement de Vincent : « ça a modifié les
+   * capos placés »). La réparation partait alors dans le mauvais sens et
+   * ÉCRASAIT le bon contenu par l'ancien de la version. Une réparation qui peut
+   * détruire des données ne vaut pas le bug d'affichage qu'elle corrigeait.
+   * Le vrai correctif est de rendre TOUS les chemins d'écriture synchrones
+   * (source unique), pas de deviner la vérité au chargement — à traiter à part.
    */
-  const av = activeVersion(base);
-  if (base.activeVersionId !== av.id) {
-    base = { ...base, activeVersionId: av.id };
-  }
-  if (
-    base.key !== av.key ||
-    base.tempo !== av.tempo ||
-    base.capo !== av.capo ||
-    base.lyrics !== av.lyrics
-  ) {
-    base = {
-      ...base,
-      key: av.key,
-      tempo: av.tempo,
-      capo: av.capo,
-      structure: av.structure,
-      lyrics: av.lyrics,
-      publicLyrics: av.publicLyrics,
-    };
-  }
 
   const { notes: _legacyNotes, ...clean } = base as Song & { notes?: string };
   return clean as Song;
