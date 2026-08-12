@@ -424,6 +424,18 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Retirer du répertoire': 'Remove from repertoire',
   '« {title} » retiré du répertoire — il reste chez toi.':
     '“{title}” removed from the repertoire — it stays in your library.',
+  // ---------- Corbeille : quelle intention ? (b279) ----------
+  '« {title} » — que veux-tu faire ?': '“{title}” — what do you want to do?',
+  'Tu regardes le répertoire de {groupe}. Retirer du répertoire et supprimer le morceau ne sont pas la même chose — dis-moi laquelle.':
+    'You are looking at {groupe}’s repertoire. Removing from the repertoire and deleting the song are not the same thing — tell me which one.',
+  'Le retirer du répertoire de {band}': 'Remove it from {band}’s repertoire',
+  'Il reste dans ta bibliothèque — tu continues de le jouer en solo.':
+    'It stays in your library — you keep playing it solo.',
+  'Supprimer le morceau…': 'Delete the song…',
+  'Là, il quitte ta bibliothèque. L’écran suivant dit exactement ce qui se passe.':
+    'That one takes it out of your library. The next screen says exactly what happens.',
+  'Ses {n} versions seront supprimées, et le morceau quittera aussi les setlists.':
+    'All {n} of its versions will be deleted, and the song will also leave the setlists.',
   'Aucun morceau ne correspond.': 'No song matches.',
 
   // ---------- NoteModal.tsx ----------
