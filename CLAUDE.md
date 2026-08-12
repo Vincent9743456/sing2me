@@ -997,8 +997,24 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   ouvre l'app même en mode avion ; les pages publiques (/live, /nom,
   /s/…, CGU, signalement) ne sont jamais bloquées ; si l'auth n'est pas
   configurée (déploiement sans cloud), pas de portail.
-- Variables Vite : accès statique uniquement
-  (`import.meta.env.VITE_X`) — jamais d'accès dynamique.
+- **UN SEUL RAFRAÎCHISSEMENT DE JETON À LA FOIS** (b285, déconnexion
+  intempestive signalée par Vincent après un live de 5 h). Supabase fait
+  TOURNER les refresh tokens : renouveler en émet un nouveau et invalide
+  l'ancien ; présenter deux fois le même est vu comme une réutilisation
+  suspecte et RÉVOQUE toute la session. Or `getValidSession` est appelée de
+  partout (synchro, sondage du live, groupes, page publique) : au seuil des
+  2 min avant expiration, plusieurs appels partaient ensemble avec le MÊME
+  refresh token — course d'autant plus probable pendant un live. Le premier
+  réussissait, les suivants tombaient sur un token consommé → déconnexion.
+  Correctif dans `getValidSession` (`src/lib/auth.ts`) : une seule promesse de
+  rafraîchissement partagée entre appels concurrents (`refreshEnCours`), et on
+  ne déconnecte PAS sur un `'invalid'` si la session stockée porte déjà un
+  jeton frais (une course concurrente a renouvelé). Règle générale : toute
+  rotation de secret côté serveur exige un accès concurrent sérialisé côté
+  client. À ne pas confondre avec le CACHE d'e-mail (le blocage de connexion
+  de Vincent venait d'un scanner de messagerie pro qui détonait le lien
+  magique et consommait le jeton à usage unique — réglé côté Supabase par un
+  gabarit d'e-mail SANS lien, code seul).
 - Supabase côté client : clé anon + RLS uniquement ; service_role
   seulement dans `api/*.js` (Vercel).
 - SQL : les fichiers `supabase/*.sql` restent idempotents
