@@ -242,6 +242,24 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     (« Tonalité de ce concert »). La tonalité annoncée aux autres
     musiciens vient du morceau (`playedKey`), jamais de la clé de
     rafraîchissement de la diffusion ;
+  - **LE HAUT NIVEAU D'UN MORCEAU REFLÈTE SA VERSION ACTIVE** (b290, signalé
+    par Vincent : dans une partition « originale », le mode scène affichait la
+    version du GROUPE — sans capo). `song.key`, `song.capo`, `song.lyrics`… ne
+    sont qu'un MIROIR de la version active (`activeVersionId`) ; le mode scène,
+    le direct et la vue publique les lisent. Toutes les écritures gardent ce
+    miroir à jour (`switchVersion`, `setSongCapo`, `bakeDraft`→
+    `syncActiveVersion`), donc au repos ils sont TOUJOURS égaux — SAUF quand un
+    traitement change la version active sans resynchroniser : `migrateSong`
+    réinitialisait `activeVersionId` sur l'originale (version de groupe devenue
+    introuvable, b185, ou `dedupeBandVersions`) en laissant `capo`/`lyrics`/
+    `key` sur l'ancien contenu de groupe. `migrateSong` réaligne donc le haut
+    niveau sur la version active À LA FIN, après toutes les réparations de
+    versions — no-op sur une donnée saine, réparation sur une donnée
+    désynchronisée, `updatedAt` non touché (une réparation silencieuse ne gagne
+    pas la fusion, cicatrice b248/b249). Corollaire d'affichage : **le capo est
+    en ÉVIDENCE en mode scène** (pastille `.stage-capo`, jetons `--stage-*`, ni
+    ambre ni cyan) — « c'est important qu'elle le soit », on le pose avant de
+    jouer ;
   - **invariant « originale maîtresse »** (assoupli b135) : la 1ʳᵉ version
     (`versions[0]`) est TOUJOURS une version personnelle (`bandId ''`) —
     elle reste dans la bibliothèque perso, pilote les autres, n'est jamais

@@ -379,17 +379,27 @@ export function Stage({
         <h2 className="songtitle" style={{ fontSize: `${fontSize * 1.4}rem` }}>
           {song.title}
         </h2>
+        {/* CAPO EN ÉVIDENCE (b290, demande de Vincent : « l'information du
+            Capo n'est pas visible. C'est important qu'elle le soit »). Sur
+            scène, à distance, un « Capo 2 » noyé dans la ligne grise se rate —
+            et c'est une info qu'on pose AVANT de jouer. Pastille à fort
+            contraste, sous le titre. En vue « tonalité réelle » (basse), le
+            capo ne s'applique pas au jeu : on ne l'affiche pas. */}
+        {!displayReal && song.capo > 0 && (
+          <div className="stage-capo">
+            🎸 {t('Capo {n}', { n: song.capo })}
+            {realKey !== '' ? (
+              <span className="sc-real">
+                {t('sonne en {ton}', { ton: realKey })}
+              </span>
+            ) : null}
+          </div>
+        )}
         <div className="help" style={{ marginBottom: 10 }}>
           {[
             song.artist,
             shownKey,
             song.tempo > 0 ? `${song.tempo} BPM` : '',
-            !displayReal && song.capo > 0
-              ? t('Capo {n}', { n: song.capo })
-              : '',
-            !displayReal && song.capo > 0 && realKey !== ''
-              ? t('sonne en {ton}', { ton: realKey })
-              : '',
           ]
             .filter((x) => x !== '')
             .join(' · ')}
