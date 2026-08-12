@@ -1454,6 +1454,53 @@ export function migrateSong(raw: unknown): Song {
     base = { ...base, idea: false };
   }
 
+  /**
+   * INVARIANT : LE HAUT NIVEAU REFLÈTE LA VERSION ACTIVE (b290, signalé par
+   * Vincent : dans une partition « originale », le mode scène affichait la
+   * version du GROUPE — sans capo).
+   *
+   * `song.key`, `song.capo`, `song.lyrics`… ne sont qu'un MIROIR de la version
+   * active (`activeVersionId`). Toutes les écritures le garantissent
+   * (`switchVersion`, `setSongCapo`, `bakeDraft`→`syncActiveVersion`), donc au
+   * repos ils sont TOUJOURS égaux — sauf quand un traitement a changé la
+   * version active sans resynchroniser. Deux fuites réelles :
+   *  · la réinitialisation d'`activeVersionId` plus haut (version de groupe
+   *    devenue introuvable — b185, ou dédoublonnage `dedupeBandVersions`)
+   *    remettait bien l'originale en active, mais laissait `capo`/`lyrics`/
+   *    `key` sur l'ancien contenu de groupe ;
+   *  · `dedupeBandVersions`/`ensureOriginalVersion` peuvent retirer la version
+   *    active, laissant `activeVersionId` pendant.
+   * Le mode scène, le direct et la vue publique lisent le haut niveau : ils
+   * montraient donc le contenu du groupe (sans capo) à la place de l'originale.
+   *
+   * On réaligne ICI, après TOUTES les réparations de versions : `activeVersionId`
+   * pointe une version existante, et le haut niveau est recopié depuis elle.
+   * No-op sur une donnée saine (ils sont déjà égaux), réparation sur une donnée
+   * désynchronisée. `updatedAt` n'est PAS touché : une réparation silencieuse
+   * n'a pas à gagner la fusion de synchro (chaque appareil la refait au
+   * chargement), comme les réparations de b248/b249.
+   */
+  const av = activeVersion(base);
+  if (base.activeVersionId !== av.id) {
+    base = { ...base, activeVersionId: av.id };
+  }
+  if (
+    base.key !== av.key ||
+    base.tempo !== av.tempo ||
+    base.capo !== av.capo ||
+    base.lyrics !== av.lyrics
+  ) {
+    base = {
+      ...base,
+      key: av.key,
+      tempo: av.tempo,
+      capo: av.capo,
+      structure: av.structure,
+      lyrics: av.lyrics,
+      publicLyrics: av.publicLyrics,
+    };
+  }
+
   const { notes: _legacyNotes, ...clean } = base as Song & { notes?: string };
   return clean as Song;
 }
