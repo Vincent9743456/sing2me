@@ -22,7 +22,7 @@
  * Trois issues, une seule fonction : le store applique la décision, les
  * écrans l'ANNONCENT avant. Ils ne peuvent pas diverger.
  */
-import { Setlist, Song } from '../types';
+import { Band, Setlist, Song } from '../types';
 
 export type SortDuMorceau =
   /** Morceau personnel : suppression franche, avec pierre tombale. */
@@ -34,8 +34,22 @@ export type SortDuMorceau =
   /** Programmé dans une setlist du groupe : on ne le supprime pas. */
   | { mode: 'refus'; bandId: string; setlist: string };
 
-/** Les groupes dont ce morceau fait partie du répertoire. */
-export function groupesDuMorceau(song: Song): string[] {
+/**
+ * Les groupes dont ce morceau fait partie du répertoire.
+ *
+ * UN IDENTIFIANT ORPHELIN N'EST PAS UN GROUPE (b281, constat de Vincent :
+ * « le morceau que je supprime n'est affecté à aucun groupe, le message est
+ * incohérent »). Une version pouvait porter le `bandId` d'un groupe qui
+ * n'existe plus — groupe supprimé, ou identifiant local remplacé au retour
+ * dans un groupe (b185). Le morceau passait alors pour un morceau de
+ * répertoire, et l'app annonçait « il vient du répertoire de ton groupe » :
+ * la formule générique « ton groupe » ÉTAIT le symptôme, faute d'avoir pu
+ * nommer le groupe en question.
+ *
+ * On ne garde donc que les groupes que je connais vraiment. `connus` non
+ * fourni = pas de filtrage (appels historiques).
+ */
+export function groupesDuMorceau(song: Song, connus?: Band[]): string[] {
   const ids = (song.versions ?? [])
     .map((v) => v.bandId ?? '')
     .filter((id) => id !== '');
@@ -43,7 +57,10 @@ export function groupesDuMorceau(song: Song): string[] {
   // appartient au répertoire du groupe même si aucune version ne le porte.
   const enAttente = song.pendingBandId ?? '';
   if (enAttente !== '' && !ids.includes(enAttente)) ids.push(enAttente);
-  return [...new Set(ids)];
+  const uniques = [...new Set(ids)];
+  if (!connus) return uniques;
+  const existants = new Set(connus.map((b) => b.id));
+  return uniques.filter((id) => existants.has(id));
 }
 
 /**
@@ -53,8 +70,13 @@ export function groupesDuMorceau(song: Song): string[] {
  * `bandId` du morceau, parce que c'est le programme du GROUPE qui protège,
  * pas mon brouillon personnel.
  */
-export function sortDuMorceau(song: Song, setlists: Setlist[]): SortDuMorceau {
-  const groupes = groupesDuMorceau(song);
+export function sortDuMorceau(
+  song: Song,
+  setlists: Setlist[],
+  /** Mes groupes — pour ignorer un rattachement devenu orphelin (b281). */
+  bands?: Band[],
+): SortDuMorceau {
+  const groupes = groupesDuMorceau(song, bands);
   if (groupes.length === 0) return { mode: 'supprime' };
   const programmee = setlists.find(
     (sl) =>
