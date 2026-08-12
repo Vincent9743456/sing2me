@@ -58,6 +58,7 @@ import {
   mergeBandData,
 } from '../lib/bandSync';
 import { migrateSong } from '../lib/model';
+import { dedupeExamples, exampleSetlist, exampleSongs } from '../seed';
 import {
   ensureBandPage,
   reserverAdresseArtiste,
@@ -274,6 +275,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   }, []);
   // Pas de push tant que la fusion initiale n'a pas eu lieu
   const readyRef = useRef(false);
+  /**
+   * Une invitation de groupe est en cours de traitement (b286). Posé AVANT
+   * `joinBand` (donc avant tout effacement de `pendingInvite`), il est le seul
+   * signal fiable pour que le seed ne s'exécute PAS chez un compte créé sur
+   * invitation — dont les premiers morceaux doivent être ceux du groupe.
+   * Déclaré ici pour être lisible par l'effet de synchro initiale, qui tourne
+   * juste au-dessus.
+   */
+  const invitedRef = useRef(false);
 
   /*
    * Ce qui MONTE dans le cloud (b202). Cette liste oubliait deux choses, et
@@ -500,8 +510,50 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             ),
           );
         }
-        hydrateRef.current(sur as AppState);
-        await pushCloud(valid, sur);
+        /**
+         * CONTENU D'EXEMPLE : UNE SEULE FOIS, À LA CRÉATION DU COMPTE (b286,
+         * signalé par Vincent : « j'ai plein de "Ma première setlist" »).
+         *
+         * `cloud === null` = la ligne `user_library` n'existe pas encore, donc
+         * ce compte n'a JAMAIS rien eu : c'est le seul instant certain pour
+         * semer, et il est LU sur le cloud, pas deviné par un délai. Le premier
+         * envoi crée la ligne ; elle n'est plus jamais nulle → aucun re-seed,
+         * et une suppression volontaire reste définitive. Jamais sur un lien
+         * public ou une invitation (l'invité voit du vrai contenu).
+         */
+        let hors = false;
+        let invite = false;
+        try {
+          hors = /^#\/(s|p)\//.test(location.hash);
+          invite = localStorage.getItem('sing2me/pendingInvite') !== null;
+        } catch {
+          /* location/stockage indisponible : on ne sème pas dans le doute */
+          hors = true;
+        }
+        let aEcrire = sur;
+        if (
+          cloud === null &&
+          !hors &&
+          !invite &&
+          // Signal fiable, posé avant `joinBand` : un compte créé sur
+          // invitation ne reçoit jamais d'exemples (b286).
+          !invitedRef.current &&
+          (sur.songs?.length ?? 0) === 0 &&
+          (sur.setlists?.length ?? 0) === 0
+        ) {
+          const songs = exampleSongs();
+          aEcrire = {
+            ...sur,
+            songs,
+            setlists: [exampleSetlist(songs.map((s) => s.id))],
+          };
+        }
+        // Effondre les doublons hérités de l'ancien bug, sur l'état FUSIONNÉ
+        // (donc en tenant compte de ce que d'autres appareils avaient empilé) ;
+        // les tombstones posés se propagent au prochain cycle.
+        aEcrire = dedupeExamples(aEcrire);
+        hydrateRef.current(aEcrire as AppState);
+        await pushCloud(valid, aEcrire);
         if (cancelled) return;
         // Noté APRÈS l'envoi : un compte marqué dont le cloud n'aurait rien
         // reçu ferait perdre ces données au changement suivant.
@@ -595,7 +647,6 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
    * premier plan — un lien ouvert dans un autre onglet ne laisse pas d'autre
    * signal.
    */
-  const invitedRef = useRef(false);
   const [inviteTick, setInviteTick] = useState(0);
   useEffect(() => {
     const reveille = () => setInviteTick((n) => n + 1);
