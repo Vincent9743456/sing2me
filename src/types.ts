@@ -256,6 +256,16 @@ export interface Prefs {
    * personnel ne reste sur le serveur.
    */
   pagePubliqueMasquee?: boolean;
+  /**
+   * Un masquage de groupe qui n'a pas atteint le serveur (b282). Levé quand
+   * la republication de la fiche échoue — hors ligne, réseau capricieux —
+   * et rejoué à la prochaine synchronisation, comme toute modification faite
+   * hors ligne (b221). Sans lui, la page publique continuerait de nommer un
+   * groupe masqué jusqu'au prochain enregistrement du profil : un réglage de
+   * vie privée n'a pas le droit d'attendre un geste qui ne viendra peut-être
+   * jamais.
+   */
+  ficheARepublier?: boolean;
   /** Vue par défaut du musicien (profil) */
   defaultView: ViewMode;
   /** Nom du musicien (signe les notes de répétition) */

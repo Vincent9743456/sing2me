@@ -560,6 +560,26 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     direct à son nom** — sans cette dernière règle, masquer ne servirait à
     rien : un seul concert suffirait à l'exposer. C'est un choix PERSONNEL
     (c'est ma page publique), jamais partagé avec les autres membres.
+    **UN RÉGLAGE QUI DÉCIDE DE CE QUE VOIT LE PUBLIC AGIT TOUT DE SUITE**
+    (b282, constat de Vincent : « le masquage des groupes sur la page artiste
+    pour le public ne fonctionne pas »). Le filtre était juste — mais il ne
+    s'exécute qu'à la PUBLICATION de la fiche (enregistrement du profil, GO
+    LIVE, réservation d'adresse), et cocher « masquer » ne publiait rien. La
+    fiche en ligne gardait donc la liste d'avant, indéfiniment. Deux fuites :
+    le groupe restait NOMMÉ sur `/monnom`, et son adresse miroir restait
+    ouverte quand le masquage venait de la LISTE (l'œil de b228) — seule la
+    case de la fiche du groupe prenait la peine de la retirer. Même règle
+    qu'en b262 pour la page rendue invisible : sur une question de vie privée,
+    un réglage qui ment est pire que pas de réglage. La décision vit à UN
+    endroit (`src/lib/masquagegroupe.ts`) — deux interrupteurs pour la même
+    chose ne peuvent pas se comporter différemment. Corollaires : le drapeau
+    LOCAL part d'abord (il interdit déjà le direct, et ça ne dépend d'aucun
+    serveur), masquer ne CRÉE jamais de page d'artiste (sans fiche en ligne il
+    n'y a rien d'exposé), un échec se DIT et s'arme pour la synchro suivante
+    (`prefs.ficheARepublier`, comme toute modification hors ligne, b221), et
+    **on ne conclut pas « pas de page » sur une panne** : `fetchMyPublicName`
+    avale l'erreur — ce qu'il faut pour afficher, jamais pour conclure
+    (cicatrice b245/b246), d'où `monNomPublicOuErreur`.
   - **mon QR est unique, mon choix au lancement décide de ce que voit le
     public** (b183) : le passage en direct réserve/rafraîchit ma fiche
     publique avec MON profil, jamais celui du groupe (sinon un concert de

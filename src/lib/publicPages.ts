@@ -283,6 +283,30 @@ export async function fetchMyPublicName(
 }
 
 /**
+ * LA MÊME QUESTION, MAIS SANS AVALER LA PANNE (b282).
+ *
+ * `fetchMyPublicName` est tolérante : hors ligne, elle rend `null`, comme un
+ * compte qui n'aurait aucune page. C'est ce qu'il faut pour AFFICHER — jamais
+ * pour CONCLURE (cicatrice b245/b246 : ce qui ne trouve rien n'est pas une
+ * preuve d'absence). En masquant un groupe, la nuance décide de tout : si on
+ * prend un réseau coupé pour « rien à corriger », la fiche en ligne continue
+ * de nommer le groupe masqué et personne ne le saura jamais.
+ *
+ * Rend '' quand le serveur a répondu qu'il n'y a pas de ligne ; LÈVE quand on
+ * n'a pas pu lui poser la question.
+ */
+export async function monNomPublicOuErreur(s: AuthSession): Promise<string> {
+  if (!publicPagesAvailable()) return '';
+  const res = await fetch(
+    `${sbUrl()}/rest/v1/public_pages?user_id=eq.${s.userId}&select=name`,
+    { headers: { apikey: anon(), authorization: `Bearer ${s.accessToken}` } },
+  );
+  if (!res.ok) throw new Error(`public_pages ${res.status}`);
+  const rows = await res.json();
+  return (Array.isArray(rows) && rows[0]?.name) || '';
+}
+
+/**
  * MON ADRESSE PUBLIQUE, EN INSISTANT (b245, écran envoyé par Vincent : « Ta
  * page publique n'est pas encore réservée » alors qu'elle l'était).
  *

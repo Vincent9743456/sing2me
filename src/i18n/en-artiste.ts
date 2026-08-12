@@ -503,6 +503,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Masquer « {nom} » au public ?': 'Hide “{nom}” from the audience?',
   'Il disparaît de tes identités publiques et son adresse est retirée. Tes morceaux, tes setlists et les autres membres ne changent pas — et ce choix ne concerne que toi.': 'It disappears from your public identities and its address is released. Your songs, your setlists and the other members do not change — and this choice is yours alone.',
   'Groupe masqué : rien de ce qui le concerne n’est proposé au public.': 'Hidden band: nothing about it is offered to the audience.',
+  'Le groupe est masqué sur ton appareil, mais ta page publique n’a pas pu être mise à jour. Réessaie une fois en ligne.': 'The band is hidden on your device, but your public page could not be updated. Try again once you are back online.',
   'Publie le groupe (invite un musicien) pour lui donner une adresse publique.': 'Publish the band (invite a musician) to give it a public address.',
   'adresse choisie par le créateur du groupe': 'address chosen by the band creator',
   'Seul le créateur du groupe peut lui donner une adresse.': 'Only the band creator can give it an address.',

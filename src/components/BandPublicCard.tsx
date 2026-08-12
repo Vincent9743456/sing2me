@@ -30,8 +30,12 @@ import {
   fetchBandPageName,
   publicPagesAvailable,
   publierFicheGroupe,
-  releaseBandPage,
 } from '../lib/publicPages';
+import {
+  appliquerMasquage,
+  ECHEC_MASQUAGE,
+  groupeMasque,
+} from '../lib/masquagegroupe';
 import { normalizePublicName, publicNameError } from '../lib/publicName';
 import { useStore } from '../store';
 import { t } from '../i18n';
@@ -44,7 +48,7 @@ export function BandPublicCard({
   band: Band;
   onSave: (band: Band) => void;
 }) {
-  const { artist } = useStore();
+  const { artist, bands, prefs, savePrefs } = useStore();
   const masque = band.hiddenFromPublic === true;
   const cloudId = band.cloudId ?? '';
   const estDetenteur = band.owned !== false;
@@ -69,16 +73,28 @@ export function BandPublicCard({
     };
   }, [cloudId, band.name]);
 
-  /** Masquer retire l'adresse : masqué avec une adresse publique = mensonge. */
-  async function masquer() {
-    onSave({ ...band, hiddenFromPublic: true });
-    if (adresse !== '' && cloudId !== '') {
-      const s = await getValidSession();
-      if (s) {
-        await releaseBandPage(s, cloudId);
-        setAdresse('');
-      }
-    }
+  /**
+   * Masquer retire l'adresse (masqué avec une adresse publique = mensonge)
+   * ET republie la fiche de l'artiste, qui nommait le groupe (b282). Un seul
+   * module pour les deux interrupteurs — celui-ci et l'œil de la liste :
+   * deux réglages qui décident de la même chose ne peuvent pas se comporter
+   * différemment.
+   */
+  async function basculer(masquer: boolean) {
+    onSave(groupeMasque(band, masquer));
+    const { ok, adresse: rendue } = await appliquerMasquage(
+      band,
+      masquer,
+      bands,
+      artist,
+      prefs.pagePubliqueMasquee === true,
+    );
+    setAdresse(masquer ? '' : rendue);
+    setErreur(ok ? null : t(ECHEC_MASQUAGE));
+    // Rejoué à la prochaine synchro (b282), comme toute modification faite
+    // hors ligne : la page publique ne doit pas rester en retard sur le
+    // réglage.
+    if (!ok) savePrefs({ ...prefs, ficheARepublier: true });
   }
 
   async function reserver() {
@@ -124,7 +140,7 @@ export function BandPublicCard({
           type="checkbox"
           checked={masque}
           onChange={() => {
-            if (masque) onSave({ ...band, hiddenFromPublic: undefined });
+            if (masque) void basculer(false);
             else setConfirmMasquer(true);
           }}
         />
@@ -150,7 +166,7 @@ export function BandPublicCard({
           confirmLabel={t('Masquer')}
           onConfirm={() => {
             setConfirmMasquer(false);
-            void masquer();
+            void basculer(true);
           }}
           onClose={() => setConfirmMasquer(false)}
         />

@@ -62,6 +62,7 @@ import {
   ensureBandPage,
   reserverAdresseArtiste,
 } from '../lib/publicPages';
+import { republierFicheArtiste } from '../lib/masquagegroupe';
 import {
   compteLocal,
   noterCompteLocal,
@@ -384,10 +385,28 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         const bands = st.bands.map((b) => identites.get(b.id) ?? b);
         hydrateRef.current({ ...st, songs, setlists, bands } as AppState);
       }
+      /**
+       * UN MASQUAGE QUI N'A PAS ABOUTI REPART TOUT SEUL (b282, même principe
+       * que les modifications faites hors ligne, b221). La page publique
+       * nommerait sinon un groupe masqué jusqu'au prochain enregistrement du
+       * profil — un geste qui ne viendra peut-être jamais.
+       */
+      const apres = JSON.parse(stateRef.current) as SyncState;
+      if (apres.prefs?.ficheARepublier === true) {
+        const fait = await republierFicheArtiste(
+          valid,
+          apres.artist,
+          apres.bands,
+          apres.prefs.pagePubliqueMasquee === true,
+        );
+        if (fait) {
+          store.savePrefs({ ...apres.prefs, ficheARepublier: undefined });
+        }
+      }
     } finally {
       bandSyncBusy.current = false;
     }
-  }, []);
+  }, [store.savePrefs]);
 
   // À la connexion : tirer le cloud, fusionner, pousser le résultat.
   useEffect(() => {
