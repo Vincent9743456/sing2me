@@ -364,13 +364,49 @@ async function refreshSession(
   }
 }
 
+/**
+ * Un SEUL rafraîchissement à la fois (b285, déconnexion intempestive signalée
+ * par Vincent après un live de 5 h).
+ *
+ * Supabase fait TOURNER les refresh tokens : chaque renouvellement émet un
+ * nouveau token et invalide l'ancien. Présenter deux fois le même est vu
+ * comme une réutilisation suspecte et RÉVOQUE toute la session. Or
+ * `getValidSession` est appelée de partout (synchro, sondage du live,
+ * groupes, page publique) : au moment où le jeton franchit le seuil des
+ * 2 min, plusieurs appels partaient ensemble, tous avec le MÊME refresh
+ * token — course d'autant plus probable pendant un live, où les sondages
+ * sont fréquents. Le premier réussissait, les suivants présentaient un token
+ * déjà consommé → 'invalid' → déconnexion.
+ *
+ * On partage donc une seule promesse de rafraîchissement entre les appels
+ * concurrents.
+ */
+let refreshEnCours: Promise<AuthSession | null | 'invalid'> | null = null;
+
 /** Session utilisable (rafraîchie si proche de l'expiration). */
 export async function getValidSession(): Promise<AuthSession | null> {
   const s = loadSession();
   if (!s) return null;
   if (s.expiresAt - Date.now() / 1000 > 120) return s;
-  const next = await refreshSession(s);
+  if (!refreshEnCours) {
+    refreshEnCours = refreshSession(s).finally(() => {
+      refreshEnCours = null;
+    });
+  }
+  const next = await refreshEnCours;
   if (next === 'invalid') {
+    // Avant de déconnecter : une course concurrente a-t-elle DÉJÀ renouvelé
+    // avec succès ? Si la session stockée porte un autre jeton, encore
+    // valide, le 'invalid' venait d'un refresh token consommé par la course,
+    // pas d'une vraie révocation — on garde la session fraîche.
+    const fraiche = loadSession();
+    if (
+      fraiche &&
+      fraiche.accessToken !== s.accessToken &&
+      fraiche.expiresAt - Date.now() / 1000 > 120
+    ) {
+      return fraiche;
+    }
     // Jeton réellement révoqué : déconnexion propre
     saveSession(null);
     return null;
