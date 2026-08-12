@@ -17,10 +17,10 @@ import { announceBandSong } from '../lib/bands';
 import { songKey } from '../lib/importer';
 import {
   duplicateVersion,
-  removeVersion,
   switchVersion,
   versionForBand,
 } from '../lib/model';
+import { retireDuRepertoire } from '../lib/retraitgroupe';
 import { useStore } from '../store';
 import { makeId, Setlist, Song } from '../types';
 import { Icon } from './Icon';
@@ -125,25 +125,11 @@ export function AssignSheet({
         void announceBandSong(b.cloudId, author, song.title, song.artist);
       } else if (!want && v) {
         // Retrait de répertoire = acte de niveau groupe (propagé à tous).
-        if (
-          !confirm(
-            t(
-              'Retirer « {title} » du répertoire de {band} ? Le morceau sortira du répertoire du groupe pour TOUS les membres — chacun garde la partition dans sa bibliothèque personnelle.',
-              { title: song.title, band: b.name || t('ce groupe') },
-            ),
-          )
-        ) {
-          continue;
-        }
-        workingSong =
-          workingSong.versions.length > 1
-            ? removeVersion(workingSong, v.id)
-            : {
-                ...workingSong,
-                versions: workingSong.versions.map((x) =>
-                  x.id === v.id ? { ...x, bandId: '' } : x,
-                ),
-              };
+        // La décision vit dans `retraitgroupe.ts` (b278) : ici on l'applique,
+        // on ne la réécrit pas. La confirmation, elle, a lieu AVANT d'arriver
+        // ici — un `confirm()` natif au milieu d'une boucle était contraire à
+        // la règle 10 (feuilles de l'app, jamais de boîte du téléphone).
+        workingSong = retireDuRepertoire(workingSong, b.id);
         recordBandRemoval(b.id, songKey(song.title, song.artist));
       }
     }

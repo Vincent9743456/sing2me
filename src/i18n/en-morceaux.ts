@@ -415,6 +415,15 @@ export const EN_MORCEAUX: Record<string, string> = {
     'These songs are the ones in your library. To import new ones, close this screen and go to the Songs tab.',
   'Ta bibliothèque est vide — importe un morceau depuis l’onglet Morceaux, il sera ensuite proposé ici.':
     'Your library is empty — import a song from the Songs tab and it will show up here.',
+  // ---------- Retirer du répertoire d'un groupe (b278) ----------
+  'Retirer du répertoire de {band}': 'Remove from {band}’s repertoire',
+  'Retirer « {title} » du répertoire de {band} ?':
+    'Remove “{title}” from {band}’s repertoire?',
+  'Le morceau sort du répertoire du groupe pour TOUS les membres. Il RESTE dans ta bibliothèque personnelle, et dans celle de chacun.':
+    'The song leaves the band’s repertoire for ALL members. It STAYS in your own library, and in everyone else’s.',
+  'Retirer du répertoire': 'Remove from repertoire',
+  '« {title} » retiré du répertoire — il reste chez toi.':
+    '“{title}” removed from the repertoire — it stays in your library.',
   'Aucun morceau ne correspond.': 'No song matches.',
 
   // ---------- NoteModal.tsx ----------
