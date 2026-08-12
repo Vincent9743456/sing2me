@@ -8,7 +8,7 @@ import { PublicEye, PublicPreview } from '../components/PublicPreview';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
-import { MenuSheet } from '../components/Feedback';
+import { ConfirmSheet, MenuSheet, useToast } from '../components/Feedback';
 import { Onboarding } from '../components/Onboarding';
 import { BackupNudge } from '../components/BackupNudge';
 import { EXAMPLE_TAG } from '../seed';
@@ -152,6 +152,11 @@ import {
   switchVersion,
   versionForBand,
 } from '../lib/model';
+import {
+  auRepertoire,
+  retireDuRepertoire,
+  texteRetrait,
+} from '../lib/retraitgroupe';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { emptySetlist, formatDuration, makeId, Setlist, Song } from '../types';
@@ -198,10 +203,12 @@ export function Library() {
     saveSong,
     deleteSetlist,
     clearBandRemoval,
+    recordBandRemoval,
     prefs,
     savePrefs,
     artist,
   } = useStore();
+  const toast = useToast();
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
   // null = tous · '' = solo (aucun groupe) · sinon id du groupe
@@ -212,6 +219,13 @@ export function Library() {
   const account = useAccount();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  /** Morceau qu'on s'apprête à retirer du répertoire affiché (b278). */
+  const [rowRetrait, setRowRetrait] = useState<string | null>(null);
+  /**
+   * Le groupe DONT on regarde le répertoire — `null` partout ailleurs. C'est
+   * lui qui décide si « Retirer du répertoire » a un sens : hors de cette
+   * vue, la question « de quel groupe ? » n'a pas de réponse (b278).
+   */
   // Menu « ⋯ » d'un morceau (Jouer / Modifier / Ajouter à… / Supprimer),
   // menu « ⋯ » de l'en-tête, et sous-feuilles ouvertes depuis ces menus.
   const [rowMenu, setRowMenu] = useState<Song | null>(null);
@@ -265,6 +279,10 @@ export function Library() {
   // chantier « Reprise de répertoire »). Ils sont bien en bibliothèque —
   // un mauvais import signalé vaut mieux qu'un import manquant — mais on
   // les retrouve d'un geste, avec la raison du doute sur chaque ligne.
+  const groupeAffiche =
+    bandFilter !== null && bandFilter !== ''
+      ? (bands.find((b) => b.id === bandFilter) ?? null)
+      : null;
   const [showCheck, setShowCheck] = useState(false);
   const checkCount = useMemo(
     () => songs.filter((s) => s.needsCheck !== undefined).length,
@@ -1152,6 +1170,39 @@ export function Library() {
         <SetlistPicker songId={pickerFor} onClose={() => setPickerFor(null)} />
       )}
 
+      {/* Le retrait s'ANNONCE (règle 10 : jamais une boîte du téléphone) :
+          il vaut pour tous les membres, et il ne touche pas la bibliothèque
+          — c'est exactement ce que le musicien a besoin de lire avant. */}
+      {rowRetrait !== null &&
+        groupeAffiche !== null &&
+        (() => {
+          const s = songs.find((x) => x.id === rowRetrait);
+          if (!s) return null;
+          const txt = texteRetrait(s, groupeAffiche);
+          return (
+            <ConfirmSheet
+              title={txt.titre}
+              message={txt.message}
+              confirmLabel={txt.libelle}
+              danger
+              onConfirm={() => {
+                saveSong(retireDuRepertoire(s, groupeAffiche.id));
+                recordBandRemoval(
+                  groupeAffiche.id,
+                  songKey(s.title, s.artist),
+                );
+                setRowRetrait(null);
+                toast.show(
+                  t('« {title} » retiré du répertoire — il reste chez toi.', {
+                    title: s.title || t('Ce morceau'),
+                  }),
+                );
+              }}
+              onClose={() => setRowRetrait(null)}
+            />
+          );
+        })()}
+
       {/* Menu « ⋯ » d'un morceau : 4 actions maximum. */}
       {rowMenu && (
         <MenuSheet
@@ -1172,6 +1223,28 @@ export function Library() {
               icon: 'plus',
               onClick: () => setRowAssign(rowMenu.id),
             },
+            /* RETIRER DU RÉPERTOIRE, LÀ OÙ ON LE CHERCHE (b278, demande de
+               Vincent). Le geste n'existait que dans « Ajouter à… », où il
+               fallait comprendre qu'on DÉCOCHE un groupe déjà coché — un
+               écran qui s'appelle « Ajouter » n'est pas l'endroit où l'on
+               cherche à retirer. L'entrée n'apparaît QUE dans la vue d'un
+               répertoire de groupe : ailleurs, elle n'aurait pas de sens
+               (quel groupe ?) et allongerait le menu pour rien. */
+            ...(groupeAffiche &&
+            (() => {
+              const s = songs.find((x) => x.id === rowMenu.id);
+              return s ? auRepertoire(s, groupeAffiche.id) : false;
+            })()
+              ? [
+                  {
+                    label: t('Retirer du répertoire de {band}', {
+                      band: groupeAffiche.name || t('ce groupe'),
+                    }),
+                    icon: 'x' as const,
+                    onClick: () => setRowRetrait(rowMenu.id),
+                  },
+                ]
+              : []),
             // Toute mention qui réclame une action doit pouvoir être levée
             // d'un geste (règle 11, b212) : « À vérifier » n'avait aucune
             // sortie — elle survivait même au remplacement de la partition
