@@ -114,6 +114,16 @@ export function SongDeleteSheet({
         <p className="help">
           {t('Là, il quitte ta bibliothèque. L’écran suivant dit exactement ce qui se passe.')}
         </p>
+        {/* UNE QUESTION A TOUJOURS UNE SORTIE (b283, demande de Vincent).
+            Cette feuille est la seule à en proposer DEUX sans proposer de ne
+            rien faire : les ConfirmSheet ont leur « Annuler », celle du refus
+            son « J'ai compris ». Le fond ferme bien, mais sur un téléphone la
+            feuille occupe presque tout l'écran — il n'y a plus de fond à
+            toucher, et rien ne dit qu'on peut renoncer. */}
+        <div className="spacer" />
+        <button className="btn ghost block" onClick={onClose}>
+          {t('Annuler')}
+        </button>
       </Sheet>
     );
   }
