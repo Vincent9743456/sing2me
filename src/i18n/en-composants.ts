@@ -16,6 +16,7 @@ export const EN_COMPOSANTS: Record<string, string> = {
   'Son répertoire arrive dans ta bibliothèque. Tes propres morceaux restent à toi.':
     'Its repertoire is arriving in your library. Your own songs stay yours.',
   'Voir le groupe': 'View band',
+  'C’est prêt !': 'All set!',
   'Bienvenue sur mojosong 🎶': 'Welcome to mojosong 🎶',
   'Commence par importer un morceau — colle un texte, un lien de partition, un PDF ou un fichier Word.':
     'Start by importing a song — paste text, a chart link, a PDF, or a Word file.',
