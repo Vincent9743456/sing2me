@@ -203,6 +203,12 @@ export function NoteModal({
   const heard = useRef(false);
   /** Du texte a-t-il été dicté (finalisé) depuis le dernier passage IA ? */
   const dictated = useRef(false);
+  /**
+   * Le texte courant est-il DÉJÀ passé par la fusion IA (b317) ? Évite de
+   * refaire tourner l'IA à l'enregistrement quand la dictée l'a déjà fait,
+   * et se remet à faux dès que l'utilisateur retape (texte neuf à fusionner).
+   */
+  const aiProcessed = useRef(false);
   const autoAi = useRef(0);
   // Miroirs pour les minuteries (synthèse différée) : le texte et la
   // visibilité doivent être lus à jour, pas figés dans une fermeture.
@@ -501,9 +507,20 @@ export function NoteModal({
     d.start();
   }
 
-  async function runAi() {
+  /**
+   * Fusion IA de la note courante (dictée OU écrite, b317) avec la note
+   * vivante : remplace ce qui est contredit, ajoute ce qui est nouveau,
+   * classe la portée. Renvoie le résultat (pour l'enregistrement direct
+   * d'une note écrite) ou null si l'IA n'a rien pu faire (hors-ligne…),
+   * auquel cas l'appelant garde le texte brut.
+   */
+  async function runAi(): Promise<{
+    text: string;
+    replaces?: string;
+    visibility: 'groupe' | 'privee';
+  } | null> {
     const input = textRef.current;
-    if (input.trim() === '' || aiBusy) return;
+    if (input.trim() === '' || aiBusy) return null;
     const living = livingRef.current;
     setError(null);
     setAiBusy(true);
@@ -513,6 +530,8 @@ export function NoteModal({
     const forced = !existing && visibilityChosen.current;
     const forcedPrev =
       visibilityRef.current === 'groupe' ? living.prevGroupe : living.prevPerso;
+    let resultVis: 'groupe' | 'privee' = visibilityRef.current;
+    let replaces: string | undefined;
     try {
       const out = await aiSummarize(
         input,
@@ -527,64 +546,90 @@ export function NoteModal({
             },
         forced ? (forcedPrev?.text ?? '') : '',
       );
-      if (out.text.trim() !== '') {
-        setText(out.text);
-        dictated.current = false;
-        if (forced) {
-          // La fusion a porté sur la note vivante de la portée choisie :
-          // c'est elle, et elle seule, que l'on remplacera.
-          mergedWith.current = forcedPrev?.id ?? null;
-        } else if (!existing && out.scope !== '') {
-          // Portée détectée (b155) : la note bascule d'elle-même — et la
-          // fusion remplacera la note vivante de CETTE portée.
-          const vis = out.scope === 'perso' ? 'privee' : 'groupe';
-          mergedWith.current =
-            (out.scope === 'perso' ? living.prevPerso : living.prevGroupe)
-              ?.id ?? null;
-          if (vis !== visibilityRef.current) {
-            setVisibility(vis);
-            setInfo(
-              out.scope === 'perso'
-                ? t(
-                    "🔒 L'IA a classé ce commentaire comme personnel — il ira dans ta note personnelle. Change la visibilité si besoin.",
-                  )
-                : t(
-                    "👥 L'IA a classé ce commentaire pour le groupe. Change la visibilité si besoin.",
-                  ),
-            );
-          }
-        } else if (!existing) {
-          // Portée inconnue (réponse hors format) : prudence — la note
-          // s'AJOUTE, on ne remplace jamais sans fusion certaine.
-          mergedWith.current = null;
+      if (out.text.trim() === '') return null;
+      setText(out.text);
+      textRef.current = out.text; // miroir à jour tout de suite (b317)
+      dictated.current = false;
+      aiProcessed.current = true;
+      if (forced) {
+        // La fusion a porté sur la note vivante de la portée choisie :
+        // c'est elle, et elle seule, que l'on remplacera.
+        mergedWith.current = forcedPrev?.id ?? null;
+        replaces = forcedPrev?.id ?? undefined;
+      } else if (!existing && out.scope !== '') {
+        // Portée détectée (b155) : la note bascule d'elle-même — et la
+        // fusion remplacera la note vivante de CETTE portée.
+        const vis = out.scope === 'perso' ? 'privee' : 'groupe';
+        resultVis = vis;
+        mergedWith.current =
+          (out.scope === 'perso' ? living.prevPerso : living.prevGroupe)?.id ??
+          null;
+        replaces = mergedWith.current ?? undefined;
+        if (vis !== visibilityRef.current) {
+          setVisibility(vis);
+          visibilityRef.current = vis; // miroir à jour tout de suite
+          setInfo(
+            out.scope === 'perso'
+              ? t(
+                  "🔒 L'IA a classé ce commentaire comme personnel — il ira dans ta note personnelle. Change la visibilité si besoin.",
+                )
+              : t(
+                  "👥 L'IA a classé ce commentaire pour le groupe. Change la visibilité si besoin.",
+                ),
+          );
         }
+      } else if (!existing) {
+        // Portée inconnue (réponse hors format) : prudence — la note
+        // s'AJOUTE, on ne remplace jamais sans fusion certaine.
+        mergedWith.current = null;
+        replaces = undefined;
       }
+      return { text: out.text, replaces, visibility: resultVis };
     } catch (e) {
       // IA indisponible (hors-ligne…) : le texte brut reste tel quel.
       setError(e instanceof Error ? e.message : t('La synthèse a échoué.'));
+      return null;
     } finally {
       setAiBusy(false);
     }
   }
 
-  function onSubmit() {
-    if (text.trim() === '') return;
+  async function onSubmit() {
+    if (text.trim() === '' || aiBusy) return;
     window.clearTimeout(autoAi.current);
     stopRecording(false);
     cancelServerDictation();
+    // NOTE ÉCRITE : elle profite AUSSI de la fusion IA (b317, demande de
+    // Vincent). Sans ça, une note tapée s'empilait à côté de la note vivante
+    // au lieu de la mettre à jour ou de corriger une contradiction — alors
+    // que la dictée, elle, était bien fusionnée. On ne le fait qu'à la
+    // CRÉATION (une édition directe reste littérale) et si l'IA n'a pas déjà
+    // tourné (dictée). Jamais bloquant : si l'IA échoue, on garde le texte
+    // brut (repli sur le comportement d'avant).
+    let finalText = text.trim();
+    let replaces = existing ? undefined : (mergedWith.current ?? undefined);
+    let vis = visibility;
+    if (!existing && !aiProcessed.current) {
+      const merged = await runAi();
+      if (merged) {
+        finalText = merged.text.trim();
+        replaces = merged.replaces;
+        vis = merged.visibility;
+      }
+    }
     onSave(
       existing
-        ? { ...existing, text: text.trim(), visibility }
+        ? { ...existing, text: finalText, visibility: vis }
         : {
             id: makeId(),
             target: '',
             bandId,
-            text: text.trim(),
+            text: finalText,
             author,
-            visibility,
+            visibility: vis,
             createdAt: new Date().toISOString(),
           },
-      existing ? undefined : (mergedWith.current ?? undefined),
+      replaces,
     );
     onClose();
   }
@@ -611,7 +656,12 @@ export function NoteModal({
             clavier OU dictée, la modale entière sous les yeux. */}
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            // Texte retapé à la main : il devra repasser par la fusion IA
+            // à l'enregistrement (b317).
+            aiProcessed.current = false;
+            setText(e.target.value);
+          }}
           placeholder={t('Départ batterie seule, break avant le pont, fin abrégée…')}
         />
       </Field>
@@ -718,9 +768,13 @@ export function NoteModal({
           className="btn"
           style={{ flex: 1 }}
           onClick={onSubmit}
-          disabled={text.trim() === ''}
+          disabled={text.trim() === '' || aiBusy}
         >
-          {existing ? t('Enregistrer les modifications') : t('Enregistrer la note')}
+          {aiBusy
+            ? t('⏳ Fusion…')
+            : existing
+              ? t('Enregistrer les modifications')
+              : t('Enregistrer la note')}
         </button>
         <button className="btn ghost" onClick={onClose}>
           {t('Annuler')}
