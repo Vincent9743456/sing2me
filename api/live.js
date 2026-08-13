@@ -147,11 +147,20 @@ async function closeLive(base, row) {
           join_code: '',
           last_song_at: null,
           hearts: 0,
-          // b182 : on CONSERVE started_at, artist, band_id, setlist_name et
-          // concert. La ligne devient la trace du live : c'est elle qui dit
-          // quand il a commencé, qui jouait et sur quelle setlist. Les
-          // effacer rendait tout historique live-par-live impossible —
-          // il fallait alors deviner les frontières au temps écoulé.
+          // b314 : le profil artiste COMPLET (photo, bio, liens, vignettes des
+          // membres — b232) n'a plus lieu d'être une fois le direct fini.
+          // L'historique (live-stats, pastlives, livre d'or) ne lit QUE le
+          // nom : on réduit donc `artist` à { name }. Sans ça, chaque live
+          // clos gardait ~17 kB de JSON en TOAST pour rien (880 kB pour 51
+          // lives, constat de Vincent). Le profil COMPLET reste diffusé
+          // pendant le direct (publicView, status ≠ off) — ici on est en
+          // clôture, l'écran public est déjà terminé.
+          artist: row?.artist?.name ? { name: String(row.artist.name) } : null,
+          // b182 : on CONSERVE started_at, band_id, setlist_name et concert.
+          // La ligne devient la trace du live : c'est elle qui dit quand il a
+          // commencé, qui jouait et sur quelle setlist. Les effacer rendait
+          // tout historique live-par-live impossible — il fallait alors
+          // deviner les frontières au temps écoulé.
           updated_at: new Date().toISOString(),
         }),
       },
