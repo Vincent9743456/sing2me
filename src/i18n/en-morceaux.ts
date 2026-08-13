@@ -578,6 +578,8 @@ export const EN_MORCEAUX: Record<string, string> = {
     'You have changed the chart since you wrote this text: the audience still reads your version, it has not followed along.',
   'Aucune parole à afficher — le public verra l’écran de concert sans texte.':
     'No lyrics to show — the audience will see the concert screen with no text.',
+  'Préparé automatiquement depuis ta partition : les accords sont retirés, les sections rappelées. Pour changer ce que lit le public, modifie la partition.':
+    'Prepared automatically from your chart: chords removed, sections kept. To change what the audience reads, edit the chart.',
   'Texte écrit par toi. Le public lit ceci, et pas ta partition.':
     'Text written by you. The audience reads this, not your chart.',
   'Préparé depuis ta partition : les accords sont retirés, les sections rappelées. Il suit tes corrections tout seul.':

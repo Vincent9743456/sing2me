@@ -25,6 +25,7 @@ import {
   versionForBand,
 } from '../lib/model';
 import { parolesPubliques } from '../lib/publiclyrics';
+import { PublicEye, PublicView } from '../components/PublicView';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { songKey } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
@@ -136,6 +137,10 @@ export function SongView({
   const [renameOpen, setRenameOpen] = useState(false);
   const toast = useToast();
   const [delSongOpen, setDelSongOpen] = useState(false);
+  // 👁 Vue du public (LECTURE SEULE, b302) : la partition bascule sur ce que
+  // liront les spectateurs. On consulte, on ne corrige pas (retouche retirée
+  // en b294) — pour changer, on modifie la partition.
+  const [vuePublic, setVuePublic] = useState(false);
   const scroll = useAutoScroll(undefined, song?.id);
 
   // En lecture de setlist : bascule sur la version de l'item, puis
@@ -234,7 +239,10 @@ export function SongView({
     BAND_COLORS[
       Math.max(0, bands.findIndex((x) => x.id === bid)) % BAND_COLORS.length
     ];
-  const showTranspose = view === 'complete' || view === 'accords';
+  // Transposer n'a aucun sens dans la vue du public : elle ne montre pas un
+  // seul accord (règle 3 — un écran, une mission).
+  const showTranspose =
+    !vuePublic && (view === 'complete' || view === 'accords');
   // Notes du contexte courant : solo/tous + celles du groupe de la version
   const contextNotes = notesForBand(song.rehearsalNotes, current.bandId);
   // Journal : la note la plus récente en premier
@@ -419,6 +427,9 @@ export function SongView({
               ❤ {song.hearts}
             </span>
           )}
+          {/* 👁 Consultation de la vue du public (lecture seule, b302) —
+              visible sur la partition, pas rangé dans un pli. */}
+          <PublicEye actif={vuePublic} onToggle={() => setVuePublic((v) => !v)} />
           {/* En haut de page (demande Vincent) : proposer une meilleure
               partition dès l'arrivée sur le morceau. */}
           {!isBandVersion && song.versions.length < 2 && (
@@ -609,14 +620,18 @@ export function SongView({
           </details>
         )}
 
-        <SongBody
-          song={{ ...song, rehearsalNotes: contextNotes }}
-          view={view}
-          semitones={displayShift}
-          capo={0}
-          preferFlat={preferFlat}
-          fontSize={1}
-        />
+        {vuePublic ? (
+          <PublicView song={song} onClose={() => setVuePublic(false)} />
+        ) : (
+          <SongBody
+            song={{ ...song, rehearsalNotes: contextNotes }}
+            view={view}
+            semitones={displayShift}
+            capo={0}
+            preferFlat={preferFlat}
+            fontSize={1}
+          />
+        )}
 
         {/* Pas de rangée Scène / A− / A+ ici (décision Vincent) : « Scène »
             est déjà dans l'en-tête, et la taille du texte se règle en mode

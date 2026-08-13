@@ -1233,21 +1233,25 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   disparaît au lieu de laisser un blanc ; les espaces de fin de ligne partent
   (dans un texte centré, ils décalent le vers) ; un en-tête sans une seule
   parole en dessous ne s'affiche pas.
-- **RETRAIT b294 — la RETOUCHE du texte public est SUPPRIMÉE** (arbitrage
-  Vincent : « ça introduit une complexité. Si les paroles vues par le public
-  doivent être retouchées, c'est à l'intérieur de la partition générale
-  directement »). Tout le mécanisme b223/b224 décrit juste en dessous (l'œil
-  « 👁 Vue du public », l'éditeur `PublicPreview`, `song.publicLyrics` /
-  `SongVersion.publicLyrics`, les fonctions `retoucherParoles` /
-  `rendreAutomatique` / `garderMonTexte` / `parolesRetouchees` /
-  `partitionAChange`) N'EXISTE PLUS. `parolesPubliques` (`publiclyrics.ts`)
-  renvoie désormais TOUJOURS `stripChords(lyrics)` : le public lit la
-  partition préparée, un point c'est tout ; pour changer ce qu'il voit, on
-  modifie la partition. Le champ `publicLyrics` peut subsister dans les
-  données des installés — plus jamais lu, jamais réécrit (cicatrice b290). Ne
-  PAS restaurer ce qui suit ; c'est conservé pour comprendre le code
-  historique (la plomberie `publicLyrics` reste inerte dans le modèle et la
-  synchro).
+- **RETRAIT b294 — la RETOUCHE du texte public est SUPPRIMÉE ; la CONSULTATION
+  reste** (arbitrage Vincent : « ça introduit une complexité. Si les paroles
+  vues par le public doivent être retouchées, c'est à l'intérieur de la
+  partition générale directement » — puis, b302 : « elle doit rester
+  disponible à la CONSULTATION par l'artiste, pour qu'il puisse se rassurer
+  sur la qualité de ce qui sera diffusé »). Distinction nette :
+  - **ÉDITER n'existe plus** : l'éditeur `PublicPreview`, `song.publicLyrics` /
+    `SongVersion.publicLyrics`, et les fonctions `retoucherParoles` /
+    `rendreAutomatique` / `garderMonTexte` / `parolesRetouchees` /
+    `partitionAChange` sont supprimés. `parolesPubliques` (`publiclyrics.ts`)
+    renvoie TOUJOURS `stripChords(lyrics)` : pour changer ce que voit le
+    public, on modifie la partition. Le champ `publicLyrics` peut subsister
+    dans les données des installés — plus jamais lu, jamais réécrit (b290).
+  - **CONSULTER existe toujours** (b302) : l'œil « 👁 Vue du public »
+    (`PublicEye`) sur la fiche morceau bascule la partition sur le rendu EXACT
+    du public (`PublicView` → `PublicLyrics` + `parolesPubliques`), en LECTURE
+    SEULE — aucun champ éditable. C'est un aperçu, pas une correction.
+  Ne PAS restaurer l'ÉDITION ; le bloc historique b223/b224 ci-dessous décrit
+  l'ancien mécanisme éditable, conservé pour comprendre le code.
 - *(HISTORIQUE, retiré en b294)* **Ce que lit le public se REGARDE avant le
   concert, et se CORRIGE** (b223,
   demande de Vincent). La préparation de b219 ne s'exécutait qu'au moment de
