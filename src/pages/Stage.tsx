@@ -29,6 +29,7 @@ import {
   transposeKeyName,
 } from '../lib/chords';
 import { parolesPubliques } from '../lib/publiclyrics';
+import { demarrerMidi, sabonnerActionMidi } from '../lib/midi';
 import { t } from '../i18n';
 import { notesForBand, resolveVersion } from '../lib/model';
 import { useStore } from '../store';
@@ -285,6 +286,22 @@ export function Stage({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, [items.length]);
+
+  // PÉDALE MIDI (b296) : mêmes gestes que le clavier / la pédale Bluetooth,
+  // pour les pédales qui parlent MIDI. La config est apprise dans les Réglages.
+  useEffect(() => {
+    demarrerMidi();
+    return sabonnerActionMidi((action) => {
+      if (noteOpenRef.current) return;
+      if (action === 'suivant') {
+        setIndex((i) => Math.min(items.length - 1, i + 1));
+      } else if (action === 'precedent') {
+        setIndex((i) => Math.max(0, i - 1));
+      } else if (action === 'defilement') {
+        setScroll((s) => !s);
+      }
+    });
   }, [items.length]);
 
   // Retour en haut à chaque changement de morceau

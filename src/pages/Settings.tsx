@@ -17,6 +17,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { useAccount } from '../components/Account';
 import { DeleteAccount } from '../components/DeleteAccount';
+import { PedaleMidi } from '../components/PedaleMidi';
 import { ConfirmSheet, useToast } from '../components/Feedback';
 import { fusionMiseEnForme } from '../lib/aiFormat';
 import { importText } from '../lib/importer';
@@ -458,6 +459,10 @@ export function Settings() {
             'Ton répertoire s’ouvre sans réseau : l’application est gardée sur ton téléphone. Si elle se comporte bizarrement après une mise à jour, ce bouton la remet à neuf.',
           )}
         </p>
+
+        {/* Pédale MIDI (b296) — masquée d'elle-même si le navigateur ne
+            connaît pas le MIDI. */}
+        <PedaleMidi />
 
         {/* SECTION QUI SE LÈVE TOUTE SEULE (b265) : elle n'apparaît que
             s'il y a réellement quelque chose à reprendre — ou tant qu'une
