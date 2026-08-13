@@ -1355,6 +1355,69 @@ textarea.mono {
   padding: 6px 10px;
   flex-shrink: 0;
 }
+
+/* SÉLECTEUR DE VERSION (b301) — les versions sont une fonction importante :
+   le sélecteur doit se VOIR et se lire comme un bouton, pas comme un champ
+   fade (retour de Vincent). Traitement neutre et fort (pas d'ambre, réservé à
+   l'action « qui fait avancer »), chevron accentué pour dire « ça s'ouvre ».
+   Un seul style pour toutes les pages où il apparaît : fiche, éditeur,
+   aperçu de la bibliothèque. */
+.versionpick {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+.versionpick::after {
+  content: '';
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+.versionpick select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: auto;
+  min-width: 150px;
+  max-width: 240px;
+  margin: 0;
+  font-weight: 650;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--surface-high);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-s);
+  padding: 11px 34px 11px 14px;
+  min-height: 46px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  text-overflow: ellipsis;
+}
+.versionpick select:hover {
+  border-color: var(--accent);
+}
+.versionpick select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* Dans l'éditeur, le sélecteur occupe la largeur de son champ. */
+.versionpick.block {
+  display: flex;
+  width: 100%;
+}
+.versionpick.block select {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
 .transpose {
   display: flex;
   align-items: center;

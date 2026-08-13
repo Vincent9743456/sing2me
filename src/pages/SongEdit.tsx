@@ -316,18 +316,20 @@ export function SongEdit({ id }: { id: string | null }) {
         </div>
         {draft.versions.length > 1 && (
           <Field label={t('Version modifiée')}>
-            <select
-              value={draft.activeVersionId}
-              onChange={(e) => switchEditVersion(e.target.value)}
-            >
-              {draft.versions.map((v, i) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                  {i === 0 ? ` — ${t('principale')}` : ''}
-                  {v.key !== '' ? ` (${v.key})` : ''}
-                </option>
-              ))}
-            </select>
+            <span className="versionpick block">
+              <select
+                value={draft.activeVersionId}
+                onChange={(e) => switchEditVersion(e.target.value)}
+              >
+                {draft.versions.map((v, i) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                    {i === 0 ? ` — ${t('principale')}` : ''}
+                    {v.key !== '' ? ` (${v.key})` : ''}
+                  </option>
+                ))}
+              </select>
+            </span>
           </Field>
         )}
         {draft.versions.length > 1 && (

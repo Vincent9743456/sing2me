@@ -475,29 +475,28 @@ export function SongView({
               </div>
             </div>
             {song.versions.length >= 2 && (
-              <select
-                value={current.id}
-                aria-label={t('Changer de version affichée')}
-                onChange={(e) => onVersionChange(e.target.value)}
-              >
-                {song.versions.map((v) => {
-                  const bn =
-                    v.bandId !== '' ? bandName(v.bandId) : '';
-                  // Évite « Vince et Marcus · Vince et Marcus » quand le nom
-                  // de version reprend déjà celui du groupe.
-                  const suffix =
-                    bn !== '' && bn.trim() !== v.name.trim()
-                      ? ` · ${bn}`
-                      : '';
-                  return (
-                    <option key={v.id} value={v.id}>
-                      {v.name}
-                      {suffix}
-                      {v.key !== '' ? ` (${v.key})` : ''}
-                    </option>
-                  );
-                })}
-              </select>
+              <span className="versionpick">
+                <select
+                  value={current.id}
+                  aria-label={t('Changer de version affichée')}
+                  onChange={(e) => onVersionChange(e.target.value)}
+                >
+                  {song.versions.map((v) => {
+                    const bn = v.bandId !== '' ? bandName(v.bandId) : '';
+                    // Évite « Vince et Marcus · Vince et Marcus » quand le nom
+                    // de version reprend déjà celui du groupe.
+                    const suffix =
+                      bn !== '' && bn.trim() !== v.name.trim() ? ` · ${bn}` : '';
+                    return (
+                      <option key={v.id} value={v.id}>
+                        {v.name}
+                        {suffix}
+                        {v.key !== '' ? ` (${v.key})` : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+              </span>
             )}
             <button
               className="btn ghost small"
