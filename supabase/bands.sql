@@ -387,6 +387,54 @@ begin
 end $$;
 grant execute on function public.revoke_band_invite to authenticated;
 
+-- b307 — ANNULER UNE INVITATION EN ATTENTE (demande de Vincent : « Annuler
+-- l'invitation » doit aussi révoquer le lien côté serveur, pas seulement
+-- retirer la ligne locale). Une seule fonction pour les DEUX chemins :
+--   · invitation par ANNUAIRE (compte connu) → on retire la ligne
+--     `band_invites` en attente, elle disparaît de l'app de l'invité ;
+--   · invitation par LIEN NOMINATIF → on révoque les liens encore ouverts
+--     pour ce nom (même dédup que `create_band_invite`), le lien ne mène
+--     plus à rien.
+-- Réservé au créateur du groupe. On n'a pas besoin du jeton (jamais lu en
+-- table, b251) : on cible par compte invité et/ou par nom.
+drop function if exists public.cancel_band_invite(uuid, uuid, text);
+create or replace function public.cancel_band_invite(
+  p_band uuid,
+  p_user uuid,
+  p_name text
+) returns json
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then
+    return json_build_object('error', 'Connexion requise');
+  end if;
+  if not exists (
+    select 1 from public.cloud_bands b
+    where b.id = p_band and b.owner = auth.uid()
+  ) then
+    return json_build_object(
+      'error', 'Seul le créateur du groupe annule une invitation'
+    );
+  end if;
+  -- Invitation par annuaire : on efface la ligne en attente (pas les
+  -- adhésions déjà acceptées, qui vivent dans cloud_band_members).
+  if p_user is not null then
+    delete from public.band_invites
+      where band_id = p_band and invited_user = p_user;
+  end if;
+  -- Invitation par lien nominatif : on révoque les liens encore ouverts.
+  if coalesce(btrim(p_name), '') <> '' then
+    update public.band_invite_links
+      set revoked_at = now()
+      where band_id = p_band
+        and used_by is null
+        and revoked_at is null
+        and lower(invited_name) = lower(btrim(p_name));
+  end if;
+  return json_build_object('ok', true);
+end $$;
+grant execute on function public.cancel_band_invite to authenticated;
+
 -- `join_band` : le jeton de groupe n'est PLUS accepté.
 -- Les messages d'erreur sont distincts — « expirée » et « déjà utilisée »
 -- n'appellent pas la même réaction de celui qui les lit.

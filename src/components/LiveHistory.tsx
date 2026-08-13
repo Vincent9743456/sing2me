@@ -17,6 +17,7 @@ import { ConfirmSheet, PromptSheet, useToast } from './Feedback';
 import { Icon } from './Icon';
 import { StageList } from './StageList';
 import { usePastLives } from './usePastLives';
+import { MojoLoader } from './MojoLoader';
 import { t } from '../i18n';
 import { fetchDiag, triMots } from '../lib/live';
 import { PastLive } from '../lib/pastlives';
@@ -91,7 +92,9 @@ export function LiveHistory() {
     return (
       <>
         <h2 className="pagetitle">{t('Tes derniers lives')}</h2>
-        <p className="help">{t('Chargement…')}</p>
+        {/* Mojo pendant le chargement des lives (b307), à l'endroit même où
+            la liste va apparaître — inline, pas une surcouche. */}
+        <MojoLoader inline active label={t('On retrouve tes lives…')} />
       </>
     );
   }

@@ -28,6 +28,7 @@ import {
   CloudMember,
   deleteCloudBand,
   DirectoryPerson,
+  cancelBandInvite,
   createBandInvite,
   ensureCloudBand,
   BandDeparture,
@@ -1333,11 +1334,25 @@ export function BandEdit({ id }: { id: string }) {
                   className="btn ghost small"
                   style={{ color: 'var(--danger)' }}
                   title={t("Annuler l'invitation")}
-                  onClick={() =>
+                  onClick={() => {
+                    // Révoque l'invitation CÔTÉ SERVEUR (b307) — lien nominatif
+                    // ET/OU invitation d'annuaire — best-effort : le retrait
+                    // local a lieu tout de suite, sans dépendre du réseau.
+                    const cid = cloudRef?.cloudId ?? band.cloudId ?? '';
+                    if (cid !== '') {
+                      void (async () => {
+                        try {
+                          const s = await getValidSession();
+                          if (s) await cancelBandInvite(s, cid, m.userId ?? '', m.name);
+                        } catch {
+                          /* l'annulation locale a déjà eu lieu */
+                        }
+                      })();
+                    }
                     update({
                       members: shown.members.filter((x) => x.id !== m.id),
-                    })
-                  }
+                    });
+                  }}
                 >
                   <Icon name="x" size={14} />
                 </button>
