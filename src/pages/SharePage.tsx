@@ -112,7 +112,23 @@ export function SharePage({
   const [memberDone, setMemberDone] = useState<string | null>(null);
   const [joinBusy, setJoinBusy] = useState(false);
   const [joined, setJoined] = useState<string | null>(null);
+  // P1-1 : identifiant LOCAL du groupe rejoint, pour mener l'invité droit
+  // dedans (fiche du groupe) au lieu de le laisser devant un cul-de-sac.
+  const [joinedBandId, setJoinedBandId] = useState('');
+  const [alreadyMember, setAlreadyMember] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+
+  /**
+   * ON MÈNE L'INVITÉ DIRECTEMENT DANS LE GROUPE (P1-1). Après une adhésion
+   * réussie, on affiche « ✓ Bienvenue », puis on ouvre la fiche du groupe
+   * toute seule (~800 ms). Un bouton de secours « Ouvrir le groupe » reste
+   * cliquable tout de suite au cas où la redirection tarde (réseau lent).
+   */
+  useEffect(() => {
+    if (joinedBandId === '') return;
+    const t = window.setTimeout(() => navigate('/band/' + joinedBandId), 800);
+    return () => window.clearTimeout(t);
+  }, [joinedBandId]);
 
   /**
    * Rejoint le groupe. Si l'invité n'est pas connecté, on mémorise
@@ -156,11 +172,16 @@ export function SharePage({
         (account?.email ?? '').split('@')[0] ||
         'Musicien'
       ).trim();
+      // Déjà dans le groupe ? On le dira, et on ouvrira quand même (P1-1).
+      const existant = bands.find((b) => b.cloudId === inv.cloudId);
       const bandName = await joinBand(s, inv.cloudId, inv.token, name, '');
       // Le groupe existe désormais aussi dans MON application, relié au
       // cloud : le répertoire partagé se synchronisera automatiquement.
-      if (!bands.some((b) => b.cloudId === inv.cloudId)) {
-        saveBand({
+      let localId = existant?.id ?? '';
+      if (existant) {
+        setAlreadyMember(true);
+      } else {
+        const nb = {
           ...emptyBand(),
           name: bandName || inv.band,
           cloudId: inv.cloudId,
@@ -174,8 +195,11 @@ export function SharePage({
               gear: artist.gear ? artist.gear.map((g) => ({ ...g })) : [],
             },
           ],
-        });
+        };
+        localId = nb.id;
+        saveBand(nb);
       }
+      setJoinedBandId(localId);
       setJoined(bandName || inv.band);
     } catch (e) {
       setJoinError(
@@ -346,12 +370,33 @@ export function SharePage({
             <span>✓ {t('Tes morceaux restent à toi')}</span>
           </div>
           {joined !== null ? (
-            <p style={{ color: 'var(--accent)', fontWeight: 700, margin: 0 }}>
-              {t(
-                '✓ Tu fais partie de « {band} » ! Ouvre ton onglet Groupes.',
-                { band: joined },
-              )}
-            </p>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                width: '100%',
+              }}
+            >
+              <p
+                style={{
+                  color: 'var(--accent)',
+                  fontWeight: 700,
+                  margin: 0,
+                  textAlign: 'center',
+                }}
+              >
+                {alreadyMember
+                  ? t('Tu es déjà dans « {band} ».', { band: joined })
+                  : t('✓ Bienvenue dans « {band} » !', { band: joined })}
+              </p>
+              <button
+                className="btn block"
+                onClick={() => navigate('/band/' + joinedBandId)}
+              >
+                {t('Ouvrir le groupe')}
+              </button>
+            </div>
           ) : !payload.invite.cloudId ? (
             <p className="help" style={{ margin: 0 }}>
               {t(
@@ -647,9 +692,12 @@ export function SharePage({
                 payload.invite.token &&
                 account?.email != null &&
                 (joined !== null ? (
-                  <span style={{ color: 'var(--accent)', alignSelf: 'center' }}>
-                    {t('✓ Tu fais partie de « {band} » !', { band: joined })}
-                  </span>
+                  <button
+                    className="btn"
+                    onClick={() => navigate('/band/' + joinedBandId)}
+                  >
+                    {t('Ouvrir « {band} »', { band: joined })}
+                  </button>
                 ) : (
                   <button
                     className="btn"

@@ -167,4 +167,8 @@ export const EN_PUBLIC: Record<string, string> = {
   '🤝 Rejoindre « {band} »': '🤝 Join “{band}”',
   // b231 — les groupes de l'artiste sur sa page publique
   'Ses groupes': 'Their bands',
+  'Tu es déjà dans « {band} ».': 'You’re already in “{band}”.',
+  '✓ Bienvenue dans « {band} » !': '✓ Welcome to “{band}”!',
+  'Ouvrir le groupe': 'Open the band',
+  'Ouvrir « {band} »': 'Open “{band}”',
 };
