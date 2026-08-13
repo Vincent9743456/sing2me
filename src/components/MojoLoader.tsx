@@ -29,12 +29,16 @@ export function MojoLoader({
   label,
   value,
   max,
+  inline = false,
 }: {
   active: boolean;
   label?: string;
   /** Détermine la barre : progression connue → barre à pourcentage. */
   value?: number;
   max?: number;
+  /** Dans le flux, sans surcouche : pour un chargement DE SECTION (ex. la
+   *  liste des lives) — pas une opération qui bloque tout l'écran. */
+  inline?: boolean;
 }) {
   // 'off' = rien · 'on' = affiché · 'done' = petit salut de fin avant fondu.
   const [phase, setPhase] = useState<'off' | 'on' | 'done'>('off');
@@ -76,42 +80,53 @@ export function MojoLoader({
     : 0;
   const fini = phase === 'done';
 
+  const bloc = (
+    <div
+      className={`mojoload${inline ? ' mojoload-inline' : ''}`}
+      {...(inline ? { role: 'status', 'aria-label': t('Chargement…') } : {})}
+    >
+      <img
+        className={`mojoload-mascotte${fini ? ' fini' : ''}`}
+        src="/mojo-bonjour.svg"
+        alt=""
+        aria-hidden="true"
+        width={inline ? 76 : 120}
+        height={inline ? 76 : 120}
+      />
+      {label != null && label !== '' && (
+        <div className="mojoload-label">{fini ? t('C’est prêt !') : label}</div>
+      )}
+      <div
+        className={`mojoload-bar${determinee ? '' : ' indet'}${fini ? ' plein' : ''}`}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        {...(determinee ? { 'aria-valuenow': fini ? 100 : pct } : {})}
+      >
+        <div
+          className="mojoload-fill"
+          style={determinee ? { width: `${fini ? 100 : pct}%` } : undefined}
+        />
+      </div>
+      {determinee && !fini && (
+        <div className="mojoload-count">
+          {value} / {max}
+        </div>
+      )}
+    </div>
+  );
+
+  // Inline : dans le flux de la page (chargement d'une section). Sinon :
+  // surcouche centrée portalisée dans <body>.
+  if (inline) return bloc;
+
   return createPortal(
     <div
       className={`mojoload-backdrop${fini ? ' fini' : ''}`}
       role="status"
       aria-label={t('Chargement…')}
     >
-      <div className="mojoload">
-        <img
-          className={`mojoload-mascotte${fini ? ' fini' : ''}`}
-          src="/mojo-bonjour.svg"
-          alt=""
-          aria-hidden="true"
-          width={120}
-          height={120}
-        />
-        {label != null && label !== '' && (
-          <div className="mojoload-label">{fini ? t('C’est prêt !') : label}</div>
-        )}
-        <div
-          className={`mojoload-bar${determinee ? '' : ' indet'}${fini ? ' plein' : ''}`}
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          {...(determinee ? { 'aria-valuenow': fini ? 100 : pct } : {})}
-        >
-          <div
-            className="mojoload-fill"
-            style={determinee ? { width: `${fini ? 100 : pct}%` } : undefined}
-          />
-        </div>
-        {determinee && !fini && (
-          <div className="mojoload-count">
-            {value} / {max}
-          </div>
-        )}
-      </div>
+      {bloc}
     </div>,
     document.body,
   );

@@ -147,6 +147,31 @@ export async function createBandInvite(
   return body.token;
 }
 
+/**
+ * Annule une invitation EN ATTENTE (b307) — côté serveur, pas seulement en
+ * local. Une seule fonction pour les deux chemins : par annuaire (compte
+ * connu → `p_user`) et/ou par lien nominatif (→ `p_name`). Best-effort côté
+ * appelant : l'annulation locale ne doit pas dépendre du réseau.
+ */
+export async function cancelBandInvite(
+  s: AuthSession,
+  cloudId: string,
+  userId: string,
+  name: string,
+): Promise<void> {
+  const res = await sbAuthed(s, '/rest/v1/rpc/cancel_band_invite', {
+    method: 'POST',
+    body: JSON.stringify({
+      p_band: cloudId,
+      p_user: userId.trim() !== '' ? userId : null,
+      p_name: name,
+    }),
+  });
+  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+  const body = (await res.json()) as { ok?: boolean; error?: string };
+  if (body.error) throw new Error(body.error);
+}
+
 /** Rejoint un groupe via le jeton de l'invitation. */
 export async function joinBand(
   s: AuthSession,
