@@ -464,6 +464,10 @@ export const EN_ARTISTE: Record<string, string> = {
   Copier: 'Copy',
   Lien: 'Link',
 
+  // b309 — liste des groupes : juste public / privé
+  public: 'public',
+  privé: 'private',
+
   // b228 — masquer / démasquer depuis la liste des groupes
   'masqué au public': 'hidden from the audience',
   'Masqué au public — aucun direct possible à son nom. Toucher pour le rendre visible.':

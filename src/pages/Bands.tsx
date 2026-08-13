@@ -29,7 +29,6 @@ import {
   ECHEC_MASQUAGE,
   groupeMasque,
 } from '../lib/masquagegroupe';
-import { musiciensDuGroupe } from '../lib/model';
 import { creatorMember } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -342,48 +341,17 @@ export function Bands() {
                     <div className="title">
                       {band.name || t('(sans nom)')}
                     </div>
-                    {/* Une personne, une ligne (b141) : le même musicien
-                        pouvait apparaître deux fois — prénom d'invitation
-                        (« Marco ») et identifiant de son compte
-                        (« marco.bosio »). */}
-                    {(() => {
-                      /* LE MÊME COMPTE QUE LA FICHE DU GROUPE (b255) : le
-                         créateur n'est jamais dans la liste des membres du
-                         serveur, il faut l'ajouter — sinon un groupe qu'on a
-                         REJOINT annonce un musicien de moins qu'il n'en a. */
-                      const people = musiciensDuGroupe(
-                        band,
-                        [],
-                        band.owned === false && (band.ownerName ?? '') !== ''
-                          ? { name: band.ownerName ?? '' }
-                          : undefined,
-                      ).filter((m) => m.name.trim() !== '');
-                      const n = people.length;
-                      const attente = people.filter(
-                        (m) => m.pending === true,
-                      ).length;
-                      return (
-                        <div className="sub">
-                          {/* Créateur rappelé quand ce n'est pas moi (b147). */}
-                          {band.owned === false &&
-                          (band.ownerName ?? '') !== ''
-                            ? t('créé par {nom} · ', { nom: band.ownerName ?? '' })
-                            : ''}
-                          {n > 1
-                            ? t('{n} musiciens', { n })
-                            : t('{n} musicien', { n })}
-                          {attente > 0
-                            ? t(', dont {n} en attente', { n: attente })
-                            : ''}
-                          {/* La LISTE DES NOMS n'est plus affichée ici (b306,
-                              demande de Vincent) : elle pénalisait l'affichage.
-                              Les musiciens se voient dans la fiche du groupe. */}
-                          {band.hiddenFromPublic === true
-                            ? ` · ${t('masqué au public')}`
-                            : ''}
-                        </div>
-                      );
-                    })()}
+                    {/* JUSTE « public » ou « privé » (b309, demande de
+                        Vincent : « ne pas mettre l'info sur le nombre de
+                        musiciens »). Le décompte pénalisait l'affichage et se
+                        lit déjà dans la fiche du groupe ; ici, la seule chose
+                        qui compte d'un coup d'œil est de savoir si le public
+                        peut voir ce groupe. */}
+                    <div className="sub">
+                      {band.hiddenFromPublic === true
+                        ? t('privé')
+                        : t('public')}
+                    </div>
                   </div>
                 </div>
                 {/* MASQUER / DÉMASQUER SUR LA LIGNE (b228, demande de
