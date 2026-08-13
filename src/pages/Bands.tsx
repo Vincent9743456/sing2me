@@ -375,9 +375,9 @@ export function Bands() {
                           {attente > 0
                             ? t(', dont {n} en attente', { n: attente })
                             : ''}
-                          {n > 0
-                            ? ` · ${people.map((m) => m.name).join(', ')}`
-                            : ''}
+                          {/* La LISTE DES NOMS n'est plus affichée ici (b306,
+                              demande de Vincent) : elle pénalisait l'affichage.
+                              Les musiciens se voient dans la fiche du groupe. */}
                           {band.hiddenFromPublic === true
                             ? ` · ${t('masqué au public')}`
                             : ''}
