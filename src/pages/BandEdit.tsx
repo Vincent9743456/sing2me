@@ -768,10 +768,14 @@ export function BandEdit({ id }: { id: string }) {
   // quand le vrai compte a rejoint sous un nom d'annuaire différent.
   const nameMatchesCloud = (nm: string): boolean =>
     nm !== '' && cloudNamesArr.some((cn) => sameMusician(cn, nm));
-  // Membres manuels non déjà représentés par un compte cloud, hors profils
-  // « en attente d'acceptation » (comptés à part).
+  // Membres manuels non déjà représentés par un compte cloud. On INCLUT
+  // désormais les invités « en attente d'acceptation » (b306, demande de
+  // Vincent : il faut pouvoir supprimer un membre qui n'a pas encore
+  // accepté) — ils s'affichent avec leur propre ligne « ⏳ En attente » et un
+  // bouton « Annuler l'invitation ». Un invité déjà rejoint sous un nom
+  // d'annuaire (nom qui matche le cloud) reste exclu : c'est un doublon.
   const manualMembers = shown.members.filter(
-    (m) => m.pending !== true && !nameMatchesCloud(m.name.trim().toLowerCase()),
+    (m) => !nameMatchesCloud(m.name.trim().toLowerCase()),
   );
 
   /**
@@ -1324,16 +1328,20 @@ export function BandEdit({ id }: { id: string }) {
                 <div className="title">{m.name || t('(invité)')}</div>
                 <div className="sub">{t("⏳ En attente d'acceptation")}</div>
               </div>
-              <button
-                className="btn ghost small"
-                style={{ color: 'var(--danger)' }}
-                title={t("Annuler l'invitation")}
-                onClick={() =>
-                  update({ members: shown.members.filter((x) => x.id !== m.id) })
-                }
-              >
-                <Icon name="x" size={14} />
-              </button>
+              {isOwner && (
+                <button
+                  className="btn ghost small"
+                  style={{ color: 'var(--danger)' }}
+                  title={t("Annuler l'invitation")}
+                  onClick={() =>
+                    update({
+                      members: shown.members.filter((x) => x.id !== m.id),
+                    })
+                  }
+                >
+                  <Icon name="x" size={14} />
+                </button>
+              )}
             </div>
           ) : (
           <>
