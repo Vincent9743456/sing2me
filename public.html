@@ -29,6 +29,16 @@
          enregistré ICI (entrée publique), avec son propre fichier sw,
          distinct de tout éventuel SW de l'app musicien.
     -->
+    <!-- Pas de flash blanc au chargement (b305) : on peint le nuit tout de
+         suite. Le contexte public (concert, fiche) est sombre ; la page pose
+         ensuite son propre fond. -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #0a0f1d;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
