@@ -1353,10 +1353,16 @@ function SongPreview({
                 v.bandId !== ''
                   ? (bands.find((b) => b.id === v.bandId)?.name ?? '')
                   : '';
+              // Évite « Zakoustiks · Zakoustiks » quand le nom de la version
+              // reprend déjà celui du groupe (même garde que SongView).
+              const suffix =
+                bandName !== '' && bandName.trim() !== v.name.trim()
+                  ? ` · ${bandName}`
+                  : '';
               return (
                 <option key={v.id} value={v.id}>
                   {v.name}
-                  {bandName !== '' ? ` · ${bandName}` : ''}
+                  {suffix}
                   {v.key !== '' ? ` (${v.key})` : ''}
                 </option>
               );
