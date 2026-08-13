@@ -484,6 +484,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   ', datée automatiquement.': ', dated automatically.',
   'Enregistrer les modifications': 'Save changes',
   'Enregistrer la note': 'Save the note',
+  '⏳ Fusion…': '⏳ Merging…',
   // Dictée par le serveur (b157)
   'Transcription indisponible — il faut être connecté au réseau.':
     'Transcription unavailable — you need to be online.',
