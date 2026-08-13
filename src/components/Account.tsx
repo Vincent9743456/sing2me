@@ -769,7 +769,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           localBandId = nb.id;
           store.saveBand(nb);
         }
-        // F3 : atterrissage sur Morceaux avec une bannière de bienvenue.
+        // On garde le repère de bienvenue (utilisé par l'accueil), mais on
+        // mène l'invité DROIT DANS LE GROUPE (P1-1) : après une connexion par
+        // lien magique, l'adhésion se termine seule ici, et on ouvre la fiche
+        // du groupe — jamais un écran mort ni un onglet à chercher.
         try {
           localStorage.setItem(
             'sing2me/justJoined',
@@ -778,7 +781,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         } catch {
           // stockage indisponible
         }
-        navigate('/');
+        navigate(localBandId ? '/band/' + localBandId : '/');
       } catch {
         // échec passager : on retentera au prochain cycle de session
         invitedRef.current = false;

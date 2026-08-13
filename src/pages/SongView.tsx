@@ -89,7 +89,6 @@ export function SongView({
     songs,
     bands,
     prefs,
-    artist,
     saveSong,
     acceptSong,
     setlists,
@@ -403,11 +402,9 @@ export function SongView({
           </div>
         )}
         <div className="songmeta chips">
-          {song.artist !== '' &&
-            song.artist.trim().toLowerCase() !==
-              (artist.name ?? '').trim().toLowerCase() && (
-              <span className="chip static off">{song.artist}</span>
-            )}
+          {/* Le nom de l'artiste (« Pink Floyd ») ne s'affiche PLUS en pastille
+              ici (b298, demande de Vincent : « l'information n'est pas
+              nécessaire ») — il reste dans la liste Morceaux et l'éditeur. */}
           {song.tempo > 0 && <span className="chip static">{song.tempo} BPM</span>}
           {song.durationSec > 0 && (
             <span className="chip static">{formatDuration(song.durationSec)}</span>
