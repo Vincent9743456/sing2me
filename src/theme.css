@@ -1,11 +1,11 @@
 /* ============================================================
-   DodoSongs — design épuré, sombre, pensé pour la scène.
+   mojosong — design épuré, sombre, pensé pour la scène.
    Une seule couleur d'accent (ambre), beaucoup d'air, zéro bruit.
    ============================================================ */
 
 :root {
   /* ============================================================
-     DodoSongs — jetons de la charte d'identité (août 2026), au pipette
+     mojosong — jetons de la charte d'identité (août 2026), au pipette
      près. Le fond nuit, le texte crème, l'ambre pour ce qui agit, le cyan
      pour ce qui se joue. Deux règles qui ne souffrent aucune exception :
        · le CYAN est réservé aux ACCORDS ;
@@ -2641,12 +2641,18 @@ h2.pagetitle {
   gap: 9px;
 }
 .brandname {
-  font-weight: 800;
-  font-size: 1.08rem;
-  letter-spacing: -0.01em;
+  /* Poppins (la géométrique arrondie de la charte) si un jour elle est
+     embarquée ; sinon repli sur une sans-serif système. Le mot se lit
+     toujours « mojo » (la voix) + « song » (l'ambre). */
+  font-family: 'Poppins', 'Century Gothic', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  text-transform: lowercase;
   color: var(--text);
 }
 .brandname b {
+  font-weight: 700;
   color: var(--accent);
 }
 .tabbar .brand {

@@ -3,16 +3,16 @@
  *
  *   node scripts/build-icons.mjs
  *
- * Source unique : `public/dodosongs.png` — le bloc complet de la charte
+ * Source unique : `public/mojosong.png` — le bloc complet de la charte
  * (dodo + guitare, fond nuit, angles arrondis à 22,5 %), extrait du PDF.
  * On n'en dessine JAMAIS une variante à la main : tout ce qui suit est un
  * redimensionnement de ce fichier-là, pour qu'aucune version ne diverge.
  *
  * Ce qui est produit :
- *   · dodosongs-128.png       — l'icône dans l'app (barres, pieds de page),
+ *   · mojosong-128.png       — l'icône dans l'app (barres, pieds de page),
  *                               légère parce que la page du spectateur la
  *                               charge aussi ;
- *   · dodosongs-256.png       — les emplois GRANDS (portail de connexion,
+ *   · mojosong-256.png       — les emplois GRANDS (portail de connexion,
  *                               page introuvable) : au-delà de 64 px à
  *                               l'écran, la 128 se voit pixelisée sur un
  *                               écran à haute densité ;
@@ -167,12 +167,12 @@ function reduire(src, taille, { opaque = false, part = 1 } = {}) {
   return out;
 }
 
-const src = lirePng('public/dodosongs.png');
+const src = lirePng('public/mojosong.png');
 if (src.largeur !== src.hauteur) throw new Error('la source doit être carrée');
 
 const sorties = [
-  ['public/dodosongs-128.png', 128, { opaque: false, part: 1 }],
-  ['public/dodosongs-256.png', 256, { opaque: false, part: 1 }],
+  ['public/mojosong-128.png', 128, { opaque: false, part: 1 }],
+  ['public/mojosong-256.png', 256, { opaque: false, part: 1 }],
   ['public/apple-touch-icon.png', 180, { opaque: true, part: 1 }],
   ['public/icon-192.png', 192, { opaque: true, part: 1 }],
   ['public/icon-512.png', 512, { opaque: true, part: 1 }],

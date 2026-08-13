@@ -451,7 +451,7 @@ export function SharePage({
         <div className="card" style={{ textAlign: 'center' }}>
           <h1 style={{ marginBottom: 2 }}>🎸 {payload.member.name}</h1>
           <p className="help" style={{ marginTop: 4 }}>
-            {t('a créé son profil DodoSongs')}
+            {t('a créé son profil mojosong')}
             {payload.member.instrument !== ''
               ? ` — ${payload.member.instrument}`
               : ''}
@@ -671,7 +671,7 @@ export function SharePage({
             <div>
               <strong>
                 {payload.invite
-                  ? t("{from} t'invite à rejoindre « {band} » sur DodoSongs 🎸", {
+                  ? t("{from} t'invite à rejoindre « {band} » sur mojosong 🎸", {
                       from: payload.invite.from,
                       band: payload.invite.band,
                     })
@@ -680,10 +680,10 @@ export function SharePage({
               <p className="help" style={{ margin: '4px 0 0' }}>
                 {payload.type === 'song'
                   ? t(
-                      'Récupère ce morceau dans ton propre DodoSongs (gratuit) : répertoire chez toi, transposition, notes personnelles…',
+                      'Récupère ce morceau dans ton propre mojosong (gratuit) : répertoire chez toi, transposition, notes personnelles…',
                     )
                   : t(
-                      'Récupère ces morceaux dans ton propre DodoSongs (gratuit) : répertoire chez toi, transposition, notes personnelles…',
+                      'Récupère ces morceaux dans ton propre mojosong (gratuit) : répertoire chez toi, transposition, notes personnelles…',
                     )}
               </p>
             </div>
@@ -742,7 +742,7 @@ export function SharePage({
         account?.email == null && (
           <p className="help" style={{ textAlign: 'center' }}>
             {t(
-              '💡 Avec un compte DodoSongs (gratuit, onglet Artiste → Mon compte), tu rejoindrais ce groupe en un clic.',
+              '💡 Avec un compte mojosong (gratuit, onglet Artiste → Mon compte), tu rejoindrais ce groupe en un clic.',
             )}
           </p>
         )}
@@ -805,7 +805,7 @@ export function SharePage({
 
       <div className="footer">
         <a className="ctabanner" href={location.origin + location.pathname}>
-          <LogoMark size={44} /> {t('Téléchargez')} <strong>DodoSongs</strong>{' '}
+          <LogoMark size={44} /> {t('Téléchargez')} <strong>mojosong</strong>{' '}
           {t('— votre songbook, gratuit')}
         </a>
         <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>

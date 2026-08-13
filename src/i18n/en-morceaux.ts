@@ -82,10 +82,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Tag :': 'Tag:',
   Retirer: 'Remove',
   'Importe tes partitions': 'Import your charts',
-  "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — DodoSongs met tout au propre.":
-    'Paste text, a link to a chart page, a PDF or a Word file — DodoSongs tidies it all up.',
-  'Tu as déjà une collection ? Dépose tous tes fichiers ou tes pages enregistrées en une fois — DodoSongs met tout au propre.':
-    'Already have a collection? Drop all your files or saved pages at once — DodoSongs tidies it all up.',
+  "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — mojosong met tout au propre.":
+    'Paste text, a link to a chart page, a PDF or a Word file — mojosong tidies it all up.',
+  'Tu as déjà une collection ? Dépose tous tes fichiers ou tes pages enregistrées en une fois — mojosong met tout au propre.':
+    'Already have a collection? Drop all your files or saved pages at once — mojosong tidies it all up.',
   'Importer ma collection': 'Import my collection',
   'Ajouter un seul morceau': 'Add a single song',
   'Importer mon premier morceau': 'Import my first song',
@@ -105,8 +105,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Supprimer « {title} » ?': 'Delete “{title}”?',
   "Fermer l'aperçu": 'Close preview',
   'Modifier la partition': 'Edit the chart',
-  'DodoSongs cherche la version la mieux notée de cette partition et te la propose':
-    'DodoSongs looks for the best-rated version of this chart and suggests it to you',
+  'mojosong cherche la version la mieux notée de cette partition et te la propose':
+    'mojosong looks for the best-rated version of this chart and suggests it to you',
   '★ Meilleure version ?': '★ Better version?',
   'Supprimer ce morceau': 'Delete this song',
   'Supprimer « {title} » ? Le morceau sera aussi retiré des setlists.':
@@ -252,8 +252,8 @@ export const EN_MORCEAUX: Record<string, string> = {
     '⚑ Main version: a change of key or capo carries over to the versions that were following it (those without their own setting), and is shared with the band on sync.',
   "Cette version garde ses propres tonalité et capo — la version principale n'est pas affectée.":
     "This version keeps its own key and capo — the main version isn't affected.",
-  "À l'enregistrement, DodoSongs te demandera si tes changements de partition valent pour":
-    'On save, DodoSongs will ask whether your chart changes apply to',
+  "À l'enregistrement, mojosong te demandera si tes changements de partition valent pour":
+    'On save, mojosong will ask whether your chart changes apply to',
   'cette version': 'this version',
   'seulement ou pour': 'only, or to',
   'toutes les versions': 'every version',
@@ -312,8 +312,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   '⏳ Le service demande une pause — nouvel essai dans {wait} s':
     '⏳ The service is asking for a pause — retrying in {wait}s',
   'fichier vide ou illisible': 'empty or unreadable file',
-  'supprimé de DodoSongs — non réimporté (passe par « Document ou lien » pour le récupérer)':
-    'deleted from DodoSongs — not re-imported (use “Document or link” to get it back)',
+  'supprimé de mojosong — non réimporté (passe par « Document ou lien » pour le récupérer)':
+    'deleted from mojosong — not re-imported (use “Document or link” to get it back)',
   '⚠ police PDF brouillée — décodage IA proposé': '⚠ garbled PDF font — AI decoding suggested',
   '🔧 mis à jour (accords récupérés)': '🔧 updated (chords recovered)',
   'déjà présent (« {title} »)': 'already there (“{title}”)',
@@ -391,8 +391,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   '{n} importé': '{n} imported',
   '{n} déjà présents': '{n} already there',
   '{n} déjà présent': '{n} already there',
-  '{n} supprimés de DodoSongs (non réimportés)': '{n} deleted from DodoSongs (not re-imported)',
-  '{n} supprimé de DodoSongs (non réimporté)': '{n} deleted from DodoSongs (not re-imported)',
+  '{n} supprimés de mojosong (non réimportés)': '{n} deleted from mojosong (not re-imported)',
+  '{n} supprimé de mojosong (non réimporté)': '{n} deleted from mojosong (not re-imported)',
   '{n} échecs': '{n} failed',
   '{n} échec': '{n} failed',
   'Nettoyage IA en cours': 'AI cleanup in progress',

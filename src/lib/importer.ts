@@ -1,5 +1,5 @@
 /**
- * Import intelligent de partitions texte vers le format DodoSongs.
+ * Import intelligent de partitions texte vers le format mojosong.
  *
  * Formats reconnus automatiquement :
  * 1. « Accords au-dessus des paroles » (le plus courant)

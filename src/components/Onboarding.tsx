@@ -239,10 +239,10 @@ export function Onboarding() {
         >
           <Icon name="x" size={16} />
         </button>
-        <div className="onbtitle">{t('Bienvenue sur DodoSongs 🎶')}</div>
+        <div className="onbtitle">{t('Bienvenue sur mojosong 🎶')}</div>
         <p className="help" style={{ marginTop: 4 }}>
           {t(
-            'Tu as déjà une collection de partitions ? Importe-la en une fois : dépose tes fichiers (txt, ChordPro, OnSong, Word, PDF) ou tes pages enregistrées, DodoSongs met tout au propre.',
+            'Tu as déjà une collection de partitions ? Importe-la en une fois : dépose tes fichiers (txt, ChordPro, OnSong, Word, PDF) ou tes pages enregistrées, mojosong met tout au propre.',
           )}
         </p>
         <div className="hstack" style={{ gap: 8, flexWrap: 'wrap' }}>

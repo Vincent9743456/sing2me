@@ -16,11 +16,11 @@ export const EN_COMPOSANTS: Record<string, string> = {
   'Son répertoire arrive dans ta bibliothèque. Tes propres morceaux restent à toi.':
     'Its repertoire is arriving in your library. Your own songs stay yours.',
   'Voir le groupe': 'View band',
-  'Bienvenue sur DodoSongs 🎶': 'Welcome to DodoSongs 🎶',
+  'Bienvenue sur mojosong 🎶': 'Welcome to mojosong 🎶',
   'Commence par importer un morceau — colle un texte, un lien de partition, un PDF ou un fichier Word.':
     'Start by importing a song — paste text, a chart link, a PDF, or a Word file.',
-  'Tu as déjà une collection de partitions ? Importe-la en une fois : dépose tes fichiers (txt, ChordPro, OnSong, Word, PDF) ou tes pages enregistrées, DodoSongs met tout au propre.':
-    'Already have a collection of charts? Import it all at once: drop your files (txt, ChordPro, OnSong, Word, PDF) or your saved pages, and DodoSongs tidies everything up.',
+  'Tu as déjà une collection de partitions ? Importe-la en une fois : dépose tes fichiers (txt, ChordPro, OnSong, Word, PDF) ou tes pages enregistrées, mojosong met tout au propre.':
+    'Already have a collection of charts? Import it all at once: drop your files (txt, ChordPro, OnSong, Word, PDF) or your saved pages, and mojosong tidies everything up.',
   'Importer ma collection': 'Import my collection',
   'Ajouter un seul morceau': 'Add a single song',
   'Importer mon premier morceau': 'Import my first song',
@@ -32,8 +32,8 @@ export const EN_COMPOSANTS: Record<string, string> = {
   "Fermer l'aide": 'Close hint',
 
   // InstallHint.tsx
-  'Installer DodoSongs': 'Install DodoSongs',
-  'Installe DodoSongs': 'Install DodoSongs',
+  'Installer mojosong': 'Install mojosong',
+  'Installe mojosong': 'Install mojosong',
   'Touche Partager, puis « Sur l’écran d’accueil » — accès direct, plein écran.':
     'Tap Share, then “Add to Home Screen” — direct access, full screen.',
   'Un accès direct depuis ton écran d’accueil, en plein écran.':

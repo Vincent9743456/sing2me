@@ -93,7 +93,7 @@ export function DeleteAccount({ email }: { email: string }) {
       // réécrivent (le store enregistre en différé) — sans lui, des clés
       // survivraient à la suppression.
       try {
-        sessionStorage.setItem('dodosongs:compteSupprime', '1');
+        sessionStorage.setItem('mojosong:compteSupprime', '1');
       } catch {
         // pas de sessionStorage : le nettoyage ci-dessous reste tenté
       }

@@ -436,7 +436,7 @@ export function SongView({
             <button
               className="btn ai small"
               title={t(
-                'DodoSongs cherche la version la mieux notée de cette partition et te la propose',
+                'mojosong cherche la version la mieux notée de cette partition et te la propose',
               )}
               onClick={() => setUgUpgrade(true)}
             >

@@ -1,6 +1,6 @@
 {
-  "name": "DodoSongs",
-  "short_name": "DodoSongs",
+  "name": "mojosong",
+  "short_name": "mojosong",
   "description": "Le compagnon des musiciens, des groupes et de leurs concerts.",
   "start_url": "./",
   "scope": "./",

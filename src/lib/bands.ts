@@ -30,7 +30,7 @@ const PENDING_KEY = 'sing2me/pendingInvite';
  * mais je ne vois pas le groupe » (Vincent). Cet événement réveille
  * l'adhésion, session inchangée ou non.
  */
-export const INVITE_EVENT = 'dodosongs:invitation';
+export const INVITE_EVENT = 'mojosong:invitation';
 
 export function savePendingInvite(inv: LinkInvite): void {
   try {

@@ -1,5 +1,5 @@
 /**
- * DodoSongs — modèle de données.
+ * mojosong — modèle de données.
  * Les accords sont écrits entre crochets dans les paroles : "[Am]Sous le ciel".
  *
  * La structure du morceau (intro / couplet / refrain…) est un résumé en tête
@@ -336,7 +336,7 @@ export interface BandMember {
   instrument: string;
   /** Photo de profil (annuaire) du membre, si disponible. */
   photo?: string;
-  /** true = le nom vient de la carte de musicien DodoSongs du membre */
+  /** true = le nom vient de la carte de musicien mojosong du membre */
   verified?: boolean;
   /** Invité mais pas encore accepté : profil « en attente d'acceptation ». */
   pending?: boolean;
@@ -538,7 +538,7 @@ export interface PublicScreen {
   links: boolean;
   /** Bouton « Suivre l'artiste » */
   follow: boolean;
-  /** Invitation à découvrir DodoSongs (pause / fin de concert) */
+  /** Invitation à découvrir mojosong (pause / fin de concert) */
   appInvite: boolean;
 }
 

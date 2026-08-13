@@ -25,7 +25,7 @@ export class ErrorBoundary extends React.Component<
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     // Trace en console pour le diagnostic (visible dans les outils dev).
     // eslint-disable-next-line no-console
-    console.error('DodoSongs — erreur de rendu :', error, info?.componentStack);
+    console.error('mojosong — erreur de rendu :', error, info?.componentStack);
   }
 
   private reset = () => {
