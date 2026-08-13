@@ -249,6 +249,28 @@ alter table live_sessions add column if not exists started_at timestamptz not nu
 alter table live_sessions add column if not exists ended_at timestamptz;
 alter table live_sessions add column if not exists uniques int not null default 0;
 
+-- NETTOYAGE DES VESTIGES D'UNE ANCIENNE ARCHITECTURE (avant la table `lives`,
+-- b121). `live_sessions` doublait alors l'ÉTAT du direct : elle portait
+-- `current_song`/`setlist` jsonb (paroles de tous les morceaux d'un concert —
+-- jusqu'à ~1,3 Mo par ligne oubliée, constat de Vincent), plus `is_active`,
+-- `show_chords`, `artist_id`, et deux policies d'accès CLIENT (« Artiste gère »,
+-- « Sessions publiques » — cette dernière exposait la table en lecture au
+-- public). Depuis b121, l'état vit dans `lives` ; `live_sessions` n'est plus
+-- qu'une MESURE d'audience, écrite/lue UNIQUEMENT par le serveur (service_role,
+-- qui ignore RLS). Ces colonnes/policies ne sont donc plus ni écrites ni lues.
+-- On les retire : le modèle voulu est « RLS activée + AUCUNE policy » (seul le
+-- serveur accède). Idempotent — `if exists` partout. La purge des lignes
+-- reliques (celles qui portaient le gros `setlist`) a été faite à la main sur
+-- la prod (TRUNCATE) ; on ne la met PAS ici, un fichier de schéma ne détruit
+-- jamais de données.
+drop policy if exists "Artiste gère" on live_sessions;
+drop policy if exists "Sessions publiques" on live_sessions;
+alter table live_sessions drop column if exists current_song;
+alter table live_sessions drop column if exists setlist;
+alter table live_sessions drop column if exists is_active;
+alter table live_sessions drop column if exists show_chords;
+alter table live_sessions drop column if exists artist_id;
+
 -- ------------------------------------------------------------
 -- b195 : les colonnes de BASE du livre d'or.
 --
