@@ -19,6 +19,10 @@ export const EN_COMPOSANTS: Record<string, string> = {
   'Bienvenue sur DodoSongs 🎶': 'Welcome to DodoSongs 🎶',
   'Commence par importer un morceau — colle un texte, un lien de partition, un PDF ou un fichier Word.':
     'Start by importing a song — paste text, a chart link, a PDF, or a Word file.',
+  'Tu as déjà une collection de partitions ? Importe-la en une fois : dépose tes fichiers (txt, ChordPro, OnSong, Word, PDF) ou tes pages enregistrées, DodoSongs met tout au propre.':
+    'Already have a collection of charts? Import it all at once: drop your files (txt, ChordPro, OnSong, Word, PDF) or your saved pages, and DodoSongs tidies everything up.',
+  'Importer ma collection': 'Import my collection',
+  'Ajouter un seul morceau': 'Add a single song',
   'Importer mon premier morceau': 'Import my first song',
   'Voir un exemple en mode scène': 'See an example in stage mode',
   'Prise en main': 'Getting started',

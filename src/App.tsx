@@ -150,7 +150,7 @@ function Screen() {
       page = <SongEdit id={route.id} key={route.id ?? 'new'} />;
       break;
     case 'import':
-      page = <Import />;
+      page = <Import mode={route.mode} />;
       break;
     case 'setlists':
       page = <Setlists />;

@@ -967,15 +967,23 @@ export function Library() {
                     {t('Importe tes partitions')}
                   </div>
                   {t(
-                    "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — DodoSongs met tout au propre.",
+                    'Tu as déjà une collection ? Dépose tous tes fichiers ou tes pages enregistrées en une fois — DodoSongs met tout au propre.',
                   )}
                   <div className="spacer" />
-                  <button
-                    className="btn"
-                    onClick={() => navigate('/import')}
-                  >
-                    <Icon name="import" size={16} /> {t('Importer mon premier morceau')}
-                  </button>
+                  <div className="hstack" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <button
+                      className="btn"
+                      onClick={() => navigate('/import/bulk')}
+                    >
+                      <Icon name="import" size={16} /> {t('Importer ma collection')}
+                    </button>
+                    <button
+                      className="btn ghost"
+                      onClick={() => navigate('/import')}
+                    >
+                      {t('Ajouter un seul morceau')}
+                    </button>
+                  </div>
                 </Empty>
               ) : (
                 <Empty>{t('Aucun morceau ne correspond à ta recherche.')}</Empty>
