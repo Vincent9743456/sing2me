@@ -10,7 +10,6 @@ import { parseContent, ParsedLine, stripChords } from '../lib/chordpro';
 import { Spelling, transposeContent } from '../lib/chords';
 import { ChordSheet } from './ChordDiagram';
 import { positionsPour } from '../lib/chordshapes';
-import { parolesPubliques, parolesRetouchees } from '../lib/publiclyrics';
 import { repairChordedLyrics } from '../lib/textRepair';
 import { Song, SongNote, ViewMode } from '../types';
 
@@ -94,11 +93,6 @@ export function SongBody({
   let content = repairChordedLyrics(song.lyrics);
   if (showChords) {
     content = transposeContent(content, shift, preferFlat);
-  } else if (parolesRetouchees(song)) {
-    // L'artiste a écrit lui-même ce que lit le public (b223) : c'est ce
-    // texte-là, sur TOUS les écrans où quelqu'un lit des paroles seules —
-    // sinon la vue « paroles » d'ici montrerait autre chose que le direct.
-    content = parolesPubliques(song);
   } else {
     // Une seule fonction prépare les « paroles seules » (b219) : la vue
     // paroles d'ici et ce qui part vers le public sortent du même moule.

@@ -4,7 +4,6 @@ import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
 import { garderLaMiseEnForme, revenirAvantIA } from '../lib/aiFormat';
 import { SongBody } from '../components/SongBody';
-import { PublicEye, PublicPreview } from '../components/PublicPreview';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
@@ -1177,9 +1176,6 @@ function SongPreview({
   const [ugOpen, setUgOpen] = useState(false);
   // Éditeur « Ajouter à un groupe / une setlist » (à la demande).
   const [assocOpen, setAssocOpen] = useState(false);
-  // 👁 Vue du public : la partition de l'aperçu bascule sur ce que liront
-  // les spectateurs (b223).
-  const [vuePublic, setVuePublic] = useState(false);
 
   // Mêmes réglages de lecture que la fiche : tonalité/capo mémorisés
   // par morceau + version (sur cet appareil).
@@ -1234,9 +1230,6 @@ function SongPreview({
     if (paneRef.current) paneRef.current.scrollTop = 0;
     setUgOpen(false);
     setAssocOpen(false);
-    // Changer de morceau ramène à la partition : l'œil est un coup d'œil,
-    // pas un mode dans lequel on s'installe.
-    setVuePublic(false);
   }, [id]);
 
   if (!song) return null;
@@ -1307,14 +1300,6 @@ function SongPreview({
         >
           <Icon name="play" size={14} /> {t('Scène')}
         </button>
-        {/* 👁 L'œil doit être là où la partition s'affiche (b223) : Vincent
-            l'a cherché ICI, dans l'aperçu de la liste, pas seulement sur la
-            page du morceau. */}
-        <PublicEye
-          song={song}
-          actif={vuePublic}
-          onToggle={() => setVuePublic((v) => !v)}
-        />
         <button
           className="btn ghost small"
           title={t('Ajouter à une setlist')}
@@ -1424,9 +1409,7 @@ function SongPreview({
       {assocOpen && (
         <AssignSheet songId={song.id} onClose={() => setAssocOpen(false)} />
       )}
-      {/* Transposer n'a aucun sens dans la vue du public : elle ne montre
-          pas un seul accord (b223). */}
-      {!displayReal && !vuePublic && (
+      {!displayReal && (
         <div className="transpose" style={{ marginBottom: 10 }}>
           <span className="transpose-unit">
             <span className="lbl">{t('Transposer')}</span>
@@ -1488,21 +1471,13 @@ function SongPreview({
           )}
         </div>
       )}
-      {vuePublic ? (
-        <PublicPreview
-          song={song}
-          onSave={saveSong}
-          onClose={() => setVuePublic(false)}
-        />
-      ) : (
-        <SongBody
-          song={song}
-          view="complete"
-          semitones={displayShift}
-          capo={0}
-          preferFlat={preferFlat}
-        />
-      )}
+      <SongBody
+        song={song}
+        view="complete"
+        semitones={displayShift}
+        capo={0}
+        preferFlat={preferFlat}
+      />
     </aside>
   );
 }

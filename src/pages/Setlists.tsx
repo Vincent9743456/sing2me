@@ -1,8 +1,8 @@
 /**
  * Onglet Setlists : un sélecteur de contexte en haut (solo, chaque groupe,
  * les contextes libres) et UNE liste dessous — plus de capsules à déplier
- * une par une (arbitrage Vincent, b211). En bas, l'encart « IA » qui
- * compose une setlist en un clic selon le type de soirée.
+ * une par une (arbitrage Vincent, b211). La génération IA a été retirée
+ * (b294, arbitrage Vincent — simplification).
  */
 import React, { useEffect, useState } from 'react';
 
@@ -12,7 +12,6 @@ import { Empty, Field, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { t } from '../i18n';
 import { creatorMember, versionForBand } from '../lib/model';
-import { generateSetlistAI, repertoireForContext } from '../lib/setlistAI';
 import { getValidSession, monId } from '../lib/auth';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -37,16 +36,6 @@ const BAND_COLORS = [
   'var(--band-7)',
 ];
 
-/** Suggestions de types de soirée pour la génération IA. */
-const PARTY_PRESETS = [
-  'Entre potes',
-  'Bœuf / jam',
-  'Concert',
-  'Bar / restau',
-  'Mariage',
-  'Anniversaire',
-];
-
 export function Setlists() {
   const {
     setlists,
@@ -66,8 +55,6 @@ export function Setlists() {
     [...concerts]
       .filter((c) => (c.setlistId ?? '') !== '' && c.date >= todayIso)
       .sort((a, b) => a.date.localeCompare(b.date))[0]?.setlistId ?? '';
-  // Capsules dépliées (seule reste celle de l'IA, clé 'ai').
-  const [open, setOpen] = useState<Set<string>>(new Set());
   /**
    * Sélecteur de contexte, en haut de l'écran (arbitrage Vincent, b211) —
    * même geste que les répertoires de l'onglet Morceaux : une rangée qui
@@ -118,13 +105,6 @@ export function Setlists() {
     (sl.createdBy ?? '') === '' ||
     (myId !== '' && sl.createdBy === myId);
   const [newName, setNewName] = useState('');
-  const toggle = (k: string) =>
-    setOpen((prev) => {
-      const next = new Set(prev);
-      if (next.has(k)) next.delete(k);
-      else next.add(k);
-      return next;
-    });
   const songById = new Map(songs.map((s) => [s.id, s]));
 
   // Durée « jouée » (hors réserve), estimée à 5 min si non renseignée.
@@ -426,37 +406,6 @@ export function Setlists() {
             </div>
           </div>
         )}
-
-        {/* Capsule IA : dépliable comme les autres — même style (l'icône ✨
-            suffit à la distinguer, sans bordure ni fond orange). */}
-        <div className={`stgroup ${open.has('ai') ? 'open' : ''}`}>
-          <button className="capsule-head" onClick={() => toggle('ai')}>
-            <span className="capsule-ai-badge" aria-hidden="true">
-              ✨
-            </span>
-            <div className="grow" style={{ minWidth: 0 }}>
-              <div className="capsule-title">{t("Setlist par l'IA")}</div>
-              <div className="capsule-count">
-                {t("Une setlist proposée selon l'ambiance")}
-              </div>
-            </div>
-            <span className={`capsule-chevron ${open.has('ai') ? 'open' : ''}`}>
-              <Icon name="chevron-down" size={18} />
-            </span>
-          </button>
-          {open.has('ai') && (
-            <div className="capsule-body">
-              <AiSetlistCard
-                songs={songs}
-                bands={bands}
-                onCreated={(sl) => {
-                  saveSetlist(sl);
-                  navigate(`/setlist/${sl.id}`);
-                }}
-              />
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Action principale unique, au même endroit que « Nouveau morceau »
@@ -616,159 +565,6 @@ export function Setlists() {
             </button>
           </div>
         </Modal>
-      )}
-    </>
-  );
-}
-
-/** Encart « IA » : compose une setlist selon le type de soirée. */
-function AiSetlistCard({
-  songs,
-  bands,
-  onCreated,
-}: {
-  songs: Song[];
-  bands: { id: string; name: string }[];
-  onCreated: (sl: Setlist) => void;
-}) {
-  const [partyType, setPartyType] = useState('');
-  const [minutes, setMinutes] = useState(60);
-  const [bandId, setBandId] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  // Répertoire disponible pour le contexte choisi (groupe précis ou solo).
-  const available = repertoireForContext(songs, bandId).length;
-  const contextLabel =
-    bandId === ''
-      ? t('en solo')
-      : bands.find((b) => b.id === bandId)?.name || t('ce groupe');
-
-  async function generate() {
-    if (busy) return;
-    setBusy(true);
-    setError('');
-    try {
-      const { result, songs: lib } = await generateSetlistAI(
-        songs,
-        partyType.trim(),
-        minutes,
-        bandId,
-      );
-      const items = result.order
-        .map((idx) => lib[idx])
-        .filter((s): s is Song => s != null)
-        .map((s) => ({
-          id: makeId(),
-          songId: s.id,
-          note: '',
-          keyOverride: '',
-          versionId: versionForBand(s, bandId)?.id ?? '',
-        }));
-      if (items.length === 0) {
-        setError(t("L'IA n'a retenu aucun morceau — réessaie."));
-        return;
-      }
-      onCreated({
-        ...emptySetlist(),
-        name: result.name || `Setlist ${partyType.trim() || 'IA'}`,
-        comment: result.comment,
-        bandId,
-        partyType: partyType.trim(),
-        items,
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t('Génération impossible.'));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <>
-      <p className="help" style={{ margin: '2px 0 8px' }}>
-        {available > 1
-          ? t(
-              "Un ordre proposé selon l'ambiance, dans le répertoire {contexte} ({n} morceaux).",
-              { contexte: contextLabel, n: available },
-            )
-          : t(
-              "Un ordre proposé selon l'ambiance, dans le répertoire {contexte} ({n} morceau).",
-              { contexte: contextLabel, n: available },
-            )}
-      </p>
-      <div className="chips" style={{ marginBottom: 8 }}>
-        {PARTY_PRESETS.map((p) => (
-          <button
-            key={p}
-            className={`chip ${partyType === p ? '' : 'off'}`}
-            onClick={() => setPartyType(partyType === p ? '' : p)}
-          >
-            {t(p)}
-          </button>
-        ))}
-      </div>
-      <div
-        style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
-      >
-        <input
-          type="text"
-          value={partyType}
-          placeholder={t('Type de soirée (ou précise…)')}
-          style={{ flex: 1, minWidth: 160 }}
-          onChange={(e) => setPartyType(e.target.value)}
-        />
-        <label className="help" style={{ margin: 0 }}>
-          {t('Durée')}
-          <input
-            type="number"
-            value={minutes}
-            min={5}
-            max={300}
-            step={5}
-            style={{ width: 70, marginLeft: 6, padding: '4px 6px' }}
-            onChange={(e) =>
-              setMinutes(
-                Math.max(5, Math.min(300, parseInt(e.target.value, 10) || 60)),
-              )
-            }
-          />{' '}
-          {t('min')}
-        </label>
-        {bands.length > 0 && (
-          <select
-            value={bandId}
-            title={t('Contexte de la setlist (solo ou groupe)')}
-            style={{ width: 'auto', padding: '4px 6px' }}
-            onChange={(e) => setBandId(e.target.value)}
-          >
-            <option value="">{t('Solo')}</option>
-            {bands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name || t('Groupe sans nom')}
-              </option>
-            ))}
-          </select>
-        )}
-        <button
-          className="btn"
-          disabled={busy || available === 0}
-          onClick={() => void generate()}
-        >
-          {busy ? t('Génération…') : t('✨ Générer')}
-        </button>
-      </div>
-      {available === 0 && (
-        <p className="help" style={{ marginBottom: 0 }}>
-          {t(
-            "Aucun morceau {contexte} pour l'instant — affecte des morceaux à ce répertoire d'abord.",
-            { contexte: contextLabel },
-          )}
-        </p>
-      )}
-      {error !== '' && (
-        <p className="help" style={{ color: 'var(--danger)', marginBottom: 0 }}>
-          {error}
-        </p>
       )}
     </>
   );
