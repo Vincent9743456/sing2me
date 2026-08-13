@@ -10,7 +10,7 @@ import { TopBar } from '../components/ui';
 import { getLang, t } from '../i18n';
 import { navigate } from '../router';
 
-const CONTACT = 'vtessier6@gmail.com';
+const CONTACT = 'marco@mojosong.com';
 
 export function Terms() {
   return (
