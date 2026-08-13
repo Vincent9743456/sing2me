@@ -24,6 +24,61 @@ function sbHeaders() {
   };
 }
 
+/**
+ * Présence d'un spectateur — écrite UNE SEULE FOIS par appareil (b313).
+ *
+ * AVANT : chaque ping (toutes les 8 s, par spectateur) ré-écrivait `last_seen`
+ * sur `live_attendance` ET ré-appliquait `uniques=N` sur `live_sessions`, MÊME
+ * inchangé. Un concert de 3 h à 3 spectateurs = des milliers d'UPDATE sur une
+ * seule ligne → 3 Mo de tuples morts pour 8 sessions, alors que la donnée
+ * logique est infime. Et `last_seen`/`first_seen` ne sont RELUS nulle part
+ * (seul diag.js sonde l'existence de la colonne).
+ *
+ * DÉSORMAIS : un ping d'un spectateur DÉJÀ vu ne fait qu'une LECTURE, aucune
+ * écriture. On n'écrit (présence + recompte des uniques) que lorsqu'un NOUVEL
+ * appareil apparaît — quelques fois par concert, plus des milliers. La mesure
+ * reste exacte : on change QUAND on écrit, pas ce qu'on compte.
+ */
+async function markPresence(base, sessionId, device) {
+  const sid = encodeURIComponent(sessionId);
+  const dev = encodeURIComponent(device);
+  // Déjà présent ? Alors le compteur n'a pas bougé : rien à écrire.
+  const seen = await fetch(
+    `${base}/rest/v1/live_attendance?session_id=eq.${sid}&device_id=eq.${dev}&select=device_id&limit=1`,
+    { headers: sbHeaders() },
+  );
+  if (seen.ok) {
+    const arr = await seen.json();
+    if (Array.isArray(arr) && arr.length > 0) return;
+  }
+  // Nouvel appareil : on l'inscrit une fois (ignore-duplicates couvre une
+  // course entre deux pings simultanés — jamais un doublon, jamais un UPDATE).
+  await fetch(`${base}/rest/v1/live_attendance`, {
+    method: 'POST',
+    headers: { ...sbHeaders(), prefer: 'resolution=ignore-duplicates' },
+    body: JSON.stringify({ session_id: sessionId, device_id: device }),
+  });
+  // Le nombre d'uniques change → on le recale (rare : à chaque arrivant).
+  try {
+    const c = await fetch(
+      `${base}/rest/v1/live_attendance?session_id=eq.${sid}&select=device_id`,
+      { headers: { ...sbHeaders(), prefer: 'count=exact' } },
+    );
+    const range = c.headers.get('content-range') || '';
+    const m = /\/(\d+)$/.exec(range);
+    const uniques = m ? parseInt(m[1], 10) : 0;
+    if (uniques > 0) {
+      await fetch(`${base}/rest/v1/live_sessions?id=eq.${sid}`, {
+        method: 'PATCH',
+        headers: sbHeaders(),
+        body: JSON.stringify({ uniques }),
+      });
+    }
+  } catch {
+    /* comptage best-effort */
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('cache-control', 'no-store');
   try {
@@ -86,39 +141,9 @@ export default async function handler(req, res) {
         }
       }
       if (row2 && row2.status !== 'off' && row2.session_id) {
-        await fetch(`${base}/rest/v1/live_attendance`, {
-          method: 'POST',
-          headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
-          body: JSON.stringify({
-            session_id: row2.session_id,
-            device_id: device,
-            last_seen: new Date().toISOString(),
-          }),
-        });
-        // Compteur d'uniques tenu à jour PENDANT le direct (b201) : il ne
-        // l'était qu'à la clôture, et l'artiste voyait donc 0 spectateur en
-        // pleine session. Léger, best-effort.
-        try {
-          const c = await fetch(
-            `${base}/rest/v1/live_attendance?session_id=eq.${row2.session_id}&select=device_id`,
-            { headers: { ...sbHeaders(), prefer: 'count=exact' } },
-          );
-          const range = c.headers.get('content-range') || '';
-          const m = /\/(\d+)$/.exec(range);
-          const uniques = m ? parseInt(m[1], 10) : 0;
-          if (uniques > 0) {
-            await fetch(
-              `${base}/rest/v1/live_sessions?id=eq.${row2.session_id}`,
-              {
-                method: 'PATCH',
-                headers: sbHeaders(),
-                body: JSON.stringify({ uniques }),
-              },
-            );
-          }
-        } catch {
-          /* comptage best-effort */
-        }
+        // Compteur d'uniques tenu à jour PENDANT le direct (b201), mais écrit
+        // seulement quand un nouvel appareil apparaît (b313, voir markPresence).
+        await markPresence(base, row2.session_id, device);
       }
       res.status(200).json({ ok: true });
       return;
@@ -136,34 +161,9 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Présence (session, appareil anonyme) : 1 ligne par unique.
-    await fetch(`${base}/rest/v1/live_attendance`, {
-      method: 'POST',
-      headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
-      body: JSON.stringify({
-        session_id: row.session_id,
-        device_id: device,
-        last_seen: new Date().toISOString(),
-      }),
-    });
-
-    // Met à jour le compteur d'uniques courant (léger, best-effort).
-    try {
-      const c = await fetch(
-        `${base}/rest/v1/live_attendance?session_id=eq.${row.session_id}&select=device_id`,
-        { headers: { ...sbHeaders(), prefer: 'count=exact' } },
-      );
-      const range = c.headers.get('content-range') || '';
-      const m = /\/(\d+)$/.exec(range);
-      const uniques = m ? parseInt(m[1], 10) : 0;
-      await fetch(`${base}/rest/v1/live_sessions?id=eq.${row.session_id}`, {
-        method: 'PATCH',
-        headers: sbHeaders(),
-        body: JSON.stringify({ uniques }),
-      });
-    } catch {
-      /* comptage best-effort */
-    }
+    // Présence (session, appareil anonyme) : 1 ligne par unique, écrite une
+    // seule fois — le recompte des uniques suit (b313, voir markPresence).
+    await markPresence(base, row.session_id, device);
 
     res.status(200).json({ ok: true });
   } catch {
