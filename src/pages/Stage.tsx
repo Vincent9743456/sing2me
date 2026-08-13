@@ -29,6 +29,7 @@ import {
   transposeKeyName,
 } from '../lib/chords';
 import { parolesPubliques } from '../lib/publiclyrics';
+import { useWakeLock } from '../lib/wakelock';
 import { demarrerMidi, sabonnerActionMidi } from '../lib/midi';
 import { t } from '../i18n';
 import { notesForBand, resolveVersion } from '../lib/model';
@@ -184,33 +185,11 @@ export function Stage({
   const setlistBroadcast =
     publicSetlist !== null && live.status === 'on' && live.mode === 'concert';
 
-  // Anti-veille (Wake Lock) pendant toute la durée du mode scène.
-  useEffect(() => {
-    let lock: { release: () => Promise<void> } | null = null;
-    let active = true;
-    async function acquire() {
-      try {
-        const nav = navigator as Navigator & {
-          wakeLock?: { request: (type: 'screen') => Promise<{ release: () => Promise<void> }> };
-        };
-        if (nav.wakeLock && active) {
-          lock = await nav.wakeLock.request('screen');
-        }
-      } catch {
-        // refusé (batterie faible…) : non bloquant
-      }
-    }
-    void acquire();
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void acquire();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      active = false;
-      document.removeEventListener('visibilitychange', onVisible);
-      if (lock) void lock.release();
-    };
-  }, []);
+  // Anti-veille (Wake Lock) pendant toute la durée du mode scène — hook
+  // partagé (b318), robuste aux relâchements d'iOS. L'écran reste allumé
+  // tant qu'on est en scène ; seul le mode « Économie d'énergie » d'iOS peut
+  // encore le remettre en veille (Apple refuse alors la demande).
+  useWakeLock();
 
   // Défilement automatique
   useEffect(() => {
