@@ -10,8 +10,11 @@
  * (compte obligatoire) et n'est importé par aucune page publique. Rien de ce
  * qui est ici ne doit jamais apparaître sur la page du QR.
  *
- * Le détail (morceau par morceau, séances, mots reçus) reste replié : un
- * écran = une mission, l'avancé ne coûte rien à qui ne le cherche pas.
+ * Réduit à l'ESSENTIEL (b310, demande de Vincent) : quatre chiffres, rien
+ * d'autre. Le détail replié (morceau par morceau, séances, fanbase, bouton
+ * de report manuel) a été retiré — les ❤ et les mots du public descendent
+ * de toute façon tout seuls dans la bibliothèque, et l'historique des lives
+ * porte déjà le détail par concert. Un écran = une mission.
  */
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -33,18 +36,6 @@ import { liveReady } from '../lib/liveAuth';
 import { buildPastLives } from '../lib/pastlives';
 import { fetchFollowerStats, FollowerStats } from '../lib/fanbase';
 import { useStore } from '../store';
-
-/** Date courte lisible (reste en fr-FR, voir rapport i18n). */
-function jour(iso: string): string {
-  return new Date(iso).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-  });
-}
-function jourHeure(iso: string): string {
-  const d = new Date(iso);
-  return `${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })} ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-}
 
 export function LiveStats() {
   const { prefs, artist, bands, songs, saveSong, resetAt } = useStore();
@@ -237,81 +228,6 @@ export function LiveStats() {
               <div className="statlabel">⭐ {t('suiveurs')}</div>
             </div>
           </div>
-
-          <details className="stfold">
-            <summary>{t('Voir le détail')}</summary>
-            <div className="spacer" />
-
-            {sessions !== null && sessions.length > 0 && (
-              <div className="card" style={{ marginBottom: 10 }}>
-                <div className="help" style={{ marginBottom: 8 }}>
-                  👥 {t('AUDIENCE DE TES CONCERTS')}
-                </div>
-                {sessions.map((s) => (
-                  <div className="strow" key={s.id}>
-                    <span style={{ flex: 1 }}>
-                      {jourHeure(s.started_at)}
-                      {s.ended_at === null && (
-                        <em className="stauthor"> · {t('en cours')}</em>
-                      )}
-                    </span>
-                    <strong style={{ whiteSpace: 'nowrap' }}>
-                      {s.uniques > 1
-                        ? t('{n} spectateurs', { n: s.uniques })
-                        : t('{n} spectateur', { n: s.uniques })}
-                    </strong>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Les mots du public vivent dans l'historique des lives
-                (décision Vincent, b178) : ils appartiennent au concert où
-                ils ont été écrits, pas à une pile hors sol. */}
-            {stats !== null && stats.length > 0 && (
-              <div className="card" style={{ marginBottom: 10 }}>
-                <div className="help" style={{ marginBottom: 8 }}>
-                  ❤ {t('MORCEAU PAR MORCEAU')}
-                </div>
-                {stats.map((st, i) => (
-                  <div className="strow" key={i}>
-                    <span className="stlabel">{jour(st.played_at)}</span>
-                    <span style={{ flex: 1 }}>
-                      {st.song_title}
-                      {st.concert_title !== '' && (
-                        <span className="stauthor"> · {st.concert_title}</span>
-                      )}
-                    </span>
-                    <span style={{ color: 'var(--live)', fontWeight: 700 }}>
-                      ❤ {st.hearts}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {followers !== null && followers.sharedEmails.length > 0 && (
-              <div className="card" style={{ marginBottom: 10 }}>
-                <div className="help" style={{ marginBottom: 4 }}>
-                  ⭐ {t('TA FANBASE')}
-                </div>
-                <p className="help" style={{ marginTop: 8, marginBottom: 4 }}>
-                  {t('Emails partagés avec toi ({n}) :', {
-                    n: followers.sharedEmails.length,
-                  })}
-                </p>
-                <div className="help" style={{ wordBreak: 'break-all' }}>
-                  {followers.sharedEmails.join(', ')}
-                </div>
-              </div>
-            )}
-
-            {(stats?.length ?? 0) > 0 && (
-              <button className="btn ghost small" onClick={() => reporter()}>
-                ↻ {t('Reporter ❤ et messages dans la bibliothèque')}
-              </button>
-            )}
-          </details>
         </>
       )}
       <div className="spacer" />
