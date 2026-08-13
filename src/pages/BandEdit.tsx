@@ -259,6 +259,9 @@ export function BandEdit({ id }: { id: string }) {
   const [removeMember, setRemoveMember] = useState<{
     userId: string;
     name: string;
+    // Invité pas encore accepté : on ANNULE l'invitation (pas un retrait de
+    // membre) — libellés et action côté serveur diffèrent (b312).
+    pending?: boolean;
   } | null>(null);
 
   // Membres réels (comptes) du groupe publié
@@ -1691,37 +1694,62 @@ export function BandEdit({ id }: { id: string }) {
       {/* « ⋯ » de l'en-tête : tout l'avancé du groupe. */}
       {removeMember && (
         <ConfirmSheet
-          title={t('Retirer {nom} du groupe ?', {
-            nom: removeMember.name || t('ce musicien'),
-          })}
-          message={t(
-            "Il perdra l'accès au répertoire et aux setlists du groupe. Sa bibliothèque personnelle, elle, ne bouge pas. Tu pourras le réinviter plus tard.",
-          )}
-          confirmLabel={t('Retirer du groupe')}
+          title={
+            removeMember.pending === true
+              ? t('Annuler l’invitation de {nom} ?', {
+                  nom: removeMember.name || t('ce musicien'),
+                })
+              : t('Retirer {nom} du groupe ?', {
+                  nom: removeMember.name || t('ce musicien'),
+                })
+          }
+          message={
+            removeMember.pending === true
+              ? t(
+                  'Son invitation sera annulée. Tu pourras la renvoyer plus tard.',
+                )
+              : t(
+                  "Il perdra l'accès au répertoire et aux setlists du groupe. Sa bibliothèque personnelle, elle, ne bouge pas. Tu pourras le réinviter plus tard.",
+                )
+          }
+          confirmLabel={
+            removeMember.pending === true
+              ? t('Annuler l’invitation')
+              : t('Retirer du groupe')
+          }
           danger
           onConfirm={() => {
             const cid = band.cloudId;
             const target = removeMember.userId;
-            if (!cid) return;
+            const name = removeMember.name;
+            const wasPending = removeMember.pending === true;
             void (async () => {
               try {
                 const s = await getValidSession();
-                if (!s) return;
-                await removeBandMember(s, cid, target);
-                setCloudMembers((list) =>
-                  list.filter((x) => x.user_id !== target),
-                );
-                // Retirer aussi son entrée LOCALE : sinon le musicien
-                // réapparaît juste en dessous, en « saisi à la main ».
+                if (s && cid) {
+                  if (wasPending) {
+                    // Au mieux : annule l'invitation côté serveur — le compte
+                    // visé (si connu) ET le lien nominatif (par le nom).
+                    await cancelBandInvite(s, cid, target, name);
+                  } else {
+                    await removeBandMember(s, cid, target);
+                    setCloudMembers((list) =>
+                      list.filter((x) => x.user_id !== target),
+                    );
+                    setDepartures((list) =>
+                      list.filter((x) => x.userId !== target),
+                    );
+                  }
+                }
+                // Retirer la ligne LOCALE dans tous les cas (invité comme
+                // membre) : sinon la personne réapparaît juste en dessous. Un
+                // groupe purement local (sans cloudId) passe aussi par ici.
                 saveBand({
                   ...band,
                   members: band.members.filter(
-                    (x) => !sameMusician(x.name, removeMember.name),
+                    (x) => !sameMusician(x.name, name),
                   ),
                 });
-                setDepartures((list) =>
-                  list.filter((x) => x.userId !== target),
-                );
               } catch {
                 /* silencieux : la liste se rafraîchira à la prochaine ouverture */
               }
@@ -1749,6 +1777,11 @@ export function BandEdit({ id }: { id: string }) {
               !isMe &&
               m.pending !== true &&
               cloud !== undefined;
+            // Invité PAS ENCORE accepté : le créateur peut annuler son
+            // invitation (b312, demande de Vincent — le bouton manquait ici,
+            // dans la liste « Musiciens du groupe »). On retire la ligne
+            // locale et on annule l'invitation côté serveur, au mieux.
+            const canCancelInvite = band.owned === true && m.pending === true;
             // Ligne CLIQUABLE avec ses actions dedans (b145) — un <button>
             // dans un <button> est invalide en HTML : la corbeille passait
             // à la ligne, décalée sous le musicien.
@@ -1796,21 +1829,36 @@ export function BandEdit({ id }: { id: string }) {
                     <div className="sub">{m.instrument}</div>
                   )}
                 </div>
-                {canRemove && (
+                {(canRemove || canCancelInvite) && (
                   <button
                     className="btn icon"
                     style={{ color: 'var(--danger)', flexShrink: 0 }}
-                    title={t('Retirer {nom} du groupe', {
-                      nom: m.name || t('ce musicien'),
-                    })}
-                    aria-label={t('Retirer {nom} du groupe', {
-                      nom: m.name || t('ce musicien'),
-                    })}
+                    title={
+                      canCancelInvite
+                        ? t('Annuler l’invitation de {nom}', {
+                            nom: m.name || t('ce musicien'),
+                          })
+                        : t('Retirer {nom} du groupe', {
+                            nom: m.name || t('ce musicien'),
+                          })
+                    }
+                    aria-label={
+                      canCancelInvite
+                        ? t('Annuler l’invitation de {nom}', {
+                            nom: m.name || t('ce musicien'),
+                          })
+                        : t('Retirer {nom} du groupe', {
+                            nom: m.name || t('ce musicien'),
+                          })
+                    }
                     onClick={(e) => {
                       e.stopPropagation();
                       setRemoveMember({
-                        userId: cloud!.user_id,
+                        userId: canCancelInvite
+                          ? (m.userId ?? '')
+                          : cloud!.user_id,
                         name: m.name,
+                        pending: canCancelInvite,
                       });
                     }}
                   >

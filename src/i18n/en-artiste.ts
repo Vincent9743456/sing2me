@@ -296,6 +296,13 @@ export const EN_ARTISTE: Record<string, string> = {
   'Retirer du groupe': 'Remove from the band',
   'Retirer {nom} du groupe': 'Remove {nom} from the band',
   'Retirer {nom} du groupe ?': 'Remove {nom} from the band?',
+  // b312 — annuler l'invitation d'un membre pas encore accepté (modale
+  // « Musiciens du groupe »)
+  'Annuler l’invitation': 'Cancel invitation',
+  'Annuler l’invitation de {nom}': 'Cancel {nom}’s invitation',
+  'Annuler l’invitation de {nom} ?': 'Cancel {nom}’s invitation?',
+  'Son invitation sera annulée. Tu pourras la renvoyer plus tard.':
+    'Their invitation will be cancelled. You can send it again later.',
   'Rien pour ce concert (pas encore joué, ou direct lancé sans concert planifié ce jour-là).': 'Nothing for this gig yet (not played yet, or a live session started with no gig planned that day).',
   'Réglages et paramètres': 'Settings and preferences',
   'Répertoire du groupe': 'Band repertoire',
