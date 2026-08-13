@@ -34,12 +34,12 @@ Chaque modification du code se recharge instantanément.
 
 Le dépôt GitHub `Vincent9743456/sing2me` est la **source de vérité** :
 Vercel y est connecté, et **chaque push sur `main` déploie
-automatiquement** https://sing2me-three.vercel.app. Plus besoin de
+automatiquement** https://mojosong.com. Plus besoin de
 `vercel --prod`.
 
 À chaque livraison : incrémenter `src/version.ts` (APP_BUILD) **et**
 `public/version.txt`, puis vérifier après déploiement que
-`https://sing2me-three.vercel.app/version.txt` renvoie la bonne version.
+`https://mojosong.com/version.txt` renvoie la bonne version.
 
 ---
 
@@ -302,7 +302,7 @@ fonctionne comme avant ; à la connexion, local et cloud sont **fusionnés**
 1. **Supabase → SQL Editor** : exécute `supabase/auth.sql` (crée la table
    `user_library` avec sa sécurité RLS ; ré-exécutable sans risque).
 2. **Supabase → Authentication → URL Configuration** : renseigne
-   **Site URL** = `https://sing2me-three.vercel.app` (ton domaine).
+   **Site URL** = `https://mojosong.com` (ton domaine).
 3. **Vercel → Settings → Environment Variables** (Production) :
    - `VITE_SUPABASE_URL` = `https://zssnwjtfzbymtsiccvao.supabase.co`
    - `VITE_SUPABASE_ANON_KEY` = la clé **anon public** (Supabase →
