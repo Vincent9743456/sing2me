@@ -300,6 +300,11 @@ export function Stage({
         setIndex((i) => Math.max(0, i - 1));
       } else if (action === 'defilement') {
         setScroll((s) => !s);
+      } else if (action === 'accelerer') {
+        // Mêmes bornes que le clavier (+/−) : 10 → 120.
+        setSpeed((s) => Math.min(120, s + 10));
+      } else if (action === 'ralentir') {
+        setSpeed((s) => Math.max(10, s - 10));
       }
     });
   }, [items.length]);

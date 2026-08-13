@@ -28,6 +28,8 @@ const ACTIONS: { cle: MidiAction; label: string }[] = [
   { cle: 'suivant', label: 'Morceau suivant' },
   { cle: 'precedent', label: 'Morceau précédent' },
   { cle: 'defilement', label: 'Défilement (marche / arrêt)' },
+  { cle: 'accelerer', label: 'Accélérer le défilement' },
+  { cle: 'ralentir', label: 'Ralentir le défilement' },
 ];
 
 export function PedaleMidi() {

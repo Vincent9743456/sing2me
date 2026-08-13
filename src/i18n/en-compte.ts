@@ -205,6 +205,8 @@ export const EN_COMPTE: Record<string, string> = {
   'Morceau suivant': 'Next song',
   'Morceau précédent': 'Previous song',
   'Défilement (marche / arrêt)': 'Scrolling (on / off)',
+  'Accélérer le défilement': 'Speed up scrolling',
+  'Ralentir le défilement': 'Slow down scrolling',
   'Appuie sur la pédale…': 'Press the pedal…',
   'Apprendre': 'Learn',
   'Effacer': 'Clear',

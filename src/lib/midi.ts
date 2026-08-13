@@ -17,7 +17,12 @@
  * du mode scène : morceau suivant, précédent, marche/arrêt du défilement.
  */
 
-export type MidiAction = 'suivant' | 'precedent' | 'defilement';
+export type MidiAction =
+  | 'suivant'
+  | 'precedent'
+  | 'defilement'
+  | 'accelerer'
+  | 'ralentir';
 
 export interface MidiConfig {
   actif: boolean;
