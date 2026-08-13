@@ -159,7 +159,7 @@ export function TopBar({
           /* LA MARQUE SUR TÉLÉPHONE (b238, constat de Vincent : « le logo
              n'apparaît pas sur le téléphone »). Elle ne vivait que dans la
              barre latérale, qui n'existe qu'à partir de 900 px : sur un
-             téléphone, le dodo ne se voyait donc nulle part une fois
+             téléphone, l'emblème ne se voyait donc nulle part une fois
              connecté. Il prend la gouttière gauche, déjà réservée au bouton
              Retour — donc rien ne bouge, et il s'efface dès qu'on entre dans
              un écran d'où l'on revient. Décoratif et NON cliquable : l'onglet

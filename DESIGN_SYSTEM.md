@@ -1,4 +1,4 @@
-# DodoSongs — Design System
+# mojosong — Design System
 
 > Source de vérité pour toute modification d'interface.
 > **À lire avant de toucher au CSS ou aux composants.**
@@ -9,12 +9,12 @@
 
 **Conservé** : dark-first assumé (identité scène), accent unique,
 accords en cyan, rayons généreux, sobriété sans froideur.
-**Identité (b237)** : la charte **DodoSongs** — fond nuit `#0A0F1D`, texte
+**Identité (b237)** : la charte **mojosong** — fond nuit `#0A0F1D`, texte
 crème `#F4F0E9`, ambre `#FCA711` pour ce qui agit, cyan `#5BD0E8` pour ce
-qui se joue. Le logo est le **dodo à la guitare**, un bloc complet posé sur
+qui se joue. Le logo est l'**emblème mojosong** (carnet ouvert : note + ondes), posé sur
 le fond nuit dans un carré aux angles arrondis (22,5 % du côté) : on ne
 l'ouvre pas, on ne le recolore pas, on ne le met jamais dans un cercle, on
-ne lui ajoute pas d'ombre portée. Source unique `public/dodosongs.png`, les
+ne lui ajoute pas d'ombre portée. Source unique `public/mojosong-emblem.svg`, les
 tailles dérivées par `scripts/build-icons.mjs`.
 *(Remplace l'identité b53 — orange scène `#f6832a` + logo « bulle qui
 chante ». Rien de b53 ne survit ; si une couleur de cette époque réapparaît

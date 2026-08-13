@@ -1,4 +1,4 @@
-# DodoSongs — Inventaire des composants
+# mojosong — Inventaire des composants
 
 Statuts : ✅ conserver · 🔧 corriger · 🔀 fusionner · ➕ créer · ❌ supprimer
 

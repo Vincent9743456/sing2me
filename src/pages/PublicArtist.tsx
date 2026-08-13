@@ -137,7 +137,7 @@ export function PublicArtist({ name }: { name: string }) {
             className="btn block"
             href={location.origin + location.pathname.replace(/[^/]*$/, '')}
           >
-            {t('Découvrir DodoSongs')}
+            {t('Découvrir mojosong')}
           </a>
         </div>
       </div>
@@ -176,7 +176,7 @@ export function PublicArtist({ name }: { name: string }) {
           className="ctabanner"
           href={location.origin + location.pathname.replace(/[^/]*$/, '')}
         >
-          <LogoMark size={44} /> {t('Découvrez')} <strong>DodoSongs</strong>{' '}
+          <LogoMark size={44} /> {t('Découvrez')} <strong>mojosong</strong>{' '}
           {t('— votre songbook, gratuit')}
         </a>
         <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>

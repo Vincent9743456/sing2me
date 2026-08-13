@@ -77,7 +77,7 @@ const empreinte = readFileSync(new URL('../public/version.txt', import.meta.url)
 const cle = `${empreinte}-${fichiers.length}-${fichiers.join('|').length}`;
 
 const source = `/* Généré par scripts/build-sw.mjs — ne pas modifier à la main. */
-const CACHE = 'dodosongs-${cle}';
+const CACHE = 'mojosong-${cle}';
 const COQUILLES = ${JSON.stringify(OBLIGATOIRES)};
 const FICHIERS = ${JSON.stringify(fichiers)};
 /* Pages autonomes hébergées à côté de l'app : le SW ne les touche pas. */
@@ -111,7 +111,12 @@ self.addEventListener('activate', (e) => {
         noms
           .filter(
             (n) =>
-              (n.indexOf('dodosongs-') === 0 || n.indexOf('sing2me-') === 0) &&
+              // On reconnaît les préfixes SUCCESSIFS du produit (sing2me →
+              // dodosongs → mojosong) pour n'oublier aucun ancien cache sur
+              // les téléphones déjà installés.
+              (n.indexOf('mojosong-') === 0 ||
+                n.indexOf('dodosongs-') === 0 ||
+                n.indexOf('sing2me-') === 0) &&
               n !== CACHE,
           )
           .map((n) => caches.delete(n)),
@@ -208,5 +213,5 @@ self.addEventListener('message', (e) => {
 
 writeFileSync(join(DIST, 'sw.js'), source);
 console.log(
-  `build-sw : dist/sw.js écrit — ${fichiers.length} fichiers, cache « dodosongs-${cle} »`,
+  `build-sw : dist/sw.js écrit — ${fichiers.length} fichiers, cache « mojosong-${cle} »`,
 );

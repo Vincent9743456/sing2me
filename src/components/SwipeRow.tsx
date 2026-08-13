@@ -26,7 +26,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n';
 
 /** Ouvre-t-on ce volet ? Un seul à la fois, sur tout l'écran. */
-const OUVERT = 'dodosongs:volet';
+const OUVERT = 'mojosong:volet';
 
 /** Largeur du volet révélé — une cible tactile confortable (48 px + marges). */
 const LARGEUR = 88;

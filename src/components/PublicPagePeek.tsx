@@ -110,7 +110,7 @@ export function PublicPagePeek({
     try {
       if (qr !== '' && nav.canShare) {
         const blob = await (await fetch(qr)).blob();
-        const fichier = new File([blob], 'dodosongs-qr.png', {
+        const fichier = new File([blob], 'mojosong-qr.png', {
           type: 'image/png',
         });
         if (nav.canShare({ files: [fichier] })) {
@@ -162,7 +162,7 @@ export function PublicPagePeek({
                 <a
                   className="btn ghost small"
                   href={qr}
-                  download="dodosongs-qr.png"
+                  download="mojosong-qr.png"
                 >
                   {t('⤓ Enregistrer le QR')}
                 </a>

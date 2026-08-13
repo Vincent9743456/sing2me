@@ -1,4 +1,4 @@
-# DodoSongs — remettre l'application en route depuis zéro
+# mojosong — remettre l'application en route depuis zéro
 
 *Que faire si l'accès à GitHub, à Vercel ou à Supabase est perdu.*
 Établi le 11 août 2026 (b277).
@@ -16,14 +16,14 @@ de travail** — un disque externe, une clé USB, un espace en ligne.
 
 | Fichier | Ce que c'est |
 |---|---|
-| `dodosongs-historique-complet.bundle` | **Tout le dépôt**, avec l'historique complet de chaque livraison. C'est la vraie sauvegarde |
-| `dodosongs-code-b277.zip` | Les fichiers du projet à la dernière version, sans historique. Pour ouvrir et lire sans rien installer |
+| `mojosong-historique-complet.bundle` | **Tout le dépôt**, avec l'historique complet de chaque livraison. C'est la vraie sauvegarde |
+| `mojosong-code-b277.zip` | Les fichiers du projet à la dernière version, sans historique. Pour ouvrir et lire sans rien installer |
 
 ### Repartir du bundle
 
 ```bash
-git clone dodosongs-historique-complet.bundle dodosongs
-cd dodosongs
+git clone mojosong-historique-complet.bundle mojosong
+cd mojosong
 git log --oneline | head          # l'historique est là, entier
 ```
 
@@ -90,7 +90,7 @@ rien.
 
 > **Ta bibliothèque à toi** ne dépend de rien de tout ça : elle vit sur ton
 > téléphone. Réglages → **💾 Enregistrer une sauvegarde** produit un fichier
-> qui se relit **même sans DodoSongs** (c'est du texte : titres, paroles,
+> qui se relit **même sans mojosong** (c'est du texte : titres, paroles,
 > accords). Fais-le de temps en temps, c'est le filet le plus solide.
 
 ---

@@ -967,7 +967,7 @@ export function Library() {
                     {t('Importe tes partitions')}
                   </div>
                   {t(
-                    'Tu as déjà une collection ? Dépose tous tes fichiers ou tes pages enregistrées en une fois — DodoSongs met tout au propre.',
+                    'Tu as déjà une collection ? Dépose tous tes fichiers ou tes pages enregistrées en une fois — mojosong met tout au propre.',
                   )}
                   <div className="spacer" />
                   <div className="hstack" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -1296,7 +1296,7 @@ function SongPreview({
           className="btn ai small"
           onClick={() => setUgOpen(true)}
           title={t(
-            'DodoSongs cherche la version la mieux notée de cette partition et te la propose',
+            'mojosong cherche la version la mieux notée de cette partition et te la propose',
           )}
         >
           {t('★ Meilleure version ?')}

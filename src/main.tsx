@@ -33,8 +33,8 @@ suivreLeClavier();
  * moindre ligne de l'app ne s'exécute. Rien ne peut plus le contredire.
  */
 try {
-  if (sessionStorage.getItem('dodosongs:compteSupprime') === '1') {
-    sessionStorage.removeItem('dodosongs:compteSupprime');
+  if (sessionStorage.getItem('mojosong:compteSupprime') === '1') {
+    sessionStorage.removeItem('mojosong:compteSupprime');
     const aJeter: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);

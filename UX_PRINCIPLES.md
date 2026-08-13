@@ -1,4 +1,4 @@
-# DodoSongs — Principes UX
+# mojosong — Principes UX
 
 1. **La partition d'abord.** Sur tout écran musical, le contenu (paroles,
    accords, structure) est l'élément dominant ; les outils s'effacent.

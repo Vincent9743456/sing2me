@@ -202,7 +202,7 @@ export function BandEdit({ id }: { id: string }) {
   } | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   /**
-   * DÉJÀ SUR DODOSONGS ? (b252, demande de Vincent : « il faut que
+   * DÉJÀ SUR MOJOSONG ? (b252, demande de Vincent : « il faut que
    * l'invitation puisse vérifier si la personne n'est pas déjà inscrite »).
    * Cherché pendant la frappe : quand la personne a un compte, l'invitation
    * part DIRECTEMENT chez elle — rien à envoyer, et sa ligne porte son
@@ -1253,7 +1253,7 @@ export function BandEdit({ id }: { id: string }) {
         )}
         {cloudMembers.length > 0 && (
           <>
-            <p className="help">{t('Membres avec compte DodoSongs :')}</p>
+            <p className="help">{t('Membres avec compte mojosong :')}</p>
             {cloudMembers.map((m) => (
               <div
                 key={m.user_id}
@@ -1347,7 +1347,7 @@ export function BandEdit({ id }: { id: string }) {
             {m.verified === true && (
               <span
                 title={t(
-                  'Profil DodoSongs confirmé (carte de musicien reçue)',
+                  'Profil mojosong confirmé (carte de musicien reçue)',
                 )}
                 style={{ color: 'var(--accent)', flexShrink: 0 }}
               >
@@ -1468,7 +1468,7 @@ export function BandEdit({ id }: { id: string }) {
         </div>
         <p className="help">
           {t(
-            "L'invitation contient le répertoire du groupe (morceaux de ses setlists). Si le musicien a un compte DodoSongs, il rejoint le groupe en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa « carte de musicien » (l'ouvrir ici met à jour la liste manuelle).",
+            "L'invitation contient le répertoire du groupe (morceaux de ses setlists). Si le musicien a un compte mojosong, il rejoint le groupe en un clic et apparaît ici avec ✓. Sinon, il peut te renvoyer sa « carte de musicien » (l'ouvrir ici met à jour la liste manuelle).",
           )}
         </p>
         {editSaved && !editDirty && (
@@ -1494,7 +1494,7 @@ export function BandEdit({ id }: { id: string }) {
         <Modal title={t('Ajouter un membre')} onClose={() => setAddOpen(false)}>
           <p className="help" style={{ marginTop: 0 }}>
             {t(
-              'Cherche un musicien qui a déjà DodoSongs (il devra accepter), ou envoie-lui un lien / email.',
+              'Cherche un musicien qui a déjà mojosong (il devra accepter), ou envoie-lui un lien / email.',
             )}
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -1586,7 +1586,7 @@ export function BandEdit({ id }: { id: string }) {
             autoFocus
             onChange={(e) => setPendingName(e.target.value)}
           />
-          {/* DÉJÀ SUR DODOSONGS ? (b252, demande de Vincent : « il faut que
+          {/* DÉJÀ SUR MOJOSONG ? (b252, demande de Vincent : « il faut que
               l'invitation puisse vérifier si la personne n'est pas déjà
               inscrite »). On cherche pendant qu'il tape : si la personne a un
               compte, l'invitation part DIRECTEMENT chez elle — pas de lien à
@@ -1597,8 +1597,8 @@ export function BandEdit({ id }: { id: string }) {
               <div className="spacer" />
               <p className="help" style={{ margin: 0 }}>
                 {dejaInscrits.length === 1
-                  ? t('Cette personne est déjà sur DodoSongs :')
-                  : t('Ces musiciens sont déjà sur DodoSongs :')}
+                  ? t('Cette personne est déjà sur mojosong :')
+                  : t('Ces musiciens sont déjà sur mojosong :')}
               </p>
               {dejaInscrits.map((p) => (
                 <div className="row" key={p.user_id}>

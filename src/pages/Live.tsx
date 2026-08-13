@@ -680,7 +680,7 @@ export function Live({
       {!liveNow && role === 'public' && ps.appInvite && (
         <div className="footer">
           <a className="ctabanner" href={location.origin + '/'}>
-            <LogoMark size={44} /> {t('Téléchargez')} <strong>DodoSongs</strong>{' '}
+            <LogoMark size={44} /> {t('Téléchargez')} <strong>mojosong</strong>{' '}
             {t('— votre songbook, gratuit')}
           </a>
           <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>

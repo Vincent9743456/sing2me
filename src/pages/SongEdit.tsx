@@ -413,7 +413,7 @@ export function SongEdit({ id }: { id: string | null }) {
         {draft.versions.length > 1 && (
           <p className="help">
             {t(
-              "À l'enregistrement, DodoSongs te demandera si tes changements de partition valent pour",
+              "À l'enregistrement, mojosong te demandera si tes changements de partition valent pour",
             )}{' '}
             <strong>{t('cette version')}</strong> {t('seulement ou pour')}{' '}
             <strong>{t('toutes les versions')}</strong>.

@@ -1,5 +1,5 @@
 /**
- * Encourage l'ajout de DodoSongs à l'écran d'accueil (PWA).
+ * Encourage l'ajout de mojosong à l'écran d'accueil (PWA).
  *  • Android / Chrome : bouton « Installer » (rejoue l'invite native captée
  *    dans main.tsx).
  *  • iOS Safari : pas d'invite native → petite consigne « Partager → Sur
@@ -79,13 +79,13 @@ export function InstallHint() {
     <div
       className="installhint"
       role="dialog"
-      aria-label={t('Installer DodoSongs')}
+      aria-label={t('Installer mojosong')}
     >
       <span className="installhint-ico" aria-hidden="true">
         📲
       </span>
       <div className="grow" style={{ minWidth: 0 }}>
-        <strong>{t('Installe DodoSongs')}</strong>
+        <strong>{t('Installe mojosong')}</strong>
         <div className="help" style={{ margin: 0 }}>
           {ios
             ? t(
