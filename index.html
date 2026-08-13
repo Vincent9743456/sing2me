@@ -24,9 +24,67 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="mojosong" />
+    <!-- SPLASH DE DÉMARRAGE (b305) : sans lui, le premier rendu — avant que
+         le CSS et React ne s'appliquent — était BLANC (constat de Vincent),
+         puis vide. L'app est SOMBRE par défaut : on peint donc le nuit TOUT
+         DE SUITE (première peinture, aucune dépendance) et on montre l'emblème
+         + le nom pendant le lancement. React remplace le contenu de #root à
+         son montage : le splash disparaît seul. -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #0a0f1d;
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: #0a0f1d;
+      }
+      #boot img {
+        width: 96px;
+        height: 96px;
+        animation: bootpulse 1.3s ease-in-out infinite;
+      }
+      #boot .n {
+        font-family: 'Poppins', 'Century Gothic', system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 1.5rem;
+        letter-spacing: -0.02em;
+        color: #f4f0e9;
+      }
+      #boot .n b {
+        font-weight: 700;
+        color: #fca711;
+      }
+      @keyframes bootpulse {
+        0%,
+        100% {
+          opacity: 0.55;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot img {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot" aria-hidden="true">
+        <img src="/mojosong-emblem.svg" alt="" width="96" height="96" />
+        <div class="n">mojo<b>song</b></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
