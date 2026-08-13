@@ -13,6 +13,7 @@ import React, {
   useContext,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 
 import { t } from '../i18n';
 import { Icon, IconName } from './Icon';
@@ -26,7 +27,10 @@ export function Sheet({
   children: React.ReactNode;
   onClose: () => void;
 }) {
-  return (
+  // Portalisée dans <body> (b300), même raison que la modale : ouverte depuis
+  // le volet d'aperçu collant de la bibliothèque, elle passait sinon derrière
+  // la barre d'outils.
+  return createPortal(
     <div
       className="sheet-backdrop"
       onClick={(e) => {
@@ -38,7 +42,8 @@ export function Sheet({
         {title && <h3 className="sheet-title">{title}</h3>}
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

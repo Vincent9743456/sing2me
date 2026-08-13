@@ -1342,8 +1342,8 @@ function SongPreview({
             .join(' · ')}
         </span>
         {song.versions.length > 1 && (
+          <span className="versionpick">
           <select
-            style={{ width: 'auto', padding: '4px 8px', fontSize: '0.8rem' }}
             value={song.activeVersionId}
             title={t('Changer de version (solo, groupe…)')}
             onChange={(e) => saveSong(switchVersion(song, e.target.value))}
@@ -1362,6 +1362,7 @@ function SongPreview({
               );
             })}
           </select>
+          </span>
         )}
       </div>
       {/* Appartenances : état compact (où le morceau EST) + éditeur à la

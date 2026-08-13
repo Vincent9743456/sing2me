@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { t } from '../i18n';
 import { navigate, Route } from '../router';
@@ -276,7 +277,13 @@ export function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  return (
+  // PORTALISÉ dans <body> (b300) : une feuille ouverte depuis un conteneur
+  // « collant » à défilement interne — le volet d'aperçu de la bibliothèque
+  // (`.libpreview`, position: sticky + overflow) — était PIÉGÉE dans son
+  // empilement et la barre d'outils passait par-dessus (bug signalé par
+  // Vincent). Rattachée au body, la modale échappe à tout ancêtre et se pose
+  // au-dessus de l'app. `document.body` existe toujours au rendu client.
+  return createPortal(
     <div
       className="modal-backdrop"
       onClick={(e) => {
@@ -287,7 +294,8 @@ export function Modal({
         <h2>{title}</h2>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
