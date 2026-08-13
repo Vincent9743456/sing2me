@@ -40,6 +40,7 @@ import {
   SEED_KEY,
   SEED_VERSION,
 } from './seed';
+import { dedupeSongsByContent } from './lib/sync';
 import { authAvailable } from './lib/auth';
 import {
   ArtistProfile,
@@ -148,10 +149,11 @@ function loadState(): AppState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<AppState>;
-      // Effondre d'emblée les doublons de contenu d'exemple (b286) : un ancien
-      // bug les a empilés chez certains ; on les nettoie au chargement, et les
-      // tombstones posés se propagent à la fusion suivante.
-      return dedupeExamples(withEmbeddedLiveKey({
+      // Effondre d'emblée les doublons de contenu (b286 pour les exemples,
+      // b316 pour les vrais morceaux dupliqués par une double connexion) : on
+      // nettoie au chargement, et les tombstones posés se propagent à la
+      // fusion suivante. Les deux passes sont idempotentes.
+      return dedupeSongsByContent(dedupeExamples(withEmbeddedLiveKey({
         // migration automatique de l'ancien modèle à sections
         songs: (Array.isArray(parsed.songs) ? parsed.songs : []).map(migrateSong),
         // Coquilles vides laissées par le défaut corrigé en b146 : on les
@@ -185,7 +187,7 @@ function loadState(): AppState {
         bandRemovals: Array.isArray(parsed.bandRemovals)
           ? parsed.bandRemovals
           : [],
-      }));
+      })));
     }
   } catch {
     // stockage illisible : on repart des données de démo
