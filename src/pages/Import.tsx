@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ProgressBar, TopBar } from '../components/ui';
+import { MojoLoader } from '../components/MojoLoader';
 import { SongBody } from '../components/SongBody';
 import { extractDocxText } from '../lib/docx';
 import { extractPdfPages } from '../lib/pdf';
@@ -1099,8 +1100,29 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
       </>
     ) : null;
 
+  // Import en masse : progression réelle pour Mojo (items traités / total).
+  const bulkDone = bulkItems
+    ? bulkItems.filter((x) => x.status !== 'pending' && x.status !== 'loading')
+        .length
+    : 0;
+  const bulkCount = bulkItems ? bulkItems.length : 0;
+
   return (
     <>
+      {/* Mojo pour la VRAIE attente (b304) : l'import en masse d'une
+          collection. N'apparaît qu'au bout de ~500 ms. */}
+      <MojoLoader
+        active={bulkRunning}
+        label={t('On installe ton répertoire…')}
+        value={bulkDone}
+        max={bulkCount}
+      />
+      <MojoLoader
+        active={bulkAiRunning}
+        label={t('On met tes partitions au propre…')}
+        value={aiProg?.done}
+        max={aiProg?.total}
+      />
       <TopBar live={false} title={t('Ajouter un morceau')} onBack={() => history.back()} />
       <div className="page">
         {/* 1 — Recherche : la première chose visible, toujours en tête */}

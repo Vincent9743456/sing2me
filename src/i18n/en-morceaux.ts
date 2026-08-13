@@ -87,6 +87,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Tu as déjà une collection ? Dépose tous tes fichiers ou tes pages enregistrées en une fois — mojosong met tout au propre.':
     'Already have a collection? Drop all your files or saved pages at once — mojosong tidies it all up.',
   'Importer ma collection': 'Import my collection',
+  'On installe ton répertoire…': 'Setting up your repertoire…',
+  'On met tes partitions au propre…': 'Tidying up your charts…',
   'Ajouter un seul morceau': 'Add a single song',
   'Importer mon premier morceau': 'Import my first song',
   'Aucun morceau ne correspond à ta recherche.': 'No song matches your search.',

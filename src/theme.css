@@ -3958,3 +3958,122 @@ a.pg-musicien:focus-visible .pg-nom {
   outline: 2px solid var(--text);
   outline-offset: -4px;
 }
+
+/* ---------- MojoLoader — la mascotte pour les attentes longues (b304) ---------- */
+/* Surcouche centrée, portalisée dans <body>. Deux thèmes (piste = surface
+   creuse, remplissage = ambre). Animations en transform/opacity uniquement. */
+.mojoload-backdrop {
+  position: fixed;
+  inset: 0;
+  bottom: var(--clavier, 0px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  backdrop-filter: blur(3px);
+  z-index: 700;
+  animation: fadein 0.18s ease;
+  transition: opacity 0.15s ease;
+}
+.mojoload-backdrop.fini {
+  opacity: 0;
+}
+.mojoload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 30px calc(28px + env(safe-area-inset-bottom));
+  background: var(--surface-high);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-width: min(92vw, 340px);
+}
+.mojoload-mascotte {
+  width: 120px;
+  height: 120px;
+  display: block;
+  animation: mojo-bounce 1.4s ease-in-out infinite;
+  will-change: transform;
+}
+.mojoload-mascotte.fini {
+  animation: mojo-pop 0.5s ease;
+}
+.mojoload-label {
+  font-family: 'Poppins', 'Century Gothic', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+  text-align: center;
+  text-wrap: balance;
+  margin: 0;
+}
+.mojoload-bar {
+  position: relative;
+  width: 240px;
+  max-width: 70vw;
+  height: 7px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.mojoload-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  transition: width 0.3s ease;
+}
+.mojoload-bar.plein .mojoload-fill {
+  width: 100%;
+}
+.mojoload-bar.indet .mojoload-fill {
+  width: 40%;
+  animation: mojo-indet 1.15s ease-in-out infinite;
+}
+.mojoload-count {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+@keyframes mojo-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes mojo-indet {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+@keyframes mojo-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Mojo figé, barre encore active (progression = information, pas décor). */
+  .mojoload-mascotte,
+  .mojoload-mascotte.fini {
+    animation: none;
+  }
+  .mojoload-bar.indet .mojoload-fill {
+    animation: none;
+    width: 45%;
+  }
+}
