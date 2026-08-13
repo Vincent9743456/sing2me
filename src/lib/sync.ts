@@ -16,6 +16,7 @@ import {
   Song,
   Tombstone,
 } from '../types';
+import { songKey } from './normalizeTitle';
 
 export interface SyncState {
   songs: Song[];
@@ -128,6 +129,103 @@ export function etatVide(): SyncState {
     bandRemovals: [],
     resetAt: {},
   };
+}
+
+/**
+ * EFFONDRE LES DOUBLONS DE MORCEAUX PAR CONTENU (b316).
+ *
+ * Bug signalé par Vincent : des morceaux ENTIERS dupliqués (avec toutes leurs
+ * versions), jamais reconnus comme doublons. Cause : une double connexion /
+ * course de synchro recrée la bibliothèque avec des identifiants NEUFS
+ * (l'import ne consulte que le local, jamais le cloud), et la fusion
+ * (`mergeById`) ne compare QUE les `id` — deux copies au même titre + artiste
+ * mais à id différents survivent côte à côte pour toujours. Aucun
+ * dédoublonnage par CONTENU n'existait pour les vrais morceaux (seuls les
+ * exemples en avaient un, `dedupeExamples`) : c'était le trou.
+ *
+ * On garde AU PLUS un morceau par clé de contenu (titre + artiste normalisés,
+ * `songKey`) et on enterre les surplus (tombstone par id), en redirigeant les
+ * items de setlist du perdant vers le gardé.
+ *
+ * GARDE-FOUS (hérités des cicatrices b247/b248/b286/b290) :
+ *  · CLÉ EXACTE, jamais par sous-chaîne — « Marc » ≠ « Marco ». Un morceau
+ *    sans titre (clé vide) n'est jamais regroupé.
+ *  · SURVIVANT DÉTERMINISTE sur des champs IMMUABLES (createdAt le plus
+ *    ancien, départagé par le plus petit id) : deux appareils choisissent
+ *    TOUJOURS le même survivant, même en pleine synchro. Trancher sur
+ *    `updatedAt` (qui change à chaque édition) ferait qu'un appareil enterre
+ *    A et l'autre B → les deux tombstones s'unissent → le morceau
+ *    DISPARAÎTRAIT des deux côtés. Interdit.
+ *  · JAMAIS DE PERTE DE VERSION (leçon b290) : on n'enterre un perdant que si
+ *    TOUTES ses versions (par `bandId`) sont déjà représentées dans le
+ *    survivant. Un perdant qui porte une version de groupe absente du
+ *    survivant n'est PAS effondré — mieux vaut un doublon visible qu'une
+ *    version perdue. On ne devine jamais « la vérité » entre deux contenus :
+ *    le survivant garde le sien, on n'écrase rien.
+ *  · IDEMPOTENT : sans doublon effondrable, l'objet est renvoyé TEL QUEL
+ *    (aucun tombstone ajouté) — rejouable à chaque chargement et fusion.
+ */
+export function dedupeSongsByContent<
+  S extends { songs: Song[]; setlists: Setlist[]; deleted?: Tombstone[] },
+>(state: S): S {
+  // Regrouper par clé de contenu (titre + artiste). Clé vide → jamais groupé.
+  const groups = new Map<string, Song[]>();
+  for (const s of state.songs) {
+    const k = songKey(s.title, s.artist);
+    if (k === '') continue;
+    const g = groups.get(k);
+    if (g) g.push(s);
+    else groups.set(k, [s]);
+  }
+
+  const morts: string[] = []; // ids enterrés (perdants absorbables)
+  const remap = new Map<string, string>(); // item de setlist : perdant → gardé
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    // Survivant : createdAt le plus ancien, départagé par le plus petit id.
+    // Champs IMMUABLES → choix identique sur TOUS les appareils, même
+    // pendant une synchro (sinon enterrement mutuel = morceau perdu).
+    const survivant = [...g].sort((a, b) => {
+      const ca = a.createdAt ?? '';
+      const cb = b.createdAt ?? '';
+      if (ca !== cb) return ca < cb ? -1 : 1;
+      return a.id < b.id ? -1 : 1;
+    })[0];
+    const ctxSurvivant = new Set(survivant.versions.map((v) => v.bandId ?? ''));
+    for (const s of g) {
+      if (s.id === survivant.id) continue;
+      // On n'enterre que si le perdant n'apporte AUCUNE version que le
+      // survivant n'a pas (aucun bandId inédit) — sinon on perdrait une
+      // version de groupe. On laisse alors le doublon plutôt que de détruire.
+      const absorbable = s.versions.every((v) =>
+        ctxSurvivant.has(v.bandId ?? ''),
+      );
+      if (!absorbable) continue;
+      morts.push(s.id);
+      remap.set(s.id, survivant.id);
+    }
+  }
+
+  if (morts.length === 0) return state;
+
+  const mortsSet = new Set(morts);
+  const now = new Date().toISOString();
+  return {
+    ...state,
+    songs: state.songs.filter((s) => !mortsSet.has(s.id)),
+    setlists: state.setlists.map((sl) => ({
+      ...sl,
+      items: sl.items.map((it) =>
+        remap.has(it.songId)
+          ? { ...it, songId: remap.get(it.songId) as string }
+          : it,
+      ),
+    })),
+    deleted: [
+      ...(state.deleted ?? []),
+      ...morts.map((id) => ({ id, at: now })),
+    ],
+  } as S;
 }
 
 export function mergeStates(
@@ -256,7 +354,12 @@ export function mergeStates(
     const mine = new Set(localItems.map((x) => x.id));
     return items.filter((x) => mine.has(x.id) || (x.updatedAt ?? '') > mark);
   };
-  return {
+  // Fusion par id d'abord (union local+cloud), PUIS dédoublonnage par contenu
+  // sur cette union : c'est le seul endroit où l'on voit les deux copies d'un
+  // même morceau créées séparément (double connexion / course de synchro).
+  // La redirection des items de setlist et les tombstones du perdant sont
+  // portés par `deduped` ci-dessous.
+  const deduped = dedupeSongsByContent({
     songs: afterReset(
       alive(mergeById(local.songs, cloud.songs ?? [])),
       local.songs,
@@ -267,6 +370,11 @@ export function mergeStates(
       local.setlists,
       resetAt.setlists,
     ),
+    deleted: [...tombs.values()],
+  });
+  return {
+    songs: deduped.songs,
+    setlists: deduped.setlists,
     concerts: afterReset(
       alive(mergeById(local.concerts, cloud.concerts ?? [])),
       local.concerts,
@@ -280,7 +388,7 @@ export function mergeStates(
     resetAt,
     artist,
     prefs,
-    deleted: [...tombs.values()]
+    deleted: (deduped.deleted ?? [])
       .sort((a, b) => a.at.localeCompare(b.at))
       .slice(-500),
     bandRemovals: [...removals.values()]
