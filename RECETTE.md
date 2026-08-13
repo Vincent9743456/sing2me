@@ -1,4 +1,4 @@
-# DodoSongs — Périmètre fonctionnel et plan de recette
+# mojosong — Périmètre fonctionnel et plan de recette
 
 *Établi à partir du code, pas de mémoire — version b209, 9 août 2026.*
 
@@ -308,7 +308,7 @@ serveurs disparaissent, ou s'il change de téléphone.*
 | N° | Cas | Ce qu'on doit voir | Prio |
 |---|---|---|---|
 | B-1 | Réglages → Exporter → **💾 Enregistrer une sauvegarde** | Un fichier `sing2me-AAAA-MM-JJ.json` est proposé au téléchargement | 🔴 |
-| B-2 | Ouvrir ce fichier dans un éditeur de texte | On y **lit ses titres, ses paroles et ses accords** — c'est la promesse : il se relit sans DodoSongs | 🟠 |
+| B-2 | Ouvrir ce fichier dans un éditeur de texte | On y **lit ses titres, ses paroles et ses accords** — c'est la promesse : il se relit sans mojosong | 🟠 |
 | B-3 | Supprimer un morceau, puis **↩︎ Restaurer** cette sauvegarde | Le morceau revient | 🔴 |
 | B-4 | Modifier un morceau, puis restaurer une sauvegarde **plus ancienne** | La modification récente **n'est pas écrasée** — la restauration ajoute, elle ne remplace pas | 🔴 |
 | B-5 | Restaurer un fichier qui n'est pas une sauvegarde (un PDF, un texte) | Message clair nommant la raison, **et rien ne change** dans la bibliothèque | 🟠 |

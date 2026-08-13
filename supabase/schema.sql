@@ -1,5 +1,5 @@
 -- ============================================================
--- DodoSongs — Schéma Supabase (version 2 : espace collaboratif)
+-- mojosong — Schéma Supabase (version 2 : espace collaboratif)
 -- À exécuter dans SQL Editor de ton projet Supabase.
 --
 -- Modèle : un « groupe » (band) rassemble des musiciens.

@@ -4,7 +4,7 @@
  *   node scripts/build-icons.mjs
  *
  * Source unique : `public/mojosong.png` — le bloc complet de la charte
- * (dodo + guitare, fond nuit, angles arrondis à 22,5 %), extrait du PDF.
+ * l'emblème mojosong. OBSOLÈTE depuis b303 (icônes rendues depuis le SVG).
  * On n'en dessine JAMAIS une variante à la main : tout ce qui suit est un
  * redimensionnement de ce fichier-là, pour qu'aucune version ne diverge.
  *
@@ -19,7 +19,7 @@
  *   · icon-192 / icon-512     — manifeste PWA, fond nuit opaque ;
  *   · icon-maskable-512       — même chose, mais l'illustration réduite à
  *                               80 % au centre : Android recadre les icônes
- *                               « maskable » et mangerait le bec du dodo ;
+ *                               « maskable » et mangerait le bord de l'emblème ;
  *   · apple-touch-icon (180)  — iOS arrondit lui-même, donc fond opaque.
  *
  * Aucune dépendance : décodage et encodage PNG à la main (zlib suffit).

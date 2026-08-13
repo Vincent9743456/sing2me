@@ -1,4 +1,4 @@
-# DodoSongs — Audit UX/UI (v1)
+# mojosong — Audit UX/UI (v1)
 
 > Audit de l'interface existante, réalisé sur la base du code réel
 > (`src/theme.css` ~1380 lignes, 15 pages, 10 composants partagés).

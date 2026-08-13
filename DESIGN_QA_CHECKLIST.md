@@ -1,4 +1,4 @@
-# DodoSongs — QA design (à dérouler après chaque lot)
+# mojosong — QA design (à dérouler après chaque lot)
 
 ## Cohérence
 - [ ] Aucune couleur hex hors tokens introduite

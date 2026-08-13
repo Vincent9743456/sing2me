@@ -1,4 +1,4 @@
-# DodoSongs — Tout ce que fait l'application
+# mojosong — Tout ce que fait l'application
 
 *Visite guidée, écran par écran, puis le modèle, les décisions arrêtées et
 les limites. Établi en lisant le code — chaque bouton cité existe vraiment.*
@@ -16,7 +16,7 @@ c'est comme ça**. Le plan de test (`RECETTE.md`) dit **comment vérifier que
 
 ---
 
-# Ce qu'est DodoSongs, en trois phrases
+# Ce qu'est mojosong, en trois phrases
 
 Un **songbook pour musiciens qui jouent** : sa bibliothèque de partitions
 (paroles + accords), ses setlists, ses groupes, son mode scène. Il marche
@@ -65,7 +65,7 @@ En bas de l'écran, toujours au même endroit :
 
 Et en haut à droite, sur les écrans où ça a du sens, le bouton
 **● GO LIVE** — toujours à la même place. À gauche de la barre du haut, le
-**dodo** (le logo) quand il n'y a pas de bouton Retour ; sur grand écran
+**emblème** (le logo) quand il n'y a pas de bouton Retour ; sur grand écran
 (≥ 900 px), une barre latérale remplace la barre d'onglets.
 
 ---
@@ -522,7 +522,7 @@ transposé automatiquement dans leur tonalité.
 | **↻ Recharger l'application** | Récupère la dernière version ; les données ne bougent pas |
 | **Reprendre mes partitions** | 🎯 Recaler les accords (gratuit, hors ligne) et ✨ Remettre en forme à l'IA. **N'apparaît que s'il y a quelque chose à faire**, avec le nombre exact |
 | **📄 Exporter en PDF** | Un carnet complet, imprimable |
-| **💾 Sauvegarde** | Un fichier que tu gardes chez toi, relisible **sans DodoSongs** |
+| **💾 Sauvegarde** | Un fichier que tu gardes chez toi, relisible **sans mojosong** |
 | **↩︎ Restaurer** | Ajoute ce qui manque, n'écrase jamais plus récent |
 | **Ma page publique** | Case « Rendre ma page publique invisible » : republie une fiche **vide**, l'adresse reste réservée |
 | **Réinitialiser** | Au choix : profil, groupes, morceaux, setlists, concerts |

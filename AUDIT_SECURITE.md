@@ -1,4 +1,4 @@
-# DodoSongs — Audit de code et de sécurité
+# mojosong — Audit de code et de sécurité
 
 *Réalisé le 12 août 2026, sur la version b283. Périmètre : la totalité du
 dépôt — `api/` et `server/` (serveur Vercel), `supabase/*.sql` (base et

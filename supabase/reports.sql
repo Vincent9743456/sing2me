@@ -1,5 +1,5 @@
 -- ============================================================
--- DodoSongs — Signalements de contenu (chantier 3, paquet défensif)
+-- mojosong — Signalements de contenu (chantier 3, paquet défensif)
 -- À exécuter dans SQL Editor de ton projet Supabase (idempotent).
 -- Seule la clé "service role" (côté serveur Vercel) y accède :
 -- RLS activé sans policy = personne d'autre ne peut lire/écrire.

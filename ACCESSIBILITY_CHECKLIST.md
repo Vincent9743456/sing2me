@@ -1,4 +1,4 @@
-# DodoSongs — Checklist accessibilité
+# mojosong — Checklist accessibilité
 
 À vérifier après chaque lot (items critiques *) :
 

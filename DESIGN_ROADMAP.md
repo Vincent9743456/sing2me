@@ -1,4 +1,4 @@
-# DodoSongs — Feuille de route design
+# mojosong — Feuille de route design
 
 Travail par lots courts, réversibles, sans jamais toucher à la logique
 métier pour une raison esthétique. Après chaque lot :

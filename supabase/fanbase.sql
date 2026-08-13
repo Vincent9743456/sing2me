@@ -1,5 +1,5 @@
 -- ============================================================
--- DodoSongs — Fanbase V1 (chantier 6)
+-- mojosong — Fanbase V1 (chantier 6)
 -- « Suivre cet artiste » : le public s'abonne aux actualités d'un artiste
 -- (email, avec consentement explicite). L'artiste voit le NOMBRE de
 -- suiveurs ; le détail des emails n'est partagé que si le suiveur a coché

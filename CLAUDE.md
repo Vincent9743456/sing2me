@@ -1,4 +1,4 @@
-# DodoSongs — Règles permanentes du projet
+# mojosong — Règles permanentes du projet
 
 ## Design & interface (obligatoire)
 
@@ -55,25 +55,35 @@
     n'ont PAS de valeur claire, sinon un pupitre blanc pourrait apparaître
     en plein concert.
 
-## Marque — DodoSongs (charte d'août 2026)
+## Marque — mojosong (charte de mojosong, refonte b303)
 
-- **Le nom du produit est DodoSongs**, et son icône est le dodo à la
-  guitare. Charte fournie par Vincent (PDF), appliquée en b236 **sur la
-  LANDING uniquement** (`public/site/index.html`) — voir la réserve plus
-  bas.
-- **L'icône est un bloc complet** : le dodo et sa guitare sont posés sur le
-  fond nuit, dans un carré aux angles arrondis (22,5 % du côté). On n'en
-  extrait ni l'oiseau seul ni la guitare seule ; jamais dans un cercle,
-  jamais recolorée, jamais d'ombre portée, jamais sur un fond autre que le
-  nuit. Fichier : `public/dodosongs.png` (512 px, coins transparents,
-  extrait du PDF de la charte).
+- **NOM DÉFINITIF : mojosong** (arbitrage Vincent, b303 — remplace
+  « DodoSongs »). La refonte a migré l'application ET la landing en un lot :
+  nom partout (interface FR + dicos EN, manifeste, titres, meta, robots,
+  User-Agent serveur), emblème, mot-marque, icônes, préfixe du cache SW.
+  La PALETTE ne change pas (voir jetons plus bas) — seuls le nom et le signe
+  changent.
+- **L'EMBLÈME est le CARNET OUVERT** : la note à gauche dit la musique, les
+  ondes à droite disent le direct partagé — un seul signe pour les trois
+  piliers. On ne le déforme pas, on ne sépare pas les ondes du carnet, on ne
+  le recolore pas hors charte, et on n'y introduit JAMAIS le bleu des
+  accords. Deux couleurs seulement : l'ambre + une couleur de voix (crème sur
+  sombre, nuit sur clair). Fichiers : `public/mojosong-emblem.svg` (emblème
+  ambre seul, transparent, servi par `LogoMark` à toutes les tailles car un
+  SVG ne pixelise jamais et l'ambre se lit sur les deux thèmes) ; icônes
+  d'app `public/icon-{192,512,maskable-512}.png` + `apple-touch-icon.png`,
+  RÉGÉNÉRÉES depuis le SVG de la charte via un rendu navigateur (les PNG
+  livrés dans le zip étaient incomplets — fond seul, sans emblème).
+- **LE MOT-MARQUE se lit « mojo » + « song »** : « mojo » en couleur de voix
+  (`--text`), « song » en ambre (`--accent`). Porté par `.brandname` /
+  `.brandname b` (composant `Brand`), en Poppins si un jour la police est
+  embarquée, sinon repli système. On ne recolore pas le mot autrement.
 - **Deux règles qui ne souffrent aucune exception** :
-  1. **le CYAN est réservé aux ACCORDS** — dans le logo il ne sert qu'aux
-     mécaniques de la guitare, dans l'app qu'à ce qui se joue. Un
-     utilisateur apprend en trois secondes que « bleu = accord » ; une seule
-     exception et la règle ne vaut plus rien. Corollaire : la page du
-     PUBLIC est la seule surface où le cyan n'apparaît pas (elle ne montre
-     aucun accord) ;
+  1. **le CYAN est réservé aux ACCORDS** — jamais dans la marque ni
+     l'emblème, uniquement ce qui se joue dans l'app. Un utilisateur apprend
+     en trois secondes que « bleu = accord » ; une seule exception et la
+     règle ne vaut plus rien. Corollaire : la page du PUBLIC est la seule
+     surface où le cyan n'apparaît pas (elle ne montre aucun accord) ;
   2. **un seul bouton ambre par écran** : celui qui fait avancer.
 - Rappel compatible avec la règle 12 : le direct se signale par un mot ET un
   mouvement, jamais par la couleur seule.
@@ -85,7 +95,7 @@
   familles, pas plus — une sans-serif pour l'interface, une monospace pour
   ce qui doit s'aligner (les accords, et rien d'autre).
 - **RÉSERVE LEVÉE en b237** (« le site et l'app sont modifiés. Le nouveau
-  nom est DodoSongs pour tout ») : l'application est migrée — jetons de
+  nom est mojosong pour tout ») : l'application est migrée — jetons de
   `theme.css` dans les DEUX thèmes, nom dans toute l'interface et les
   dictionnaires, manifeste, icônes, cache du service worker, CGU, docs et
   commentaires SQL. Plus une seule occurrence de l'ancien nom à l'écran.
@@ -94,12 +104,12 @@
   EFFACERAIT la bibliothèque, la session et les préférences de chaque
   utilisateur déjà installé. Même raisonnement pour les tables Supabase.
   Le préfixe du cache du service worker, lui, a bien changé
-  (`dodosongs-…`) — mais le nettoyage continue de reconnaître les anciens
+  (`mojosong-…`) — mais le nettoyage continue de reconnaître les anciens
   `sing2me-…`, sinon ils resteraient sur les téléphones pour toujours.
 - **La marque se VOIT sur un téléphone** (b238, constat de Vincent : « le
   logo n'apparaît pas sur le téléphone »). Elle ne vivait que dans la barre
   latérale, qui n'existe qu'à partir de 900 px : une fois connecté, sur un
-  téléphone, le dodo n'était affiché nulle part — ni bogue ni asset
+  téléphone, l'emblème n'était affiché nulle part — ni bogue ni asset
   manquant, simplement aucun endroit pour le montrer. Il occupe désormais la
   gouttière gauche de la barre du haut, celle déjà réservée au bouton
   Retour : rien ne bouge, il s'efface dès qu'on entre dans un écran d'où
@@ -109,9 +119,9 @@
   (règle 3). **Taille doublée en b241** (« double la taille si ça entre dans
   le format ») : 56 px dans la barre du haut — 60 l'aurait poussée au-delà
   de 86 px, 56 la garde à 83 et tient dans la gouttière de 64 déjà réservée.
-  `LogoMark` sert `dodosongs-128.png` jusqu'à 64 px d'affichage et
-  `dodosongs-256.png` au-delà : sinon l'icône se pixelise sur un écran à
-  haute densité, et la page du spectateur n'a pas à charger la grande.
+  Depuis b303, `LogoMark` sert l'emblème SVG (`mojosong-emblem.svg`) à
+  TOUTES les tailles : un vecteur ne pixelise jamais, un seul fichier suffit,
+  et l'ambre se lit sur les deux thèmes (plus de couple 128/256 px à choisir).
 - **Reste à faire un jour** : l'adresse de déploiement est encore
   `sing2me-three.vercel.app` (c'est celle de Vercel, elle se change dans
   leur console, pas dans le code).

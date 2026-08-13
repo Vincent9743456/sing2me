@@ -1,5 +1,5 @@
 -- ============================================================
--- DodoSongs — Annuaire des musiciens + invitations avec acceptation.
+-- mojosong — Annuaire des musiciens + invitations avec acceptation.
 -- À exécuter dans le SQL Editor de Supabase APRÈS bands.sql
 -- (ré-exécutable sans risque — idempotent).
 --
