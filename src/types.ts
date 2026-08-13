@@ -184,9 +184,11 @@ export interface Song {
    */
   declined?: boolean;
   /**
-   * Par défaut, tout morceau est jouable en Solo. true = déqualifié
-   * manuellement du répertoire solo (l'utilisateur estime ne pas pouvoir
-   * le jouer seul). Personnel — jamais inclus dans les partages.
+   * OBSOLÈTE (b293) — le « mode Solo » a été retiré (arbitrage Vincent : pour
+   * se faire un répertoire perso, on crée un groupe dont on est seul membre).
+   * Le champ reste dans le type parce qu'il vit dans le localStorage des
+   * installés : on ne le lit ni ne l'écrit plus, mais on ne le supprime pas
+   * (aucune réécriture destructive du stockage — cicatrice b290).
    */
   noSolo?: boolean;
   /**

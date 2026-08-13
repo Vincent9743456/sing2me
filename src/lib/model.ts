@@ -33,6 +33,20 @@ import {
   StructureRow,
 } from '../types';
 
+/**
+ * TAGS À AFFICHER (b293, demande de Vincent) : on masque le tag qui répète le
+ * nom de l'artiste — beaucoup de fichiers importés portent « Pink Floyd » en
+ * tag, doublon inutile du champ artiste déjà affiché. On FILTRE à l'affichage,
+ * sans jamais toucher au stockage : rien n'est réécrit (cicatrice b290), la
+ * donnée reste, elle ne se voit simplement plus.
+ */
+export function tagsAffichables(song: Pick<Song, 'tags' | 'artist'>): string[] {
+  const a = (song.artist ?? '').trim().toLowerCase();
+  const tags = song.tags ?? [];
+  if (a === '') return tags;
+  return tags.filter((tag) => tag.trim().toLowerCase() !== a);
+}
+
 /** Suite des accords [X] d'un texte, doublons consécutifs supprimés. */
 export function extractChordSequence(content: string): string {
   const found: string[] = [];

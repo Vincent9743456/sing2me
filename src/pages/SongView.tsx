@@ -20,6 +20,7 @@ import {
   renameVersion,
   setSongCapo,
   switchVersion,
+  tagsAffichables,
   transposeSong,
   versionForBand,
 } from '../lib/model';
@@ -418,30 +419,11 @@ export function SongView({
           {song.durationSec > 0 && (
             <span className="chip static">{formatDuration(song.durationSec)}</span>
           )}
-          {song.tags.map((t) => (
+          {tagsAffichables(song).map((t) => (
             <span className="chip static off" key={t}>
               {t}
             </span>
           ))}
-          <button
-            className={`chip ${song.noSolo === true ? 'off' : ''}`}
-            title={
-              song.noSolo === true
-                ? t('Déqualifié du répertoire solo — cliquer pour le requalifier')
-                : t(
-                    'Jouable en solo (par défaut) — cliquer pour le déqualifier si tu ne peux pas le jouer seul',
-                  )
-            }
-            onClick={() =>
-              saveSong({
-                ...song,
-                noSolo: song.noSolo === true ? undefined : true,
-              })
-            }
-          >
-            <Icon name="mic" size={12} />{' '}
-            {song.noSolo === true ? t('Pas en solo') : t('Solo ✓')}
-          </button>
           {song.hearts > 0 && (
             <span className="chip static" style={{ color: 'var(--heart)' }}>
               ❤ {song.hearts}
