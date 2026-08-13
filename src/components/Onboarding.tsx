@@ -242,12 +242,15 @@ export function Onboarding() {
         <div className="onbtitle">{t('Bienvenue sur DodoSongs 🎶')}</div>
         <p className="help" style={{ marginTop: 4 }}>
           {t(
-            'Commence par importer un morceau — colle un texte, un lien de partition, un PDF ou un fichier Word.',
+            'Tu as déjà une collection de partitions ? Importe-la en une fois : dépose tes fichiers (txt, ChordPro, OnSong, Word, PDF) ou tes pages enregistrées, DodoSongs met tout au propre.',
           )}
         </p>
         <div className="hstack" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn" onClick={() => navigate('/import')}>
-            <Icon name="import" size={16} /> {t('Importer mon premier morceau')}
+          <button className="btn" onClick={() => navigate('/import/bulk')}>
+            <Icon name="import" size={16} /> {t('Importer ma collection')}
+          </button>
+          <button className="btn ghost" onClick={() => navigate('/import')}>
+            {t('Ajouter un seul morceau')}
           </button>
           {example && (
             <button

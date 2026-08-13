@@ -193,6 +193,27 @@ export const EN_COMPTE: Record<string, string> = {
   '{n} partitions reprises · {d} à vérifier.': '{n} charts redone · {d} need a check.',
   '{n} partitions reprises.': '{n} charts redone.',
 
+  // PedaleMidi.tsx — pédale MIDI (b296)
+  'Pédale MIDI': 'MIDI pedal',
+  'Pilote le mode scène avec une pédale MIDI (USB ou Bluetooth). Une pédale « tourne-pages » qui se comporte en clavier fonctionne déjà sans réglage.':
+    'Control stage mode with a MIDI pedal (USB or Bluetooth). A page-turner pedal that acts as a keyboard already works with no setup.',
+  'Activer la pédale MIDI': 'Enable the MIDI pedal',
+  'Entrée MIDI': 'MIDI input',
+  'Aucune pédale détectée — branche-la (ou appaire-la en Bluetooth), puis appuie sur « Apprendre ».':
+    'No pedal detected — plug it in (or pair it over Bluetooth), then tap “Learn”.',
+  'N’importe quelle entrée': 'Any input',
+  'Morceau suivant': 'Next song',
+  'Morceau précédent': 'Previous song',
+  'Défilement (marche / arrêt)': 'Scrolling (on / off)',
+  'Accélérer le défilement': 'Speed up scrolling',
+  'Ralentir le défilement': 'Slow down scrolling',
+  'Appuie sur la pédale…': 'Press the pedal…',
+  'Apprendre': 'Learn',
+  'Effacer': 'Clear',
+  'non réglée': 'not set',
+  'Note {n}': 'Note {n}',
+  'Contrôleur {n}': 'Controller {n}',
+  'Programme {n}': 'Program {n}',
   // Settings.tsx — hors ligne et rechargement (b221)
   'Application': 'App',
   '↻ Recharger l’application': '↻ Reload the app',

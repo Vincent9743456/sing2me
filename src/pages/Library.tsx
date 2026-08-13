@@ -4,7 +4,6 @@ import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
 import { garderLaMiseEnForme, revenirAvantIA } from '../lib/aiFormat';
 import { SongBody } from '../components/SongBody';
-import { PublicEye, PublicPreview } from '../components/PublicPreview';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
@@ -151,6 +150,7 @@ import {
   duplicateVersion,
   removeVersion,
   switchVersion,
+  tagsAffichables,
   versionForBand,
 } from '../lib/model';
 import {
@@ -187,13 +187,6 @@ const BAND_COLORS = [
   'var(--band-7)',
 ];
 
-/** Une partition « nouvelle » : ajoutée à la bibliothèque dans les 7 jours. */
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-function isRecent(createdAt: string): boolean {
-  const t = Date.parse(createdAt);
-  return Number.isFinite(t) && Date.now() - t < WEEK_MS;
-}
-
 export function Library() {
   const {
     songs,
@@ -212,7 +205,7 @@ export function Library() {
   const toast = useToast();
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
-  // null = tous · '' = solo (aucun groupe) · sinon id du groupe
+  // null = tous les morceaux · sinon id du répertoire de groupe
   const [bandFilter, setBandFilter] = useState<string | null>(null);
   // Panneau « Filtrer » : tri + vues + répertoires + tags — replié par
   // défaut (règle : recherche + liste, rien d'autre).
@@ -294,19 +287,6 @@ export function Library() {
     () => songs.filter((s) => s.idea === true && s.declined !== true).length,
     [songs],
   );
-  // Nouveautés : partitions ajoutées dans la semaine (repérage rapide)
-  const [showNew, setShowNew] = useState(false);
-  const newCount = useMemo(
-    () =>
-      songs.filter(
-        (s) =>
-          s.idea !== true &&
-          (s.pendingBandId ?? '') === '' &&
-          !(s.tags ?? []).includes(EXAMPLE_TAG) &&
-          isRecent(s.createdAt),
-      ).length,
-    [songs],
-  );
   // Propositions de groupe en attente d'acceptation (non importées tant
   // qu'on ne les a pas acceptées d'un clic).
   // La vue « Propositions » a disparu avec sa puce (b203). Les propositions
@@ -356,7 +336,7 @@ export function Library() {
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
-    songs.forEach((s) => s.tags.forEach((t) => set.add(t)));
+    songs.forEach((s) => tagsAffichables(s).forEach((t) => set.add(t)));
     return [...set].sort((a, b) => a.localeCompare(b, 'fr'));
   }, [songs]);
 
@@ -400,29 +380,8 @@ export function Library() {
     const q = query.trim().toLowerCase();
     const byTitle = (a: (typeof songs)[number], b: (typeof songs)[number]) =>
       a.title.localeCompare(b.title, 'fr');
-    // Les nouvelles importations restent épinglées EN TÊTE tant qu'elles
-    // sont « nouvelles » (une semaine) — sauf en tri par artiste (qui
-    // regroupe) ou dans une vue filtrée dédiée.
-    const pinTop = sort !== 'artist' && !showNew && !showIdeas && !showCheck;
-    const isProposal = (s: (typeof songs)[number]) =>
-      (s.pendingBandId ?? '') !== '';
-    const freshRank = (s: (typeof songs)[number]) =>
-      s.idea !== true &&
-      !isProposal(s) &&
-      !(s.tags ?? []).includes(EXAMPLE_TAG) &&
-      isRecent(s.createdAt);
     return [...songs]
       .sort((a, b) => {
-        if (pinTop) {
-          // Les nouvelles importations de la semaine, en tête.
-          const fa = freshRank(a);
-          const fb = freshRank(b);
-          if (fa !== fb) return fa ? -1 : 1;
-          if (fa && fb) {
-            const cmp = b.createdAt.localeCompare(a.createdAt);
-            if (cmp !== 0) return cmp;
-          }
-        }
         if (sort === 'artist') {
           const cmp = a.artist.localeCompare(b.artist, 'fr');
           return cmp !== 0 ? cmp : byTitle(a, b);
@@ -464,12 +423,9 @@ export function Library() {
         // programmer dans une setlist les fait entrer ici pour de bon.
         return s.idea !== true;
       })
-      .filter((s) => (showNew ? isRecent(s.createdAt) : true))
       .filter((s) => (tag ? s.tags.includes(tag) : true))
       .filter((s) => {
         if (bandFilter === null) return true;
-        // Solo : tous les morceaux par défaut, sauf déqualifiés (noSolo)
-        if (bandFilter === '') return s.noSolo !== true;
         return membership.bandsBySong.get(s.id)?.has(bandFilter) ?? false;
       })
       .filter(
@@ -487,7 +443,6 @@ export function Library() {
     bandFilter,
     membership,
     showIdeas,
-    showNew,
     showCheck,
   ]);
 
@@ -504,11 +459,11 @@ export function Library() {
   }, [filtered]);
 
   // Ouvrir un morceau applique par défaut la version du contexte courant :
-  // dans un filtre groupe → la version du groupe ; sinon (toutes / solo) →
-  // la version originale. Comme SongView/SongEdit et les notes suivent la
-  // version active, commentaires et modifications visent la bonne version.
+  // dans un filtre groupe → la version du groupe ; sinon (tous) → la version
+  // originale. Comme SongView/SongEdit et les notes suivent la version active,
+  // commentaires et modifications visent la bonne version.
   function openWithContext(song: Song) {
-    const bid = bandFilter && bandFilter !== '' ? bandFilter : '';
+    const bid = bandFilter ?? '';
     const vid = contextVersionId(song, bid);
     if (vid !== song.activeVersionId) saveSong(switchVersion(song, vid));
   }
@@ -607,10 +562,6 @@ export function Library() {
                         </div>
                       )}
                     </div>
-                    {/* Le repérage des nouveautés passe par le chip
-                        « ✨ Nouveautés » (filtre actionnable) — plus de badge
-                        par ligne : sur un import en masse, chaque ligne en
-                        portait un (bruit signalé par l'audit UI). */}
                     {/* Plus d'icône presse-papier par ligne (bruit) : la
                         présence en setlist se voit dans « Ajouter à… ». */}
                     {song.hearts > 0 && (
@@ -701,7 +652,7 @@ export function Library() {
   // Idées ont leur propre bouton, à l'écran (b225) — les compter ici ferait
   // parler la pastille d'un réglage que le pli ne montre pas.
   const activeFilters =
-    (showNew || showCheck ? 1 : 0) +
+    (showCheck ? 1 : 0) +
     (bandFilter !== null ? 1 : 0) +
     (tag !== null ? 1 : 0);
 
@@ -837,41 +788,21 @@ export function Library() {
           </>
         )}
         {filtersOpen &&
-          (bands.length > 0 || checkCount > 0 || newCount > 0) && (
+          (bands.length > 0 || checkCount > 0) && (
           <>
             <div className="spacer" />
-            {/* Rangée 1 — VUES particulières (état des morceaux) :
-                tout / répertoires de groupe / nouveautés / propositions. */}
+            {/* Rangée 1 — VUES particulières (état des morceaux). */}
             <div className="chips filterchips scrollrow">
               <button
-                className={`chip ${bandFilter === null && !showIdeas && !showNew ? '' : 'off'}`}
+                className={`chip ${bandFilter === null && !showIdeas ? '' : 'off'}`}
                 onClick={() => {
                   setBandFilter(null);
                   setShowIdeas(false);
-                  setShowNew(false);
                   setShowCheck(false);
                 }}
               >
                 {t('Tous les morceaux')}
               </button>
-              {/* La puce « 📥 Propositions » a été retirée (b203, décision
-                  Vincent : « Proposition n'est pas utile »). Elle doublait
-                  les propositions, où elles vivent depuis b174 — et
-                  elles apparaissent maintenant dans le répertoire du groupe
-                  qui les a proposées, là où on les cherche vraiment. */}
-              {newCount > 0 && (
-                <button
-                  className={`chip ${showNew ? '' : 'off'}`}
-                  title={t('Partitions ajoutées dans la semaine')}
-                  onClick={() => {
-                    setShowNew(!showNew);
-                    setBandFilter(null);
-                    setShowIdeas(false);
-                  }}
-                >
-                  {t('✨ Nouveautés ({n})', { n: newCount })}
-                </button>
-              )}
               {checkCount > 0 && (
                 <button
                   className={`chip ${showCheck ? '' : 'off'}`}
@@ -882,23 +813,15 @@ export function Library() {
                     setShowCheck(!showCheck);
                     setBandFilter(null);
                     setShowIdeas(false);
-                    setShowNew(false);
-                    setShowCheck(false);
                   }}
                 >
                   {t('🔎 À vérifier ({n})', { n: checkCount })}
                 </button>
               )}
-              {/* La puce « 📥 Propositions » a QUITTÉ ce pli (b225, demande de
-                  Vincent) : elle est le seul filtre qui CACHE des morceaux —
-                  une proposition n'apparaît nulle part ailleurs. La ranger derrière
-                  « Filtrer » revenait à masquer une partie de la
-                  bibliothèque sans le dire. Elle vit maintenant au-dessus de
-                  la liste, et seulement quand il y en a. */}
             </div>
-            {/* Rangée 2 — RÉPERTOIRES (identification par groupe / solo) :
-                fonction différente, rendue évidente par le libellé et la
-                rangée séparée. */}
+            {/* Rangée 2 — RÉPERTOIRES de groupe : identification par groupe.
+                Le répertoire « solo » a disparu (b293) — pour se faire un
+                répertoire perso, on crée un groupe dont on est seul membre. */}
             {bands.length > 0 && (
               <div
                 className="chips filterchips scrollrow"
@@ -907,29 +830,14 @@ export function Library() {
                 <span className="help" style={{ margin: 0 }}>
                   {t('Répertoires :')}
                 </span>
-                <button
-                  className={`chip ${bandFilter === '' && !showIdeas && !showNew ? '' : 'off'}`}
-                  title={t(
-                    'Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)',
-                  )}
-                  onClick={() => {
-                    setBandFilter('');
-                    setShowIdeas(false);
-                    setShowNew(false);
-                    setShowCheck(false);
-                  }}
-                >
-                  <Icon name="mic" size={12} /> {t('Solo')}
-                </button>
                 {bands.map((b, i) => (
                   <button
                     key={b.id}
-                    className={`chip ${bandFilter === b.id && !showIdeas && !showNew ? '' : 'off'}`}
+                    className={`chip ${bandFilter === b.id && !showIdeas ? '' : 'off'}`}
                     onClick={() => {
                       setBandFilter(bandFilter === b.id ? null : b.id);
                       setShowIdeas(false);
-                      setShowNew(false);
-                      }}
+                    }}
                   >
                     {/* La couleur du groupe = un point discret, pas une
                         bordure (l'encadrement signale la sélection). */}
@@ -953,41 +861,24 @@ export function Library() {
         )}
         {/* Résumé du filtre actif : TOUJOURS visible (même panneau fermé),
             pour que la liste réduite s'explique d'elle-même. */}
-        {(showNew || bandFilter !== null) && (
-          <>
-            {showNew && (
-              <p className="help" style={{ margin: '6px 0 0' }}>
-                {filtered.length > 1
-                  ? t('Partitions ajoutées cette semaine — {n} morceaux.', {
-                      n: filtered.length,
-                    })
-                  : t('Partitions ajoutées cette semaine — {n} morceau.', {
-                      n: filtered.length,
-                    })}
-              </p>
-            )}
-            {!showIdeas && !showNew && bandFilter !== null && (
-              <p className="help" style={{ margin: '6px 0 0' }}>
-                {t('Filtre actif :')}{' '}
-                <strong style={{ color: 'var(--accent)' }}>
-                  {bandFilter === ''
-                    ? t('Solo')
-                    : (bands.find((b) => b.id === bandFilter)?.name ?? t('Groupe'))}
-                </strong>{' '}
-                —{' '}
-                {filtered.length > 1
-                  ? t('{n} morceaux', { n: filtered.length })
-                  : t('{n} morceau', { n: filtered.length })}{' '}
-                ·{' '}
-                <button
-                  className="btn ghost small"
-                  onClick={() => setBandFilter(null)}
-                >
-                  {t('Tout afficher')}
-                </button>
-              </p>
-            )}
-          </>
+        {bandFilter !== null && !showIdeas && (
+          <p className="help" style={{ margin: '6px 0 0' }}>
+            {t('Filtre actif :')}{' '}
+            <strong style={{ color: 'var(--accent)' }}>
+              {bands.find((b) => b.id === bandFilter)?.name ?? t('Groupe')}
+            </strong>{' '}
+            —{' '}
+            {filtered.length > 1
+              ? t('{n} morceaux', { n: filtered.length })
+              : t('{n} morceau', { n: filtered.length })}{' '}
+            ·{' '}
+            <button
+              className="btn ghost small"
+              onClick={() => setBandFilter(null)}
+            >
+              {t('Tout afficher')}
+            </button>
+          </p>
         )}
         {tag !== null && (
           <p className="help" style={{ margin: '6px 0 0' }}>
@@ -1041,7 +932,6 @@ export function Library() {
               onClick={() => {
                 setShowIdeas(!showIdeas);
                 setBandFilter(null);
-                setShowNew(false);
                 setShowCheck(false);
               }}
             >
@@ -1077,15 +967,23 @@ export function Library() {
                     {t('Importe tes partitions')}
                   </div>
                   {t(
-                    "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — DodoSongs met tout au propre.",
+                    'Tu as déjà une collection ? Dépose tous tes fichiers ou tes pages enregistrées en une fois — DodoSongs met tout au propre.',
                   )}
                   <div className="spacer" />
-                  <button
-                    className="btn"
-                    onClick={() => navigate('/import')}
-                  >
-                    <Icon name="import" size={16} /> {t('Importer mon premier morceau')}
-                  </button>
+                  <div className="hstack" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <button
+                      className="btn"
+                      onClick={() => navigate('/import/bulk')}
+                    >
+                      <Icon name="import" size={16} /> {t('Importer ma collection')}
+                    </button>
+                    <button
+                      className="btn ghost"
+                      onClick={() => navigate('/import')}
+                    >
+                      {t('Ajouter un seul morceau')}
+                    </button>
+                  </div>
                 </Empty>
               ) : (
                 <Empty>{t('Aucun morceau ne correspond à ta recherche.')}</Empty>
@@ -1286,9 +1184,6 @@ function SongPreview({
   const [ugOpen, setUgOpen] = useState(false);
   // Éditeur « Ajouter à un groupe / une setlist » (à la demande).
   const [assocOpen, setAssocOpen] = useState(false);
-  // 👁 Vue du public : la partition de l'aperçu bascule sur ce que liront
-  // les spectateurs (b223).
-  const [vuePublic, setVuePublic] = useState(false);
 
   // Mêmes réglages de lecture que la fiche : tonalité/capo mémorisés
   // par morceau + version (sur cet appareil).
@@ -1343,9 +1238,6 @@ function SongPreview({
     if (paneRef.current) paneRef.current.scrollTop = 0;
     setUgOpen(false);
     setAssocOpen(false);
-    // Changer de morceau ramène à la partition : l'œil est un coup d'œil,
-    // pas un mode dans lequel on s'installe.
-    setVuePublic(false);
   }, [id]);
 
   if (!song) return null;
@@ -1416,14 +1308,6 @@ function SongPreview({
         >
           <Icon name="play" size={14} /> {t('Scène')}
         </button>
-        {/* 👁 L'œil doit être là où la partition s'affiche (b223) : Vincent
-            l'a cherché ICI, dans l'aperçu de la liste, pas seulement sur la
-            page du morceau. */}
-        <PublicEye
-          song={song}
-          actif={vuePublic}
-          onToggle={() => setVuePublic((v) => !v)}
-        />
         <button
           className="btn ghost small"
           title={t('Ajouter à une setlist')}
@@ -1533,9 +1417,7 @@ function SongPreview({
       {assocOpen && (
         <AssignSheet songId={song.id} onClose={() => setAssocOpen(false)} />
       )}
-      {/* Transposer n'a aucun sens dans la vue du public : elle ne montre
-          pas un seul accord (b223). */}
-      {!displayReal && !vuePublic && (
+      {!displayReal && (
         <div className="transpose" style={{ marginBottom: 10 }}>
           <span className="transpose-unit">
             <span className="lbl">{t('Transposer')}</span>
@@ -1597,21 +1479,13 @@ function SongPreview({
           )}
         </div>
       )}
-      {vuePublic ? (
-        <PublicPreview
-          song={song}
-          onSave={saveSong}
-          onClose={() => setVuePublic(false)}
-        />
-      ) : (
-        <SongBody
-          song={song}
-          view="complete"
-          semitones={displayShift}
-          capo={0}
-          preferFlat={preferFlat}
-        />
-      )}
+      <SongBody
+        song={song}
+        view="complete"
+        semitones={displayShift}
+        capo={0}
+        preferFlat={preferFlat}
+      />
     </aside>
   );
 }

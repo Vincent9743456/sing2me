@@ -8,7 +8,7 @@ export type Route =
   | { name: 'library' }
   | { name: 'song'; id: string }
   | { name: 'songEdit'; id: string | null }
-  | { name: 'import' }
+  | { name: 'import'; mode?: 'bulk' }
   | { name: 'setlists' }
   | { name: 'setlist'; id: string }
   | { name: 'setlistEdit'; id: string | null }
@@ -50,7 +50,9 @@ export function parseHash(hash: string): Route {
       if (parts[1]) return { name: 'song', id: parts[1] };
       return { name: 'library' };
     case 'import':
-      return { name: 'import' };
+      // #/import/bulk ouvre directement l'import en masse (parcours d'un
+      // nouvel entrant qui migre toute sa collection, b295).
+      return { name: 'import', mode: parts[1] === 'bulk' ? 'bulk' : undefined };
     case 'setlists':
       return { name: 'setlists' };
     case 'setlist':

@@ -100,9 +100,11 @@ export function extractUgLinks(input: string): string[] {
 
 /** Barre de progression du traitement en masse. */
 
-export function Import() {
+export function Import({ mode }: { mode?: 'bulk' } = {}) {
   const { songs, deleted, saveSong } = useStore();
-  const [method, setMethod] = useState<AddMethod>('ug');
+  // #/import/bulk arrive directement sur l'import en masse (b295) : c'est le
+  // parcours de qui migre toute une collection d'un coup.
+  const [method, setMethod] = useState<AddMethod>(mode === 'bulk' ? 'bulk' : 'ug');
   // Pli « Autres façons d'importer » (fermé par défaut : un seul chemin
   // visible ; forcé ouvert quand une alternative est en cours).
   const [othersOpen, setOthersOpen] = useState(false);

@@ -219,6 +219,26 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 
 ## État actuel & backlog (août 2026)
 
+- **Vague de SIMPLIFICATIONS b293→b296** (arbitrage Vincent : « simplifier
+  l'application et son utilisation »). Retraits — ne pas restaurer sans
+  Vincent :
+  - **b293** : les « ✨ Nouveautés » (badge/épinglage 7 jours des imports
+    récents) ; le **mode Solo** (drapeau `noSolo` « jouable en solo » + le
+    répertoire filtré « Solo » de l'onglet Morceaux — pour un répertoire
+    perso, on crée un groupe dont on est seul membre) ; les **tags qui
+    répètent le nom de l'artiste**, masqués à l'affichage (`tagsAffichables`
+    dans `model.ts`, filtre non destructif). `noSolo`/`publicLyrics` restent
+    des champs de type inertes (localStorage des installés).
+  - **b294** : la **retouche du texte public** (voir bloc « RETRAIT b294 »)
+    et la **génération IA de setlist** (`setlistAI.ts` supprimé, encart de
+    l'onglet Setlists retiré).
+  Ajouts :
+  - **b295** : l'**import en masse** mis en avant à l'accueil (carte de
+    bienvenue + état vide de Morceaux → bouton « Importer ma collection » ;
+    raccourci `#/import/bulk`).
+  - **b296** : **pédale MIDI** dans les Réglages (`src/lib/midi.ts` sans
+    dépendance, `PedaleMidi.tsx` ; réglage d'APPAREIL en localStorage
+    `sing2me/midi`, jamais dans `prefs` ; le mode scène l'écoute).
 - Version en production : voir `src/version.ts` (b17 au 5 août 2026 :
   onglet 👥 Groupes dédié, groupe affiché sur les setlists, espace de
   discussion de groupe `band_messages`).
@@ -1213,7 +1233,23 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   disparaît au lieu de laisser un blanc ; les espaces de fin de ligne partent
   (dans un texte centré, ils décalent le vers) ; un en-tête sans une seule
   parole en dessous ne s'affiche pas.
-- **Ce que lit le public se REGARDE avant le concert, et se CORRIGE** (b223,
+- **RETRAIT b294 — la RETOUCHE du texte public est SUPPRIMÉE** (arbitrage
+  Vincent : « ça introduit une complexité. Si les paroles vues par le public
+  doivent être retouchées, c'est à l'intérieur de la partition générale
+  directement »). Tout le mécanisme b223/b224 décrit juste en dessous (l'œil
+  « 👁 Vue du public », l'éditeur `PublicPreview`, `song.publicLyrics` /
+  `SongVersion.publicLyrics`, les fonctions `retoucherParoles` /
+  `rendreAutomatique` / `garderMonTexte` / `parolesRetouchees` /
+  `partitionAChange`) N'EXISTE PLUS. `parolesPubliques` (`publiclyrics.ts`)
+  renvoie désormais TOUJOURS `stripChords(lyrics)` : le public lit la
+  partition préparée, un point c'est tout ; pour changer ce qu'il voit, on
+  modifie la partition. Le champ `publicLyrics` peut subsister dans les
+  données des installés — plus jamais lu, jamais réécrit (cicatrice b290). Ne
+  PAS restaurer ce qui suit ; c'est conservé pour comprendre le code
+  historique (la plomberie `publicLyrics` reste inerte dans le modèle et la
+  synchro).
+- *(HISTORIQUE, retiré en b294)* **Ce que lit le public se REGARDE avant le
+  concert, et se CORRIGE** (b223,
   demande de Vincent). La préparation de b219 ne s'exécutait qu'au moment de
   la diffusion : son résultat n'apparaissait nulle part dans l'app, l'artiste
   découvrait l'écran de ses spectateurs par-dessus une épaule, en plein
@@ -1243,7 +1279,8 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   Corollaire : corriger le texte du public ne touche JAMAIS aux paroles ni aux
   accords du musicien, et un texte vide n'ouvre pas un écran blanc au public —
   il ramène à l'automatique.
-- **Le texte du public appartient à la VERSION, pas au morceau** (b224,
+- *(HISTORIQUE, retiré en b294 — voir le bloc « RETRAIT b294 » ci-dessus)*
+  **Le texte du public appartient à la VERSION, pas au morceau** (b224,
   question de Vincent : « ça suit les versions ? et les morceaux partagés avec
   le groupe ? »). Posé sur le morceau (b223), il ne bougeait pas d'une version
   à l'autre et ne partait JAMAIS aux autres membres — celui qui prenait la

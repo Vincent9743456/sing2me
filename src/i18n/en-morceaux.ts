@@ -84,6 +84,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Importe tes partitions': 'Import your charts',
   "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — DodoSongs met tout au propre.":
     'Paste text, a link to a chart page, a PDF or a Word file — DodoSongs tidies it all up.',
+  'Tu as déjà une collection ? Dépose tous tes fichiers ou tes pages enregistrées en une fois — DodoSongs met tout au propre.':
+    'Already have a collection? Drop all your files or saved pages at once — DodoSongs tidies it all up.',
+  'Importer ma collection': 'Import my collection',
+  'Ajouter un seul morceau': 'Add a single song',
   'Importer mon premier morceau': 'Import my first song',
   'Aucun morceau ne correspond à ta recherche.': 'No song matches your search.',
   'Ajouter des morceaux au répertoire du groupe': "Add songs to the band's repertoire",
