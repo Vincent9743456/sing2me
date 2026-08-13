@@ -478,15 +478,22 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
 
   const now = new Date().toISOString();
   const versionId = makeId();
+  const artiste = (meta.artist ?? '').trim();
+  // Un tag qui répète le nom de l'artiste (« Pink Floyd ») est un doublon
+  // inutile : on ne l'enregistre pas à l'import (b298, demande de Vincent).
+  const tags =
+    artiste === ''
+      ? meta.tags
+      : meta.tags.filter((tg) => tg.trim().toLowerCase() !== artiste.toLowerCase());
   const song: Song = {
     id: makeId(),
     title: (meta.title ?? fallbackTitle).trim() || 'Morceau importé',
-    artist: meta.artist ?? '',
+    artist: artiste,
     key: meta.key ?? '',
     tempo: meta.tempo ?? 0,
     capo: meta.capo ?? 0,
     durationSec: meta.durationSec ?? 0,
-    tags: meta.tags,
+    tags,
     structure,
     lyrics,
     versions: [
