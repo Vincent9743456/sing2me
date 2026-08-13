@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0A1128">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="mojocomposer">
+<title>mojocomposer — carnet de compositeur</title>
+<style>
+  :root{
+    --navy:#0A1128;
+    --navy-2:#111A38;
+    --navy-3:#1A2547;
+    --orange:#F2A20C;
+    --orange-soft:#F5B940;
+    --cream:#F7F2E4;
+    --dim:#8A93B0;
+    --dim-2:#3A4568;
+    --red:#E86A5E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:var(--navy);color:var(--cream);
+    font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+    display:flex;flex-direction:column;align-items:center;
+    height:100dvh;overflow:hidden;
+  }
+  header{
+    width:100%;max-width:560px;
+    display:flex;align-items:center;justify-content:center;
+    gap:9px;padding:16px 20px 10px;flex-shrink:0;
+  }
+  header svg{width:26px;height:26px;}
+  .wordmark{font-size:23px;font-weight:800;letter-spacing:-0.5px;}
+  .wordmark .mojo{color:var(--cream);}
+  .wordmark .composer{color:var(--orange);}
+  .view{
+    flex:1;width:100%;max-width:560px;min-height:0;
+    display:flex;flex-direction:column;
+    padding:0 16px 16px;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .hidden{display:none !important;}
+  /* ---------- boutons ---------- */
+  .btn{
+    border:none;border-radius:12px;cursor:pointer;
+    font-family:inherit;font-weight:700;font-size:15px;
+    padding:13px 18px;transition:transform .12s ease,opacity .12s ease;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--orange);color:var(--navy);box-shadow:0 0 16px rgba(242,162,12,.25);}
+  .btn-ghost{background:var(--navy-3);color:var(--cream);}
+  .btn-small{padding:7px 12px;font-size:13px;border-radius:9px;}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid var(--dim-2);}
+  /* ---------- accueil ---------- */
+  .home-head{display:flex;flex-direction:column;gap:12px;padding:6px 0 14px;}
+  .home-sub{color:var(--dim);font-size:13.5px;line-height:1.5;text-align:center;}
+  .song-card{
+    background:var(--navy-2);border:1px solid var(--dim-2);
+    border-radius:14px;padding:14px 16px;margin-bottom:10px;
+    cursor:pointer;display:flex;align-items:center;gap:12px;
+    transition:border-color .15s ease;
+  }
+  .song-card:active{border-color:var(--orange);}
+  .song-card .note-ic{
+    width:40px;height:40px;border-radius:11px;flex-shrink:0;
+    background:rgba(242,162,12,.12);color:var(--orange);
+    display:flex;align-items:center;justify-content:center;
+    font-size:19px;font-weight:800;
+  }
+  .song-card .info{flex:1;min-width:0;}
+  .song-card .t{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .song-card .m{color:var(--dim);font-size:12px;margin-top:3px;}
+  .song-card .del{background:none;border:none;color:var(--dim-2);font-size:18px;padding:8px;cursor:pointer;}
+  .empty{
+    text-align:center;color:var(--dim);font-size:14px;
+    padding:44px 20px;line-height:1.6;
+  }
+  .empty b{color:var(--orange);}
+  /* ---------- vue chanson ---------- */
+  .song-top{display:flex;align-items:center;gap:8px;padding:4px 0 10px;}
+  .back{
+    background:var(--navy-3);border:none;color:var(--cream);
+    width:38px;height:38px;border-radius:11px;font-size:20px;
+    cursor:pointer;flex-shrink:0;line-height:1;
+  }
+  #songTitle{
+    flex:1;background:transparent;border:none;outline:none;
+    color:var(--cream);font-family:inherit;font-weight:800;
+    font-size:20px;min-width:0;border-bottom:1.5px solid transparent;
+    padding:4px 2px;
+  }
+  #songTitle:focus{border-bottom-color:var(--orange);}
+  .saved-dot{font-size:11px;color:var(--dim-2);flex-shrink:0;width:64px;text-align:right;transition:color .3s;}
+  .saved-dot.on{color:var(--orange);}
+  /* ---------- dictaphone ---------- */
+  .rec-zone{
+    background:var(--navy-2);border:1px solid var(--dim-2);
+    border-radius:16px;padding:14px;margin-bottom:12px;
+  }
+  .rec-row{display:flex;align-items:center;gap:14px;}
+  .rec-btn{
+    width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--orange);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 20px rgba(242,162,12,.35);
+    transition:transform .12s ease;
+  }
+  .rec-btn:active{transform:scale(.94);}
+  .rec-btn .ic{
+    width:22px;height:22px;border-radius:50%;
+    background:var(--navy);transition:border-radius .2s ease;
+  }
+  .rec-btn.recording{animation:pulse 1.2s ease-in-out infinite;}
+  .rec-btn.recording .ic{border-radius:5px;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 14px rgba(242,162,12,.35);}50%{box-shadow:0 0 34px rgba(242,162,12,.75);}}
+  .rec-info{flex:1;}
+  .rec-info .lbl{font-weight:700;font-size:15px;}
+  .rec-info .sub{color:var(--dim);font-size:12.5px;margin-top:3px;}
+  .rec-timer{font-variant-numeric:tabular-nums;color:var(--orange);font-weight:800;font-size:22px;display:none;}
+  .recording-state .rec-timer{display:block;}
+  .recording-state .rec-sub-idle{display:none;}
+  /* ---------- listes idées / versions ---------- */
+  .section-title{
+    font-size:11.5px;font-weight:800;letter-spacing:2px;
+    text-transform:uppercase;color:var(--dim);
+    margin:14px 2px 8px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .item{
+    background:var(--navy-2);border:1px solid var(--dim-2);
+    border-radius:12px;padding:10px 12px;margin-bottom:8px;
+  }
+  .item-row{display:flex;align-items:center;gap:10px;}
+  .play{
+    width:38px;height:38px;border-radius:50%;border:1.5px solid var(--orange);
+    background:transparent;color:var(--orange);font-size:14px;
+    cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  }
+  .play.playing{background:var(--orange);color:var(--navy);}
+  .item .info{flex:1;min-width:0;}
+  .item .n{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .item .d{color:var(--dim);font-size:11.5px;margin-top:2px;}
+  .icon-btn{background:none;border:none;color:var(--dim);font-size:16px;padding:7px;cursor:pointer;}
+  .ver-body{
+    display:none;margin-top:10px;padding-top:10px;
+    border-top:1px dashed var(--dim-2);
+    white-space:pre-wrap;font-size:13.5px;line-height:1.55;color:var(--dim);
+  }
+  .item.open .ver-body{display:block;}
+  /* ---------- paroles ---------- */
+  .lyrics-zone{display:flex;flex-direction:column;min-height:260px;}
+  #lyrics{
+    flex:1;min-height:240px;resize:vertical;
+    background:var(--navy-2);border:1px solid var(--dim-2);
+    border-radius:14px;padding:14px;color:var(--cream);
+    font-family:'Menlo','Consolas',monospace;font-size:14.5px;line-height:1.7;
+    outline:none;
+  }
+  #lyrics:focus{border-color:var(--orange);}
+  #preview{
+    flex:1;min-height:240px;background:var(--navy-2);
+    border:1px solid var(--dim-2);border-radius:14px;padding:14px;
+    font-family:'Menlo','Consolas',monospace;font-size:14.5px;line-height:1.7;
+    white-space:pre-wrap;overflow-y:auto;
+  }
+  .chord{
+    color:var(--orange);font-weight:800;
+    background:rgba(242,162,12,.1);border-radius:4px;padding:0 3px;
+  }
+  .hint{color:var(--dim-2);font-size:11.5px;margin:6px 2px 0;line-height:1.5;}
+  .hint b{color:var(--dim);}
+  /* fab nouvelle chanson */
+  .fab{
+    position:fixed;right:18px;bottom:22px;z-index:5;
+    width:58px;height:58px;border-radius:50%;border:none;
+    background:var(--orange);color:var(--navy);font-size:30px;font-weight:800;
+    cursor:pointer;box-shadow:0 4px 22px rgba(242,162,12,.45);
+    display:flex;align-items:center;justify-content:center;line-height:1;
+  }
+  .toast{
+    position:fixed;left:50%;bottom:92px;transform:translateX(-50%);
+    background:var(--orange);color:var(--navy);font-weight:700;font-size:13.5px;
+    padding:10px 18px;border-radius:999px;z-index:20;
+    opacity:0;pointer-events:none;transition:opacity .25s ease;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <svg viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M12 6 L26 13 V34.5 a7 7 0 1 0 3 5.8 V19 l-14-7 Z" fill="#F2A20C"/>
+    <path d="M33 16 q6 8 0 16" stroke="#F7F2E4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M39 12 q9 12 0 24" stroke="#F2A20C" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div class="wordmark"><span class="mojo">mojo</span><span class="composer">composer</span></div>
+</header>
+
+<!-- ================= ACCUEIL ================= -->
+<div class="view" id="homeView">
+  <div class="home-head">
+    <div class="home-sub">Vos chansons en cours — idées audio, paroles, accords et versions,<br>tout est gardé sur ce téléphone.</div>
+  </div>
+  <div id="songList"></div>
+  <div class="empty hidden" id="emptyMsg">
+    Aucune chanson pour l'instant.<br>Touchez <b>+</b> pour commencer la première.
+  </div>
+</div>
+<button class="fab" id="newSongBtn" title="Nouvelle chanson">+</button>
+
+<!-- ================= CHANSON ================= -->
+<div class="view hidden" id="songView">
+  <div class="song-top">
+    <button class="back" id="backBtn">‹</button>
+    <input id="songTitle" placeholder="Titre de la chanson" autocomplete="off">
+    <div class="saved-dot" id="savedDot">enregistré ✓</div>
+  </div>
+
+  <!-- dictaphone -->
+  <div class="rec-zone" id="recZone">
+    <div class="rec-row">
+      <button class="rec-btn" id="recBtn"><div class="ic"></div></button>
+      <div class="rec-info">
+        <div class="lbl" id="recLbl">Enregistrer une idée</div>
+        <div class="sub rec-sub-idle">Riff, mélodie, voix… touchez le bouton</div>
+        <div class="rec-timer" id="recTimer">0:00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title"><span>Idées enregistrées</span><span id="recCount"></span></div>
+  <div id="recList"></div>
+
+  <!-- paroles / accords -->
+  <div class="section-title">
+    <span>Paroles &amp; accords</span>
+    <button class="btn btn-ghost btn-small" id="previewBtn">Aperçu accords</button>
+  </div>
+  <div class="lyrics-zone">
+    <textarea id="lyrics" placeholder="Couplet 1&#10;[Am] Sous le ciel de [F] l'aube claire&#10;[C] Je cherche encore [G] tes mots…&#10;&#10;Notez les accords entre crochets [Am] au fil des paroles." spellcheck="false"></textarea>
+    <div id="preview" class="hidden"></div>
+    <div class="hint">Accords entre crochets : <b>[Am] [F] [C7] [Gsus4]</b> — ils s'affichent en orange dans l'aperçu.</div>
+  </div>
+
+  <!-- versions -->
+  <div class="section-title">
+    <span>Versions</span>
+    <button class="btn btn-primary btn-small" id="snapBtn">📌 Figer la version</button>
+  </div>
+  <div id="verList"></div>
+  <div class="hint" style="margin-bottom:30px">Figer une version = photo instantanée du titre et des paroles à cet instant. Vous pourrez toujours la consulter ou la restaurer.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ================= base de données locale (IndexedDB) ================= */
+let db = null;
+function openDB(){
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open('mojocomposer', 1);
+    rq.onupgradeneeded = () => {
+      const d = rq.result;
+      if (!d.objectStoreNames.contains('songs')) d.createObjectStore('songs', { keyPath:'id' });
+      if (!d.objectStoreNames.contains('recs')){
+        const st = d.createObjectStore('recs', { keyPath:'id' });
+        st.createIndex('songId', 'songId');
+      }
+    };
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+function tx(store, mode, fn){
+  return new Promise((res, rej) => {
+    const t = db.transaction(store, mode);
+    const s = t.objectStore(store);
+    const out = fn(s);
+    t.oncomplete = () => res(out && out.result !== undefined ? out.result : undefined);
+    t.onerror = () => rej(t.error);
+  });
+}
+const putSong  = s  => tx('songs', 'readwrite', st => st.put(s));
+const delSong  = id => tx('songs', 'readwrite', st => st.delete(id));
+const putRec   = r  => tx('recs',  'readwrite', st => st.put(r));
+const delRec   = id => tx('recs',  'readwrite', st => st.delete(id));
+function allSongs(){
+  return new Promise((res, rej) => {
+    const rq = db.transaction('songs').objectStore('songs').getAll();
+    rq.onsuccess = () => res(rq.result || []);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+function recsOf(songId){
+  return new Promise((res, rej) => {
+    const rq = db.transaction('recs').objectStore('recs').index('songId').getAll(songId);
+    rq.onsuccess = () => res(rq.result || []);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+
+/* ================= utilitaires ================= */
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+function fmtDur(s){
+  s = Math.max(0, Math.round(s));
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+function fmtDate(ts){
+  const d = new Date(ts);
+  const day = d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+  const time = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  return day + ' · ' + time;
+}
+function esc(s){
+  return s.replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
+}
+function renderChords(text){
+  // [Am] -> accord en orange ; le reste est échappé tel quel
+  return esc(text).replace(/\[([A-G](?:#|b)?[a-zA-Z0-9°ø+#/]*)\]/g, '<span class="chord">$1</span>');
+}
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ================= état ================= */
+let currentSong = null;
+let saveTimer = null;
+let mediaRecorder = null, recChunks = [], recStream = null, recStart = 0, recTicker = null;
+let player = new Audio(), playingId = null, playingURL = null;
+
+/* ================= accueil ================= */
+async function renderHome(){
+  const songs = (await allSongs()).sort((a, b) => b.updatedAt - a.updatedAt);
+  const list = $('songList');
+  list.innerHTML = '';
+  $('emptyMsg').classList.toggle('hidden', songs.length > 0);
+  for (const s of songs){
+    const recs = await recsOf(s.id);
+    const card = document.createElement('div');
+    card.className = 'song-card';
+    card.innerHTML =
+      '<div class="note-ic">♪</div>' +
+      '<div class="info"><div class="t">' + esc(s.title || 'Sans titre') + '</div>' +
+      '<div class="m">' + fmtDate(s.updatedAt) + ' · ' + recs.length + ' idée' + (recs.length > 1 ? 's' : '') +
+      ' · ' + (s.versions || []).length + ' version' + ((s.versions || []).length > 1 ? 's' : '') + '</div></div>' +
+      '<button class="del" title="Supprimer">✕</button>';
+    card.querySelector('.del').addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm('Supprimer « ' + (s.title || 'Sans titre') + ' » et toutes ses idées audio ?')) return;
+      for (const r of recs) await delRec(r.id);
+      await delSong(s.id);
+      renderHome();
+    });
+    card.addEventListener('click', () => openSong(s));
+    list.appendChild(card);
+  }
+}
+
+/* ================= vue chanson ================= */
+function showView(name){
+  $('homeView').classList.toggle('hidden', name !== 'home');
+  $('newSongBtn').classList.toggle('hidden', name !== 'home');
+  $('songView').classList.toggle('hidden', name !== 'song');
+}
+async function openSong(s){
+  currentSong = s;
+  $('songTitle').value = s.title || '';
+  $('lyrics').value = s.lyrics || '';
+  setPreviewMode(false);
+  await renderRecs();
+  renderVersions();
+  showView('song');
+}
+async function newSong(){
+  const s = {
+    id: uid(), title: '', lyrics: '', versions: [],
+    createdAt: Date.now(), updatedAt: Date.now()
+  };
+  await putSong(s);
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  openSong(s);
+  setTimeout(() => $('songTitle').focus(), 120);
+}
+function scheduleSave(){
+  $('savedDot').classList.remove('on');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveNow, 500);
+}
+async function saveNow(){
+  if (!currentSong) return;
+  currentSong.title = $('songTitle').value;
+  currentSong.lyrics = $('lyrics').value;
+  currentSong.updatedAt = Date.now();
+  await putSong(currentSong);
+  $('savedDot').classList.add('on');
+}
+
+/* ================= dictaphone ================= */
+function bestMime(){
+  if (!window.MediaRecorder) return null;
+  for (const m of ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm']){
+    if (MediaRecorder.isTypeSupported(m)) return m;
+  }
+  return '';
+}
+async function toggleRecord(){
+  if (mediaRecorder && mediaRecorder.state === 'recording'){ stopRecord(); return; }
+  try{
+    recStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+  }catch(e){
+    alert("Micro inaccessible : vérifiez l'autorisation micro dans les réglages du navigateur.");
+    return;
+  }
+  const mime = bestMime();
+  if (mime === null){
+    alert("L'enregistrement audio n'est pas pris en charge par ce navigateur.");
+    recStream.getTracks().forEach(t => t.stop());
+    return;
+  }
+  recChunks = [];
+  mediaRecorder = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined);
+  mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
+  mediaRecorder.onstop = onRecordStop;
+  mediaRecorder.start(250);
+  recStart = Date.now();
+  $('recZone').classList.add('recording-state');
+  $('recBtn').classList.add('recording');
+  $('recLbl').textContent = 'Enregistrement…';
+  recTicker = setInterval(() => { $('recTimer').textContent = fmtDur((Date.now() - recStart) / 1000); }, 250);
+}
+function stopRecord(){
+  if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+}
+async function onRecordStop(){
+  clearInterval(recTicker);
+  const dur = (Date.now() - recStart) / 1000;
+  if (recStream) recStream.getTracks().forEach(t => t.stop());
+  $('recZone').classList.remove('recording-state');
+  $('recBtn').classList.remove('recording');
+  $('recLbl').textContent = 'Enregistrer une idée';
+  $('recTimer').textContent = '0:00';
+  if (!currentSong || !recChunks.length) return;
+  const blob = new Blob(recChunks, { type: mediaRecorder.mimeType || 'audio/mp4' });
+  if (dur < 0.4){ toast('Trop court — réessayez'); return; }
+  const n = (await recsOf(currentSong.id)).length + 1;
+  await putRec({
+    id: uid(), songId: currentSong.id,
+    name: 'Idée ' + n, date: Date.now(), dur, blob, mime: blob.type
+  });
+  currentSong.updatedAt = Date.now();
+  await putSong(currentSong);
+  toast('Idée enregistrée ✓');
+  renderRecs();
+}
+function stopPlayback(){
+  player.pause();
+  if (playingURL){ URL.revokeObjectURL(playingURL); playingURL = null; }
+  playingId = null;
+  document.querySelectorAll('.play.playing').forEach(b => { b.classList.remove('playing'); b.textContent = '▶'; });
+}
+async function renderRecs(){
+  const recs = (await recsOf(currentSong.id)).sort((a, b) => b.date - a.date);
+  $('recCount').textContent = recs.length ? recs.length : '';
+  const list = $('recList');
+  list.innerHTML = '';
+  if (!recs.length){
+    list.innerHTML = '<div class="hint" style="margin:0 2px 4px">Vos mémos audio apparaîtront ici — remplace le dictaphone.</div>';
+    return;
+  }
+  for (const r of recs){
+    const it = document.createElement('div');
+    it.className = 'item';
+    it.innerHTML =
+      '<div class="item-row">' +
+        '<button class="play">▶</button>' +
+        '<div class="info"><div class="n">' + esc(r.name) + '</div>' +
+        '<div class="d">' + fmtDate(r.date) + ' · ' + fmtDur(r.dur) + '</div></div>' +
+        '<button class="icon-btn rn" title="Renommer">✎</button>' +
+        '<button class="icon-btn rm" title="Supprimer">✕</button>' +
+      '</div>';
+    const playBtn = it.querySelector('.play');
+    playBtn.addEventListener('click', () => {
+      if (playingId === r.id){ stopPlayback(); return; }
+      stopPlayback();
+      playingURL = URL.createObjectURL(r.blob);
+      player.src = playingURL;
+      player.play().catch(() => toast('Lecture impossible'));
+      playingId = r.id;
+      playBtn.classList.add('playing');
+      playBtn.textContent = '■';
+    });
+    it.querySelector('.rn').addEventListener('click', async () => {
+      const name = prompt('Nom de cette idée :', r.name);
+      if (name === null) return;
+      r.name = name.trim() || r.name;
+      await putRec(r);
+      renderRecs();
+    });
+    it.querySelector('.rm').addEventListener('click', async () => {
+      if (!confirm('Supprimer « ' + r.name + ' » ?')) return;
+      if (playingId === r.id) stopPlayback();
+      await delRec(r.id);
+      renderRecs();
+    });
+    list.appendChild(it);
+  }
+}
+player.addEventListener('ended', stopPlayback);
+
+/* ================= versions ================= */
+async function snapshotVersion(){
+  if (!currentSong) return;
+  await saveNow();
+  const n = (currentSong.versions || []).length + 1;
+  const label = prompt('Nom de cette version :', 'V' + n);
+  if (label === null) return;
+  currentSong.versions = currentSong.versions || [];
+  currentSong.versions.unshift({
+    id: uid(), label: label.trim() || ('V' + n),
+    title: currentSong.title, lyrics: currentSong.lyrics, date: Date.now()
+  });
+  await putSong(currentSong);
+  toast('Version figée ✓');
+  renderVersions();
+}
+function renderVersions(){
+  const list = $('verList');
+  const vers = currentSong.versions || [];
+  list.innerHTML = '';
+  if (!vers.length){
+    list.innerHTML = '<div class="hint" style="margin:0 2px 4px">Aucune version figée pour l\'instant.</div>';
+    return;
+  }
+  for (const v of vers){
+    const it = document.createElement('div');
+    it.className = 'item';
+    it.innerHTML =
+      '<div class="item-row">' +
+        '<div class="info"><div class="n">' + esc(v.label) + '</div>' +
+        '<div class="d">' + fmtDate(v.date) + (v.title ? ' · ' + esc(v.title) : '') + '</div></div>' +
+        '<button class="btn btn-ghost btn-small rst">Restaurer</button>' +
+        '<button class="icon-btn rm" title="Supprimer">✕</button>' +
+      '</div>' +
+      '<div class="ver-body"></div>';
+    it.querySelector('.ver-body').innerHTML = renderChords(v.lyrics || '(paroles vides)');
+    it.querySelector('.item-row').addEventListener('click', e => {
+      if (e.target.closest('button')) return;
+      it.classList.toggle('open');
+    });
+    it.querySelector('.rst').addEventListener('click', async () => {
+      if (!confirm('Restaurer « ' + v.label + ' » ? Les paroles actuelles seront remplacées (figez-les d\'abord si besoin).')) return;
+      $('songTitle').value = v.title;
+      $('lyrics').value = v.lyrics;
+      await saveNow();
+      setPreviewMode(false);
+      toast('Version restaurée');
+    });
+    it.querySelector('.rm').addEventListener('click', async () => {
+      if (!confirm('Supprimer la version « ' + v.label + ' » ?')) return;
+      currentSong.versions = currentSong.versions.filter(x => x.id !== v.id);
+      await putSong(currentSong);
+      renderVersions();
+    });
+    list.appendChild(it);
+  }
+}
+
+/* ================= aperçu accords ================= */
+let previewOn = false;
+function setPreviewMode(on){
+  previewOn = on;
+  $('lyrics').classList.toggle('hidden', on);
+  $('preview').classList.toggle('hidden', !on);
+  $('previewBtn').textContent = on ? 'Éditer' : 'Aperçu accords';
+  if (on) $('preview').innerHTML = renderChords($('lyrics').value || '(rien à afficher pour l\'instant)');
+}
+
+/* ================= événements ================= */
+$('newSongBtn').addEventListener('click', newSong);
+$('backBtn').addEventListener('click', async () => {
+  stopPlayback();
+  if (mediaRecorder && mediaRecorder.state === 'recording') stopRecord();
+  await saveNow();
+  currentSong = null;
+  showView('home');
+  renderHome();
+});
+$('songTitle').addEventListener('input', scheduleSave);
+$('lyrics').addEventListener('input', scheduleSave);
+$('recBtn').addEventListener('click', toggleRecord);
+$('snapBtn').addEventListener('click', snapshotVersion);
+$('previewBtn').addEventListener('click', () => setPreviewMode(!previewOn));
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+window.addEventListener('pagehide', saveNow);
+
+/* ================= démarrage ================= */
+openDB().then(d => { db = d; renderHome(); }).catch(() => {
+  document.body.innerHTML = '<p style="padding:40px;text-align:center;color:#E86A5E">Stockage local indisponible — ouvrez mojocomposer dans Safari ou Chrome (hors navigation privée).</p>';
+});
+</script>
+</body>
+</html>

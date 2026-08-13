@@ -29,14 +29,27 @@ const DIST = new URL('../dist/', import.meta.url).pathname;
 const OBLIGATOIRES = ['/index.html', '/public.html'];
 
 /**
+ * PAGES AUTONOMES HÉBERGÉES À CÔTÉ DE L'APP (b292) : de simples HTML servis
+ * au même domaine, SANS aucun lien avec l'app. Le service worker ne doit PAS
+ * s'en mêler — ni les mettre en cache, ni (surtout) les traiter comme une
+ * navigation d'app. Sans ce contournement, ouvrir `/mojotune.html` ferait
+ * `cache.put('/index.html', <cette page>)` (via `coquillePour`) et
+ * EMPOISONNERAIT la coquille de l'app (l'app hors-ligne servirait l'outil à
+ * sa place). On les exclut donc du précache ET on les laisse passer au réseau.
+ */
+const AUTONOMES = ['/mojocomposer.html', '/mojotune.html'];
+
+/**
  * Ce qui ne doit JAMAIS être mis en cache :
  *  - `version.txt` sert justement à vérifier la version DÉPLOYÉE ;
  *  - `site/` est la landing publique, elle n'a rien à faire hors ligne ;
+ *  - les pages autonomes (b292), indépendantes de l'app ;
  *  - les cartes de source (`.map`), inutiles à l'exécution.
  */
 function aGarder(chemin) {
   if (chemin === '/version.txt') return false;
   if (chemin.startsWith('/site/')) return false;
+  if (AUTONOMES.includes(chemin)) return false;
   if (chemin.endsWith('.map')) return false;
   return true;
 }
@@ -67,6 +80,8 @@ const source = `/* Généré par scripts/build-sw.mjs — ne pas modifier à la 
 const CACHE = 'dodosongs-${cle}';
 const COQUILLES = ${JSON.stringify(OBLIGATOIRES)};
 const FICHIERS = ${JSON.stringify(fichiers)};
+/* Pages autonomes hébergées à côté de l'app : le SW ne les touche pas. */
+const AUTONOMES = ${JSON.stringify(AUTONOMES)};
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -170,6 +185,10 @@ self.addEventListener('fetch', (e) => {
   }
   if (url.origin !== self.location.origin) return;
   if (toujoursFrais(url)) return;
+  // Pages autonomes (b292) : indépendantes de l'app, le SW les laisse au
+  // réseau — jamais de cache, jamais de coquille (sinon l'index serait
+  // empoisonné par leur contenu).
+  if (AUTONOMES.indexOf(url.pathname) !== -1) return;
   if (req.mode === 'navigate') {
     e.respondWith(reseauPuisCoquille(req, url));
     return;

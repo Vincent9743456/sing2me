@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0A1128">
+<title>mojotune — accordeur</title>
+<style>
+  :root{
+    --navy:#0A1128;
+    --navy-2:#111A38;
+    --navy-3:#1A2547;
+    --orange:#F2A20C;
+    --orange-soft:#F5B940;
+    --cream:#F7F2E4;
+    --dim:#8A93B0;
+    --dim-2:#3A4568;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:var(--navy);
+    color:var(--cream);
+    font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+    display:flex;flex-direction:column;align-items:center;
+    overflow:hidden;
+    user-select:none;-webkit-user-select:none;
+    height:100dvh;
+  }
+  /* ---------- header ---------- */
+  header{
+    width:100%;max-width:520px;
+    display:flex;align-items:center;justify-content:center;
+    gap:10px;padding:18px 20px 6px;
+  }
+  .logo{display:flex;align-items:center;gap:9px;}
+  .logo svg{width:30px;height:30px;}
+  .wordmark{font-size:26px;font-weight:800;letter-spacing:-0.5px;line-height:1;}
+  .wordmark .mojo{color:var(--cream);}
+  .wordmark .tune{color:var(--orange);}
+  /* ---------- instrument chips ---------- */
+  .instruments{
+    display:flex;gap:8px;padding:12px 16px 4px;
+    width:100%;max-width:520px;justify-content:center;flex-wrap:wrap;
+  }
+  .chip{
+    border:1.5px solid var(--dim-2);
+    background:transparent;color:var(--dim);
+    padding:8px 15px;border-radius:999px;
+    font-size:14px;font-weight:600;cursor:pointer;
+    transition:all .18s ease;
+    font-family:inherit;
+  }
+  .chip.active{
+    background:var(--orange);border-color:var(--orange);
+    color:var(--navy);
+    box-shadow:0 0 18px rgba(242,162,12,.35);
+  }
+  /* ---------- main ---------- */
+  main{
+    flex:1;width:100%;max-width:520px;
+    display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;
+    padding:0 16px 10px;min-height:0;
+  }
+  /* ---------- gauge ---------- */
+  .gauge-wrap{position:relative;width:min(92vw,440px);}
+  .gauge-wrap svg{width:100%;height:auto;display:block;}
+  .note-display{
+    position:absolute;left:50%;top:66%;transform:translate(-50%,-50%);
+    text-align:center;pointer-events:none;width:100%;
+  }
+  .note-name{
+    font-size:clamp(64px,20vw,96px);font-weight:800;line-height:1;
+    color:var(--dim-2);transition:color .15s ease, text-shadow .15s ease;
+    letter-spacing:-2px;
+  }
+  .note-name .oct{font-size:.38em;font-weight:700;vertical-align:baseline;margin-left:2px;}
+  .note-name.listening{color:var(--cream);}
+  .note-name.intune{color:var(--orange);text-shadow:0 0 34px rgba(242,162,12,.65);}
+  .note-solfege{font-size:15px;color:var(--dim);margin-top:4px;font-weight:600;letter-spacing:2px;text-transform:uppercase;}
+  .cents-readout{
+    margin-top:8px;font-size:17px;font-weight:700;
+    font-variant-numeric:tabular-nums;color:var(--dim);
+    transition:color .15s ease;min-height:22px;
+  }
+  .cents-readout.intune{color:var(--orange);}
+  .freq-readout{font-size:12px;color:var(--dim-2);margin-top:3px;font-variant-numeric:tabular-nums;font-weight:600;}
+  /* ---------- status ---------- */
+  .status{
+    font-size:16px;font-weight:700;letter-spacing:.5px;
+    min-height:24px;text-align:center;color:var(--dim);
+    transition:color .2s ease;
+  }
+  .status.low,.status.high{color:var(--cream);}
+  .status.intune{color:var(--orange);}
+  /* ---------- strings ---------- */
+  .strings{
+    display:flex;gap:10px;justify-content:center;align-items:flex-end;
+    padding-bottom:6px;
+  }
+  .string{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    width:52px;
+  }
+  .string .dot{
+    width:46px;height:46px;border-radius:50%;
+    border:2px solid var(--dim-2);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:16px;color:var(--dim);
+    background:var(--navy-2);
+    transition:all .18s ease;position:relative;
+  }
+  .string .dot .oct{font-size:9px;font-weight:700;align-self:flex-end;margin:14px 0 0 1px;}
+  .string.active .dot{
+    border-color:var(--cream);color:var(--cream);
+    transform:scale(1.12);
+    box-shadow:0 0 14px rgba(247,242,228,.22);
+  }
+  .string.active.intune .dot{
+    border-color:var(--orange);background:var(--orange);color:var(--navy);
+    box-shadow:0 0 20px rgba(242,162,12,.55);
+  }
+  .string.done .dot::after{
+    content:'✓';position:absolute;top:-7px;right:-5px;
+    width:17px;height:17px;border-radius:50%;
+    background:var(--orange);color:var(--navy);
+    font-size:11px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .string .hz{font-size:10px;color:var(--dim-2);font-weight:600;font-variant-numeric:tabular-nums;}
+  /* ---------- strobe ---------- */
+  .strobe{
+    width:min(92vw,440px);height:22px;display:block;
+    border-radius:11px;background:var(--navy-2);
+    border:1px solid var(--dim-2);
+  }
+  .strobe-label{
+    font-size:9px;color:var(--dim-2);font-weight:700;
+    letter-spacing:2px;text-transform:uppercase;
+    text-align:center;margin-top:4px;
+  }
+  /* ---------- niveau micro ---------- */
+  .level-zone{display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .level-wrap{
+    width:min(64vw,280px);height:6px;border-radius:999px;
+    background:var(--navy-3);overflow:hidden;
+  }
+  .level-bar{
+    height:100%;width:0%;background:var(--orange);
+    border-radius:999px;transition:width .07s linear;
+  }
+  .level-label{font-size:10px;color:var(--dim-2);font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+  /* ---------- start overlay ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(10,17,40,.96);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:22px;z-index:10;padding:30px;text-align:center;
+    backdrop-filter:blur(4px);
+  }
+  .overlay.hidden{display:none;}
+  .overlay .big-logo{font-size:40px;font-weight:800;letter-spacing:-1px;}
+  .overlay p{color:var(--dim);font-size:15px;max-width:300px;line-height:1.5;}
+  .start-btn{
+    background:var(--orange);color:var(--navy);
+    border:none;border-radius:999px;
+    padding:16px 38px;font-size:17px;font-weight:800;
+    cursor:pointer;font-family:inherit;
+    box-shadow:0 0 30px rgba(242,162,12,.4);
+    transition:transform .15s ease;
+  }
+  .start-btn:active{transform:scale(.96);}
+  .err{color:#E86A5E;font-size:13px;max-width:320px;line-height:1.5;display:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M10 8 L23 15 L23 40 C23 40 20 36 15 36 C11 36 8 38.5 8 41.5 C8 44.5 11 46 14 45.5 L10 8Z" fill="none"/>
+      <path d="M12 6 L26 13 V34.5 a7 7 0 1 0 3 5.8 V19 l-14-7 Z" fill="#F2A20C"/>
+      <path d="M33 16 q6 8 0 16" stroke="#F7F2E4" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M39 12 q9 12 0 24" stroke="#F2A20C" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="wordmark"><span class="mojo">mojo</span><span class="tune">tune</span></div>
+  </div>
+</header>
+
+<div class="instruments" id="instruments"></div>
+
+<main>
+  <div class="gauge-wrap">
+    <svg id="gauge" viewBox="0 0 440 260">
+      <!-- arc scale built by JS -->
+      <g id="ticks"></g>
+      <g id="labels"></g>
+      <!-- in-tune center zone marker -->
+      <path id="centerZone" fill="none" stroke="#F2A20C" stroke-width="10" stroke-linecap="round" opacity="0.28"/>
+      <!-- needle -->
+      <g id="needleG">
+        <line id="needle" x1="220" y1="235" x2="220" y2="72" stroke="#F7F2E4" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="220" cy="235" r="9" fill="#F7F2E4" id="needleHub"/>
+      </g>
+    </svg>
+    <div class="note-display">
+      <div class="note-name" id="noteName">—</div>
+      <div class="note-solfege" id="noteSolfege">&nbsp;</div>
+      <div class="cents-readout" id="cents">&nbsp;</div>
+      <div class="freq-readout" id="freq">&nbsp;</div>
+    </div>
+  </div>
+
+  <div>
+    <canvas id="strobe" class="strobe"></canvas>
+    <div class="strobe-label">strobe — immobile = juste</div>
+  </div>
+
+  <div class="level-zone">
+    <div class="status" id="status">Jouez une corde…</div>
+    <div class="level-wrap"><div class="level-bar" id="levelBar"></div></div>
+    <div class="level-label">niveau micro</div>
+  </div>
+
+  <div class="strings" id="strings"></div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="big-logo"><span style="color:var(--cream)">mojo</span><span style="color:var(--orange)">tune</span></div>
+  <p>Accordeur automatique pour guitare, basse, ukulélé et violon.<br>Aucune sélection de note : jouez, mojotune écoute.</p>
+  <button class="start-btn" id="startBtn">🎤 &nbsp;Activer le micro</button>
+  <p class="err" id="errMsg"></p>
+</div>
+
+<script>
+'use strict';
+/* ================= configuration ================= */
+const A4 = 440;
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const SOLFEGE    = ['Do','Do#','Ré','Ré#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
+
+const INSTRUMENTS = {
+  guitare:  { label:'Guitare',  strings:[{n:'E',o:2},{n:'A',o:2},{n:'D',o:3},{n:'G',o:3},{n:'B',o:3},{n:'E',o:4}] },
+  basse:    { label:'Basse',    strings:[{n:'E',o:1},{n:'A',o:1},{n:'D',o:2},{n:'G',o:2}] },
+  ukulele:  { label:'Ukulélé',  strings:[{n:'G',o:4},{n:'C',o:4},{n:'E',o:4},{n:'A',o:4}] },
+  violon:   { label:'Violon',   strings:[{n:'G',o:3},{n:'D',o:4},{n:'A',o:4},{n:'E',o:5}] },
+};
+
+const IN_TUNE_CENTS = 2;      // seuil "juste" (niveau accordeur professionnel)
+const HOLD_MS = 900;          // temps en zone juste pour valider une corde
+const CLARITY_MIN = 0.95;     // seuil de confiance : rejette les lectures noyées dans le bruit
+const RMS_MIN = 0.0015;       // seuil de volume (sensible : capte un instrument à distance)
+const MIC_BOOST = 4;          // amplification logicielle du micro
+
+/* ================= helpers notes ================= */
+function noteFreq(name, oct){
+  const semisFromA4 = NOTE_NAMES.indexOf(name) - 9 + (oct - 4) * 12;
+  return A4 * Math.pow(2, semisFromA4 / 12);
+}
+function centsOff(freq, ref){ return 1200 * Math.log2(freq / ref); }
+
+/* ================= état ================= */
+let currentInstrument = 'guitare';
+let stringTargets = [];       // [{name,oct,freq,midi,el,done}]
+let activeIdx = -1;
+let activeMidi = null;        // note chromatique actuellement affichée
+let inTuneSince = 0;
+let audioCtx = null, analyser = null, buf = null;
+let rafId = null;
+const centsHistory = [];
+let lastGoodTime = 0;
+let displayedCents = 0;       // valeur lissée pour l'aiguille
+
+/* ================= UI : instruments ================= */
+const instrumentsEl = document.getElementById('instruments');
+for (const key of Object.keys(INSTRUMENTS)){
+  const b = document.createElement('button');
+  b.className = 'chip' + (key === currentInstrument ? ' active' : '');
+  b.textContent = INSTRUMENTS[key].label;
+  b.dataset.key = key;
+  b.addEventListener('click', () => selectInstrument(key));
+  instrumentsEl.appendChild(b);
+}
+function selectInstrument(key){
+  currentInstrument = key;
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.key === key));
+  buildStrings();
+  resetDetection();
+}
+
+/* ================= UI : cordes ================= */
+const stringsEl = document.getElementById('strings');
+function buildStrings(){
+  stringsEl.innerHTML = '';
+  stringTargets = INSTRUMENTS[currentInstrument].strings.map(s => {
+    const f = noteFreq(s.n, s.o);
+    const el = document.createElement('div');
+    el.className = 'string';
+    el.innerHTML = '<div class="dot">' + s.n + '<span class="oct">' + s.o + '</span></div>' +
+                   '<div class="hz">' + f.toFixed(1) + ' Hz</div>';
+    stringsEl.appendChild(el);
+    return { name:s.n, oct:s.o, freq:f, midi:12 * (s.o + 1) + NOTE_NAMES.indexOf(s.n), el, done:false };
+  });
+}
+buildStrings();
+
+/* ================= UI : jauge SVG ================= */
+const CX = 220, CY = 235, R = 165;
+const ANG_MIN = -62, ANG_MAX = 62;   // degrés pour -50..+50 cents
+function centsToAngle(c){
+  const cc = Math.max(-50, Math.min(50, c));
+  return ANG_MIN + (cc + 50) / 100 * (ANG_MAX - ANG_MIN);
+}
+function polar(angleDeg, radius){
+  const a = (angleDeg - 90) * Math.PI / 180;
+  return [CX + radius * Math.cos(a), CY + radius * Math.sin(a)];
+}
+(function buildGauge(){
+  const ticks = document.getElementById('ticks');
+  const labels = document.getElementById('labels');
+  const NS = 'http://www.w3.org/2000/svg';
+  for (let c = -50; c <= 50; c += 5){
+    const major = c % 25 === 0;
+    const mid = c % 10 === 0;
+    const ang = centsToAngle(c);
+    const rOut = R + 12;
+    const rIn  = R + 12 - (major ? 22 : mid ? 15 : 9);
+    const [x1,y1] = polar(ang, rOut);
+    const [x2,y2] = polar(ang, rIn);
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+    l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+    l.setAttribute('stroke', c === 0 ? '#F2A20C' : (major ? '#8A93B0' : '#3A4568'));
+    l.setAttribute('stroke-width', c === 0 ? 4 : major ? 3 : 2);
+    l.setAttribute('stroke-linecap','round');
+    ticks.appendChild(l);
+    if (major){
+      const [lx,ly] = polar(ang, R + 30);
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x',lx); t.setAttribute('y',ly);
+      t.setAttribute('fill', c === 0 ? '#F2A20C' : '#8A93B0');
+      t.setAttribute('font-size','15');
+      t.setAttribute('font-weight','700');
+      t.setAttribute('text-anchor','middle');
+      t.setAttribute('dominant-baseline','middle');
+      t.setAttribute('font-family','inherit');
+      t.textContent = c > 0 ? '+' + c : String(c);
+      labels.appendChild(t);
+    }
+  }
+  // zone "juste" : petit arc autour de 0
+  const a1 = centsToAngle(-IN_TUNE_CENTS), a2 = centsToAngle(IN_TUNE_CENTS);
+  const [sx,sy] = polar(a1, R - 4);
+  const [ex,ey] = polar(a2, R - 4);
+  document.getElementById('centerZone')
+    .setAttribute('d', 'M ' + sx + ' ' + sy + ' A ' + (R-4) + ' ' + (R-4) + ' 0 0 1 ' + ex + ' ' + ey);
+})();
+
+const needleG = document.getElementById('needleG');
+const needle = document.getElementById('needle');
+const needleHub = document.getElementById('needleHub');
+function setNeedle(cents, intune, silent){
+  const ang = centsToAngle(cents);
+  needleG.setAttribute('transform', 'rotate(' + ang + ' ' + CX + ' ' + CY + ')');
+  const col = silent ? '#3A4568' : intune ? '#F2A20C' : '#F7F2E4';
+  needle.setAttribute('stroke', col);
+  needleHub.setAttribute('fill', col);
+}
+setNeedle(0, false, true);
+
+/* ================= éléments d'affichage ================= */
+const noteNameEl = document.getElementById('noteName');
+const noteSolfegeEl = document.getElementById('noteSolfege');
+const centsEl = document.getElementById('cents');
+const freqEl = document.getElementById('freq');
+const statusEl = document.getElementById('status');
+
+/* ================= détection de hauteur =================
+   Autocorrélation fenêtrée (Hann) normalisée par l'autocorrélation
+   de la fenêtre elle-même : supprime le biais de bord qui décale
+   les notes graves de plusieurs cents. Précision mesurée < 1 cent
+   de 41 Hz (Mi grave basse) à 660 Hz (Mi aigu violon). */
+/* FFT itérative radix-2 (in-place) — l'autocorrélation en O(N log N)
+   au lieu de O(N²) : ~1 ms par analyse au lieu de ~15 ms. */
+function fft(re, im){
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++){
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j){
+      let t = re[i]; re[i] = re[j]; re[j] = t;
+      t = im[i]; im[i] = im[j]; im[j] = t;
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1){
+    const half = len >> 1;
+    const ang = -2 * Math.PI / len;
+    const wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len){
+      let cwr = 1, cwi = 0;
+      for (let j = 0; j < half; j++){
+        const a = i + j, b2 = a + half;
+        const vr = re[b2] * cwr - im[b2] * cwi;
+        const vi = re[b2] * cwi + im[b2] * cwr;
+        re[b2] = re[a] - vr; im[b2] = im[a] - vi;
+        re[a] += vr;         im[a] += vi;
+        const nwr = cwr * wr - cwi * wi;
+        cwi = cwr * wi + cwi * wr; cwr = nwr;
+      }
+    }
+  }
+}
+let fftRe = null, fftIm = null, fftN = 0;
+function acfFFT(x, M){
+  // autocorrélation via FFT, zéro-padding 2N (pas de repli circulaire)
+  const n = 1 << Math.ceil(Math.log2(2 * x.length));
+  if (fftN !== n){ fftRe = new Float64Array(n); fftIm = new Float64Array(n); fftN = n; }
+  fftRe.fill(0); fftIm.fill(0);
+  fftRe.set(x);
+  fft(fftRe, fftIm);
+  for (let i = 0; i < n; i++){
+    fftRe[i] = fftRe[i] * fftRe[i] + fftIm[i] * fftIm[i];
+    fftIm[i] = 0;
+  }
+  // le spectre de puissance est réel et pair : sa FFT directe = n × ACF
+  fft(fftRe, fftIm);
+  const out = new Float64Array(M + 1);
+  for (let l = 0; l <= M; l++) out[l] = fftRe[l] / n;
+  return out;
+}
+
+let hannW = null, hannACF = null, hannN = 0;
+function prepWindow(N, sampleRate){
+  const maxLag = Math.min(N - 1, Math.floor(sampleRate / 30));
+  hannW = new Float64Array(N);
+  for (let i = 0; i < N; i++) hannW[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (N - 1)));
+  hannACF = acfFFT(hannW, maxLag);
+  hannN = N;
+}
+function autoCorrelate(buffer, sampleRate){
+  const N = buffer.length;
+  let rms = 0;
+  for (let i = 0; i < N; i++) rms += buffer[i] * buffer[i];
+  rms = Math.sqrt(rms / N);
+  if (rms < RMS_MIN) return { freq:-1, clarity:0, rms };
+
+  if (hannN !== N) prepWindow(N, sampleRate);
+  const maxLag = hannACF.length - 1;
+  const minLag = Math.max(2, Math.floor(sampleRate / 1600));   // jusqu'à ~1600 Hz
+
+  const x = new Float64Array(N);
+  for (let i = 0; i < N; i++) x[i] = buffer[i] * hannW[i];
+  const c = acfFFT(x, maxLag);
+  const nc0 = c[0] / hannACF[0];
+  if (nc0 <= 0) return { freq:-1, clarity:0, rms };
+
+  // on ne cherche qu'après la première traversée de zéro
+  // (évite le plateau initial de l'autocorrélation, source d'erreurs d'octave)
+  let zc = 0;
+  while (zc < maxLag && c[zc] > 0) zc++;
+  const start = Math.max(minLag, zc);
+  if (start >= maxLag) return { freq:-1, clarity:0, rms };
+
+  // normalisation exacte par l'autocorrélation de la fenêtre
+  const nc = new Float64Array(maxLag + 1);
+  let globalMax = 0;
+  for (let i = start; i <= maxLag; i++){
+    nc[i] = hannACF[i] > 1e-9 ? c[i] / hannACF[i] : 0;
+    if (nc[i] > globalMax) globalMax = nc[i];
+  }
+  if (globalMax <= 0) return { freq:-1, clarity:0, rms };
+  const clarity = globalMax / nc0;
+
+  // premier pic local ≥ 90 % du max global : évite de choisir un sous-harmonique
+  let maxpos = -1;
+  const thresh = 0.9 * globalMax;
+  for (let i = start + 1; i < maxLag; i++){
+    if (nc[i] >= thresh && nc[i] >= nc[i - 1] && nc[i] >= nc[i + 1]){ maxpos = i; break; }
+  }
+  if (maxpos < 0){
+    for (let i = start; i <= maxLag; i++) if (nc[i] === globalMax){ maxpos = i; break; }
+  }
+
+  // interpolation sub-échantillon : parabole ajustée aux moindres carrés
+  // (fenêtre adaptative — les pics plats des notes graves sont sensibles au bruit)
+  let T0 = maxpos;
+  let k = Math.max(1, Math.min(5, Math.floor(maxpos / 40)));
+  k = Math.min(k, maxpos - start, maxLag - maxpos);
+  if (k >= 1){
+    let Sx2 = 0, Sx4 = 0, Sy = 0, Sxy = 0, Sx2y = 0;
+    const n = 2 * k + 1;
+    for (let j = -k; j <= k; j++){
+      const y = nc[maxpos + j];
+      Sx2 += j * j; Sx4 += j * j * j * j;
+      Sy += y; Sxy += j * y; Sx2y += j * j * y;
+    }
+    const A = (n * Sx2y - Sx2 * Sy) / (n * Sx4 - Sx2 * Sx2);
+    const B = Sxy / Sx2;
+    if (A < 0){
+      const off = -B / (2 * A);
+      if (Math.abs(off) <= k) T0 = maxpos + off;
+    }
+  }
+  return { freq: sampleRate / T0, clarity, rms };
+}
+
+/* ================= capture continue (AudioWorklet) =================
+   Tampon circulaire alimenté échantillon par échantillon : permet le
+   raffinement par vocodeur de phase, impossible avec AnalyserNode
+   (alignement temporel inconnu entre deux lectures). */
+const RING_SIZE = 32768, RING_MASK = RING_SIZE - 1;
+const ring = new Float32Array(RING_SIZE);
+let ringHead = 0, totalRing = 0, useWorklet = false, workletNode = null;
+
+function pushSamples(a){
+  for (let i = 0; i < a.length; i++){
+    ring[ringHead] = a[i];
+    ringHead = (ringHead + 1) & RING_MASK;
+  }
+  totalRing += a.length;
+}
+function readLast(out){
+  let idx = (ringHead - out.length + RING_SIZE) & RING_MASK;
+  for (let i = 0; i < out.length; i++){
+    out[i] = ring[idx];
+    idx = (idx + 1) & RING_MASK;
+  }
+}
+let workletBlobURL = null;
+function workletURL(){
+  if (!workletBlobURL){
+    const code = [
+      "class MojoCapture extends AudioWorkletProcessor{",
+      "  constructor(){ super(); this._buf = new Float32Array(1024); this._n = 0; }",
+      "  process(inputs){",
+      "    const ch = inputs[0] && inputs[0][0];",
+      "    if (ch){",
+      "      for (let i = 0; i < ch.length; i++){",
+      "        this._buf[this._n++] = ch[i];",
+      "        if (this._n === 1024){",
+      "          this.port.postMessage(this._buf);",
+      "          this._buf = new Float32Array(1024);",
+      "          this._n = 0;",
+      "        }",
+      "      }",
+      "    }",
+      "    return true;",
+      "  }",
+      "}",
+      "registerProcessor('mojo-capture', MojoCapture);"
+    ].join('\n');
+    workletBlobURL = URL.createObjectURL(new Blob([code], { type:'application/javascript' }));
+  }
+  return workletBlobURL;
+}
+
+/* ================= raffinement par vocodeur de phase =================
+   L'évolution de phase entre deux fenêtres espacées de 100 ms exactement
+   donne la fréquence avec une résolution ~0,02 cent. On combine les
+   3 premières harmoniques, pondérées par leur énergie (utile pour les
+   graves dont la fondamentale est faible au micro d'un téléphone). */
+const REFINE_W = 4096;
+let hannR = null;
+function dftAt(f, sr, endOffset){
+  // DFT fenêtrée (Hann) sur REFINE_W échantillons finissant endOffset avant la tête du ring
+  let idx = (ringHead - endOffset + RING_SIZE * 2) & RING_MASK;
+  const dth = 2 * Math.PI * f / sr;
+  const cd = Math.cos(dth), sd = Math.sin(dth);
+  let cr = 1, ci = 0, re = 0, im = 0;
+  for (let n = 0; n < REFINE_W; n++){
+    const s = ring[idx] * hannR[n];
+    re += s * cr;
+    im -= s * ci;
+    const t = cr * cd - ci * sd;
+    ci = cr * sd + ci * cd;
+    cr = t;
+    idx = (idx + 1) & RING_MASK;
+  }
+  return { amp: Math.hypot(re, im), phase: Math.atan2(im, re) };
+}
+function refineFreq(f0, sr){
+  const hop = Math.round(sr * 0.1);
+  if (totalRing < REFINE_W + hop + 1024) return -1;
+  if (!hannR){
+    hannR = new Float64Array(REFINE_W);
+    for (let i = 0; i < REFINE_W; i++) hannR[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (REFINE_W - 1)));
+  }
+  let num = 0, den = 0;
+  for (let k = 1; k <= 3; k++){
+    const fk = f0 * k;
+    if (fk > sr * 0.45) break;
+    const A = dftAt(fk, sr, REFINE_W + hop);   // fenêtre ancienne
+    const B = dftAt(fk, sr, REFINE_W);          // fenêtre récente
+    const amp = Math.min(A.amp, B.amp);
+    if (amp <= 0) continue;
+    let d = B.phase - A.phase - 2 * Math.PI * fk * (hop / sr);
+    d = d - 2 * Math.PI * Math.round(d / (2 * Math.PI));   // repli en (-π, π]
+    const fRef = (fk + d * sr / (2 * Math.PI * hop)) / k;
+    if (Math.abs(1200 * Math.log2(fRef / f0)) > 8) continue;   // incohérent avec l'estimation grossière
+    const w = amp * amp;
+    num += w * fRef; den += w;
+  }
+  return den > 0 ? num / den : -1;
+}
+
+/* ================= strobe ================= */
+const strobeCanvas = document.getElementById('strobe');
+const sctx = strobeCanvas.getContext('2d');
+let strobeOn = false, strobeInTune = false, strobeOffset = 0;
+function drawStrobe(){
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.round(strobeCanvas.clientWidth * dpr), h = Math.round(strobeCanvas.clientHeight * dpr);
+  if (!w || !h) return;
+  if (strobeCanvas.width !== w || strobeCanvas.height !== h){ strobeCanvas.width = w; strobeCanvas.height = h; }
+  sctx.clearRect(0, 0, w, h);
+  const period = 28 * dpr, bar = 14 * dpr;
+  if (strobeOn) strobeOffset += displayedCents * 0.12 * dpr;   // vitesse ∝ écart ; immobile = juste
+  sctx.fillStyle = !strobeOn ? 'rgba(58,69,104,0.5)'
+                 : strobeInTune ? '#F2A20C' : 'rgba(247,242,228,0.75)';
+  for (let x = ((strobeOffset % period) + period) % period - period; x < w; x += period){
+    sctx.fillRect(x, 0, bar, h);
+  }
+}
+
+/* ================= boucle principale ================= */
+function nearestString(freq){
+  let best = -1, bestDist = Infinity;
+  for (let i = 0; i < stringTargets.length; i++){
+    const d = Math.abs(Math.log2(freq / stringTargets[i].freq));
+    if (d < bestDist){ bestDist = d; best = i; }
+  }
+  return best;
+}
+function median(arr){
+  const s = [...arr].sort((a,b) => a - b);
+  return s[Math.floor(s.length / 2)];
+}
+function resetDetection(){
+  activeIdx = -1; activeMidi = null; inTuneSince = 0; centsHistory.length = 0;
+  displayedCents = 0; strobeOn = false;
+  setNeedle(0, false, true);
+  noteNameEl.textContent = '—';
+  noteNameEl.className = 'note-name';
+  noteSolfegeEl.innerHTML = '&nbsp;';
+  centsEl.innerHTML = '&nbsp;';
+  centsEl.className = 'cents-readout';
+  freqEl.innerHTML = '&nbsp;';
+  statusEl.textContent = 'Jouez une corde…';
+  statusEl.className = 'status';
+}
+
+let deadFrames = 0, recoveryTried = false, helpShown = false, frameNo = 0;
+const levelBar = document.getElementById('levelBar');
+
+let analysisCost = 0;   // coût moyen d'une analyse (ms) — pour s'adapter aux appareils lents
+function loop(){
+  rafId = requestAnimationFrame(loop);
+  drawStrobe();                // le strobe est animé à 60 Hz pour rester fluide
+  frameNo++;
+  // analyse à 60 Hz ; si l'appareil est trop lent (> 8 ms par analyse), on passe à 30 Hz
+  if (analysisCost > 8 && (frameNo & 1)) return;
+  const tA = performance.now();
+  if (useWorklet && totalRing >= buf.length){
+    readLast(buf);             // capture continue, alignement échantillon exact
+  } else {
+    analyser.getFloatTimeDomainData(buf);
+  }
+  let { freq, clarity, rms } = autoCorrelate(buf, audioCtx.sampleRate);
+  // raffinement par vocodeur de phase (~0,02 cent) quand la capture continue est active
+  if (useWorklet && freq > 0 && clarity >= CLARITY_MIN){
+    const fr = refineFreq(freq, audioCtx.sampleRate);
+    if (fr > 0) freq = fr;
+  }
+  const now = performance.now();
+  analysisCost = analysisCost * 0.9 + (now - tA) * 0.1;
+
+  // barre de niveau micro
+  levelBar.style.width = Math.min(100, Math.round((rms || 0) / 0.08 * 100)) + '%';
+
+  // surveillance : flux micro mort (bug connu de Safari iOS)
+  if (!rms || rms < 1e-6){
+    deadFrames++;
+    if (deadFrames === 150 && !recoveryTried){
+      recoveryTried = true;
+      recoverAudio();
+    } else if (deadFrames === 700 && recoveryTried && !helpShown){
+      helpShown = true;
+      statusEl.textContent = 'Aucun signal micro — fermez les autres apps audio, puis Réglages ▸ Safari ▸ Micro : Autoriser';
+      statusEl.className = 'status low';
+    }
+  } else {
+    deadFrames = 0; helpShown = false;
+  }
+
+  if (freq > 0 && clarity >= CLARITY_MIN){
+    lastGoodTime = now;
+
+    // note chromatique la plus proche de ce qui est entendu : la bascule se fait
+    // au point médian entre deux notes (hystérésis minimale de 2 cents anti-clignotement)
+    const midiF = 69 + 12 * Math.log2(freq / A4);
+    let dispMidi = Math.round(midiF);
+    if (activeMidi !== null && Math.abs((midiF - activeMidi) * 100) < 52) dispMidi = activeMidi;
+    if (dispMidi !== activeMidi){
+      activeMidi = dispMidi;
+      centsHistory.length = 0;   // nouvelle note : repartir immédiatement
+      inTuneSince = 0;
+    }
+    const noteIdx = ((dispMidi % 12) + 12) % 12;
+    const noteOct = Math.floor(dispMidi / 12) - 1;
+    const refFreq = A4 * Math.pow(2, (dispMidi - 69) / 12);
+
+    // corde la plus proche, pour le guidage
+    const idx = nearestString(freq);
+    if (idx !== activeIdx){
+      activeIdx = idx;
+      stringTargets.forEach((s,i) => {
+        s.el.classList.toggle('active', i === idx);
+        s.el.classList.remove('intune');
+      });
+    }
+    const target = stringTargets[idx];
+    const onString = dispMidi === target.midi;   // joue-t-on bien la note de la corde ?
+
+    const cents = (midiF - dispMidi) * 100;      // écart vs la note ENTENDUE
+    if (centsHistory.length === 0) displayedCents = cents;   // changement de note : l'aiguille saute directement
+    centsHistory.push(cents);
+    if (centsHistory.length > 5) centsHistory.shift();
+    const c = median(centsHistory);
+
+    // lissage léger de l'aiguille (réactif à 60 Hz)
+    displayedCents += (c - displayedCents) * 0.5;
+
+    const intune = Math.abs(c) <= IN_TUNE_CENTS;
+    setNeedle(displayedCents, intune, false);
+    strobeOn = true; strobeInTune = intune;
+
+    noteNameEl.innerHTML = NOTE_NAMES[noteIdx] + '<span class="oct">' + noteOct + '</span>';
+    noteNameEl.className = 'note-name ' + (intune ? 'intune' : 'listening');
+    noteSolfegeEl.textContent = SOLFEGE[noteIdx];
+    centsEl.textContent = (c > 0 ? '+' : '') + c.toFixed(1) + ' cents';
+    centsEl.className = 'cents-readout' + (intune ? ' intune' : '');
+    freqEl.textContent = freq.toFixed(2) + ' Hz  ·  ' + NOTE_NAMES[noteIdx] + noteOct + ' = ' + refFreq.toFixed(2) + ' Hz';
+
+    target.el.classList.toggle('intune', onString && intune);
+
+    if (!onString){
+      // autre note que la corde visée : guider vers elle
+      inTuneSince = 0;
+      const tooHigh = dispMidi > target.midi;
+      statusEl.textContent = 'Corde ' + target.name + target.oct + ' : ' +
+        (tooHigh ? 'accordez plus bas ▼' : 'accordez plus haut ▲');
+      statusEl.className = 'status ' + (tooHigh ? 'high' : 'low');
+    } else if (intune){
+      statusEl.textContent = '✓ Juste';
+      statusEl.className = 'status intune';
+      if (!inTuneSince) inTuneSince = now;
+      if (now - inTuneSince > HOLD_MS && !target.done){
+        target.done = true;
+        target.el.classList.add('done');
+        if (navigator.vibrate) navigator.vibrate(60);
+      }
+    } else {
+      inTuneSince = 0;
+      if (c < 0){ statusEl.textContent = 'Trop bas — tendez ▲'; statusEl.className = 'status low'; }
+      else      { statusEl.textContent = 'Trop haut — détendez ▼'; statusEl.className = 'status high'; }
+    }
+  } else if (now - lastGoodTime > 700){
+    // silence : on garde la dernière note affichée mais on éteint
+    if (activeIdx >= 0){
+      stringTargets[activeIdx].el.classList.remove('active','intune');
+    }
+    activeIdx = -1;
+    centsHistory.length = 0;
+    inTuneSince = 0;
+    strobeOn = false;
+    setNeedle(displayedCents, false, true);
+    noteNameEl.className = 'note-name';
+    centsEl.className = 'cents-readout';
+    statusEl.textContent = 'Jouez une corde…';
+    statusEl.className = 'status';
+  }
+}
+
+/* ================= démarrage micro ================= */
+const overlay = document.getElementById('overlay');
+const startBtn = document.getElementById('startBtn');
+const errMsg = document.getElementById('errMsg');
+
+let micStream = null;
+
+async function setupAudio(strict){
+  // stoppe l'ancien flux et l'ancien contexte (indispensable sur iOS :
+  // le contexte doit être créé APRÈS getUserMedia pour adopter la bonne fréquence d'échantillonnage)
+  if (micStream) micStream.getTracks().forEach(t => t.stop());
+  micStream = await navigator.mediaDevices.getUserMedia(
+    strict ? { audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } }
+           : { audio:true }
+  );
+  if (audioCtx){ try{ await audioCtx.close(); }catch(e){} }
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  await audioCtx.resume();
+  const src = audioCtx.createMediaStreamSource(micStream);
+  // filtre passe-haut léger pour couper le ronflement secteur
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 25; hp.Q.value = 0.7;
+  // amplification logicielle : rend le micro bien plus sensible sans toucher aux réglages système
+  const boost = audioCtx.createGain();
+  boost.gain.value = MIC_BOOST;
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 8192;   // ~170 ms de signal : précision accrue sur les graves
+  analyser.smoothingTimeConstant = 0;
+  src.connect(hp); hp.connect(boost); boost.connect(analyser);
+  buf = new Float32Array(analyser.fftSize);
+
+  // capture continue via AudioWorklet (précision maximale) ; repli sur l'analyser sinon
+  useWorklet = false;
+  ringHead = 0; totalRing = 0;
+  try{
+    if (audioCtx.audioWorklet){
+      await audioCtx.audioWorklet.addModule(workletURL());
+      workletNode = new AudioWorkletNode(audioCtx, 'mojo-capture');
+      workletNode.port.onmessage = e => pushSamples(e.data);
+      const mute = audioCtx.createGain();
+      mute.gain.value = 0;
+      boost.connect(workletNode);
+      workletNode.connect(mute);
+      mute.connect(audioCtx.destination);
+      useWorklet = true;
+    }
+  }catch(e){ useWorklet = false; }
+
+  const track = micStream.getAudioTracks()[0];
+  track.onmute = () => { statusEl.textContent = 'Micro suspendu par le système…'; statusEl.className = 'status'; };
+  audioCtx.onstatechange = () => {
+    if (audioCtx.state !== 'running') audioCtx.resume().catch(()=>{});
+  };
+}
+
+async function recoverAudio(){
+  statusEl.textContent = 'Réactivation du micro…';
+  statusEl.className = 'status';
+  try{
+    await setupAudio(false);   // repli : contraintes par défaut (plus fiables sur iOS)
+    deadFrames = 0;
+  }catch(e){ /* le message d'aide s'affichera via la surveillance */ }
+}
+
+startBtn.addEventListener('click', async () => {
+  errMsg.style.display = 'none';
+  try{
+    // essaie d'abord les contraintes "haute fidélité", sinon les contraintes par défaut
+    try{ await setupAudio(true); }
+    catch(e){ await setupAudio(false); }
+    overlay.classList.add('hidden');
+    if (rafId) cancelAnimationFrame(rafId);
+    deadFrames = 0; recoveryTried = false; helpShown = false;
+    loop();
+  } catch(e){
+    errMsg.textContent = "Impossible d'accéder au micro : " + (e && e.message ? e.message : e) +
+      ". Vérifiez les autorisations (Réglages ▸ Safari ▸ Micro), puis rechargez la page.";
+    errMsg.style.display = 'block';
+  }
+});
+
+// reprend l'audio au retour sur l'onglet ou au premier toucher (exigence iOS)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && audioCtx && audioCtx.state !== 'running') audioCtx.resume().catch(()=>{});
+});
+document.addEventListener('touchend', () => {
+  if (audioCtx && audioCtx.state !== 'running') audioCtx.resume().catch(()=>{});
+}, { passive:true });
+</script>
+</body>
+</html>
