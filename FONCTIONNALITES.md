@@ -3,7 +3,7 @@
 *Visite guidée, écran par écran, puis le modèle, les décisions arrêtées et
 les limites. Établi en lisant le code — chaque bouton cité existe vraiment.*
 
-**Version b274, 11 août 2026.** Production : https://sing2me-three.vercel.app
+**Version b274, 11 août 2026.** Production : https://mojosong.com
 
 Ce document décrit **ce qu'on peut faire et où c'est**, puis **pourquoi
 c'est comme ça**. Le plan de test (`RECETTE.md`) dit **comment vérifier que

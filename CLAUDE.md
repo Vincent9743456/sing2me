@@ -122,15 +122,23 @@
   Depuis b303, `LogoMark` sert l'emblème SVG (`mojosong-emblem.svg`) à
   TOUTES les tailles : un vecteur ne pixelise jamais, un seul fichier suffit,
   et l'ambre se lit sur les deux thèmes (plus de couple 128/256 px à choisir).
-- **Reste à faire un jour** : l'adresse de déploiement est encore
-  `sing2me-three.vercel.app` (c'est celle de Vercel, elle se change dans
-  leur console, pas dans le code).
+- **DOMAINE DE PRODUCTION : https://mojosong.com** (migration b307). L'ancienne
+  adresse Vercel `sing2me-three.vercel.app` reste valable (Vercel la garde),
+  mais l'adresse officielle est le domaine. RIEN à changer dans le CODE
+  applicatif : tous les liens (partage, QR, invitation) et le `redirect_to`
+  de l'auth sont dérivés de `location.origin` — ils suivent le domaine tout
+  seuls. Seules ont changé les URL EN DUR de la landing (`public/site`) et des
+  docs. **Côté Vincent (hors code)** : DNS/domaine dans Vercel, et surtout
+  Supabase → Auth → URL Configuration : **Site URL = https://mojosong.com** +
+  ajouter `https://mojosong.com` (et `https://mojosong.com/**`) aux **Redirect
+  URLs**, sinon les liens magiques / OAuth vers le nouveau domaine sont
+  refusés.
 
 ## Déploiement & versions (pipeline actuel)
 
 - Source de vérité : ce dépôt GitHub (`Vincent9743456/sing2me`).
   **Tout push sur `main` déclenche un déploiement Vercel automatique**
-  vers https://sing2me-three.vercel.app — pas de `vercel --prod` manuel.
+  vers https://mojosong.com — pas de `vercel --prod` manuel.
 - **À chaque livraison, incrémenter la version aux DEUX endroits** :
   - `src/version.ts` → `APP_BUILD = 'J mois AAAA · bN'` (affiché en bas
     de l'onglet Artiste) ;
@@ -181,7 +189,7 @@
   humain (rendu, formulation, choix produit), et on le DIT alors, sans
   bloquer la livraison. Et ce qui touche à la base (`supabase/*.sql`) reste
   à annoncer : c'est Vincent qui l'exécute.
-- Après push : vérifier https://sing2me-three.vercel.app/version.txt.
+- Après push : vérifier https://mojosong.com/version.txt.
 - Supabase : projet `zssnwjtfzbymtsiccvao` ; après modification d'un
   fichier `supabase/*.sql`, demander à Vincent de le ré-exécuter dans le
   SQL Editor (les fichiers sont idempotents) —
