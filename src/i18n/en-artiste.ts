@@ -312,7 +312,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'Son invitation sera annulée. Tu pourras la renvoyer plus tard.':
     'Their invitation will be cancelled. You can send it again later.',
   'Rien pour ce concert (pas encore joué, ou direct lancé sans concert planifié ce jour-là).': 'Nothing for this gig yet (not played yet, or a live session started with no gig planned that day).',
-  'Réglages et paramètres': 'Settings and preferences',
+  'Sauvegarde, langue, pédale MIDI, compte…':
+    'Backup, language, MIDI pedal, account…',
   'Répertoire du groupe': 'Band repertoire',
   'Saisis le code à 6 chiffres donné par la personne qui a lancé le direct (bœuf ou concert).': 'Enter the 6-digit code given by the person who started the live session (jam or gig).',
   'Setlist': 'Setlist',

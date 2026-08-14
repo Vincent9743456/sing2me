@@ -325,22 +325,30 @@ export function Artist() {
 
   return (
     <>
-      <TopBar
-        title={t('Profil artiste')}
-        right={
-          <button
-            className="btn icon"
-            title={t('Réglages et paramètres')}
-            aria-label={t('Réglages et paramètres')}
-            onClick={() => navigate('/reglages')}
-          >
-            <Icon name="sliders" size={20} />
-          </button>
-        }
-      />
+      {/* Le bouton Réglages vit DANS la page (b350, demande de Vincent :
+          « ramène le bouton paramètre dans la page, pour qu'il soit plus
+          visible ») — une grande rangée, comme les portes des fiches de
+          groupe. L'icône de la barre du haut est retirée : jamais deux
+          chemins vers une action existante (règle 3). */}
+      <TopBar title={t('Profil artiste')} />
       <div className="page">
         <LiveBanner />
         <AccountSection />
+        <div className="spacer" />
+        <button className="bigrow" onClick={() => navigate('/reglages')}>
+          <span className="i" aria-hidden="true">
+            ⚙️
+          </span>
+          <div className="grow" style={{ minWidth: 0 }}>
+            <div className="ti">{t('Réglages')}</div>
+            <div className="su">
+              {t('Sauvegarde, langue, pédale MIDI, compte…')}
+            </div>
+          </div>
+          <span className="chev" aria-hidden="true">
+            ›
+          </span>
+        </button>
         <div className="spacer" />
 
         {editing && (
