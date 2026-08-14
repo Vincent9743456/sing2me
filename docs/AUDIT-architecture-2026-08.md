@@ -133,3 +133,15 @@ destructif). Si vide, rien à faire.
   `dedupeSongsByContent`, changement de compte, réparations de version : leur
   simplification a déjà coûté des données (b290). Toute refonte y va avec les
   cas b245/b246/b247/b248/b290 épinglés comme tests de non-régression.
+
+## Backlog produit — noté au fil de l'eau
+
+- **Flux « Recherche & création » : retour intelligent selon le presse-papiers**
+  (idéal exprimé par Vincent, b329) : au retour depuis UG, si un LIEN est dans
+  le presse-papiers → atterrir sur l'écran de collage ; sinon → rester sur les
+  résultats (l'utilisateur veut voir une autre version). IMPOSSIBLE en PWA
+  iOS : le volet navigateur restauré par iOS ne peut pas être fermé par notre
+  code, et la lecture du presse-papiers sans geste est interdite. À reprendre
+  avec l'app NATIVE Capacitor (v3) : contrôle du navigateur intégré
+  (fermeture au retour), détection presse-papiers Android, UIPasteControl
+  iOS — la spec d'origine du flux redevient applicable telle quelle.
