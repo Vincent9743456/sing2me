@@ -116,6 +116,19 @@ export function parseContent(content: string): ParsedLine[] {
  * queue) et les espaces de fin de ligne retirés — dans un texte centré, ils
  * décalent visiblement le vers.
  */
+/**
+ * LIGNE DE DÉFINITION DE DOIGTÉ (b328, constat de Vincent sur la vue
+ * publique) : « Bb*: 1133xx », « Am: 002210 », « G* = 31x3xx »… — la note de
+ * bas de page d'UG qui explique les accords étoilés. C'est une information de
+ * musicien, jamais une parole : elle se retire à l'import ET de la
+ * préparation publique (pour les morceaux déjà importés).
+ */
+export function estDefinitionAccord(line: string): boolean {
+  const m = /^\s*(\S+)\s*[:=]\s*([0-9xXoO][0-9xXoO ]{2,12})\s*$/.exec(line);
+  if (!m) return false;
+  return PLAIN_CHORD_TOKEN.test(m[1]);
+}
+
 export function stripChords(content: string): string {
   const brut: string[] = [];
   for (const src of content.split('\n')) {
@@ -124,6 +137,10 @@ export function stripChords(content: string): string {
       continue;
     }
     if (isPlainChordLine(src)) continue;
+    if (estDefinitionAccord(src)) continue;
+    // Trait de séparation (« ----- », « _____ ») : de la mise en page de la
+    // source, pas une parole (b328).
+    if (/^\s*[-_=—–]{3,}\s*$/.test(src)) continue;
     const l = src.replace(/\[([^\]\n]+)\]/g, '').replace(/\s+$/g, '');
     // Il ne restait que des accords sur cette ligne.
     if (l.trim() === '' && src.trim() !== '') continue;

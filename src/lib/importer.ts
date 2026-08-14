@@ -9,6 +9,7 @@
  *    résumé de structure en tête de partition ; les paroles restent un bloc
  *    continu.
  */
+import { estDefinitionAccord } from './chordpro';
 import { extractChordSequence } from './model';
 import {
   ligneDeSection,
@@ -356,7 +357,14 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
     .replace(/\r\n?/g, '\n')
     .replace(/\t/g, '    ')
     .replace(/\u00a0/g, ' ');
-  const { lines, meta, markers } = extractMeta(normalized.split('\n'));
+  const { lines, meta, markers } = extractMeta(
+    normalized
+      .split('\n')
+      // Notes de doigt\u00e9s (\u00ab Bb*: 1133xx \u00bb) : la note de bas de page d'UG \u2014
+      // une info de mise en page, pas une parole ni un accord jou\u00e9. Nettoy\u00e9e
+      // \u00e0 l'import (b328, demande de Vincent).
+      .filter((l) => !estDefinitionAccord(l)),
+  );
 
   // Une "zone" par en-tête rencontré ; les paroles restent continues.
   interface Zone {
