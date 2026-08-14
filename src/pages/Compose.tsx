@@ -67,6 +67,22 @@ function urlUgDirecte(query: string): string {
   return `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
 }
 
+/**
+ * RECHERCHE WEB « AUGMENTÉE » (b327, idée de Vincent : « mots clés à mettre
+ * dans la recherche en shadow ») : la requête est enrichie en douce de
+ * mots-clés de partition, et c'est le MOTEUR qui classe tous les sites par
+ * pertinence — un tri qu'aucun métamoteur maison n'égalerait, sans une seule
+ * requête de notre infra vers qui que ce soit (posture §A.4/A.5 : jamais de
+ * recherche multi-sites côté serveur). Aucun nom de plateforme affiché.
+ */
+function urlRechercheWeb(query: string): string {
+  return `https://www.google.com/search?q=${encodeURIComponent(`${query} accords paroles chords tab`)}`;
+}
+
+/** Le moteur choisi pour la recherche en cours — pour que « rouvrir » rouvre
+ *  la même chose. sessionStorage : la préférence meurt avec l'onglet. */
+const MOTEUR_KEY = 'sing2me/composeMoteur';
+
 export function Compose({ draftId }: { draftId: string | null }) {
   const { songs, saveSong, purgeBrouillon } = useStore();
   const toast = useToast();
@@ -89,7 +105,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
   const validees = useMemo(() => songs.filter((s) => !estBrouillon(s)), [songs]);
 
   /* ── Étape 1 : recherche = création ─────────────────────────────── */
-  function lancerRecherche() {
+  function lancerRecherche(moteur: 'ug' | 'web') {
     const q = query.trim();
     if (q === '') return;
     // Une seule création en cours : la nouvelle recherche remplace
@@ -102,13 +118,31 @@ export function Compose({ draftId }: { draftId: string | null }) {
     };
     saveSong(brouillon);
     // UN SEUL GESTE (b324, demande de Vincent) : la recherche OUVRE tout de
-    // suite les résultats UG — l'écran de collage n'est que ce qu'on
-    // retrouve au retour. La perte de brouillon de b323 (PWA suspendue
-    // avant l'écriture différée) est contrée par une écriture disque
-    // SYNCHRONE dans le même geste, plus le vidage sur pagehide.
+    // suite les résultats — l'écran de collage n'est que ce qu'on retrouve
+    // au retour. La perte de brouillon de b323 (PWA suspendue avant
+    // l'écriture différée) est contrée par une écriture disque SYNCHRONE
+    // dans le même geste, plus le vidage sur pagehide.
     ecrireMorceauImmediat(brouillon);
-    window.open(urlRechercheUg(q), '_blank', 'noopener');
+    try {
+      sessionStorage.setItem(MOTEUR_KEY, moteur);
+    } catch {
+      /* stockage indisponible : « rouvrir » retombera sur UG */
+    }
+    window.open(
+      moteur === 'web' ? urlRechercheWeb(q) : urlRechercheUg(q),
+      '_blank',
+      'noopener',
+    );
     navigate(`/creer/${brouillon.id}`);
+  }
+
+  /** Le moteur de la recherche en cours (pour « rouvrir » la même page). */
+  function moteurEnCours(): 'ug' | 'web' {
+    try {
+      return sessionStorage.getItem(MOTEUR_KEY) === 'web' ? 'web' : 'ug';
+    } catch {
+      return 'ug';
+    }
   }
 
   /* ── Récupération de route (b323) : si le brouillon visé a disparu mais
@@ -272,16 +306,26 @@ export function Compose({ draftId }: { draftId: string | null }) {
             placeholder={t('Titre, artiste… (ex. hallelujah cohen)')}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') lancerRecherche();
+              if (e.key === 'Enter') lancerRecherche('ug');
             }}
           />
           <div className="spacer" />
           <button
             className="btn block"
             disabled={query.trim() === ''}
-            onClick={lancerRecherche}
+            onClick={() => lancerRecherche('ug')}
           >
             🔎 {t('Chercher sur Ultimate Guitar')}
+          </button>
+          <div className="spacer" />
+          {/* Recherche web « augmentée » (b327) : tous les sites de
+              partitions, triés par le moteur — mots-clés ajoutés en douce. */}
+          <button
+            className="btn ghost block"
+            disabled={query.trim() === ''}
+            onClick={() => lancerRecherche('web')}
+          >
+            🌐 {t('Chercher sur le web')}
           </button>
         </>
       )}
@@ -312,14 +356,23 @@ export function Compose({ draftId }: { draftId: string | null }) {
             </div>
           )}
           {/* Cet écran est celui du RETOUR (b324) : la recherche a déjà
-              ouvert UG. Ce bouton ne sert qu'à rouvrir la page si besoin. */}
+              ouvert la page. Ce bouton ne sert qu'à la rouvrir si besoin —
+              sur le MÊME moteur que la recherche lancée (b327). */}
           <button
             className="btn ghost block"
             onClick={() =>
-              window.open(urlRechercheUg(draft.title), '_blank', 'noopener')
+              window.open(
+                moteurEnCours() === 'web'
+                  ? urlRechercheWeb(draft.title)
+                  : urlRechercheUg(draft.title),
+                '_blank',
+                'noopener',
+              )
             }
           >
-            ↗ {t('Ouvrir la recherche sur Ultimate Guitar')}
+            {moteurEnCours() === 'web'
+              ? `🌐 ${t('Rouvrir la recherche web')}`
+              : `↗ ${t('Ouvrir la recherche sur Ultimate Guitar')}`}
           </button>
           <div className="spacer" />
           <p className="help">
