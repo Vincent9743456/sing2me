@@ -245,9 +245,25 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'GET') {
-      // b192 : le COMPTE identifie l'appelant ; l'ancienne clé reste
-      // acceptée le temps que les applications se mettent à jour.
-      const qui = await identifie(req);
+      // b340 : identification, mots et lives sont trois lectures
+      // indépendantes — elles partaient l'une APRÈS l'autre, et ce handler
+      // était devenu le chemin critique du chargement de l'onglet Live.
+      // Tout part ensemble ; rien n'est lu si l'appelant n'est pas identifié.
+      const premierSelect =
+        'author,body,song_title,setlist_name,performer,band_id,live_id,concert_id,concert_title,created_at';
+      const [qui, premierEssai, livesRes] = await Promise.all([
+        // b192 : le COMPTE identifie l'appelant ; l'ancienne clé reste
+        // acceptée le temps que les applications se mettent à jour.
+        identifie(req),
+        fetch(
+          `${base}/rest/v1/live_messages?select=${premierSelect}&order=created_at.desc&limit=400`,
+          { headers: sbHeaders(false) },
+        ).catch(() => null),
+        fetch(
+          `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id&limit=300`,
+          { headers: sbHeaders(false) },
+        ).catch(() => null),
+      ]);
       if (!qui.ok) {
         refuse(res);
         return;
@@ -271,7 +287,6 @@ export default async function handler(req, res) {
       // `live_id` (b186) : rattachement EXACT d'un mot à son concert —
       // l'heure seule mélangeait les directs de deux musiciens.
       const selects = [
-        'author,body,song_title,setlist_name,performer,band_id,live_id,concert_id,concert_title,created_at',
         'author,body,song_title,setlist_name,performer,band_id,concert_id,concert_title,created_at',
         'author,body,song_title,setlist_name,performer,concert_id,concert_title,created_at',
         'author,body,song_title,performer,concert_id,concert_title,created_at',
@@ -285,14 +300,17 @@ export default async function handler(req, res) {
         // inconnue : c'est le filet qui manquait.
         '*',
       ];
-      let r = null;
+      // Le premier essai (colonnes complètes) est déjà parti ci-dessus ; les
+      // replis ne courent qu'en cas de colonne inconnue (400/422) — le cas
+      // d'un SQL pas rejoué, jamais le cas nominal.
+      let r = premierEssai;
       for (const sel of selects) {
+        if (r && r.ok) break;
+        if (r && r.status !== 400 && r.status !== 422) break;
         r = await fetch(
           `${base}/rest/v1/live_messages?select=${sel}&order=created_at.desc&limit=400`,
           { headers: sbHeaders(false) },
         );
-        if (r.ok) break;
-        if (r.status !== 400 && r.status !== 422) break;
       }
       if (!r || !r.ok) {
         // Livre d'or illisible : liste vide plutôt qu'une erreur qui casse
@@ -349,11 +367,8 @@ export default async function handler(req, res) {
       );
       let mesLives = new Set();
       try {
-        const l = await fetch(
-          `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id&limit=300`,
-          { headers: sbHeaders(false) },
-        );
-        if (l.ok) {
+        const l = livesRes;
+        if (l && l.ok) {
           const lives = await l.json();
           for (const r0 of Array.isArray(lives) ? lives : []) {
             // Le propriétaire (b192) tranche avant tout : identifiant de
