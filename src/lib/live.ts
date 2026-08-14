@@ -520,6 +520,7 @@ export async function fetchMessages(
     .map((n) => n.trim())
     .filter((n) => n !== '');
   const cids = bandCloudIds.map((c) => c.trim()).filter((c) => c !== '');
+  const t0 = performance.now();
   let res: Response;
   try {
     res = await fetch(
@@ -532,6 +533,10 @@ export async function fetchMessages(
     throw new Error(OFFLINE_MSG);
   }
   const body = await readJson(res);
+  durees.mots = {
+    clientMs: Math.round(performance.now() - t0),
+    serveur: chronoServeur(body),
+  };
   if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
   // Compteurs du diagnostic : combien de lignes le serveur a LU, combien il
   // en a gardé pour moi. Sans eux, « 0 mot » se confond avec « aucun mot ».
@@ -555,6 +560,28 @@ export interface TriMots {
 let dernierTriMots: TriMots = { read: null, kept: null, detail: '' };
 export function triMots(): TriMots {
   return dernierTriMots;
+}
+
+/**
+ * DURÉES DU DERNIER CHARGEMENT (b341) : ce que l'app a mesuré (aller-retour
+ * complet) et ce que le serveur a chronométré étape par étape (champ `t` de
+ * sa réponse — auth, lectures, total, et sa région d'exécution). Affiché
+ * uniquement sur l'écran ?diag=1 : c'est la fin des corrections de lenteur
+ * à l'aveugle.
+ */
+export interface DureeAppel {
+  clientMs: number;
+  serveur: Record<string, number | string> | null;
+}
+const durees: { historique?: DureeAppel; mots?: DureeAppel } = {};
+export function dureesLive(): { historique?: DureeAppel; mots?: DureeAppel } {
+  return durees;
+}
+function chronoServeur(body: unknown): Record<string, number | string> | null {
+  const t = (body as { t?: unknown })?.t;
+  return t !== null && typeof t === 'object'
+    ? (t as Record<string, number | string>)
+    : null;
 }
 
 /** Messages du public regroupés par morceau. */
@@ -638,6 +665,7 @@ export async function fetchHistoriqueLive(
   const q =
     (names.length > 0 ? `&performer=${encodeURIComponent(names.join(','))}` : '') +
     (cids.length > 0 ? `&bands=${encodeURIComponent(cids.join(','))}` : '');
+  const t0 = performance.now();
   let res: Response;
   try {
     res = await fetch(`/api/live-x?fn=live-stats${q}`, {
@@ -647,6 +675,10 @@ export async function fetchHistoriqueLive(
     throw new Error(OFFLINE_MSG);
   }
   const body = await readJson(res);
+  durees.historique = {
+    clientMs: Math.round(performance.now() - t0),
+    serveur: chronoServeur(body),
+  };
   if (!res.ok || body.error) {
     throw new Error(body.error ?? `Erreur ${res.status}`);
   }

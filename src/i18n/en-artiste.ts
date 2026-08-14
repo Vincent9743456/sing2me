@@ -111,6 +111,11 @@ export const EN_ARTISTE: Record<string, string> = {
   'Pourquoi c’est vide ?': 'Why is this empty?',
   'Vérification…': 'Checking…',
   'tri côté serveur': 'server-side sorting',
+  'durée — historique': 'timing — history',
+  'durée — mots du public': 'timing — audience messages',
+  '{n} ms vus par l’app': '{n} ms seen by the app',
+  '(pas de chrono serveur — vieille version déployée ?)':
+    '(no server timing — old version deployed?)',
   'lecture en échec : {d}': 'read failed: {d}',
   '{n} lus · {m} pour moi': '{n} read · {m} mine',
   'mots reçus par l’app': 'messages received by the app',

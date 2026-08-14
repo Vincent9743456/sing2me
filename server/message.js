@@ -251,18 +251,33 @@ export default async function handler(req, res) {
       // Tout part ensemble ; rien n'est lu si l'appelant n'est pas identifié.
       const premierSelect =
         'author,body,song_title,setlist_name,performer,band_id,live_id,concert_id,concert_title,created_at';
+      // b341 : chronométrage renvoyé dans la réponse (champ `t`, ms) —
+      // lisible sur l'écran ?diag=1.
+      const t0 = Date.now();
+      const chrono = { region: process.env.VERCEL_REGION ?? '' };
+      const mesure = (nom, p) =>
+        p.then((r) => {
+          chrono[nom] = Date.now() - t0;
+          return r;
+        });
       const [qui, premierEssai, livesRes] = await Promise.all([
         // b192 : le COMPTE identifie l'appelant ; l'ancienne clé reste
         // acceptée le temps que les applications se mettent à jour.
-        identifie(req),
-        fetch(
-          `${base}/rest/v1/live_messages?select=${premierSelect}&order=created_at.desc&limit=400`,
-          { headers: sbHeaders(false) },
-        ).catch(() => null),
-        fetch(
-          `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id&limit=300`,
-          { headers: sbHeaders(false) },
-        ).catch(() => null),
+        mesure('auth', identifie(req)),
+        mesure(
+          'mots',
+          fetch(
+            `${base}/rest/v1/live_messages?select=${premierSelect}&order=created_at.desc&limit=400`,
+            { headers: sbHeaders(false) },
+          ).catch(() => null),
+        ),
+        mesure(
+          'lives',
+          fetch(
+            `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id&limit=300`,
+            { headers: sbHeaders(false) },
+          ).catch(() => null),
+        ),
       ]);
       if (!qui.ok) {
         refuse(res);
@@ -407,7 +422,10 @@ export default async function handler(req, res) {
             });
       // `read` / `kept` : de quoi distinguer « aucun mot en base » de « des
       // mots existent mais aucun ne me revient » (diagnostic, b191).
-      res.status(200).json({ messages, read: all.length, kept: messages.length });
+      chrono.total = Date.now() - t0;
+      res
+        .status(200)
+        .json({ t: chrono, messages, read: all.length, kept: messages.length });
       return;
     }
 

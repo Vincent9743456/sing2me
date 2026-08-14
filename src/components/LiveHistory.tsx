@@ -19,7 +19,7 @@ import { StageList } from './StageList';
 import { usePastLives } from './usePastLives';
 import { MojoLoader } from './MojoLoader';
 import { t } from '../i18n';
-import { fetchDiag, triMots } from '../lib/live';
+import { dureesLive, fetchDiag, triMots } from '../lib/live';
 import { PastLive } from '../lib/pastlives';
 import { useStore } from '../store';
 
@@ -398,6 +398,34 @@ function Diagnostic({
                 : t('{n} lus · {m} pour moi', { n: tri.read, m: tri.kept ?? 0 })}
             </span>
           </div>
+          {/* b341 — où partent les secondes du chargement : durée vue par
+              l'app, et chrono étape par étape du serveur (avec sa région
+              d'exécution). Le delta entre les deux = réseau + démarrage à
+              froid Vercel. */}
+          {(['historique', 'mots'] as const).map((quoi) => {
+            const d = dureesLive()[quoi];
+            if (!d) return null;
+            const s = d.serveur;
+            const etapes =
+              s === null
+                ? t('(pas de chrono serveur — vieille version déployée ?)')
+                : Object.entries(s)
+                    .filter(([k]) => k !== 'region')
+                    .map(([k, v]) => `${k} ${String(v)}`)
+                    .join(' · ') + (s.region ? ` · ${String(s.region)}` : '');
+            return (
+              <div className="strow" key={quoi}>
+                <span style={{ flex: 1, fontSize: '0.8rem' }}>
+                  {quoi === 'historique'
+                    ? t('durée — historique')
+                    : t('durée — mots du public')}
+                </span>
+                <span className="stauthor" style={{ fontSize: '0.78rem' }}>
+                  {t('{n} ms vus par l’app', { n: d.clientMs })} — {etapes}
+                </span>
+              </div>
+            );
+          })}
           {data.tables.map((tb) => (
             <div className="strow" key={tb.table}>
               <span style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}>

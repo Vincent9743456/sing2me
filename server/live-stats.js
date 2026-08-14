@@ -33,21 +33,40 @@ export default async function handler(req, res) {
     // lue que si l'appelant est bien identifié.
     const select =
       'song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,setlist_name,session_id';
+    // b341 : chaque étape est chronométrée et renvoyée dans la réponse
+    // (champ `t`, en ms) — lisible sur l'écran ?diag=1. Trois lots de
+    // corrections « logiques » sans mesure, ça suffit.
+    const t0 = Date.now();
+    const chrono = { region: process.env.VERCEL_REGION ?? '' };
+    const mesure = (nom, p) =>
+      p.then((r) => {
+        chrono[nom] = Date.now() - t0;
+        return r;
+      });
     const [qui, livesRes, statsRes, sessionsRes] = await Promise.all([
       // b192 : le COMPTE identifie l'appelant ; l'ancienne clé reste
       // acceptée le temps que les applications installées se mettent à jour.
-      identifie(req),
-      fetch(
-        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id,setlist_name,concert,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
-        { headers: sbHeaders() },
-      ).catch(() => null),
-      fetch(`${base}/rest/v1/live_stats?select=${select}&order=played_at.desc&limit=800`, {
-        headers: sbHeaders(),
-      }).catch(() => null),
-      fetch(
-        `${base}/rest/v1/live_sessions?select=id,artist_name,started_at,ended_at,uniques&order=started_at.desc&limit=200`,
-        { headers: sbHeaders() },
-      ).catch(() => null),
+      mesure('auth', identifie(req)),
+      mesure(
+        'lives',
+        fetch(
+          `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id,setlist_name,concert,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
+          { headers: sbHeaders() },
+        ).catch(() => null),
+      ),
+      mesure(
+        'stats',
+        fetch(`${base}/rest/v1/live_stats?select=${select}&order=played_at.desc&limit=800`, {
+          headers: sbHeaders(),
+        }).catch(() => null),
+      ),
+      mesure(
+        'sessions',
+        fetch(
+          `${base}/rest/v1/live_sessions?select=id,artist_name,started_at,ended_at,uniques&order=started_at.desc&limit=200`,
+          { headers: sbHeaders() },
+        ).catch(() => null),
+      ),
     ]);
     if (!qui.ok) {
       refuse(res);
@@ -180,7 +199,9 @@ export default async function handler(req, res) {
     }
     if (!Array.isArray(sessions)) sessions = [];
 
+    chrono.total = Date.now() - t0;
     res.status(200).json({
+      t: chrono,
       stats,
       // Une séance m'appartient si elle porte l'un de MES lives, ou si elle
       // est à mon nom (archives d'avant les lives enregistrés).
