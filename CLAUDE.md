@@ -692,8 +692,12 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     « Meilleure version ? », en production depuis des mois. La mise en
     forme reste 100 % locale (aucun appel IA dans ce flux). L'aller-retour
     web (b320-b332 : 302 anti-lien-universel, onglet nommé, filet « copier
-    le lien ») est RETIRÉ ; `api/aller.js` reste déployé tant que des
-    bundles b333 circulent.
+    le lien ») est RETIRÉ, et ses restes nettoyés en b335 (`api/aller.js`
+    supprimé — la fenêtre b333 n'a duré que quelques heures de test —,
+    `ecrireMorceauImmediat` retirée du store, clés i18n orphelines).
+    Le vidage d'enregistrement sur `pagehide` (b323), lui, RESTE : il
+    protège tout état contre une mise en arrière-plan, pas seulement les
+    brouillons.
 - **Modèle économique — « Licence Scène »** (arbitrage fondateurs, août
   2026 ; remplace TOUT modèle antérieur, dont le Premium individuel à
   2,99 € désormais abandonné ; pas encore implémenté) :
