@@ -69,6 +69,18 @@ export default async function handler(req, res) {
       ),
     ]);
     if (!qui.ok) {
+      // b344 : un cron Vercel appelle cette fonction toutes les 5 minutes,
+      // SANS identité — uniquement pour la garder CHAUDE (instance, DNS,
+      // connexions TLS vers Supabase : les lectures ci-dessus sont déjà
+      // parties, c'est exactement ce qui coûtait ~2 s par vague sur une
+      // instance froide, capture de Vincent du 15 août). On lui répond 200
+      // pour que le tableau de bord Vercel ne compte pas des échecs ;
+      // AUCUNE donnée ne part — un appelant ordinaire reste refusé.
+      const ua = String(req.headers['user-agent'] ?? '');
+      if (ua.includes('vercel-cron')) {
+        res.status(200).json({ warm: true });
+        return;
+      }
       refuse(res);
       return;
     }
