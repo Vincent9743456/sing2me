@@ -49,6 +49,7 @@
   /* Fonctionnelles */
   --chord: #5bd0e8;         /* cyan — les accords, et RIEN d'autre */
   --danger: #f4677e;        /* rouge de la charte — l'erreur */
+  --danger-soft: rgba(244, 103, 126, 0.14);
   /* Le direct porte l'AMBRE (charte : « ambre — actions, accent, état
      LIVE »). Il ne se distingue donc jamais par la couleur seule : c'est le
      mot « LIVE » et le point qui bat qui le disent, comme l'exige la charte
@@ -146,6 +147,7 @@
   --accent-dark: #d9ab63;
   --chord: #0e6a80;
   --danger: #c0304a;
+  --danger-soft: rgba(192, 48, 74, 0.12);
   --live: #9a6700;
   --live-soft: #7f5500;
   --ok: #0d7a53;
@@ -4090,4 +4092,78 @@ a.pg-musicien:focus-visible .pg-nom {
     animation: none;
     width: 45%;
   }
+}
+
+/* ============================================================
+   Live — refonte de la modale (b345). Deux écrans : AVANT (segmenté +
+   Démarrer) et PENDANT (bandeau d'état, QR au centre, Pause en action
+   courante, Terminer en lien discret). Cibles ≥ 48px : on joue d'une
+   main, à bout de bras, dans le noir.
+   ============================================================ */
+.seglive {
+  display: flex;
+  max-width: 320px;
+  margin: 4px auto 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.seglive button {
+  flex: 1;
+  min-height: 48px;
+  background: var(--surface-high);
+  color: var(--text-dim);
+  border: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.seglive button.actif {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.livebandeau {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  border-radius: 12px;
+  margin: 2px 0 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.livebandeau .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.livebandeau.on {
+  background: var(--danger-soft);
+}
+/* Le live se signale par un mot ET un mouvement, jamais par la couleur
+   seule (charte) : la pastille pulse. */
+.livebandeau.on .dot {
+  background: var(--danger);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.livebandeau.pause {
+  background: var(--warn-soft);
+}
+.livebandeau.pause .dot {
+  background: var(--warn);
+}
+/* Action destructive en LIEN, jamais en gros bouton : elle ne doit pas
+   pouvoir se confondre avec Pause/Reprendre (une erreur de tap sur scène
+   coûte toute la salle). */
+.linklike {
+  background: none;
+  border: 0;
+  padding: 12px 16px;
+  min-height: 48px;
+  color: var(--text-dim);
+  text-decoration: underline;
+  font-size: 0.95rem;
+  cursor: pointer;
 }

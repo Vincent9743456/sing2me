@@ -1459,7 +1459,25 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **LE DIRECT S'APPELLE « LIVE », PLUS « ON AIR »** (b257-b258, Vincent :
   « il n'y a plus de mode on air, maintenant c'est le mode live »). Le bouton
   dit GO LIVE, l'onglet dit Live : rien de ce que l'utilisateur lit ne peut
-  porter un troisième nom. Plus AUCUNE occurrence visible — ni dans l'app
+  porter un troisième nom.
+  **AMENDÉ b345 (refonte UX de la modale live, cahier de Vincent)** : « live »
+  est LE mot, partout dans ce périmètre — le bouton dit désormais « ● Live »
+  (GO LIVE disparaît), les actions disent « Démarrer le live / Terminer le
+  live », et « direct » quitte l'interface de la modale. La refonte : deux
+  écrans (AVANT : segmenté Concert|Répétition + conséquence écrite + Démarrer
+  pleine largeur ; PENDANT : bandeau EN LIVE/EN PAUSE avec durée et
+  spectateurs, QR au centre en élément principal, Pause/Reprendre en action
+  courante, **Terminer en lien discret + confirmation obligatoire** — jamais
+  le poids d'une action courante, une erreur de tap sur scène coûte la
+  salle). La PAUSE est le mécanisme anti-rescan (spectateurs connectés,
+  affichage vidé) : en pause et en répétition, les lectures PUBLIQUES du
+  serveur ne transportent plus aucune parole (purge api/live.js — le sondage
+  du lanceur `?id=` et le suivi musiciens `?band=` gardent tout). Le QR n'a
+  plus de bouton dans la modale : il vit dans « Page publique / QR » (b242)
+  et s'affiche seul pendant la session. Collision au démarrage : AVERTIR
+  sans bloquer (deux lives du même concert s'additionnent, b207). Arbitrages
+  Vincent b345 : vocabulaire tout-live, Solo reste un choix du même
+  sélecteur, purge serveur autorisée, avertissement de collision. Plus AUCUNE occurrence visible — ni dans l'app
   (les deux langues), ni dans la landing, ni dans `robots.txt`. Le bloc de
   réglage « Mode ON AIR » du profil artiste a disparu avec : depuis b192 il
   n'y avait plus rien à saisir, donc plus rien à expliquer.
