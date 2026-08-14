@@ -4,6 +4,10 @@
     {
       "path": "/api/live",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/live-stats",
+      "schedule": "*/5 * * * *"
     }
   ],
   "rewrites": [
