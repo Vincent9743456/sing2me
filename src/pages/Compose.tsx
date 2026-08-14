@@ -58,7 +58,23 @@ import { extractUgLinks } from './Import';
  * sur UG sans réveiller l'app.
  */
 function urlRechercheUg(query: string): string {
-  return `/api/aller?q=${encodeURIComponent(query)}`;
+  // `t` : anti-cache (b332) — une 302 ou une restauration d'onglet ne doit
+  // jamais resservir la recherche PRÉCÉDENTE.
+  return `/api/aller?q=${encodeURIComponent(query)}&t=${Date.now()}`;
+}
+
+/**
+ * OUVERTURE DANS UN ONGLET NOMMÉ (b332, constat de Vincent : « il me remet
+ * la chanson sur laquelle j'étais tout à l'heure ») : avec `_blank`, iOS
+ * RE-PRÉSENTAIT le volet navigateur de la recherche précédente — jamais
+ * fermé — tel quel, sans charger la nouvelle adresse. Un onglet NOMMÉ est
+ * réutilisé ET re-navigué vers la nouvelle URL : l'écran est donc toujours
+ * rafraîchi. `w.opener = null` garde l'isolation que `noopener` donnait
+ * (la page ouverte ne peut pas piloter mojosong).
+ */
+function ouvrirRechercheUg(query: string): void {
+  const w = window.open(urlRechercheUg(query), 'mojosong_ug');
+  if (w) w.opener = null;
 }
 
 /** L'adresse UG en clair — pour le filet « copier le lien » (b321) : collée
@@ -107,7 +123,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
     // l'écriture différée) est contrée par une écriture disque SYNCHRONE
     // dans le même geste, plus le vidage sur pagehide.
     ecrireMorceauImmediat(brouillon);
-    window.open(urlRechercheUg(q), '_blank', 'noopener');
+    ouvrirRechercheUg(q);
     navigate(`/creer/${brouillon.id}`);
   }
 
@@ -324,9 +340,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
               ouvert la page. Ce bouton ne sert qu'à la rouvrir si besoin. */}
           <button
             className="btn ghost block"
-            onClick={() =>
-              window.open(urlRechercheUg(draft.title), '_blank', 'noopener')
-            }
+            onClick={() => ouvrirRechercheUg(draft.title)}
           >
             ↗ {t('Ouvrir la recherche sur Ultimate Guitar')}
           </button>
