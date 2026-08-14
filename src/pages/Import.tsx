@@ -1168,11 +1168,15 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
             le nom s'affiche (texte seul, jamais de logo). */}
         <button
           className="btn ghost block"
-          style={{ marginBottom: 'var(--sp-3)' }}
           onClick={() => navigate('/creer')}
         >
           🔎 {t('Chercher sur Ultimate Guitar')}
         </button>
+        {/* Une ligne pour situer le parcours (b331) : le détail des étapes
+            vit sur l'écran de recherche lui-même. */}
+        <p className="help" style={{ marginTop: 4, marginBottom: 'var(--sp-3)' }}>
+          {t('Cherche, copie la partition (ou son lien), reviens la coller : elle se met en forme toute seule.')}
+        </p>
 
         {RECHERCHE_SERVEUR && method === 'ug' && ugResults !== null && ugResults.length > 0 && (
           <div
