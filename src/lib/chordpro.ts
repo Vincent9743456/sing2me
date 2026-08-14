@@ -123,6 +123,21 @@ export function parseContent(content: string): ParsedLine[] {
  * musicien, jamais une parole : elle se retire à l'import ET de la
  * préparation publique (pour les morceaux déjà importés).
  */
+/**
+ * LIGNE DE CRÉDITS / D'EN-TÊTE DE LA SOURCE (b333, demande de Vincent : « la
+ * chanson doit commencer avec les accords ou les paroles ») : « Transcrit par
+ * X », « Tabbed by… », « Auteurs: … », « Musique: … », « Accorder: E A D G B E »,
+ * « Difficulté: … »… Des informations de la page d'origine, pas de la
+ * partition. Motifs STRICTS — un libellé de crédit reconnu, jamais une
+ * heuristique sur du texte libre : une vraie parole ne doit jamais partir.
+ */
+const CREDITS_RE =
+  /^\s*(?:(?:transcrit|arrangé|arrangee?|adapté)\s+par\b|(?:transcribed|tabbed|arranged|submitted)\s+by\b|(?:auteurs?|compositeurs?|paroles(?:\s+et\s+musique)?|musique|interprètes?|artiste|album|ann[ée]e)\s*:\s*\S|(?:written|music|lyrics|words)\s+by\b|(?:author|composer|difficult[éy]|tuning|accordage|accorder)\s*:)/i;
+
+export function estLigneDeCredits(line: string): boolean {
+  return CREDITS_RE.test(line);
+}
+
 export function estDefinitionAccord(line: string): boolean {
   const m = /^\s*(\S+)\s*[:=]\s*([0-9xXoO][0-9xXoO ]{2,12})\s*$/.exec(line);
   if (!m) return false;
@@ -138,6 +153,9 @@ export function stripChords(content: string): string {
     }
     if (isPlainChordLine(src)) continue;
     if (estDefinitionAccord(src)) continue;
+    // Crédits de la source, restés dans les morceaux importés avant b333 :
+    // le public n'a pas à lire « Transcrit par… ».
+    if (estLigneDeCredits(src)) continue;
     // Trait de séparation (« ----- », « _____ ») : de la mise en page de la
     // source, pas une parole (b328).
     if (/^\s*[-_=—–]{3,}\s*$/.test(src)) continue;

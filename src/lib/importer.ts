@@ -9,7 +9,7 @@
  *    résumé de structure en tête de partition ; les paroles restent un bloc
  *    continu.
  */
-import { estDefinitionAccord } from './chordpro';
+import { estDefinitionAccord, estLigneDeCredits } from './chordpro';
 import { extractChordSequence } from './model';
 import {
   ligneDeSection,
@@ -363,7 +363,10 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
       // Notes de doigt\u00e9s (\u00ab Bb*: 1133xx \u00bb) : la note de bas de page d'UG \u2014
       // une info de mise en page, pas une parole ni un accord jou\u00e9. Nettoy\u00e9e
       // \u00e0 l'import (b328, demande de Vincent).
-      .filter((l) => !estDefinitionAccord(l)),
+      .filter((l) => !estDefinitionAccord(l))
+      // Cr\u00e9dits de la source (\u00ab Transcrit par\u2026 \u00bb, \u00ab Auteurs: \u2026 \u00bb) : la
+      // chanson commence aux accords ou aux paroles (b333).
+      .filter((l) => !estLigneDeCredits(l)),
   );
 
   // Une "zone" par en-tête rencontré ; les paroles restent continues.
