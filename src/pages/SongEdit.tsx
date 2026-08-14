@@ -209,6 +209,45 @@ export function SongEdit({ id }: { id: string | null }) {
     commitSave('current');
   }
 
+  /** QUELQUE CHOSE a-t-il changé depuis l'ouverture de l'éditeur ? Tous les
+   *  champs édités comptent — pas seulement la partition. */
+  function modifie(): boolean {
+    if (!existing) return true;
+    if (partitionChanged()) return true;
+    const v = existing.versions.find((x) => x.id === draft.activeVersionId);
+    const tagsDraft = tagsText
+      .split(/[,;]/)
+      .map((x) => x.trim())
+      .filter((x) => x !== '')
+      .join(',');
+    return (
+      draft.title !== existing.title ||
+      draft.artist !== existing.artist ||
+      (draft.structureNotes ?? '') !== (existing.structureNotes ?? '') ||
+      parseDuration(durationText) !== existing.durationSec ||
+      tagsDraft !== existing.tags.join(',') ||
+      (versionName.trim() !== '' && versionName.trim() !== (v?.name ?? '')) ||
+      versionBandId !== (v?.bandId ?? '')
+    );
+  }
+
+  /**
+   * « VOIR LA PARTITION » ENREGISTRE D'ABORD (b348, perte signalée par
+   * Vincent : modifier, ouvrir la partition sans « Enregistrer », fermer —
+   * les modifications étaient perdues en silence). Ce bouton emprunte le
+   * MÊME chemin qu'« Enregistrer » (titre requis, question de portée quand
+   * le morceau a plusieurs versions), qui se termine déjà sur la partition.
+   * Sans modification, on ne fait que consulter — et un bouton qui consulte
+   * n'écrit rien (b243).
+   */
+  function voirPartition() {
+    if (!modifie()) {
+      navigate(`/song/${draft.id}`);
+      return;
+    }
+    onSave();
+  }
+
   // La suppression passe par la feuille commune (b239) : c'est elle qui sait
   // qu'un morceau venu d'un groupe ne s'efface pas, et qu'un morceau
   // programmé par le groupe ne se supprime pas du tout.
@@ -461,10 +500,7 @@ export function SongEdit({ id }: { id: string | null }) {
         {!isNew && (
           <>
             <div className="spacer" />
-            <button
-              className="btn ghost block"
-              onClick={() => navigate(`/song/${draft.id}`)}
-            >
+            <button className="btn ghost block" onClick={voirPartition}>
               <Icon name="eye" size={15} /> {t('Voir la partition')}
             </button>
             <div className="spacer" />
