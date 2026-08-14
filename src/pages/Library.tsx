@@ -13,6 +13,7 @@ import { BackupNudge } from '../components/BackupNudge';
 import { EXAMPLE_TAG } from '../seed';
 import { Empty, TopBar } from '../components/ui';
 import { t } from '../i18n';
+import { replier } from '../lib/recherche';
 
 /** Ajout / retrait d'un morceau dans les setlists, sans quitter la liste. */
 function SetlistPicker({
@@ -398,7 +399,9 @@ export function Library() {
   }, [songs, setlists, bandIndex]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    // Recherche repliée (b337) : accents, casse et ponctuation ne comptent
+    // pas — « la bas » trouve « Là-Bas ».
+    const q = replier(query);
     const byTitle = (a: (typeof songs)[number], b: (typeof songs)[number]) =>
       a.title.localeCompare(b.title, 'fr');
     return [...songs]
@@ -455,9 +458,9 @@ export function Library() {
       .filter(
         (s) =>
           q === '' ||
-          s.title.toLowerCase().includes(q) ||
-          s.artist.toLowerCase().includes(q) ||
-          s.tags.some((t) => t.toLowerCase().includes(q)),
+          replier(s.title).includes(q) ||
+          replier(s.artist).includes(q) ||
+          s.tags.some((t) => replier(t).includes(q)),
       );
   }, [
     songs,

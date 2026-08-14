@@ -23,6 +23,7 @@ import {
 } from '../lib/bands';
 import { findSameSong, songKey } from '../lib/importer';
 import { duplicateVersion, switchVersion, versionForBand } from '../lib/model';
+import { replier } from '../lib/recherche';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { Song } from '../types';
@@ -366,14 +367,16 @@ function SongPicker({
 }) {
   const [q, setQ] = useState('');
   const list = useMemo(() => {
-    const needle = q.trim().toLowerCase();
+    // Recherche repliée (b337) : même règle que la bibliothèque
+    // (src/lib/recherche.ts) — accents, casse et ponctuation ne comptent pas.
+    const needle = replier(q);
     return [...songs]
       .filter((s) => s.idea !== true)
       .filter(
         (s) =>
           needle === '' ||
-          s.title.toLowerCase().includes(needle) ||
-          s.artist.toLowerCase().includes(needle),
+          replier(s.title).includes(needle) ||
+          replier(s.artist).includes(needle),
       )
       .sort((a, b) => a.title.localeCompare(b.title, 'fr'));
   }, [songs, q]);
