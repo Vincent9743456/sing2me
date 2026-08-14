@@ -160,6 +160,37 @@ export const EN_COMPTE: Record<string, string> = {
   '🔴 Démarrer le direct': '🔴 Start the live session',
   '🔴 En direct — le public voit les paroles, les musiciens leur partition.': '🔴 Live — the audience sees the lyrics, musicians see their sheet.',
 
+  // Refonte de la modale live (b345)
+  'Le groupe': 'The band',
+  'Le public voit les paroles du morceau en cours.':
+    'The audience sees the lyrics of the current song.',
+  'Seuls les musiciens du groupe suivent.':
+    'Only the band’s musicians follow along.',
+  'Démarrer la répétition': 'Start the rehearsal',
+  'Démarrer le live': 'Start the live',
+  'Les musiciens du groupe suivent automatiquement.':
+    'Band musicians follow along automatically.',
+  'EN LIVE': 'LIVE',
+  'EN PAUSE': 'PAUSED',
+  'Les spectateurs restent connectés, l’affichage est vide.':
+    'Viewers stay connected; the display is blank.',
+  'QR du live': 'Live QR',
+  'Copié ✓': 'Copied ✓',
+  '⏳…': '⏳…',
+  'Terminer le live': 'End the live',
+  'Le serveur n’a pas répondu. Tu peux couper ici : ton téléphone sort du live, et l’application préviendra le serveur dès qu’elle y arrive.':
+    'The server didn’t answer. You can cut here: your phone leaves the live, and the app will tell the server as soon as it can reach it.',
+  'Terminer quand même': 'End anyway',
+  'Terminer le live ?': 'End the live?',
+  'Les spectateurs seront déconnectés et devront rescanner.':
+    'Viewers will be disconnected and will need to rescan.',
+  '{name} est déjà en live': '{name} is already live',
+  'Un autre membre a déjà lancé un live pour ce groupe. En démarrer un deuxième est possible : les chiffres du concert s’additionnent.':
+    'Another member has already started a live for this band. Starting a second one is possible: the gig’s numbers add up.',
+  'Démarrer quand même': 'Start anyway',
+  'Live en cours — gérer': 'Live in progress — manage',
+  'Passer en live': 'Go live',
+
   // Settings.tsx — reprendre mes partitions (b220)
   'Reprendre mes partitions': 'Redo my charts',
   'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs et setlists restent tels quels.':

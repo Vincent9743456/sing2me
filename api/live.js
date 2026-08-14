@@ -441,6 +441,25 @@ export default async function handler(req, res) {
         await closeLive(base, row);
         row = { ...row, status: 'off' };
       }
+      /*
+       * PURGE EN PAUSE ET EN RÉPÉTITION (b345, refonte du live) : sur une
+       * lecture PUBLIQUE (par adresse, nom ou code — jamais par `id`, le
+       * sondage du lanceur, ni par `band`, le suivi des musiciens), une
+       * session en pause ou en répétition ne transporte AUCUNE parole. Le
+       * client cachait déjà l'affichage ; désormais la donnée ne circule
+       * plus du tout — c'est la seule façon de garantir « rien en mémoire »
+       * chez le spectateur (l'état poussé au prochain sondage remplace le
+       * sien). `bandSong` reste : c'est le canal des musiciens, l'entracte
+       * ne les concerne pas.
+       */
+      const lecturePublique = !req.query?.id && !req.query?.band;
+      if (
+        row &&
+        lecturePublique &&
+        (row.status === 'pause' || row.mode === 'repet')
+      ) {
+        row = { ...row, song: null, setlist_count: 0 };
+      }
       const wantSetlist =
         req.query?.setlist === '1' || req.query?.setlist === 'true';
       if (row && row.status !== 'off') {
@@ -455,6 +474,23 @@ export default async function handler(req, res) {
           res.status(200).json({
             setlist: visible && Array.isArray(full.setlist) ? full.setlist : [],
           });
+          return;
+        }
+        // Le LANCEUR (lecture par identifiant) reçoit en plus le nombre de
+        // spectateurs uniques de la session (b345) — bandeau EN LIVE.
+        if (req.query?.id && row.session_id) {
+          const vue = publicView(row);
+          try {
+            const c = await fetch(
+              `${base}/rest/v1/live_attendance?session_id=eq.${encodeURIComponent(row.session_id)}&select=device_id`,
+              { headers: { ...sbHeaders(), prefer: 'count=exact' } },
+            );
+            const m = /\/(\d+)$/.exec(c.headers.get('content-range') || '');
+            if (m) vue.viewers = parseInt(m[1], 10);
+          } catch {
+            /* comptage best-effort : le bandeau s'en passe */
+          }
+          res.status(200).json(vue);
           return;
         }
         res.status(200).json(publicView(row));

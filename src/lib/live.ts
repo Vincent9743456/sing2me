@@ -62,6 +62,9 @@ export interface LiveState {
   bandId: string;
   /** Nom de la personne qui a lancé le direct (affiché aux membres). */
   startedBy: string;
+  /** Spectateurs uniques de la session (b345) — renvoyé uniquement au
+   *  LANCEUR (lecture par identifiant) ; absent des lectures publiques. */
+  viewers?: number;
 }
 
 export interface LiveStat {
@@ -218,6 +221,7 @@ export async function fetchLiveById(id: string): Promise<LiveState> {
     updatedAt: body.updatedAt ?? null,
     bandId: typeof body.bandId === 'string' ? body.bandId : '',
     startedBy: typeof body.startedBy === 'string' ? body.startedBy : '',
+    viewers: typeof body.viewers === 'number' ? body.viewers : undefined,
   };
 }
 

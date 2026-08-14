@@ -16,6 +16,7 @@ import React, {
 import {
   fetchLive,
   fetchLiveById,
+  fetchLiveForBands,
   fetchLiveStats,
   fetchMessages,
   heartTotals,
@@ -50,6 +51,8 @@ import {
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { t } from '../i18n';
+import { useWakeLock } from '../lib/wakelock';
+import { ConfirmSheet } from './Feedback';
 import { Modal } from './ui';
 
 /**
@@ -155,6 +158,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   }, [who, concertsDuJour.map((c) => c.id).join(',')]);
   const todayConcert = concertsDuJour.find((c) => c.id === concertId) ?? null;
 
+  // Les groupes qu'un live peut porter (un groupe masqué au public n'en
+  // porte jamais, b227) — sert au sélecteur ET à la garde de collision.
+  const bandsVisibles = bands.filter((b) => b.hiddenFromPublic !== true);
   const performerBase =
     who === 'solo'
       ? artist.name !== ''
@@ -184,6 +190,14 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState('');
+  // Refonte b345 : confirmation avant Terminer, avertissement de collision
+  // (un autre membre déjà en live), copie du lien, durée écoulée et
+  // spectateurs de la session.
+  const [confirmFin, setConfirmFin] = useState(false);
+  const [collision, setCollision] = useState<string | null>(null);
+  const [copie, setCopie] = useState(false);
+  const [dureeTxt, setDureeTxt] = useState('');
+  const [viewers, setViewers] = useState<number | null>(null);
   // Nom public dictable, annoncé au micro pendant le concert
   // (« dis-leur livemyband.fr/tonnom ») — demande Vincent, b136.
   const [publicName, setPublicName] = useState(() => cachedPublicName());
@@ -243,6 +257,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
           : await fetchLive(ref?.joinCode ?? '');
         if (cancelled) return;
         setHearts(s.hearts);
+        setViewers(typeof s.viewers === 'number' ? s.viewers : null);
         // Le serveur peut couper un direct oublié (4 h, ou 1 h sans
         // partition) : on répercute l'arrêt sur l'UI du leader — et on
         // rapatrie les ❤ du direct, que personne n'aurait sinon récupérés
@@ -435,6 +450,23 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     // Relancer un direct ANNULE une clôture restée en attente (b217) :
     // l'artiste vient de dire l'inverse, on ne ferme pas derrière lui.
     if (next !== 'off') oublierCloture();
+    // Durée écoulée du bandeau (b345) : posée au VRAI démarrage (jamais à
+    // la reprise d'une pause), effacée à la fin. Clé locale, jamais
+    // synchronisée — c'est l'horloge de CE téléphone.
+    if (next === 'on' && statusRef.current === 'off') {
+      try {
+        localStorage.setItem('sing2me/onairStart', String(Date.now()));
+      } catch {
+        /* sans stockage, pas de durée affichée — rien de cassé */
+      }
+    }
+    if (next === 'off') {
+      try {
+        localStorage.removeItem('sing2me/onairStart');
+      } catch {
+        /* idem */
+      }
+    }
     try {
       // Passage en direct : la fiche publique est publiée/rafraîchie et le
       // nom dictable réservé automatiquement s'il manquait (b136) — le QR
@@ -578,6 +610,78 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     setCurrent(null);
   }
 
+  /**
+   * Démarrage avec garde de collision (b345, arbitrage Vincent : avertir
+   * sans bloquer). Si un AUTRE membre a déjà lancé le live du groupe, on le
+   * dit avant de doubler — deux lives du même concert restent légitimes
+   * (b207, les chiffres s'additionnent), mais pas sans le savoir.
+   * Vérification best-effort : réseau muet ou lent (2,5 s), le live part.
+   */
+  async function demarrer() {
+    const choisi = who === 'solo' ? null : bands.find((x) => x.id === who);
+    const cid = (choisi?.cloudId ?? '').trim();
+    if (choisi && choisi.hiddenFromPublic !== true && cid !== '') {
+      setBusy(true);
+      try {
+        const autre = await Promise.race([
+          fetchLiveForBands([cid]),
+          new Promise<null>((r) => window.setTimeout(() => r(null), 2500)),
+        ]);
+        const ref = currentLiveRef();
+        if (autre !== null && autre.id !== '' && autre.id !== (ref?.liveId ?? '')) {
+          setBusy(false);
+          setCollision(choisi.name || t('Le groupe'));
+          return;
+        }
+      } catch {
+        /* vérification best-effort */
+      }
+      setBusy(false);
+    }
+    void act('on');
+  }
+
+  async function copierUrl() {
+    try {
+      await navigator.clipboard.writeText(qrUrl);
+      setCopie(true);
+      window.setTimeout(() => setCopie(false), 1600);
+    } catch {
+      /* presse-papiers indisponible : le lien reste lisible à l'écran */
+    }
+  }
+
+  // L'écran de l'artiste ne s'endort pas tant que le panneau live est
+  // ouvert en session (b345) — même filet que le mode scène (b318).
+  useWakeLock(panel && status !== 'off');
+
+  // Le QR est l'élément PRINCIPAL de l'écran de session (b345) : il
+  // s'affiche tout seul, plus de bouton à trouver.
+  useEffect(() => {
+    if (panel && status !== 'off' && qr === null) void showQr();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panel, status]);
+
+  // Durée écoulée mm:ss (h:mm:ss après une heure) du bandeau EN LIVE.
+  useEffect(() => {
+    if (!panel || status !== 'on') return;
+    const maj = () => {
+      const t0 = Number(localStorage.getItem('sing2me/onairStart') ?? '');
+      if (!Number.isFinite(t0) || t0 <= 0) {
+        setDureeTxt('');
+        return;
+      }
+      const s = Math.max(0, Math.floor((Date.now() - t0) / 1000));
+      const mn = Math.floor(s / 60);
+      const h = Math.floor(mn / 60);
+      const two = (n: number) => String(n).padStart(2, '0');
+      setDureeTxt(h > 0 ? `${h}:${two(mn % 60)}:${two(s % 60)}` : `${mn}:${two(s % 60)}`);
+    };
+    maj();
+    const id = window.setInterval(maj, 1000);
+    return () => window.clearInterval(id);
+  }, [panel, status]);
+
   async function showQr() {
     try {
       // QR UNIQUE ET ÉTERNEL (décision Vincent) : il encode l'adresse
@@ -600,43 +704,50 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         value={{ status, hearts, openPanel: () => setPanel(true) }}
       >
         {children}
-        {/* « Mode Live » et non plus « Mode ON AIR » (b257, remarque de
-            Vincent : « il n'y a plus de mode on air, maintenant c'est le
-            mode live »). Le bouton dit GO LIVE, l'onglet dit Live : le
-            panneau qu'ils ouvrent ne peut pas porter un autre nom. */}
+        {/* REFONTE b345 (cahier UX de Vincent) : « live » est LE mot — GO
+            LIVE et « direct » quittent l'interface de ce périmètre (amende
+            b257 ; le CODE garde ses noms, b258). Deux écrans : AVANT
+            (choisir, démarrer) et PENDANT (bandeau d'état, QR au centre,
+            Pause en action courante, Terminer en lien discret confirmé). */}
         {panel && (
-          <Modal title={t('Mode Live')} onClose={() => setPanel(false)}>
-            <p className="help" style={{ textAlign: 'center' }}>
-              {status === 'on' &&
-                (mode === 'repet'
-                  ? t(
-                      '🎸 Répétition en cours — seuls les musiciens voient le morceau ; le public, rien.',
-                    )
-                  : t(
-                      '🔴 En direct — le public voit les paroles, les musiciens leur partition.',
-                    ))}
-              {status === 'pause' &&
-                t('⏸ En pause — le public voit un écran d’attente.')}
-              {status === 'off' &&
-                t('Hors session — le QR ne montre que ta page artiste.')}
-            </p>
+          <Modal title={t('Live')} onClose={() => setPanel(false)}>
             {status === 'off' && (
-              <div className="field" style={{ maxWidth: 320, margin: '0 auto 6px' }}>
-                <label>{t('Type de session')}</label>
-                <select
-                  value={mode}
-                  onChange={(e) => setMode(e.target.value as LiveMode)}
+              <>
+                {/* Choix VISIBLE (pas un menu déroulant), conséquence
+                    écrite dessous. Le dernier choix est mémorisé. */}
+                <div
+                  className="seglive"
+                  role="radiogroup"
+                  aria-label={t('Type de session')}
                 >
-                  <option value="concert">
-                    {t('🎤 Concert — public + musiciens')}
-                  </option>
-                  <option value="repet">
-                    {t('🎸 Répétition — musiciens seulement')}
-                  </option>
-                </select>
-              </div>
+                  <button
+                    type="button"
+                    className={mode === 'concert' ? 'actif' : ''}
+                    aria-pressed={mode === 'concert'}
+                    onClick={() => setMode('concert')}
+                  >
+                    {t('Concert')}
+                  </button>
+                  <button
+                    type="button"
+                    className={mode === 'repet' ? 'actif' : ''}
+                    aria-pressed={mode === 'repet'}
+                    onClick={() => setMode('repet')}
+                  >
+                    {t('Répétition')}
+                  </button>
+                </div>
+                <p className="help" style={{ textAlign: 'center', margin: '8px 0 12px' }}>
+                  {mode === 'concert'
+                    ? t('Le public voit les paroles du morceau en cours.')
+                    : t('Seuls les musiciens du groupe suivent.')}
+                </p>
+              </>
             )}
-            {status === 'off' && (
+            {/* Sans groupe, rien à choisir : le live part en solo. Avec des
+                groupes, Solo reste un choix du MÊME sélecteur (arbitrage
+                b345 — le cahier n'en parlait pas). */}
+            {status === 'off' && bandsVisibles.length > 0 && (
               <div className="field" style={{ maxWidth: 320, margin: '0 auto 6px' }}>
                 <label>{t('Qui joue ce soir ?')}</label>
                 <select value={who} onChange={(e) => setWho(e.target.value)}>
@@ -648,13 +759,11 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                   {/* Masqué au public = pas de direct à son nom (b227).
                       Sinon le masquer ne servirait à rien : un seul concert
                       suffirait à l'exposer. */}
-                  {bands
-                    .filter((b) => b.hiddenFromPublic !== true)
-                    .map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name || t('Groupe sans nom')}
-                      </option>
-                    ))}
+                  {bandsVisibles.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name || t('Groupe sans nom')}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
@@ -678,127 +787,147 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 </select>
               </div>
             )}
-            {/* L'ADRESSE À DICTER est la seule chose à retenir (b170) :
-                c'est ce que l'artiste annonce au micro, et c'est aussi ce que
-                vise son QR. Elle ne change jamais — contrairement au code de
-                session qu'elle remplace, qui mourait avec la session. */}
-            {status !== 'off' && publicName !== '' && (
-              <div style={{ textAlign: 'center', margin: '10px 0' }}>
-                <div className="label">{t('Adresse à annoncer au public')}</div>
-                <div
-                  className="linkbox"
-                  style={{ fontSize: '1.1rem', fontWeight: 700 }}
+            {/* ÉCRAN 1 — le bouton qui fait avancer, pleine largeur. */}
+            {status === 'off' && (
+              <>
+                <button
+                  className="btn block"
+                  style={{ marginTop: 10 }}
+                  disabled={busy}
+                  onClick={() => void demarrer()}
                 >
-                  {location.host}/{publicName}
-                </div>
-              </div>
-            )}
-            <div
-              style={{
-                display: 'flex',
-                gap: 8,
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                margin: '14px 0',
-              }}
-            >
-              {status === 'off' && (
-                <button className="btn" disabled={busy} onClick={() => act('on')}>
                   {busy
                     ? t('⏳ Lancement…')
                     : mode === 'repet'
-                      ? t('🎸 Démarrer la répétition')
-                      : t('🔴 Démarrer le direct')}
+                      ? t('Démarrer la répétition')
+                      : t('Démarrer le live')}
                 </button>
-              )}
-              {status === 'on' && (
-                <button
-                  className="btn ghost"
-                  disabled={busy}
-                  onClick={() => act('pause')}
-                >
-                  {t('⏸ Pause')}
-                </button>
-              )}
-              {status === 'pause' && (
-                <button className="btn" disabled={busy} onClick={() => act('on')}>
-                  {busy ? t('⏳ Reprise…') : t('▶ Reprendre')}
-                </button>
-              )}
-              {status !== 'off' && (
-                <button
-                  className="btn danger"
-                  disabled={busy}
-                  onClick={() => act('off')}
-                >
-                  {busy ? t('⏳ Arrêt…') : t('⏹ Arrêter')}
-                </button>
-              )}
-              <button className="btn ghost" onClick={() => void showQr()}>
-                {t('Mon QR unique')}
-              </button>
-              {arretForce && (
-                <button className="btn danger" onClick={arreterIci}>
-                  {t('⏹ Arrêter quand même')}
-                </button>
-              )}
-            </div>
-            {arretForce && (
-              <p className="help" style={{ textAlign: 'center' }}>
-                {t(
-                  'Le serveur n’a pas répondu. Tu peux couper ici : ton téléphone sort du direct, et l’application préviendra le serveur dès qu’elle y arrive.',
-                )}
-              </p>
-            )}
-            {qr && (
-              <div className="qrbox">
-                <img src={qr} alt={t('QR unique de tes sessions')} />
-                <div className="linkbox">{qrUrl}</div>
-                <p className="help" style={{ textAlign: 'center' }}>
-                  <strong>
-                    {t(
-                      'Ton QR à toi, toujours le même — imprime-le une fois pour toutes.',
-                    )}
-                  </strong>
-                  <br />
-                  {t(
-                    'Concert : le public voit les paroles, un musicien (du groupe ou de passage) touche « 🎸 Je joue » pour sa partition. Répétition : seuls les musiciens voient le morceau. Hors session : ta page artiste.',
-                  )}
-                </p>
-                {qrUrl.endsWith('/live') && (
-                  <p className="help" style={{ textAlign: 'center' }}>
-                    {t(
-                      '💡 Réserve ton nom public (onglet Artiste → « Ton lien public dictable ») pour un QR à ton nom, valable pour toujours.',
-                    )}
+                {who !== 'solo' && (
+                  <p className="help" style={{ textAlign: 'center', marginTop: 8 }}>
+                    {t('Les musiciens du groupe suivent automatiquement.')}
                   </p>
                 )}
-              </div>
+              </>
+            )}
+            {/* ÉCRAN 2 — bandeau d'état, QR au centre (élément principal),
+                Pause/Reprendre en action courante, Terminer en lien discret
+                éloigné : une erreur de tap sur scène coûte toute la salle. */}
+            {status !== 'off' && (
+              <>
+                <div className={`livebandeau ${status === 'on' ? 'on' : 'pause'}`}>
+                  <span className="dot" aria-hidden="true" />
+                  <strong>{status === 'on' ? t('EN LIVE') : t('EN PAUSE')}</strong>
+                  {status === 'on' && dureeTxt !== '' && <span>{dureeTxt}</span>}
+                  {status === 'on' &&
+                    viewers !== null &&
+                    (viewers > 1 ? (
+                      <span>{t('{n} spectateurs', { n: viewers })}</span>
+                    ) : (
+                      <span>{t('{n} spectateur', { n: viewers })}</span>
+                    ))}
+                </div>
+                {status === 'pause' && (
+                  <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
+                    {t('Les spectateurs restent connectés, l’affichage est vide.')}
+                  </p>
+                )}
+                {/* Le QR reste affiché EN PAUSE : un retardataire peut
+                    rejoindre pendant l'entracte. */}
+                {qr && (
+                  <div className="qrbox">
+                    <img src={qr} alt={t('QR du live')} />
+                    <div className="linkbox" style={{ fontSize: '0.9rem' }}>
+                      {qrUrl}
+                    </div>
+                    <button
+                      className="btn ghost small"
+                      onClick={() => void copierUrl()}
+                    >
+                      {copie ? t('Copié ✓') : t('Copier le lien')}
+                    </button>
+                  </div>
+                )}
+                {status === 'on' ? (
+                  <button
+                    className="btn block"
+                    style={{ marginTop: 12 }}
+                    disabled={busy}
+                    onClick={() => void act('pause')}
+                  >
+                    {busy ? t('⏳…') : t('⏸ Pause')}
+                  </button>
+                ) : (
+                  <button
+                    className="btn block"
+                    style={{ marginTop: 12 }}
+                    disabled={busy}
+                    onClick={() => void act('on')}
+                  >
+                    {busy ? t('⏳ Reprise…') : t('▶ Reprendre')}
+                  </button>
+                )}
+                <p style={{ textAlign: 'center', margin: '20px 0 4px' }}>
+                  <button
+                    className="linklike"
+                    disabled={busy}
+                    onClick={() => setConfirmFin(true)}
+                  >
+                    {t('Terminer le live')}
+                  </button>
+                </p>
+              </>
+            )}
+            {/* Le message hors-ligne n'apparaît qu'au moment où la panne
+                survient (b216) — jamais en préventif. */}
+            {arretForce && (
+              <>
+                <p className="help" style={{ textAlign: 'center' }}>
+                  {t(
+                    'Le serveur n’a pas répondu. Tu peux couper ici : ton téléphone sort du live, et l’application préviendra le serveur dès qu’elle y arrive.',
+                  )}
+                </p>
+                <div style={{ textAlign: 'center' }}>
+                  <button className="btn danger" onClick={arreterIci}>
+                    {t('Terminer quand même')}
+                  </button>
+                </div>
+              </>
             )}
             {error && (
               <p style={{ color: 'var(--danger)', textAlign: 'center' }}>
                 {error}
               </p>
             )}
-            <p className="help" style={{ textAlign: 'center', margin: '4px 0 10px' }}>
-              {t('📡 Synchro du groupe ')}
-              <strong>{t('automatique')}</strong>
-              {t(
-                ' : les musiciens qui suivent voient ton morceau, dans leur vue et leur tonalité. Sans réseau, chacun reprend la main sur sa bibliothèque locale.',
-              )}
-            </p>
-            <p className="help" style={{ textAlign: 'center' }}>
-              {t('Tu es musicien du groupe ?')}{' '}
-              <a
-                href="#/follow"
-                style={{ color: 'var(--accent)' }}
-                onClick={() => setPanel(false)}
-              >
-                {t('Suivre le morceau en cours →')}
-              </a>
-            </p>
-            {/* La clé On Air est fournie automatiquement (embarquée au
-                build) : aucun avertissement technique à montrer ici. */}
           </Modal>
+        )}
+        {confirmFin && (
+          <ConfirmSheet
+            title={t('Terminer le live ?')}
+            message={t(
+              'Les spectateurs seront déconnectés et devront rescanner.',
+            )}
+            confirmLabel={t('Terminer')}
+            danger
+            onConfirm={() => {
+              setConfirmFin(false);
+              void act('off');
+            }}
+            onClose={() => setConfirmFin(false)}
+          />
+        )}
+        {collision !== null && (
+          <ConfirmSheet
+            title={t('{name} est déjà en live', { name: collision })}
+            message={t(
+              'Un autre membre a déjà lancé un live pour ce groupe. En démarrer un deuxième est possible : les chiffres du concert s’additionnent.',
+            )}
+            confirmLabel={t('Démarrer quand même')}
+            onConfirm={() => {
+              setCollision(null);
+              void act('on');
+            }}
+            onClose={() => setCollision(null)}
+          />
         )}
       </StatusContext.Provider>
     </OnAirContext.Provider>
@@ -824,8 +953,8 @@ export function OnAirButton({ inBar = false }: { inBar?: boolean } = {}) {
       onClick={openPanel}
       title={
         status === 'on' || status === 'pause'
-          ? t('Direct en cours — gérer')
-          : t('Passer en direct (public)')
+          ? t('Live en cours — gérer')
+          : t('Passer en live')
       }
     >
       {status === 'on' ? (
@@ -836,7 +965,8 @@ export function OnAirButton({ inBar = false }: { inBar?: boolean } = {}) {
       ) : status === 'pause' ? (
         '⏸ LIVE'
       ) : (
-        '● GO LIVE'
+        // b345 (amende b257) : « live » est LE mot, GO LIVE disparaît.
+        '● Live'
       )}
     </button>
   );
