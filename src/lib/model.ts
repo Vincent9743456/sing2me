@@ -25,6 +25,7 @@ import {
   ArtistProfile,
   Band,
   Concert,
+  estBrouillon,
   makeId,
   Setlist,
   Song,
@@ -1466,6 +1467,27 @@ export function migrateSong(raw: unknown): Song {
     base.keptAtJam !== true
   ) {
     base = { ...base, idea: false };
+  }
+
+  /**
+   * UN BROUILLON PROPOSÉ À UN GROUPE N'EST PLUS UN BROUILLON (b338, constat
+   * de Vincent : la fiche du groupe annonçait « 2 morceaux », le répertoire
+   * n'en montrait qu'un). Le sélecteur de la discussion laissait passer les
+   * brouillons de création (b319) : proposer posait une version de groupe
+   * sur un brouillon — compté par la fiche, invisible partout ailleurs,
+   * jamais synchronisé, et le TTL de 6 h l'aurait balayé AVEC sa version de
+   * groupe. Le sélecteur est corrigé, et ce qui a déjà été écrit se répare
+   * ici : proposer entérine l'inscription en bibliothèque (même logique que
+   * la programmation en setlist, b174) — un « brouillon » qui porte une
+   * version de groupe ou une proposition est un morceau. Idempotent.
+   */
+  if (
+    estBrouillon(base) &&
+    (base.versions.some((v) => (v.bandId ?? '') !== '') ||
+      (base.pendingBandId ?? '') !== '')
+  ) {
+    const { status: _brouillonEntérine, ...reste } = base;
+    base = reste as Song;
   }
 
   /**

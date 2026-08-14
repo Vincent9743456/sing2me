@@ -26,7 +26,7 @@ import { duplicateVersion, switchVersion, versionForBand } from '../lib/model';
 import { replier } from '../lib/recherche';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { Song } from '../types';
+import { estBrouillon, Song } from '../types';
 
 /**
  * ÉCRIRE, C'EST ÉCRIRE (b266, constat de Vincent : « les 3 boutons Discussion
@@ -372,6 +372,11 @@ function SongPicker({
     const needle = replier(q);
     return [...songs]
       .filter((s) => s.idea !== true)
+      // Un brouillon de création n'apparaît NULLE PART (b319) — b338 : ce
+      // sélecteur était la seule surface d'ajout qui l'avait oublié, et
+      // proposer un brouillon posait une version de groupe sur un morceau
+      // invisible, jamais synchronisé, balayé au bout de 6 h.
+      .filter((s) => !estBrouillon(s))
       .filter(
         (s) =>
           needle === '' ||
