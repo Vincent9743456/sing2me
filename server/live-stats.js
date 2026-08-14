@@ -25,15 +25,35 @@ export default async function handler(req, res) {
       res.status(501).json({ error: 'Mode ON AIR non configuré' });
       return;
     }
-    // b192 : le COMPTE identifie l'appelant ; l'ancienne clé reste acceptée
-    // le temps que les applications installées se mettent à jour.
-    const qui = await identifie(req);
+    const base = process.env.SUPABASE_URL.replace(/\/$/, '');
+
+    // b339 : ces quatre allers-retours (identification comprise) sont
+    // indépendants — ils partaient l'un APRÈS l'autre, et c'est ce qui
+    // faisait attendre l'onglet Live. Tout part ensemble ; la réponse n'est
+    // lue que si l'appelant est bien identifié.
+    const select =
+      'song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,setlist_name,session_id';
+    const [qui, livesRes, statsRes, sessionsRes] = await Promise.all([
+      // b192 : le COMPTE identifie l'appelant ; l'ancienne clé reste
+      // acceptée le temps que les applications installées se mettent à jour.
+      identifie(req),
+      fetch(
+        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id,setlist_name,concert,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
+        { headers: sbHeaders() },
+      ).catch(() => null),
+      fetch(`${base}/rest/v1/live_stats?select=${select}&order=played_at.desc&limit=800`, {
+        headers: sbHeaders(),
+      }).catch(() => null),
+      fetch(
+        `${base}/rest/v1/live_sessions?select=id,artist_name,started_at,ended_at,uniques&order=started_at.desc&limit=200`,
+        { headers: sbHeaders() },
+      ).catch(() => null),
+    ]);
     if (!qui.ok) {
       refuse(res);
       return;
     }
     const moi = qui.user?.id ?? '';
-    const base = process.env.SUPABASE_URL.replace(/\/$/, '');
 
     /*
      * À QUI APPARTIENT UN LIVE (b188) — la question posée par Vincent, et
@@ -71,11 +91,8 @@ export default async function handler(req, res) {
     // début, sa fin (updated_at à la clôture), qui jouait et quelle setlist.
     let lives = [];
     try {
-      let l = await fetch(
-        `${base}/rest/v1/lives?select=id,artist,band_id,started_by,owner_id,setlist_name,concert,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
-        { headers: sbHeaders() },
-      );
-      if (!l.ok) {
+      let l = livesRes;
+      if (!l || !l.ok) {
         // Colonne b192 pas encore créée (SQL non rejoué) : sans elle.
         l = await fetch(
           `${base}/rest/v1/lives?select=id,artist,band_id,started_by,setlist_name,concert,started_at,updated_at,status,session_id&order=started_at.desc.nullslast&limit=200`,
@@ -112,12 +129,7 @@ export default async function handler(req, res) {
 
     // `performer` dit QUI jouait, `setlist_name` quelle setlist tournait
     // (b180), `session_id` à quel live le morceau appartient (b186).
-    const select =
-      'song_title,song_artist,hearts,concert_id,concert_title,played_at,performer,setlist_name,session_id';
-    let r = await fetch(
-      `${base}/rest/v1/live_stats?select=${select}&order=played_at.desc&limit=800`,
-      { headers: sbHeaders() },
-    );
+    let r = statsRes;
     // Colonnes pas encore créées (SQL non rejoué) : on retombe sur des
     // lectures de plus en plus pauvres plutôt que de ne rien renvoyer.
     const replis = [
@@ -130,13 +142,13 @@ export default async function handler(req, res) {
       `select=*&order=played_at.desc&limit=800`,
     ];
     for (const q of replis) {
-      if (r.ok) break;
+      if (r && r.ok) break;
       r = await fetch(`${base}/rest/v1/live_stats?${q}`, {
         headers: sbHeaders(),
       });
     }
-    if (!r.ok) {
-      res.status(502).json({ error: `Supabase a répondu ${r.status}` });
+    if (!r || !r.ok) {
+      res.status(502).json({ error: `Supabase a répondu ${r ? r.status : '(injoignable)'}` });
       return;
     }
     const toutes = await r.json();
@@ -162,11 +174,7 @@ export default async function handler(req, res) {
     // si la table n'existe pas encore (SQL pas exécuté), on renvoie [].
     let sessions = [];
     try {
-      const s = await fetch(
-        `${base}/rest/v1/live_sessions?select=id,artist_name,started_at,ended_at,uniques&order=started_at.desc&limit=200`,
-        { headers: sbHeaders() },
-      );
-      if (s.ok) sessions = await s.json();
+      if (sessionsRes && sessionsRes.ok) sessions = await sessionsRes.json();
     } catch {
       /* audience best-effort */
     }

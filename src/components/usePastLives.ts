@@ -16,10 +16,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import {
-  fetchAudienceSessions,
-  fetchLiveStats,
+  fetchHistoriqueLive,
   fetchMessages,
-  fetchPastLives,
   LiveMessage,
   LiveSession,
   LiveStat,
@@ -82,16 +80,16 @@ export function usePastLives(): PastLivesData {
     void (async () => {
       setLoading(true);
       try {
-        const [se, st, ms, lv] = await Promise.all([
-          fetchAudienceSessions(prefs.liveKey),
-          fetchLiveStats(prefs.liveKey, noms, cids),
+        // UN appel pour lives + morceaux + séances (b339) : le serveur
+        // renvoyait déjà les trois ensemble, on l'appelait trois fois.
+        const [h, ms] = await Promise.all([
+          fetchHistoriqueLive(prefs.liveKey, noms, cids),
           fetchMessages(prefs.liveKey, noms, cids),
-          fetchPastLives(prefs.liveKey, noms, cids),
         ]);
         if (cancelled) return;
-        setRows(lv);
-        setSessions(se);
-        setStats(st);
+        setRows(h.rows);
+        setSessions(h.sessions);
+        setStats(h.stats);
         setMessages(ms);
         setFailed(false);
       } catch {
