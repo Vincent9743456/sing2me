@@ -101,12 +101,23 @@ export function Compose({ draftId }: { draftId: string | null }) {
       status: 'draft',
     };
     saveSong(brouillon);
-    // Nouvel onglet : le seul contact avec UG est la navigation de
-    // l'utilisateur (aucun fetch, aucune WebView possible sur le web —
-    // UG interdit l'encadrement).
-    window.open(urlRechercheUg(q), '_blank', 'noopener');
+    // On N'OUVRE PAS UG dans le même geste (b323, brouillon perdu par
+    // Vincent) : iOS suspend la PWA dès que l'onglet s'ouvre, AVANT que le
+    // brouillon tout juste créé soit écrit sur le disque — au retour, l'app
+    // rechargée retombait sur l'écran de recherche, sans rien où coller.
+    // L'étape suivante porte le bouton d'ouverture : quand l'utilisateur le
+    // touche, l'état est déjà enregistré.
     navigate(`/creer/${brouillon.id}`);
   }
+
+  /* ── Récupération de route (b323) : si le brouillon visé a disparu mais
+     qu'un autre vit encore, on y ramène ; et l'écran ouvert SANS identifiant
+     reprend le brouillon vivant au lieu de repartir de zéro. ─────────── */
+  React.useEffect(() => {
+    if (draft !== null) return;
+    const vivant = songs.find((s) => estBrouillon(s));
+    if (vivant) navigate(`/creer/${vivant.id}`);
+  }, [draft, songs]);
 
   const [lienEnCours, setLienEnCours] = useState(false);
 
@@ -299,6 +310,18 @@ export function Compose({ draftId }: { draftId: string | null }) {
               </p>
             </div>
           )}
+          {/* L'ouverture d'UG est un GESTE SÉPARÉ de la création (b323) :
+              quand on le touche, le brouillon est déjà enregistré — le
+              retour retombe donc toujours ici, prêt à coller. */}
+          <button
+            className="btn block"
+            onClick={() =>
+              window.open(urlRechercheUg(draft.title), '_blank', 'noopener')
+            }
+          >
+            ↗ {t('Ouvrir la recherche sur Ultimate Guitar')}
+          </button>
+          <div className="spacer" />
           <p className="help">
             {t(
               'Sur la page ouverte, sélectionne la partition (accords + paroles), copie-la, puis reviens ici.',
@@ -328,14 +351,6 @@ export function Compose({ draftId }: { draftId: string | null }) {
           )}
           <div className="spacer" />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              className="btn ghost"
-              onClick={() =>
-                window.open(urlRechercheUg(draft.title), '_blank', 'noopener')
-              }
-            >
-              ↗ {t('Rouvrir la recherche')}
-            </button>
             <button className="btn ghost" onClick={abandonner}>
               {t('Annuler')}
             </button>
