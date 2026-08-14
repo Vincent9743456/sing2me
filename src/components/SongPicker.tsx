@@ -20,6 +20,7 @@ import {
   switchVersion,
   versionForBand,
 } from '../lib/model';
+import { replier } from '../lib/recherche';
 import { retireDuRepertoire } from '../lib/retraitgroupe';
 import { useStore } from '../store';
 import { estBrouillon, makeId, Setlist, Song } from '../types';
@@ -281,12 +282,13 @@ export function SongCollector({
   );
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    // Recherche repliée (b337) : accents, casse et ponctuation ne comptent
+    // pas — même règle que la bibliothèque (src/lib/recherche.ts).
+    const q = replier(query);
     if (q === '') return library;
     return library.filter(
       (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.artist.toLowerCase().includes(q),
+        replier(s.title).includes(q) || replier(s.artist).includes(q),
     );
   }, [library, query]);
 
