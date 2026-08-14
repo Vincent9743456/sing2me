@@ -62,7 +62,7 @@ import { normalizeTitle } from '../lib/importer';
 import { resizePhoto } from '../lib/photo';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { Band, makeId, SharePayload, Song } from '../types';
+import { Band, estBrouillon, makeId, SharePayload, Song } from '../types';
 import { isUpcoming } from './Concerts';
 
 const LINK_PRESETS = [
@@ -797,11 +797,14 @@ export function BandEdit({ id }: { id: string }) {
   const enAttente = tousLesMusiciens.filter((m) => m.pending === true);
   const memberCount = tousLesMusiciens.length;
   const fewMembers = memberCount < 2;
+  // Règle 11 : la pastille compte EXACTEMENT ce que l'écran du répertoire
+  // montrera — donc jamais un brouillon de création, qui n'apparaît nulle
+  // part (b319/b338).
   const repCount = songs.filter(
-    (s) => versionForBand(s, band.id) !== null,
+    (s) => !estBrouillon(s) && versionForBand(s, band.id) !== null,
   ).length;
   const propCount = songs.filter(
-    (s) => (s.pendingBandId ?? '') === band.id,
+    (s) => !estBrouillon(s) && (s.pendingBandId ?? '') === band.id,
   ).length;
   const bandSetlists = [...setlists]
     .filter((sl) => sl.bandId === band.id)
