@@ -679,14 +679,21 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     recommandation de garder le libellé neutre) : le flux « Recherche &
     création » AFFICHE « Chercher sur Ultimate Guitar » — usage
     référentiel, TEXTE SEUL (jamais le logo, jamais « powered by », jamais
-    une formulation suggérant un partenariat). La justification tient à
-    l'architecture du flux : c'est l'UTILISATEUR qui navigue lui-même sur
-    le site (nouvel onglet), copie à la main et colle — aucune requête ne
-    part de l'app ni du serveur, la mise en forme est 100 % locale. C'est
-    de la portabilité assumée, pas de la captation cachée. La règle §A.5
-    reste en vigueur PARTOUT AILLEURS (recherche serveur « meilleure
-    version », aide, landing, README) : ne pas étendre le nom hors de ce
-    flux sans nouvel arbitrage.
+    une formulation suggérant un partenariat). La règle §A.5 reste en
+    vigueur PARTOUT AILLEURS (aide, landing, README) : ne pas étendre le
+    nom hors de ce flux sans nouvel arbitrage.
+    **PIVOT b334 (décision explicite de Vincent)** : la justification
+    d'origine (« c'est l'utilisateur qui navigue lui-même, aucune requête
+    serveur ») n'a pas survécu au terrain — sur iPhone avec l'app UG
+    installée, le parcours de navigation était impraticable (b320→b332 :
+    lien universel, page mobile qui force l'app, préférence iOS
+    mémorisée). Le flux passe donc par NOTRE serveur : recherche
+    (fn=search) et récupération (fn=fetch) — la même exposition que
+    « Meilleure version ? », en production depuis des mois. La mise en
+    forme reste 100 % locale (aucun appel IA dans ce flux). L'aller-retour
+    web (b320-b332 : 302 anti-lien-universel, onglet nommé, filet « copier
+    le lien ») est RETIRÉ ; `api/aller.js` reste déployé tant que des
+    bundles b333 circulent.
 - **Modèle économique — « Licence Scène »** (arbitrage fondateurs, août
   2026 ; remplace TOUT modèle antérieur, dont le Premium individuel à
   2,99 € désormais abandonné ; pas encore implémenté) :
