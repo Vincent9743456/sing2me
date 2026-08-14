@@ -70,7 +70,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Ce qu’un groupe te propose, et ce que tu as gardé à un bœuf':
     'Imported songs not yet confirmed — work-in-progress stash',
   '📥 Propositions ({n})': '📥 Proposals ({n})',
-  'Répertoires :': 'Repertoires:',
+  'Groupes :': 'Bands:',
   'Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)':
     'Repertoire playable solo (every song by default, unless disqualified from its page)',
   'Ce qu’on te propose : le répertoire d’un groupe, ou un morceau gardé à un bœuf. Jouables partout — ouvre-en un pour l’accepter ✓ ou l’écarter.':
