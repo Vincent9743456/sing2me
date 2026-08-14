@@ -111,6 +111,9 @@ export const EN_ARTISTE: Record<string, string> = {
   'Pourquoi c’est vide ?': 'Why is this empty?',
   'Vérification…': 'Checking…',
   'tri côté serveur': 'server-side sorting',
+  'Diagnostic activé — onglet Live, tout en bas.':
+    'Diagnostics on — Live tab, at the very bottom.',
+  'Diagnostic désactivé.': 'Diagnostics off.',
   'durée — historique': 'timing — history',
   'durée — mots du public': 'timing — audience messages',
   '{n} ms vus par l’app': '{n} ms seen by the app',

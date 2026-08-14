@@ -14,6 +14,8 @@ import { t } from '../i18n';
 import { stripChords } from '../lib/chordpro';
 import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
+import { useToast } from '../components/Feedback';
+import { basculerDiag } from '../lib/modediag';
 import { PublicLyrics } from '../components/PublicLyrics';
 import { PublicNameCard } from '../components/PublicNameCard';
 import { findPublicPageByArtist, monAdressePublique } from '../lib/publicPages';
@@ -109,6 +111,25 @@ export function Artist() {
     songs,
     saveSong,
   } = useStore();
+  const toast = useToast();
+  // b342 : cinq appuis sur le numéro de version basculent le mode
+  // diagnostic — l'app installée n'a pas de barre d'adresse pour ?diag=1.
+  const tapsDiag = useRef<{ n: number; depuis: number }>({ n: 0, depuis: 0 });
+  function tapVersion() {
+    const now = Date.now();
+    if (now - tapsDiag.current.depuis > 2500) {
+      tapsDiag.current = { n: 0, depuis: now };
+    }
+    tapsDiag.current.n += 1;
+    if (tapsDiag.current.n >= 5) {
+      tapsDiag.current = { n: 0, depuis: 0 };
+      toast.show(
+        basculerDiag()
+          ? t('Diagnostic activé — onglet Live, tout en bas.')
+          : t('Diagnostic désactivé.'),
+      );
+    }
+  }
   const [draft, setDraft] = useState<ArtistProfile>(() => ({
     ...artist,
     links: artist.links.map((l) => ({ ...l })),
@@ -1129,6 +1150,7 @@ export function Artist() {
         <p
           className="help"
           style={{ textAlign: 'center', opacity: 0.6, marginTop: 24 }}
+          onClick={tapVersion}
         >
           {t('mojosong — version du {build}', { build: APP_BUILD })}
         </p>

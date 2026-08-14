@@ -20,6 +20,7 @@ import { usePastLives } from './usePastLives';
 import { MojoLoader } from './MojoLoader';
 import { t } from '../i18n';
 import { dureesLive, fetchDiag, triMots } from '../lib/live';
+import { diagActif } from '../lib/modediag';
 import { PastLive } from '../lib/pastlives';
 import { useStore } from '../store';
 
@@ -332,6 +333,9 @@ export function LiveHistory() {
  * l'app avec `?diag=1`, et reste invisible le reste du temps.
  */
 function diagDemande(): boolean {
+  // b342 : le mode peut aussi être activé DANS l'app (cinq appuis sur le
+  // numéro de version) — l'app installée n'a pas de barre d'adresse.
+  if (diagActif()) return true;
   try {
     return (
       new URLSearchParams(location.search).get('diag') === '1' ||
