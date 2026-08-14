@@ -152,9 +152,11 @@ destructif). Si vide, rien à faire.
   partage et ouvrir directement la création de partition avec ce contenu
   (pour l'utilisateur qui préfère naviguer seul dans UG et exporter).
   IMPOSSIBLE en PWA iOS (Apple n'ouvre pas les cibles de partage aux apps
-  web). Deux voies :
-  · Android DÈS MAINTENANT si souhaité : Web Share Target (manifest +
-    route de réception) — mojosong apparaît dans la feuille Android ;
+  web). DÉCISION VINCENT (b333) : iOS ET Android EN MÊME TEMPS, PLUS
+  TARD, avec le chantier natif Capacitor (v3) — ne pas livrer le Web Share
+  Target Android seul en attendant. Voies techniques le moment venu :
+  · Android : Web Share Target (manifest + route de réception) — mojosong
+    apparaît dans la feuille Android ;
   · iOS avec l'app NATIVE Capacitor (v3) : Share Extension recevant le
     fichier et ouvrant #/creer pré-rempli. 3ᵉ argument fort pour le
     chantier natif (avec le presse-papiers intelligent et la fermeture du
