@@ -468,30 +468,8 @@ export interface PastLiveRow {
   session_id: string | null;
 }
 
-/** Directs enregistrés (réservé à l'artiste). Best-effort → []. */
-export async function fetchPastLives(
-  key: string,
-  performer: string[] = [],
-  bandCloudIds: string[] = [],
-): Promise<PastLiveRow[]> {
-  if (key.trim() === '') return [];
-  const names = performer.map((n) => n.trim()).filter((n) => n !== '');
-  const cids = bandCloudIds.map((c) => c.trim()).filter((c) => c !== '');
-  const q =
-    (names.length > 0 ? `&performer=${encodeURIComponent(names.join(','))}` : '') +
-    (cids.length > 0 ? `&bands=${encodeURIComponent(cids.join(','))}` : '');
-  try {
-    const res = await fetch(`/api/live-x?fn=live-stats${q}`, {
-      headers: liveHeaders(key),
-    });
-    const type = res.headers.get('content-type') ?? '';
-    if (!type.includes('application/json')) return [];
-    const body = await res.json();
-    return Array.isArray(body.lives) ? body.lives : [];
-  } catch {
-    return [];
-  }
-}
+// Les directs enregistrés se lisent via fetchHistoriqueLive (b339) : le même
+// appel serveur rapporte lives, morceaux et séances — plus d'appel dédié.
 
 /** État d'une table côté serveur (diagnostic ON AIR, b178). */
 export interface DiagTable {
@@ -631,23 +609,52 @@ export interface LiveSession {
   uniques: number;
 }
 
-/** Sessions ON AIR de l'artiste (audience mesurée). Best-effort → [].
- *  MESURE SEULEMENT : ces chiffres n'entraînent aucune limite ni blocage. */
-export async function fetchAudienceSessions(
+/**
+ * L'HISTORIQUE DES DIRECTS EN UN SEUL APPEL (b339, lenteur constatée par
+ * Vincent). Le serveur a toujours renvoyé lives + morceaux + séances dans la
+ * MÊME réponse — mais le client l'appelait TROIS fois en parallèle
+ * (fetchPastLives, fetchLiveStats, fetchAudienceSessions), soit trois
+ * exécutions serverless identiques, chacune refaisant toutes les requêtes en
+ * base. Un seul appel, une seule réponse, trois lectures.
+ *
+ * Au passage, les séances d'audience sont maintenant TRIÉES avec mes noms et
+ * mes groupes : l'ancien appel dédié partait sans aucun filtre, et les
+ * séances des lives de groupe lancés par un autre membre (ou des archives à
+ * mon nom d'avant b192) n'en revenaient jamais.
+ */
+export interface HistoriqueLive {
+  rows: PastLiveRow[];
+  stats: LiveStat[];
+  sessions: LiveSession[];
+}
+
+export async function fetchHistoriqueLive(
   key: string,
-): Promise<LiveSession[]> {
-  if (key.trim() === '') return [];
+  performer: string[] = [],
+  bandCloudIds: string[] = [],
+): Promise<HistoriqueLive> {
+  const names = performer.map((n) => n.trim()).filter((n) => n !== '');
+  const cids = bandCloudIds.map((c) => c.trim()).filter((c) => c !== '');
+  const q =
+    (names.length > 0 ? `&performer=${encodeURIComponent(names.join(','))}` : '') +
+    (cids.length > 0 ? `&bands=${encodeURIComponent(cids.join(','))}` : '');
+  let res: Response;
   try {
-    const res = await fetch('/api/live-x?fn=live-stats', {
+    res = await fetch(`/api/live-x?fn=live-stats${q}`, {
       headers: liveHeaders(key),
     });
-    const type = res.headers.get('content-type') ?? '';
-    if (!type.includes('application/json')) return [];
-    const body = await res.json();
-    return Array.isArray(body.sessions) ? body.sessions : [];
   } catch {
-    return [];
+    throw new Error(OFFLINE_MSG);
   }
+  const body = await readJson(res);
+  if (!res.ok || body.error) {
+    throw new Error(body.error ?? `Erreur ${res.status}`);
+  }
+  return {
+    rows: Array.isArray(body.lives) ? body.lives : [],
+    stats: Array.isArray(body.stats) ? body.stats : [],
+    sessions: Array.isArray(body.sessions) ? body.sessions : [],
+  };
 }
 
 /** Statistiques des directs (réservé à l'artiste, clé On Air requise). */

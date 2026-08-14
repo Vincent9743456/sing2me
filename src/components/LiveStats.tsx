@@ -21,10 +21,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useToast } from './Feedback';
 import { t } from '../i18n';
 import {
-  fetchAudienceSessions,
-  fetchLiveStats,
+  fetchHistoriqueLive,
   fetchMessages,
-  fetchPastLives,
   heartTotals,
   LiveMessage,
   LiveSession,
@@ -71,18 +69,18 @@ export function LiveStats() {
     void (async () => {
       setLoading(true);
       try {
-        const [st, ms, se, fo, lv] = await Promise.all([
-          fetchLiveStats(prefs.liveKey, namesKey.split(','), cids),
+        // UN appel pour lives + morceaux + séances (b339) : le serveur
+        // renvoyait déjà les trois ensemble, on l'appelait trois fois.
+        const [h, ms, fo] = await Promise.all([
+          fetchHistoriqueLive(prefs.liveKey, namesKey.split(','), cids),
           fetchMessages(prefs.liveKey, namesKey.split(',')),
-          fetchAudienceSessions(prefs.liveKey),
           fetchFollowerStats(prefs.liveKey, artist.name),
-          fetchPastLives(prefs.liveKey, namesKey.split(','), cids),
         ]);
         if (cancelled) return;
-        setRows(lv);
-        setStats(st);
+        setRows(h.rows);
+        setStats(h.stats);
         setMessages(ms);
-        setSessions(se);
+        setSessions(h.sessions);
         setFollowers(fo);
         setError(null);
       } catch (e) {
