@@ -86,25 +86,44 @@ export function LinkPreviews({
       )}
       {lecteurs.map(({ l, yt, sp }) =>
         yt !== null ? (
-          <div className="embedbox video" key={l.id}>
-            <iframe
-              src={yt}
-              title={t('Vidéo YouTube')}
-              allow="encrypted-media; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-            />
-          </div>
+          <React.Fragment key={l.id}>
+            <div className="embedbox video">
+              <iframe
+                src={yt}
+                title={t('Vidéo YouTube')}
+                allow="encrypted-media; picture-in-picture"
+                allowFullScreen
+                loading="lazy"
+              />
+            </div>
+            {/* Un lecteur mort n'est jamais un cul-de-sac (b346, constat de
+                Vincent : cadre vide, « je ne vois plus mon lien YouTube »).
+                On ne SAIT pas quand l'intégration échoue (b263) : la sortie
+                est donc toujours là, discrète — comme les puces, elle
+                fonctionne même quand le lecteur est en panne. */}
+            <p className="embedexit">
+              <a href={l.url} target="_blank" rel="noreferrer">
+                {t('▶ Regarder sur YouTube')}
+              </a>
+            </p>
+          </React.Fragment>
         ) : (
-          <div className="embedbox audio" key={l.id}>
-            <iframe
-              src={sp!.src}
-              title={t('Écoute Spotify')}
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-              style={{ borderRadius: 12 }}
-            />
-          </div>
+          <React.Fragment key={l.id}>
+            <div className="embedbox audio">
+              <iframe
+                src={sp!.src}
+                title={t('Écoute Spotify')}
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                style={{ borderRadius: 12 }}
+              />
+            </div>
+            <p className="embedexit">
+              <a href={l.url} target="_blank" rel="noreferrer">
+                {t('♪ Écouter sur Spotify')}
+              </a>
+            </p>
+          </React.Fragment>
         ),
       )}
     </div>

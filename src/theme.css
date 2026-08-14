@@ -4167,3 +4167,18 @@ a.pg-musicien:focus-visible .pg-nom {
   font-size: 0.95rem;
   cursor: pointer;
 }
+
+/* Sortie sous un lecteur intégré (b346) : discrète, toujours cliquable —
+   un lecteur tiers peut rester vide sans qu'on puisse le détecter (b263),
+   le lien, lui, fonctionne toujours. */
+.embedexit {
+  margin: -6px 0 14px;
+  text-align: right;
+  font-size: 0.85rem;
+}
+.embedexit a {
+  color: var(--text-dim);
+  text-decoration: underline;
+  padding: 8px 2px;
+  display: inline-block;
+}
