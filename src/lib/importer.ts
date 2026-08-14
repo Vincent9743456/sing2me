@@ -18,8 +18,13 @@ import {
 } from './sections';
 import { makeId, parseDuration, Song, StructureRow } from '../types';
 
+// L'astérisque final (« G* », « Bb* ») est la notation UG « voir la note de
+// bas de page » : c'est bien un accord, l'annotation reste affichée (b326 —
+// sans elle, toute la ligne passait pour du texte et restait blanche).
+// Même grammaire que PLAIN_CHORD_TOKEN (chordpro.ts) : les deux détecteurs
+// doivent rester d'accord.
 const CHORD_TOKEN =
-  /^\(?[A-G](?:#|b)?(?:maj|min|dim|aug|sus|add|m|M|\+|°|ø)?\d*(?:(?:sus|add|maj)\d+)?(?:\/[A-G](?:#|b)?)?\)?$/;
+  /^\(?[A-G](?:#|b)?(?:maj|min|dim|aug|sus|add|m|M|\+|°|ø)?\d*(?:(?:sus|add|maj)\d+)?(?:\/[A-G](?:#|b)?)?\*{0,2}\)?$/;
 
 const NOISE_TOKEN = /^(\||%|-|–|—|x\d+|\(x\d+\)|N\.?C\.?|\.|,)$/i;
 

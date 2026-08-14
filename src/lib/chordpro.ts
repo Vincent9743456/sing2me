@@ -24,8 +24,11 @@ const CHORD_RE = /\[([^\]\n]+)\]/g;
 // Jeton d'accord strict (racine + qualité contrôlée + basse) : permet de
 // reconnaître une ligne d'accords écrite SANS crochets (« Em D G »,
 // « |C |G D | »…) sans confondre avec des paroles.
+// L'astérisque final (« G* », « Bb* ») est la notation UG « voir la note de
+// bas de page » : c'est bien un accord (b326). Même grammaire que
+// CHORD_TOKEN (importer.ts) : les deux détecteurs doivent rester d'accord.
 const PLAIN_CHORD_TOKEN =
-  /^\(?[A-G](?:#|b)?(?:maj|min|dim|aug|sus|add|m|M|\+|°|ø)?\d*(?:(?:sus|add|maj)\d+)?(?:\/[A-G](?:#|b)?)?\)?$/;
+  /^\(?[A-G](?:#|b)?(?:maj|min|dim|aug|sus|add|m|M|\+|°|ø)?\d*(?:(?:sus|add|maj)\d+)?(?:\/[A-G](?:#|b)?)?\*{0,2}\)?$/;
 // Jetons décoratifs tolérés dans une grille (les barres « | » sont
 // détachées avant le découpage, elles n'apparaissent donc pas ici).
 const PLAIN_NOISE_TOKEN = /^(%|-|–|—|:|x\d+|\(x\d+\)|N\.?C\.?|\.|,)$/i;
