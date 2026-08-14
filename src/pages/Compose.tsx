@@ -338,7 +338,22 @@ export function Compose({ draftId }: { draftId: string | null }) {
             rows={8}
             value={colle}
             placeholder={t('…ou colle-la ici à la main.')}
-            onChange={(e) => setColle(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setColle(v);
+              // Un LIEN collé se traite TOUT SEUL (b325, retour de Vincent) :
+              // pas de bouton à chercher — la récupération et la mise en
+              // forme partent dès le collage. Un TEXTE de partition, lui,
+              // attend le bouton « Mettre en forme » (on ne déclenche pas
+              // une mise en forme pendant que l'utilisateur écrit).
+              if (
+                !lienEnCours &&
+                extractUgLinks(v).length > 0 &&
+                v.trim().split(/\s+/).length <= 3
+              ) {
+                void appliquerTexte(v);
+              }
+            }}
           />
           {colle.trim() !== '' && (
             <button
