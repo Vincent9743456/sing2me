@@ -598,10 +598,8 @@ export const EN_MORCEAUX: Record<string, string> = {
     'Puts back the text prepared automatically from your chart',
   'Repartir de ma partition': 'Start again from my chart',
 
-  // b319 — recherche & création d'une partition (flux Ultimate Guitar)
+  // b319→b334 — recherche & création d'une partition (tout dans mojosong)
   'Créer une partition': 'Create a chart',
-  'Cherche le morceau, copie la partition sur la page ouverte, puis reviens ici la coller.':
-    'Search for the song, copy the chart on the opened page, then come back here and paste it.',
   'Titre, artiste… (ex. hallelujah cohen)':
     'Title, artist… (e.g. hallelujah cohen)',
   'Chercher sur Ultimate Guitar': 'Search on Ultimate Guitar',
@@ -611,14 +609,9 @@ export const EN_MORCEAUX: Record<string, string> = {
   'L’ouvrir': 'Open it',
   '— ou continue : deux arrangements du même titre sont légitimes.':
     '— or keep going: two arrangements of the same song are perfectly fine.',
-  'Sur la page ouverte, sélectionne la partition (accords + paroles), copie-la, puis reviens ici.':
-    'On the opened page, select the chart (chords + lyrics), copy it, then come back here.',
   'Coller la partition copiée': 'Paste the copied chart',
   '…ou colle-la ici à la main.': '…or paste it here by hand.',
   'Mettre en forme': 'Format it',
-  'Ouvrir la recherche sur Ultimate Guitar':
-    'Open the search on Ultimate Guitar',
-  // b334 — résultats et récupération dans mojosong
   'Tape le titre (et l’artiste) : choisis une partition, elle se met en forme toute seule.':
     'Type the title (and the artist): pick a chart, it formats itself.',
   'Aucun résultat — précise le titre (et l’artiste).':
@@ -627,17 +620,6 @@ export const EN_MORCEAUX: Record<string, string> = {
     'Paste a chart (chords + lyrics) or a chart link.',
   'Les résultats s’affichent dans mojosong : choisis, la partition se met en forme toute seule.':
     'Results show up inside mojosong: pick one, the chart formats itself.',
-  // b331 — mode d'emploi du parcours de création
-  '1. Tape le titre du morceau (et l’artiste).':
-    '1. Type the song title (and the artist).',
-  '2. Choisis une partition sur la page qui s’ouvre.':
-    '2. Pick a chart on the page that opens.',
-  '3. Copie-la — ou copie son lien si l’application UG s’ouvre.':
-    '3. Copy it — or copy its link if the UG app opens.',
-  '4. Reviens ici et colle : la partition se met en forme toute seule.':
-    '4. Come back here and paste: the chart formats itself.',
-  'Cherche, copie la partition (ou son lien), reviens la coller : elle se met en forme toute seule.':
-    'Search, copy the chart (or its link), come back and paste it: it formats itself.',
   'Le presse-papiers est vide — copie d’abord la partition.':
     'The clipboard is empty — copy the chart first.',
   'Ce navigateur ne permet pas de coller ici — utilise la zone de texte.':
@@ -658,20 +640,6 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Reprendre la création de « {titre} » ?':
     'Resume creating “{titre}”?',
   'Reprendre': 'Resume',
-
-  // b321 — filet quand l'application UG intercepte l'ouverture
-  'L’application UG s’ouvre à la place du site ?':
-    'The UG app opens instead of the website?',
-  'Copier le lien de la recherche': 'Copy the search link',
-  'puis colle-le dans la barre d’adresse : le site s’ouvrira, pas l’application.':
-    'then paste it into the address bar: the website will open, not the app.',
-  'Lien copié — colle-le dans la barre d’adresse de ton navigateur.':
-    'Link copied — paste it into your browser’s address bar.',
-  'La copie a échoué.': 'Copying failed.',
-
-  // b322 — repli par lien (l'app UG force son ouverture sur mobile)
-  'Si l’application UG s’est ouverte : copie le LIEN de la partition (bouton de partage) et colle-le ici — mojosong la récupère.':
-    'If the UG app opened: copy the chart’s LINK (share button) and paste it here — mojosong will fetch it.',
   '⏳ Récupération…': '⏳ Fetching…',
   "L'import du lien a échoué.": 'Importing the link failed.',
 };
