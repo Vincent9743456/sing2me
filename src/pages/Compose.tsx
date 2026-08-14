@@ -38,9 +38,17 @@ import { navigate } from '../router';
 import { useStore } from '../store';
 import { estBrouillon, Song } from '../types';
 
-/** Adresse de recherche UG — ouverte dans un nouvel onglet, jamais requêtée. */
+/**
+ * Adresse de recherche UG — ouverte dans un nouvel onglet, jamais requêtée.
+ *
+ * Via la page RELAIS de notre domaine (b320, constat de Vincent) : une
+ * navigation directe vers ultimate-guitar.com déclenche le LIEN UNIVERSEL du
+ * téléphone, qui ouvre l'application UG installée — où la sélection/copie est
+ * impossible. La redirection par script depuis notre page garde l'utilisateur
+ * dans le NAVIGATEUR, où le copier-coller fonctionne.
+ */
 function urlRechercheUg(query: string): string {
-  return `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
+  return `/aller-ug.html?q=${encodeURIComponent(query)}`;
 }
 
 export function Compose({ draftId }: { draftId: string | null }) {
