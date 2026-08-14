@@ -1172,10 +1172,10 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
         >
           🔎 {t('Chercher sur Ultimate Guitar')}
         </button>
-        {/* Une ligne pour situer le parcours (b331) : le détail des étapes
-            vit sur l'écran de recherche lui-même. */}
+        {/* Une ligne pour situer le parcours (b331, réécrite b334 : tout se
+            passe dans mojosong désormais). */}
         <p className="help" style={{ marginTop: 4, marginBottom: 'var(--sp-3)' }}>
-          {t('Cherche, copie la partition (ou son lien), reviens la coller : elle se met en forme toute seule.')}
+          {t('Les résultats s’affichent dans mojosong : choisis, la partition se met en forme toute seule.')}
         </p>
 
         {RECHERCHE_SERVEUR && method === 'ug' && ugResults !== null && ugResults.length > 0 && (

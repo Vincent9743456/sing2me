@@ -1,37 +1,33 @@
 /**
- * RECHERCHE & CRÉATION D'UNE PARTITION (b319) — adaptation WEB de la spec.
+ * RECHERCHE & CRÉATION D'UNE PARTITION (b319, PIVOT b334 : tout dans
+ * mojosong).
  *
- * Un champ de recherche unique → création d'une fiche BROUILLON (invisible
- * de tout : répertoire, setlists, compteurs, synchro) → ouverture de la
- * recherche Ultimate Guitar dans un NOUVEL ONGLET (le seul contact avec UG
- * est la navigation de l'utilisateur — aucune requête ne part de l'app ni du
- * serveur) → l'utilisateur copie la partition À LA MAIN → revient → colle →
- * mise en forme 100 % LOCALE (importText : accords détectés et fusionnés,
- * sections reconnues — AUCUN appel IA, AUCUN serveur) → aperçu avec titre /
- * artiste / tonalité éditables (accords en bleu via SongBody) → validation.
+ * Un champ de recherche unique → les RÉSULTATS s'affichent DANS l'app
+ * (recherche serveur existante, la même que « Meilleure version ? ») → en
+ * choisir un récupère la partition (fn=fetch) → mise en forme LOCALE
+ * (importText : accords détectés et fusionnés, sections reconnues — aucun
+ * appel IA) → aperçu avec titre / artiste / tonalité éditables (accords en
+ * bleu via SongBody) → validation.
  *
- * Décision Vincent (b319) : le libellé NOMME « Ultimate Guitar » — usage
- * référentiel, texte seul, jamais de logo ni de « powered by ». C'est une
- * levée ASSUMÉE de la règle §A.5 pour CE flux (l'utilisateur navigue
- * lui-même, rien n'est récupéré par nos serveurs : portabilité, pas
- * captation).
+ * HISTORIQUE DU PIVOT (b319→b334) : la spec d'origine faisait naviguer
+ * l'utilisateur LUI-MÊME sur le site d'UG (nouvel onglet), copie manuelle,
+ * collage — aucune requête serveur. Sur iPhone avec l'app UG installée, ce
+ * parcours s'est révélé impraticable (b320-b332 : lien universel, page
+ * mobile qui force l'app, préférence iOS mémorisée). Décision explicite de
+ * Vincent (b334, après les dérogations lien b322 et l'échec constaté) :
+ * recherche ET récupération passent par NOTRE serveur — même exposition que
+ * « Meilleure version ? », en production depuis des mois.
  *
- * DÉROGATION b322 (décision explicite de Vincent) : coller un LIEN de
- * partition déclenche une récupération via NOTRE serveur (fn=fetch, le
- * chemin qui existe déjà dans l'import) — parce que la page mobile d'UG
- * force l'ouverture de son application au clic sur un résultat, où seule la
- * copie du lien est possible. Le collage de TEXTE, lui, reste 100 % local.
+ * Le libellé NOMME « Ultimate Guitar » (décision b319) : texte seul, jamais
+ * de logo ni de « powered by ».
  *
- * Cycle de vie du brouillon :
- *  · nouvelle recherche → l'ancien brouillon meurt ;
- *  · abandon explicite (Annuler) → suppression immédiate ;
- *  · TTL 6 h au chargement de l'app (store.tsx) ;
- *  · le brouillon SURVIT au passage en arrière-plan (un appel reçu pendant
- *    la navigation UG ne détruit pas le travail).
+ * L'écran de COLLAGE reste en repli : « Recoller un autre texte » depuis
+ * l'aperçu, reprise d'un ancien brouillon — texte traité 100 % en local,
+ * lien récupéré par le serveur (b322/b325).
  *
- * Déduplication À LA VALIDATION (et à la reprise) : jamais de fusion ni de
- * suppression silencieuse — l'utilisateur arbitre (ouvrir l'existante /
- * remplacer par la nouvelle mise en forme / garder les deux).
+ * Brouillon : invisible de tout (répertoire, compteurs, synchro), TTL 6 h,
+ * une seule création à la fois. Déduplication à la validation : jamais de
+ * fusion silencieuse — l'utilisateur arbitre.
  */
 import React, { useMemo, useState } from 'react';
 
@@ -40,48 +36,16 @@ import { SongBody } from '../components/SongBody';
 import { t } from '../i18n';
 import { findSameSong, importText } from '../lib/importer';
 import { addSongAsVersion } from '../lib/model';
-import { fetchUgTab, ugTabToImportText } from '../lib/ug';
+import {
+  fetchUgTab,
+  searchUgTabs,
+  UgSearchResult,
+  ugTabToImportText,
+} from '../lib/ug';
 import { navigate } from '../router';
-import { ecrireMorceauImmediat, useStore } from '../store';
+import { useStore } from '../store';
 import { estBrouillon, Song } from '../types';
 import { extractUgLinks } from './Import';
-
-/**
- * Adresse de recherche UG — ouverte dans un nouvel onglet, jamais requêtée.
- *
- * Via une REDIRECTION 302 de notre domaine (b321, après l'échec du relais JS
- * de b320 sur l'iPhone de Vincent) : une navigation directe vers
- * ultimate-guitar.com déclenche le LIEN UNIVERSEL du téléphone, qui ouvre
- * l'application UG installée — où la sélection/copie est impossible. iOS
- * n'évalue les liens universels que sur l'URL D'ORIGINE, jamais sur la
- * destination d'une redirection HTTP : la 302 fait atterrir le navigateur
- * sur UG sans réveiller l'app.
- */
-function urlRechercheUg(query: string): string {
-  // `t` : anti-cache (b332) — une 302 ou une restauration d'onglet ne doit
-  // jamais resservir la recherche PRÉCÉDENTE.
-  return `/api/aller?q=${encodeURIComponent(query)}&t=${Date.now()}`;
-}
-
-/**
- * OUVERTURE DANS UN ONGLET NOMMÉ (b332, constat de Vincent : « il me remet
- * la chanson sur laquelle j'étais tout à l'heure ») : avec `_blank`, iOS
- * RE-PRÉSENTAIT le volet navigateur de la recherche précédente — jamais
- * fermé — tel quel, sans charger la nouvelle adresse. Un onglet NOMMÉ est
- * réutilisé ET re-navigué vers la nouvelle URL : l'écran est donc toujours
- * rafraîchi. `w.opener = null` garde l'isolation que `noopener` donnait
- * (la page ouverte ne peut pas piloter mojosong).
- */
-function ouvrirRechercheUg(query: string): void {
-  const w = window.open(urlRechercheUg(query), 'mojosong_ug');
-  if (w) w.opener = null;
-}
-
-/** L'adresse UG en clair — pour le filet « copier le lien » (b321) : collée
- *  dans la barre d'adresse, elle n'ouvre JAMAIS l'application UG. */
-function urlUgDirecte(query: string): string {
-  return `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
-}
 
 export function Compose({ draftId }: { draftId: string | null }) {
   const { songs, saveSong, purgeBrouillon } = useStore();
@@ -104,27 +68,52 @@ export function Compose({ draftId }: { draftId: string | null }) {
 
   const validees = useMemo(() => songs.filter((s) => !estBrouillon(s)), [songs]);
 
-  /* ── Étape 1 : recherche = création ─────────────────────────────── */
-  function lancerRecherche() {
+  /* ── Étape 1 : recherche → résultats DANS l'app (b334) ──────────── */
+  const [resultats, setResultats] = useState<UgSearchResult[] | null>(null);
+  const [rechercheEnCours, setRechercheEnCours] = useState(false);
+  const [choixEnCours, setChoixEnCours] = useState('');
+
+  async function lancerRecherche() {
     const q = query.trim();
-    if (q === '') return;
-    // Une seule création en cours : la nouvelle recherche remplace
-    // l'ancien brouillon (pas de cimetière).
-    for (const s of songs) if (estBrouillon(s)) purgeBrouillon(s.id);
-    const brouillon: Song = {
-      ...importText('', q).song,
-      title: q, // la requête brute sert de titre provisoire
-      status: 'draft',
-    };
-    saveSong(brouillon);
-    // UN SEUL GESTE (b324, demande de Vincent) : la recherche OUVRE tout de
-    // suite les résultats — l'écran de collage n'est que ce qu'on retrouve
-    // au retour. La perte de brouillon de b323 (PWA suspendue avant
-    // l'écriture différée) est contrée par une écriture disque SYNCHRONE
-    // dans le même geste, plus le vidage sur pagehide.
-    ecrireMorceauImmediat(brouillon);
-    ouvrirRechercheUg(q);
-    navigate(`/creer/${brouillon.id}`);
+    if (q === '' || rechercheEnCours) return;
+    setRechercheEnCours(true);
+    setResultats(null);
+    try {
+      setResultats(await searchUgTabs(q));
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : t('La recherche a échoué.'));
+    } finally {
+      setRechercheEnCours(false);
+    }
+  }
+
+  /** Choisir un résultat : récupération + mise en forme locale → aperçu. */
+  async function choisirResultat(r: UgSearchResult) {
+    if (choixEnCours !== '') return;
+    setChoixEnCours(r.url);
+    try {
+      const tab = await fetchUgTab(r.url);
+      // Une seule création en cours : la nouvelle remplace l'ancien
+      // brouillon (pas de cimetière).
+      for (const s of songs) if (estBrouillon(s)) purgeBrouillon(s.id);
+      const res = importText(ugTabToImportText(tab), tab.title || r.title);
+      const brouillon: Song = {
+        ...res.song,
+        artist: res.song.artist || tab.artist || r.artist,
+        status: 'formatting',
+      };
+      saveSong(brouillon);
+      setTitre(null);
+      setArtiste(null);
+      setTonalite(null);
+      navigate(`/creer/${brouillon.id}`);
+    } catch (e) {
+      toast.show(
+        e instanceof Error ? e.message : t("L'import du lien a échoué."),
+      );
+    } finally {
+      setChoixEnCours('');
+    }
   }
 
   /* ── Récupération de route (b323) : si le brouillon visé a disparu mais
@@ -276,20 +265,9 @@ export function Compose({ draftId }: { draftId: string | null }) {
 
       {etape === 'recherche' && (
         <>
-          {/* Mode d'emploi (b331, demande de Vincent) : le parcours fait un
-              aller-retour hors de l'app — on le dit en quatre pas, ni plus
-              ni moins. */}
-          <div className="help" style={{ lineHeight: 1.7 }}>
-            <div>{t('1. Tape le titre du morceau (et l’artiste).')}</div>
-            <div>{t('2. Choisis une partition sur la page qui s’ouvre.')}</div>
-            <div>
-              {t('3. Copie-la — ou copie son lien si l’application UG s’ouvre.')}
-            </div>
-            <div>
-              {t('4. Reviens ici et colle : la partition se met en forme toute seule.')}
-            </div>
-          </div>
-          <div className="spacer" />
+          <p className="help">
+            {t('Tape le titre (et l’artiste) : choisis une partition, elle se met en forme toute seule.')}
+          </p>
           <input
             type="text"
             value={query}
@@ -297,17 +275,56 @@ export function Compose({ draftId }: { draftId: string | null }) {
             placeholder={t('Titre, artiste… (ex. hallelujah cohen)')}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') lancerRecherche();
+              if (e.key === 'Enter') void lancerRecherche();
             }}
           />
           <div className="spacer" />
           <button
             className="btn block"
-            disabled={query.trim() === ''}
-            onClick={lancerRecherche}
+            disabled={query.trim() === '' || rechercheEnCours}
+            onClick={() => void lancerRecherche()}
           >
-            🔎 {t('Chercher sur Ultimate Guitar')}
+            {rechercheEnCours
+              ? t('🔎 Recherche en cours…')
+              : `🔎 ${t('Chercher sur Ultimate Guitar')}`}
           </button>
+          {resultats !== null && resultats.length === 0 && (
+            <p className="help">
+              {t('Aucun résultat — précise le titre (et l’artiste).')}
+            </p>
+          )}
+          {resultats !== null && resultats.length > 0 && (
+            <div className="card" style={{ marginTop: 'var(--sp-3)', padding: 6 }}>
+              {resultats.map((r, i) => (
+                <div
+                  className="row"
+                  key={i}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => void choisirResultat(r)}
+                >
+                  <div className="grow" style={{ minWidth: 0 }}>
+                    <div className="title">
+                      {r.title}
+                      {r.version > 1 ? ` (v${r.version})` : ''}
+                    </div>
+                    <div className="sub">
+                      {[
+                        r.artist,
+                        r.type,
+                        r.rating > 0 ? `★ ${r.rating}` : '',
+                        r.votes > 0 ? t('{n} votes', { n: r.votes }) : '',
+                      ]
+                        .filter((x) => x !== '')
+                        .join(' · ')}
+                    </div>
+                  </div>
+                  {choixEnCours === r.url && (
+                    <span className="help">{t('⏳ Récupération…')}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
 
@@ -336,22 +353,12 @@ export function Compose({ draftId }: { draftId: string | null }) {
               </p>
             </div>
           )}
-          {/* Cet écran est celui du RETOUR (b324) : la recherche a déjà
-              ouvert la page. Ce bouton ne sert qu'à la rouvrir si besoin. */}
-          <button
-            className="btn ghost block"
-            onClick={() => ouvrirRechercheUg(draft.title)}
-          >
-            ↗ {t('Ouvrir la recherche sur Ultimate Guitar')}
-          </button>
-          <div className="spacer" />
+          {/* Écran de REPLI depuis b334 (« Recoller un autre texte », reprise
+              d'un ancien brouillon) : coller un texte de partition — traité
+              100 % en local — ou un lien de partition, récupéré par le
+              serveur (b322). */}
           <p className="help">
-            {t(
-              'Sur la page ouverte, sélectionne la partition (accords + paroles), copie-la, puis reviens ici.',
-            )}{' '}
-            {t(
-              'Si l’application UG s’est ouverte : copie le LIEN de la partition (bouton de partage) et colle-le ici — mojosong la récupère.',
-            )}
+            {t('Colle une partition (accords + paroles) ou le lien d’une partition.')}
           </p>
           <button className="btn block" onClick={() => void collerDepuisPressePapiers()}>
             📋 {t('Coller la partition copiée')}
@@ -393,29 +400,6 @@ export function Compose({ draftId }: { draftId: string | null }) {
               {t('Annuler')}
             </button>
           </div>
-          <div className="spacer" />
-          {/* Filet ultime (b321) : si le téléphone ouvre l'application UG
-              malgré la redirection, coller l'adresse dans la BARRE D'ADRESSE
-              du navigateur ne déclenche jamais le lien universel. */}
-          <p className="help">
-            {t('L’application UG s’ouvre à la place du site ?')}{' '}
-            <button
-              className="btn ghost small"
-              onClick={() => {
-                void navigator.clipboard
-                  .writeText(urlUgDirecte(draft.title))
-                  .then(() =>
-                    toast.show(
-                      t('Lien copié — colle-le dans la barre d’adresse de ton navigateur.'),
-                    ),
-                  )
-                  .catch(() => toast.show(t('La copie a échoué.')));
-              }}
-            >
-              🔗 {t('Copier le lien de la recherche')}
-            </button>{' '}
-            {t('puis colle-le dans la barre d’adresse : le site s’ouvrira, pas l’application.')}
-          </p>
         </>
       )}
 

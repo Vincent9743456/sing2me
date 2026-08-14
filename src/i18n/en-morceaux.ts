@@ -618,6 +618,15 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Mettre en forme': 'Format it',
   'Ouvrir la recherche sur Ultimate Guitar':
     'Open the search on Ultimate Guitar',
+  // b334 — résultats et récupération dans mojosong
+  'Tape le titre (et l’artiste) : choisis une partition, elle se met en forme toute seule.':
+    'Type the title (and the artist): pick a chart, it formats itself.',
+  'Aucun résultat — précise le titre (et l’artiste).':
+    'No results — refine the title (and the artist).',
+  'Colle une partition (accords + paroles) ou le lien d’une partition.':
+    'Paste a chart (chords + lyrics) or a chart link.',
+  'Les résultats s’affichent dans mojosong : choisis, la partition se met en forme toute seule.':
+    'Results show up inside mojosong: pick one, the chart formats itself.',
   // b331 — mode d'emploi du parcours de création
   '1. Tape le titre du morceau (et l’artiste).':
     '1. Type the song title (and the artist).',
