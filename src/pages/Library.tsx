@@ -846,8 +846,10 @@ export function Library() {
                 </button>
               )}
             </div>
-            {/* Rangée 2 — RÉPERTOIRES de groupe : identification par groupe.
-                Le répertoire « solo » a disparu (b293) — pour se faire un
+            {/* Rangée 2 — vues par GROUPE. « Groupes : » et plus
+                « Répertoires : » (b347, demande de Vincent) : les pastilles
+                listent des groupes, l'étiquette dit ce qu'on lit. Le
+                répertoire « solo » a disparu (b293) — pour se faire un
                 répertoire perso, on crée un groupe dont on est seul membre. */}
             {bands.length > 0 && (
               <div
@@ -855,7 +857,7 @@ export function Library() {
                 style={{ marginTop: 'var(--sp-2)', alignItems: 'center' }}
               >
                 <span className="help" style={{ margin: 0 }}>
-                  {t('Répertoires :')}
+                  {t('Groupes :')}
                 </span>
                 {bands.map((b, i) => (
                   <button
