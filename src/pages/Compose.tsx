@@ -41,14 +41,22 @@ import { estBrouillon, Song } from '../types';
 /**
  * Adresse de recherche UG — ouverte dans un nouvel onglet, jamais requêtée.
  *
- * Via la page RELAIS de notre domaine (b320, constat de Vincent) : une
- * navigation directe vers ultimate-guitar.com déclenche le LIEN UNIVERSEL du
- * téléphone, qui ouvre l'application UG installée — où la sélection/copie est
- * impossible. La redirection par script depuis notre page garde l'utilisateur
- * dans le NAVIGATEUR, où le copier-coller fonctionne.
+ * Via une REDIRECTION 302 de notre domaine (b321, après l'échec du relais JS
+ * de b320 sur l'iPhone de Vincent) : une navigation directe vers
+ * ultimate-guitar.com déclenche le LIEN UNIVERSEL du téléphone, qui ouvre
+ * l'application UG installée — où la sélection/copie est impossible. iOS
+ * n'évalue les liens universels que sur l'URL D'ORIGINE, jamais sur la
+ * destination d'une redirection HTTP : la 302 fait atterrir le navigateur
+ * sur UG sans réveiller l'app.
  */
 function urlRechercheUg(query: string): string {
-  return `/aller-ug.html?q=${encodeURIComponent(query)}`;
+  return `/api/aller?q=${encodeURIComponent(query)}`;
+}
+
+/** L'adresse UG en clair — pour le filet « copier le lien » (b321) : collée
+ *  dans la barre d'adresse, elle n'ouvre JAMAIS l'application UG. */
+function urlUgDirecte(query: string): string {
+  return `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
 }
 
 export function Compose({ draftId }: { draftId: string | null }) {
@@ -274,7 +282,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
             </button>
           )}
           <div className="spacer" />
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
               className="btn ghost"
               onClick={() =>
@@ -287,6 +295,29 @@ export function Compose({ draftId }: { draftId: string | null }) {
               {t('Annuler')}
             </button>
           </div>
+          <div className="spacer" />
+          {/* Filet ultime (b321) : si le téléphone ouvre l'application UG
+              malgré la redirection, coller l'adresse dans la BARRE D'ADRESSE
+              du navigateur ne déclenche jamais le lien universel. */}
+          <p className="help">
+            {t('L’application UG s’ouvre à la place du site ?')}{' '}
+            <button
+              className="btn ghost small"
+              onClick={() => {
+                void navigator.clipboard
+                  .writeText(urlUgDirecte(draft.title))
+                  .then(() =>
+                    toast.show(
+                      t('Lien copié — colle-le dans la barre d’adresse de ton navigateur.'),
+                    ),
+                  )
+                  .catch(() => toast.show(t('La copie a échoué.')));
+              }}
+            >
+              🔗 {t('Copier le lien de la recherche')}
+            </button>{' '}
+            {t('puis colle-le dans la barre d’adresse : le site s’ouvrira, pas l’application.')}
+          </p>
         </>
       )}
 
