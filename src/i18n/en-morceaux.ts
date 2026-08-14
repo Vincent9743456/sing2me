@@ -618,9 +618,6 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Mettre en forme': 'Format it',
   'Ouvrir la recherche sur Ultimate Guitar':
     'Open the search on Ultimate Guitar',
-  // b327 — recherche web augmentée (tous les sites, tri du moteur)
-  'Chercher sur le web': 'Search the web',
-  'Rouvrir la recherche web': 'Reopen the web search',
   'Le presse-papiers est vide — copie d’abord la partition.':
     'The clipboard is empty — copy the chart first.',
   'Ce navigateur ne permet pas de coller ici — utilise la zone de texte.':
