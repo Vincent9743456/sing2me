@@ -1146,6 +1146,18 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           </p>
         </div>
 
+        {/* Recherche & création via Ultimate Guitar (b319) : l'utilisateur
+            navigue LUI-MÊME sur le site (nouvel onglet), copie la partition,
+            revient la coller — mise en forme 100 % locale. Décision Vincent :
+            le nom s'affiche (texte seul, jamais de logo). */}
+        <button
+          className="btn ghost block"
+          style={{ marginBottom: 'var(--sp-3)' }}
+          onClick={() => navigate('/creer')}
+        >
+          🔎 {t('Chercher sur Ultimate Guitar')}
+        </button>
+
         {method === 'ug' && ugResults !== null && ugResults.length > 0 && (
           <div
             className="card"

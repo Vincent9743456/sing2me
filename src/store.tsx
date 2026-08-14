@@ -48,6 +48,7 @@ import {
   Concert,
   defaultPrefs,
   emptyArtist,
+  estBrouillon,
   Prefs,
   Setlist,
   Song,
@@ -118,6 +119,12 @@ interface StoreValue extends AppState {
    * membres, mais reste chez son auteur — simplement détachée du groupe.
    */
   removeSetlistFromBand: (setlistId: string) => void;
+  /**
+   * Supprime un BROUILLON de création (b319) — sans pierre tombale : un
+   * brouillon n'est jamais synchronisé, une tombe ne servirait qu'à polluer
+   * la liste des suppressions. Ne touche jamais un morceau validé.
+   */
+  purgeBrouillon: (songId: string) => void;
 }
 
 /** Ce que l'utilisateur choisit d'effacer (réinitialisation partielle). */
@@ -144,6 +151,14 @@ function withEmbeddedLiveKey(state: AppState): AppState {
   return state;
 }
 
+/** Brouillon de création plus vieux que 6 h → balayé au chargement (b319). */
+const BROUILLON_TTL_MS = 6 * 60 * 60 * 1000;
+function brouillonPerime(s: Song): boolean {
+  if (!estBrouillon(s)) return false;
+  const t = Date.parse(s.createdAt);
+  return Number.isNaN(t) || Date.now() - t > BROUILLON_TTL_MS;
+}
+
 function loadState(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -154,8 +169,13 @@ function loadState(): AppState {
       // nettoie au chargement, et les tombstones posés se propagent à la
       // fusion suivante. Les deux passes sont idempotentes.
       return dedupeSongsByContent(dedupeExamples(withEmbeddedLiveKey({
-        // migration automatique de l'ancien modèle à sections
-        songs: (Array.isArray(parsed.songs) ? parsed.songs : []).map(migrateSong),
+        // migration automatique de l'ancien modèle à sections.
+        // Les BROUILLONS de création périmés (b319) sont balayés au
+        // chargement : TTL de 6 h — pas de cimetière de brouillons. Un
+        // brouillon récent survit (backgrounding, appel reçu…).
+        songs: (Array.isArray(parsed.songs) ? parsed.songs : [])
+          .map(migrateSong)
+          .filter((s) => !brouillonPerime(s)),
         // Coquilles vides laissées par le défaut corrigé en b146 : on les
         // retire au chargement (aucune donnée réelle n'y est perdue).
         setlists: (Array.isArray(parsed.setlists) ? parsed.setlists : [])
@@ -725,6 +745,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // Un brouillon se purge SANS pierre tombale (b319) : jamais synchronisé,
+  // donc rien à propager — et jamais un morceau validé, quoi qu'il arrive.
+  const purgeBrouillon = (songId: string) => {
+    setState((prev) => ({
+      ...prev,
+      songs: prev.songs.filter((s) => !(s.id === songId && estBrouillon(s))),
+    }));
+  };
+
   const value: StoreValue = {
     ...state,
     hydrate,
@@ -746,6 +775,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     clearBandRemoval,
     resetData,
     removeSetlistFromBand,
+    purgeBrouillon,
   };
 
   return (

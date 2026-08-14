@@ -72,7 +72,7 @@ import {
 import { compterEnAttente, etatVide, mergeStates, SyncState } from '../lib/sync';
 import { navigate } from '../router';
 import { AppState, useStore } from '../store';
-import { Band, emptyBand, makeId } from '../types';
+import { Band, emptyBand, estBrouillon, makeId } from '../types';
 import { t } from '../i18n';
 import { Field } from './ui';
 
@@ -149,6 +149,21 @@ export function useAccount(): AccountValue | null {
 }
 
 /** Nettoie/migre une sauvegarde cloud avant fusion. */
+/**
+ * Les BROUILLONS de création ne montent JAMAIS au cloud (b319) : ils sont
+ * locaux à l'appareil par construction. Le filtre s'applique à l'ENVOI
+ * seulement — jamais à l'état fusionné/hydraté, sinon chaque rattrapage
+ * effacerait le brouillon en cours de l'appareil.
+ */
+function sansBrouillons<S extends { songs?: { status?: string }[] }>(
+  etat: S,
+): S {
+  const songs = etat.songs ?? [];
+  const gardes = songs.filter((s) => !estBrouillon(s as { status?: 'draft' | 'formatting' }));
+  if (gardes.length === songs.length) return etat;
+  return { ...etat, songs: gardes };
+}
+
 function fromCloud(raw: unknown): Partial<SyncState> | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
@@ -613,7 +628,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         hydrateRef.current(aEcrire as AppState);
         // Repère de départ pour le rattrapage multi-appareils (b287) : notre
         // propre poussée ne doit pas passer ensuite pour une nouveauté.
-        dernierCloud.current = await pushCloud(valid, aEcrire);
+        dernierCloud.current = await pushCloud(valid, sansBrouillons(aEcrire));
         if (cancelled) return;
         // Noté APRÈS l'envoi : un compte marqué dont le cloud n'aurait rien
         // reçu ferait perdre ces données au changement suivant.
@@ -845,7 +860,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         dernierCloud.current = cloudTs;
         hydrateRef.current(etat as AppState);
       }
-      dernierCloud.current = await pushCloud(valid, etat);
+      dernierCloud.current = await pushCloud(valid, sansBrouillons(etat));
       aEnvoyer.current = false;
       noterEnvoi(new Date().toISOString());
       setStatus('ok');
