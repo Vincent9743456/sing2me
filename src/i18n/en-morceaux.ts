@@ -637,4 +637,14 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Reprendre la création de « {titre} » ?':
     'Resume creating “{titre}”?',
   'Reprendre': 'Resume',
+
+  // b321 — filet quand l'application UG intercepte l'ouverture
+  'L’application UG s’ouvre à la place du site ?':
+    'The UG app opens instead of the website?',
+  'Copier le lien de la recherche': 'Copy the search link',
+  'puis colle-le dans la barre d’adresse : le site s’ouvrira, pas l’application.':
+    'then paste it into the address bar: the website will open, not the app.',
+  'Lien copié — colle-le dans la barre d’adresse de ton navigateur.':
+    'Link copied — paste it into your browser’s address bar.',
+  'La copie a échoué.': 'Copying failed.',
 };
