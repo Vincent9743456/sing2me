@@ -11,12 +11,11 @@ import { ConfirmSheet } from '../components/Feedback';
 import { Empty, Field, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { t } from '../i18n';
-import { creatorMember, versionForBand } from '../lib/model';
-import { getValidSession, monId } from '../lib/auth';
+import { versionForBand } from '../lib/model';
+import { getValidSession } from '../lib/auth';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
-  emptyBand,
   emptySetlist,
   formatDuration,
   makeId,
@@ -47,7 +46,6 @@ export function Setlists() {
     saveSetlist,
     deleteSetlist,
     removeSetlistFromBand,
-    saveBand,
   } = useStore();
   // E5 : la setlist du prochain concert (date la plus proche) est mise en avant.
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -104,7 +102,6 @@ export function Setlists() {
     (sl.bandId ?? '') === '' ||
     (sl.createdBy ?? '') === '' ||
     (myId !== '' && sl.createdBy === myId);
-  const [newName, setNewName] = useState('');
   const songById = new Map(songs.map((s) => [s.id, s]));
 
   // Durée « jouée » (hors réserve), estimée à 5 min si non renseignée.
@@ -265,18 +262,9 @@ export function Setlists() {
     navigate('/setlist/new');
   }
 
-  /** Crée un nouveau groupe (auto-créé) puis une setlist dedans. */
-  function createInNewBand(name: string) {
-    const b = {
-      ...emptyBand(),
-      name: name.trim(),
-      owned: true,
-      members: [creatorMember(artist, prefs.userName, monId())],
-    };
-    saveBand(b);
-    setCreateOpen(false);
-    createSetlist(b.id);
-  }
+  // « createInNewBand » retirée en b349 : un groupe se crée dans l'onglet
+  // Groupes, jamais en passant par une setlist — le rattachement se fait à
+  // un groupe EXISTANT (arbitrage Vincent).
 
   /** Pastille de la capsule : photo si dispo, sinon emoji sur fond coloré. */
   const capAvatar = (photo: string, fallback: string, color: string) =>
@@ -445,15 +433,16 @@ export function Setlists() {
       {createOpen && (
         <Modal
           title={t('Créer une setlist')}
-          onClose={() => {
-            setCreateOpen(false);
-            setNewName('');
-          }}
+          onClose={() => setCreateOpen(false)}
         >
+          {/* Plus de « capsule » à créer ici (b349, arbitrage Vincent :
+              « une setlist est soit sans appartenance, soit appartenant à
+              un groupe — le groupe de rattachement doit être existant »).
+              Un groupe se crée dans l'onglet Groupes, sa maison (règle 1).
+              Les rangées « contexte » ne s'affichent que pour qui en a
+              déjà : l'existant garde une place, rien de neuf ne s'y crée. */}
           <p className="help" style={{ marginTop: 0 }}>
-            {t(
-              'Dans quelle capsule ? Choisis-en une existante, ou crée-en une nouvelle plus bas.',
-            )}
+            {t('Pour toi, ou pour un de tes groupes ?')}
           </p>
           <div
             className="row"
@@ -523,47 +512,6 @@ export function Setlists() {
                 </span>
               </div>
             ))}
-          <div className="spacer" />
-          <Field label={t('Nouvelle capsule')}>
-            <input
-              type="text"
-              value={newName}
-              placeholder={t(
-                'Nom (un groupe, ou un contexte : « Soirée entre amis »…)',
-              )}
-              onChange={(e) => setNewName(e.target.value)}
-            />
-          </Field>
-          <div className="rowactions">
-            <button
-              className="btn"
-              disabled={newName.trim() === ''}
-              title={t(
-                'Crée le groupe (tu en es le premier musicien) et une setlist dedans',
-              )}
-              onClick={() => {
-                createInNewBand(newName.trim());
-                setNewName('');
-              }}
-            >
-              <Icon name="users" size={14} /> {t('Comme groupe')}
-            </button>
-            <button
-              className="btn ghost"
-              disabled={newName.trim() === ''}
-              title={t(
-                'Crée une capsule contextuelle (ex. « Soirée entre amis »), sans groupe',
-              )}
-              onClick={() => {
-                const ctx = newName.trim();
-                setNewName('');
-                setCreateOpen(false);
-                createSetlist('', ctx);
-              }}
-            >
-              {t('🎉 Comme contexte')}
-            </button>
-          </div>
         </Modal>
       )}
     </>

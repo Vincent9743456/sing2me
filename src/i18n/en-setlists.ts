@@ -30,6 +30,7 @@ export const EN_SETLISTS: Record<string, string> = {
   '{n} setlist': '{n} setlist',
   '{n} setlists': '{n} setlists',
   'Créer une setlist': 'Create a setlist',
+  'Pour toi, ou pour un de tes groupes ?': 'For you, or for one of your bands?',
   'Ta première setlist': 'Your first setlist',
   'Crée ta première setlist pour ton prochain concert — tu glisseras tes morceaux dans l’ordre.':
     'Create your first setlist for your next show — you\'ll drag your songs into order.',
