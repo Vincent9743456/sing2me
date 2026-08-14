@@ -60,6 +60,14 @@ interface BulkItem {
 export const MAX_BULK_LINKS = 200;
 
 /**
+ * RECHERCHE SERVEUR DÉSACTIVÉE (b330, décision de Vincent) : le champ
+ * « Rechercher un morceau » (résultats listés dans l'app via /api/tabs) ne
+ * s'affiche plus — le chemin d'entrée est le flux « Recherche & création »
+ * (b319). Tout le code reste en place : repasser à true le rallume.
+ */
+const RECHERCHE_SERVEUR = false;
+
+/**
  * Extrait les liens Ultimate Guitar d'un texte collé (un par ligne ou en
  * vrac). Seules les pages de partition individuelle sont retenues :
  * `/tab/artiste/chanson-…` et `/user/tab/view?h=…` (tablatures
@@ -1125,26 +1133,34 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
       />
       <TopBar live={false} title={t('Ajouter un morceau')} onBack={() => history.back()} />
       <div className="page">
-        {/* 1 — Recherche : la première chose visible, toujours en tête */}
-        <div className="field">
-          <label>{t('Rechercher un morceau')}</label>
-          {/* La recherche part toute seule pendant la frappe (400 ms) —
-              pas de bouton ; Entrée lance tout de suite (secours clavier). */}
-          <input
-            type="text"
-            value={ugQuery}
-            placeholder={t('Titre et artiste — ex. Angie Rolling Stones')}
-            onChange={(e) => setUgQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void onUgSearch();
-            }}
-          />
-          <p className="help" style={{ marginTop: 4 }}>
-            {ugSearching
-              ? t('🔎 Recherche en cours…')
-              : t('Tape le titre (et l’artiste) : les résultats arrivent tout seuls.')}
-          </p>
-        </div>
+        {/* 1 — RECHERCHE SERVEUR DÉSACTIVÉE (b330, décision de Vincent :
+            « on a décidé de ne plus l'utiliser — garde-le en mémoire si nous
+            décidions de le réactiver »). Le champ « Rechercher un morceau »
+            (recherche côté serveur, résultats listés dans l'app) est masqué
+            derrière ce drapeau ; tout son code (onUgSearch, ugResults,
+            loadUgUrl…) reste en place. Repasser le drapeau à true suffit à
+            le rallumer. Le chemin d'entrée est désormais le flux b319. */}
+        {RECHERCHE_SERVEUR && (
+          <div className="field">
+            <label>{t('Rechercher un morceau')}</label>
+            {/* La recherche part toute seule pendant la frappe (400 ms) —
+                pas de bouton ; Entrée lance tout de suite (secours clavier). */}
+            <input
+              type="text"
+              value={ugQuery}
+              placeholder={t('Titre et artiste — ex. Angie Rolling Stones')}
+              onChange={(e) => setUgQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void onUgSearch();
+              }}
+            />
+            <p className="help" style={{ marginTop: 4 }}>
+              {ugSearching
+                ? t('🔎 Recherche en cours…')
+                : t('Tape le titre (et l’artiste) : les résultats arrivent tout seuls.')}
+            </p>
+          </div>
+        )}
 
         {/* Recherche & création via Ultimate Guitar (b319) : l'utilisateur
             navigue LUI-MÊME sur le site (nouvel onglet), copie la partition,
@@ -1158,7 +1174,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           🔎 {t('Chercher sur Ultimate Guitar')}
         </button>
 
-        {method === 'ug' && ugResults !== null && ugResults.length > 0 && (
+        {RECHERCHE_SERVEUR && method === 'ug' && ugResults !== null && ugResults.length > 0 && (
           <div
             className="card"
             style={{
