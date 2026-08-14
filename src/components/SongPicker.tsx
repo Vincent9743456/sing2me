@@ -22,7 +22,7 @@ import {
 } from '../lib/model';
 import { retireDuRepertoire } from '../lib/retraitgroupe';
 import { useStore } from '../store';
-import { makeId, Setlist, Song } from '../types';
+import { estBrouillon, makeId, Setlist, Song } from '../types';
 import { Icon } from './Icon';
 import { useScrollLock } from './StageList';
 import { Modal } from './ui';
@@ -265,10 +265,13 @@ export function SongCollector({
   // Bibliothèque personnelle. Les idées et les propositions de groupe sont
   // proposées elles aussi (b174) : les programmer est justement le geste qui
   // les inscrit définitivement en bibliothèque. Sans ça, la règle serait
-  // inapplicable — on ne pourrait pas les ajouter.
+  // inapplicable — on ne pourrait pas les ajouter. Les BROUILLONS de
+  // création (b319), eux, n'apparaissent jamais : rien d'inachevé ne se
+  // programme dans une setlist ni ne s'affecte à un groupe.
   const library = useMemo(
     () =>
       songs
+        .filter((s) => !estBrouillon(s))
         .sort((a, b) =>
           (a.title || '').localeCompare(b.title || '', 'fr', {
             sensitivity: 'base',

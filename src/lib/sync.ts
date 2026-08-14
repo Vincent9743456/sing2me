@@ -169,8 +169,13 @@ export function dedupeSongsByContent<
   S extends { songs: Song[]; setlists: Setlist[]; deleted?: Tombstone[] },
 >(state: S): S {
   // Regrouper par clé de contenu (titre + artiste). Clé vide → jamais groupé.
+  // Les BROUILLONS de création (b319) ne participent JAMAIS : leur doublon
+  // éventuel avec un morceau validé s'arbitre À LA VALIDATION, par
+  // l'utilisateur (ouvrir l'existant / remplacer / garder les deux) — jamais
+  // par une fusion silencieuse qui enterrerait son travail en cours.
   const groups = new Map<string, Song[]>();
   for (const s of state.songs) {
+    if (s.status === 'draft' || s.status === 'formatting') continue;
     const k = songKey(s.title, s.artist);
     if (k === '') continue;
     const g = groups.get(k);

@@ -160,7 +160,14 @@ import {
 } from '../lib/retraitgroupe';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { emptySetlist, formatDuration, makeId, Setlist, Song } from '../types';
+import {
+  emptySetlist,
+  estBrouillon,
+  formatDuration,
+  makeId,
+  Setlist,
+  Song,
+} from '../types';
 import { Modal } from '../components/ui';
 
 /**
@@ -201,8 +208,14 @@ export function Library() {
     prefs,
     savePrefs,
     artist,
+    purgeBrouillon,
   } = useStore();
   const toast = useToast();
+  // Création en cours (b319) : au plus UN brouillon vit à la fois.
+  const brouillonEnCours = useMemo(
+    () => songs.find((s) => estBrouillon(s)) ?? null,
+    [songs],
+  );
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
   // null = tous les morceaux · sinon id du répertoire de groupe
@@ -276,15 +289,23 @@ export function Library() {
       ? (bands.find((b) => b.id === bandFilter) ?? null)
       : null;
   const [showCheck, setShowCheck] = useState(false);
+  // Les compteurs excluent les BROUILLONS (b319) : une pastille compte
+  // exactement ce que l'écran montrera (règle 11), et un brouillon ne se
+  // montre nulle part.
   const checkCount = useMemo(
-    () => songs.filter((s) => s.needsCheck !== undefined).length,
+    () =>
+      songs.filter((s) => s.needsCheck !== undefined && !estBrouillon(s))
+        .length,
     [songs],
   );
   const [showIdeas, setShowIdeas] = useState(false);
   const ideaCount = useMemo(
     // Les propositions ÉCARTÉES (b240) n'y sont pas : la pastille compte
     // EXACTEMENT ce que l'écran montrera (règle 11).
-    () => songs.filter((s) => s.idea === true && s.declined !== true).length,
+    () =>
+      songs.filter(
+        (s) => s.idea === true && s.declined !== true && !estBrouillon(s),
+      ).length,
     [songs],
   );
   // Propositions de groupe en attente d'acceptation (non importées tant
@@ -392,6 +413,9 @@ export function Library() {
         return byTitle(a, b);
       })
       .filter((s) => {
+        // Un BROUILLON de création (b319) n'apparaît NULLE PART : ni dans le
+        // répertoire, ni dans les vues filtrées, ni dans les compteurs.
+        if (estBrouillon(s)) return false;
         // Vue « Idées » : la réserve à travailler — y compris les morceaux
         // proposés par un groupe, qui arrivent désormais ici (b174).
         if (showIdeas) return s.idea === true && s.declined !== true;
@@ -958,6 +982,33 @@ export function Library() {
         )}
         <Onboarding />
         <BackupNudge />
+        {/* Reprise d'une création en cours (b319) : un brouillon vivant se
+            propose DISCRÈTEMENT — et la mention a une sortie (règle 11) :
+            « Supprimer » la lève à la main, la validation ou le TTL 6 h la
+            lèvent tout seuls. */}
+        {brouillonEnCours && (
+          <div className="card" style={{ marginBottom: 'var(--sp-3)' }}>
+            <div className="hstack" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <span className="help" style={{ flex: 1, minWidth: 160 }}>
+                {t('Reprendre la création de « {titre} » ?', {
+                  titre: brouillonEnCours.title,
+                })}
+              </span>
+              <button
+                className="btn small"
+                onClick={() => navigate(`/creer/${brouillonEnCours.id}`)}
+              >
+                {t('Reprendre')}
+              </button>
+              <button
+                className="btn ghost small"
+                onClick={() => purgeBrouillon(brouillonEnCours.id)}
+              >
+                {t('Supprimer')}
+              </button>
+            </div>
+          </div>
+        )}
         <div className={`libsplit${selectedId ? ' hasdetail' : ''}`}>
           <div>
             {filtered.length === 0 ? (

@@ -230,8 +230,30 @@ export interface Song {
   hearts: number;
   /** Messages du public rattachés à ce morceau */
   fanMessages: FanMessage[];
+  /**
+   * BROUILLON DE CRÉATION (b319, flux « Recherche & création »).
+   *
+   * `'draft'` : fiche créée au lancement d'une recherche — INVISIBLE du
+   * répertoire, des setlists, des compteurs et de toute liste ; jamais
+   * synchronisée (locale à l'appareil). `'formatting'` : contenu collé,
+   * mise en forme en cours — mêmes règles d'invisibilité.
+   *
+   * ABSENT = morceau ordinaire (validé). La validation EFFACE le champ
+   * plutôt que d'écrire 'validated' : les morceaux déjà installés n'ont pas
+   * ce champ, et un seul état « absent » évite toute migration.
+   *
+   * Purge : nouvelle recherche (l'ancien brouillon meurt), abandon explicite,
+   * et TTL de 6 h au chargement. Un brouillon survit au passage en arrière-
+   * plan (l'interruption subie ne détruit pas le travail).
+   */
+  status?: 'draft' | 'formatting';
   createdAt: string;
   updatedAt: string;
+}
+
+/** Un morceau en cours de création (invisible et jamais synchronisé). */
+export function estBrouillon(s: { status?: 'draft' | 'formatting' }): boolean {
+  return s.status === 'draft' || s.status === 'formatting';
 }
 
 /**

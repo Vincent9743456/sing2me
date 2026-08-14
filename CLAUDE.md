@@ -675,6 +675,18 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     En pratique, on préfère quand même RECONNAÎTRE le format déposé
     plutôt que de demander à l'utilisateur quelle application il utilise :
     la procédure s'adapte sans qu'aucune liste de marques ne s'affiche.
+    **LEVÉE PARTIELLE en b319** (décision explicite de Vincent, contre la
+    recommandation de garder le libellé neutre) : le flux « Recherche &
+    création » AFFICHE « Chercher sur Ultimate Guitar » — usage
+    référentiel, TEXTE SEUL (jamais le logo, jamais « powered by », jamais
+    une formulation suggérant un partenariat). La justification tient à
+    l'architecture du flux : c'est l'UTILISATEUR qui navigue lui-même sur
+    le site (nouvel onglet), copie à la main et colle — aucune requête ne
+    part de l'app ni du serveur, la mise en forme est 100 % locale. C'est
+    de la portabilité assumée, pas de la captation cachée. La règle §A.5
+    reste en vigueur PARTOUT AILLEURS (recherche serveur « meilleure
+    version », aide, landing, README) : ne pas étendre le nom hors de ce
+    flux sans nouvel arbitrage.
 - **Modèle économique — « Licence Scène »** (arbitrage fondateurs, août
   2026 ; remplace TOUT modèle antérieur, dont le Premium individuel à
   2,99 € désormais abandonné ; pas encore implémenté) :

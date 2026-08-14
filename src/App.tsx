@@ -17,6 +17,7 @@ import { Bands } from './pages/Bands';
 import { BandEdit } from './pages/BandEdit';
 import { Live } from './pages/Live';
 import { ConcertEdit, Concerts } from './pages/Concerts';
+import { Compose } from './pages/Compose';
 import { Import } from './pages/Import';
 import { Follow } from './pages/Follow';
 import { Remote } from './pages/Remote';
@@ -151,6 +152,9 @@ function Screen() {
       break;
     case 'import':
       page = <Import mode={route.mode} />;
+      break;
+    case 'compose':
+      page = <Compose draftId={route.draftId} key={route.draftId ?? 'new'} />;
       break;
     case 'setlists':
       page = <Setlists />;

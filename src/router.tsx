@@ -9,6 +9,8 @@ export type Route =
   | { name: 'song'; id: string }
   | { name: 'songEdit'; id: string | null }
   | { name: 'import'; mode?: 'bulk' }
+  /** Recherche & création d'une partition (b319) : #/creer[/:draftId]. */
+  | { name: 'compose'; draftId: string | null }
   | { name: 'setlists' }
   | { name: 'setlist'; id: string }
   | { name: 'setlistEdit'; id: string | null }
@@ -53,6 +55,10 @@ export function parseHash(hash: string): Route {
       // #/import/bulk ouvre directement l'import en masse (parcours d'un
       // nouvel entrant qui migre toute sa collection, b295).
       return { name: 'import', mode: parts[1] === 'bulk' ? 'bulk' : undefined };
+    case 'creer':
+      // Recherche & création d'une partition (b319). Avec :draftId, reprise
+      // du brouillon correspondant.
+      return { name: 'compose', draftId: parts[1] ?? null };
     case 'setlists':
       return { name: 'setlists' };
     case 'setlist':

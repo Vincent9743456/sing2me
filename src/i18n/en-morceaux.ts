@@ -597,4 +597,44 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Remet le texte préparé automatiquement depuis ta partition':
     'Puts back the text prepared automatically from your chart',
   'Repartir de ma partition': 'Start again from my chart',
+
+  // b319 — recherche & création d'une partition (flux Ultimate Guitar)
+  'Créer une partition': 'Create a chart',
+  'Cherche le morceau, copie la partition sur la page ouverte, puis reviens ici la coller.':
+    'Search for the song, copy the chart on the opened page, then come back here and paste it.',
+  'Titre, artiste… (ex. hallelujah cohen)':
+    'Title, artist… (e.g. hallelujah cohen)',
+  'Chercher sur Ultimate Guitar': 'Search on Ultimate Guitar',
+  'Recherche en cours : ': 'Current search: ',
+  '« {titre} » existe déjà dans ton répertoire.':
+    '“{titre}” is already in your repertoire.',
+  'L’ouvrir': 'Open it',
+  '— ou continue : deux arrangements du même titre sont légitimes.':
+    '— or keep going: two arrangements of the same song are perfectly fine.',
+  'Sur la page ouverte, sélectionne la partition (accords + paroles), copie-la, puis reviens ici.':
+    'On the opened page, select the chart (chords + lyrics), copy it, then come back here.',
+  'Coller la partition copiée': 'Paste the copied chart',
+  '…ou colle-la ici à la main.': '…or paste it here by hand.',
+  'Mettre en forme': 'Format it',
+  'Rouvrir la recherche': 'Reopen the search',
+  'Le presse-papiers est vide — copie d’abord la partition.':
+    'The clipboard is empty — copy the chart first.',
+  'Ce navigateur ne permet pas de coller ici — utilise la zone de texte.':
+    'This browser does not allow pasting here — use the text area.',
+  'Enregistrer dans ma bibliothèque': 'Save to my library',
+  'Recoller un autre texte': 'Paste another text',
+  'Partition enregistrée dans ta bibliothèque.':
+    'Chart saved to your library.',
+  '« {titre} » existe déjà dans ton répertoire. Que veux-tu faire ?':
+    '“{titre}” is already in your repertoire. What do you want to do?',
+  'Ouvrir la partition existante': 'Open the existing chart',
+  'La remplacer par cette mise en forme': 'Replace it with this formatting',
+  'Garder les deux': 'Keep both',
+  '↩ Revenir à l’aperçu': '↩ Back to the preview',
+  'Nouvelle mise en forme': 'New formatting',
+  'La partition existante a été mise à jour.':
+    'The existing chart has been updated.',
+  'Reprendre la création de « {titre} » ?':
+    'Resume creating “{titre}”?',
+  'Reprendre': 'Resume',
 };
