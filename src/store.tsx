@@ -151,6 +151,29 @@ function withEmbeddedLiveKey(state: AppState): AppState {
   return state;
 }
 
+/**
+ * ÉCRITURE DISQUE IMMÉDIATE d'un morceau (b324) — pour le seul cas où l'app
+ * peut être suspendue DANS LE MÊME GESTE que la création : lancer une
+ * recherche ouvre l'onglet UG aussitôt, et iOS gèle la PWA avant le commit
+ * React + le vidage différé. On upsert le morceau directement dans le
+ * localStorage ; le store réécrira le même contenu à son rythme. Best-effort
+ * (un stockage illisible ne bloque jamais le geste).
+ */
+export function ecrireMorceauImmediat(song: Song): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as { songs?: Song[] };
+    const songs = Array.isArray(parsed.songs) ? parsed.songs : [];
+    const i = songs.findIndex((s) => s.id === song.id);
+    if (i >= 0) songs[i] = song;
+    else songs.push(song);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...parsed, songs }));
+  } catch {
+    // best-effort : le vidage sur pagehide (b323) reste le filet
+  }
+}
+
 /** Brouillon de création plus vieux que 6 h → balayé au chargement (b319). */
 const BROUILLON_TTL_MS = 6 * 60 * 60 * 1000;
 function brouillonPerime(s: Song): boolean {

@@ -42,7 +42,7 @@ import { findSameSong, importText } from '../lib/importer';
 import { addSongAsVersion } from '../lib/model';
 import { fetchUgTab, ugTabToImportText } from '../lib/ug';
 import { navigate } from '../router';
-import { useStore } from '../store';
+import { ecrireMorceauImmediat, useStore } from '../store';
 import { estBrouillon, Song } from '../types';
 import { extractUgLinks } from './Import';
 
@@ -101,12 +101,13 @@ export function Compose({ draftId }: { draftId: string | null }) {
       status: 'draft',
     };
     saveSong(brouillon);
-    // On N'OUVRE PAS UG dans le même geste (b323, brouillon perdu par
-    // Vincent) : iOS suspend la PWA dès que l'onglet s'ouvre, AVANT que le
-    // brouillon tout juste créé soit écrit sur le disque — au retour, l'app
-    // rechargée retombait sur l'écran de recherche, sans rien où coller.
-    // L'étape suivante porte le bouton d'ouverture : quand l'utilisateur le
-    // touche, l'état est déjà enregistré.
+    // UN SEUL GESTE (b324, demande de Vincent) : la recherche OUVRE tout de
+    // suite les résultats UG — l'écran de collage n'est que ce qu'on
+    // retrouve au retour. La perte de brouillon de b323 (PWA suspendue
+    // avant l'écriture différée) est contrée par une écriture disque
+    // SYNCHRONE dans le même geste, plus le vidage sur pagehide.
+    ecrireMorceauImmediat(brouillon);
+    window.open(urlRechercheUg(q), '_blank', 'noopener');
     navigate(`/creer/${brouillon.id}`);
   }
 
@@ -310,11 +311,10 @@ export function Compose({ draftId }: { draftId: string | null }) {
               </p>
             </div>
           )}
-          {/* L'ouverture d'UG est un GESTE SÉPARÉ de la création (b323) :
-              quand on le touche, le brouillon est déjà enregistré — le
-              retour retombe donc toujours ici, prêt à coller. */}
+          {/* Cet écran est celui du RETOUR (b324) : la recherche a déjà
+              ouvert UG. Ce bouton ne sert qu'à rouvrir la page si besoin. */}
           <button
-            className="btn block"
+            className="btn ghost block"
             onClick={() =>
               window.open(urlRechercheUg(draft.title), '_blank', 'noopener')
             }
