@@ -42,13 +42,57 @@ export interface PastLivesData {
   ready: boolean;
 }
 
+/**
+ * DERNIER HISTORIQUE CONNU (b343, lenteur ressentie par Vincent). Les
+ * chiffres du diagnostic (b341) ont montré un serveur sain (~100 ms, cdg1) :
+ * ce qui reste, c'est le transport — réseau du téléphone, TLS, démarrage à
+ * froid. On ne peut pas le supprimer, mais on peut ne plus le faire
+ * ATTENDRE : l'onglet affiche immédiatement le dernier historique chargé
+ * (gardé sur l'appareil, comme tout le reste — local-first), puis le
+ * rafraîchit en arrière-plan. Un compte qui change efface ce cache
+ * (CLES_DU_COMPTE, b259).
+ */
+const CACHE_LIVES = 'sing2me/liveCache';
+interface CacheLives {
+  rows: PastLiveRow[];
+  stats: LiveStat[];
+  messages: LiveMessage[];
+  sessions: LiveSession[];
+}
+function cacheLu(): CacheLives | null {
+  try {
+    const raw = localStorage.getItem(CACHE_LIVES);
+    if (!raw) return null;
+    const c = JSON.parse(raw) as Partial<CacheLives>;
+    if (!Array.isArray(c.rows)) return null;
+    return {
+      rows: c.rows,
+      stats: Array.isArray(c.stats) ? c.stats : [],
+      messages: Array.isArray(c.messages) ? c.messages : [],
+      sessions: Array.isArray(c.sessions) ? c.sessions : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function usePastLives(): PastLivesData {
   const { prefs, artist, bands, resetAt } = useStore();
-  const [sessions, setSessions] = useState<LiveSession[] | null>(null);
-  const [rows, setRows] = useState<PastLiveRow[]>([]);
-  const [stats, setStats] = useState<LiveStat[] | null>(null);
-  const [messages, setMessages] = useState<LiveMessage[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState<LiveSession[] | null>(
+    () => cacheLu()?.sessions ?? null,
+  );
+  const [rows, setRows] = useState<PastLiveRow[]>(() => cacheLu()?.rows ?? []);
+  const [stats, setStats] = useState<LiveStat[] | null>(
+    () => cacheLu()?.stats ?? null,
+  );
+  const [messages, setMessages] = useState<LiveMessage[] | null>(
+    () => cacheLu()?.messages ?? null,
+  );
+  // Avec un cache, on AFFICHE tout de suite — le rafraîchissement se fait
+  // en silence derrière. Sans cache (premier lancement), on attend comme
+  // avant. Un cache local ne conclut jamais à l'absence (règle b245) : il
+  // ne sert qu'à montrer plus vite ce qu'on a déjà su.
+  const [loading, setLoading] = useState(() => cacheLu() === null);
   const [failed, setFailed] = useState(false);
 
   const names = [artist.name, ...bands.map((b) => b.name)]
@@ -78,7 +122,9 @@ export function usePastLives(): PastLivesData {
     const noms = namesKey === '' ? [] : namesKey.split(',');
     const cids = cloudKey === '' ? [] : cloudKey.split(',');
     void (async () => {
-      setLoading(true);
+      // b343 : si un cache s'affiche déjà, le rafraîchissement est
+      // silencieux — pas de spinner par-dessus des données visibles.
+      if (cacheLu() === null) setLoading(true);
       try {
         // UN appel pour lives + morceaux + séances (b339) : le serveur
         // renvoyait déjà les trois ensemble, on l'appelait trois fois.
@@ -92,8 +138,25 @@ export function usePastLives(): PastLivesData {
         setStats(h.stats);
         setMessages(ms);
         setFailed(false);
+        try {
+          localStorage.setItem(
+            CACHE_LIVES,
+            JSON.stringify({
+              rows: h.rows,
+              stats: h.stats,
+              sessions: h.sessions,
+              messages: ms,
+            } satisfies CacheLives),
+          );
+        } catch {
+          /* stockage plein ou indisponible : l'affichage direct suffit */
+        }
       } catch {
-        if (!cancelled) setFailed(true);
+        // Le rafraîchissement a échoué : si un historique (cache) est déjà
+        // à l'écran, on le GARDE — remplacer des données visibles par un
+        // message d'indisponibilité serait un recul. `failed` ne se lève
+        // que quand il n'y a rien à montrer.
+        if (!cancelled && cacheLu() === null) setFailed(true);
       } finally {
         if (!cancelled) setLoading(false);
       }

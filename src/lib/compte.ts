@@ -73,6 +73,9 @@ const CLES_DU_COMPTE = [
   'sing2me/justJoined',
   'sing2me/libBandFilter',
   'sing2me/setlistCtx',
+  // b343 : dernier historique des directs affiché avant rafraîchissement —
+  // il appartient au compte, pas à l'appareil.
+  'sing2me/liveCache',
 ];
 
 export function oublierCachesDuCompte(): void {
