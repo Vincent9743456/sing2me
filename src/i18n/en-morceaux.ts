@@ -618,6 +618,17 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Mettre en forme': 'Format it',
   'Ouvrir la recherche sur Ultimate Guitar':
     'Open the search on Ultimate Guitar',
+  // b331 — mode d'emploi du parcours de création
+  '1. Tape le titre du morceau (et l’artiste).':
+    '1. Type the song title (and the artist).',
+  '2. Choisis une partition sur la page qui s’ouvre.':
+    '2. Pick a chart on the page that opens.',
+  '3. Copie-la — ou copie son lien si l’application UG s’ouvre.':
+    '3. Copy it — or copy its link if the UG app opens.',
+  '4. Reviens ici et colle : la partition se met en forme toute seule.':
+    '4. Come back here and paste: the chart formats itself.',
+  'Cherche, copie la partition (ou son lien), reviens la coller : elle se met en forme toute seule.':
+    'Search, copy the chart (or its link), come back and paste it: it formats itself.',
   'Le presse-papiers est vide — copie d’abord la partition.':
     'The clipboard is empty — copy the chart first.',
   'Ce navigateur ne permet pas de coller ici — utilise la zone de texte.':

@@ -260,11 +260,20 @@ export function Compose({ draftId }: { draftId: string | null }) {
 
       {etape === 'recherche' && (
         <>
-          <p className="help">
-            {t(
-              'Cherche le morceau, copie la partition sur la page ouverte, puis reviens ici la coller.',
-            )}
-          </p>
+          {/* Mode d'emploi (b331, demande de Vincent) : le parcours fait un
+              aller-retour hors de l'app — on le dit en quatre pas, ni plus
+              ni moins. */}
+          <div className="help" style={{ lineHeight: 1.7 }}>
+            <div>{t('1. Tape le titre du morceau (et l’artiste).')}</div>
+            <div>{t('2. Choisis une partition sur la page qui s’ouvre.')}</div>
+            <div>
+              {t('3. Copie-la — ou copie son lien si l’application UG s’ouvre.')}
+            </div>
+            <div>
+              {t('4. Reviens ici et colle : la partition se met en forme toute seule.')}
+            </div>
+          </div>
+          <div className="spacer" />
           <input
             type="text"
             value={query}
