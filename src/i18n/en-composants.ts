@@ -100,4 +100,6 @@ export const EN_COMPOSANTS: Record<string, string> = {
   // LinkPreviews.tsx
   'Vidéo YouTube': 'YouTube video',
   'Écoute Spotify': 'Spotify listen',
+  '▶ Regarder sur YouTube': '▶ Watch on YouTube',
+  '♪ Écouter sur Spotify': '♪ Listen on Spotify',
 };
