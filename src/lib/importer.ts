@@ -27,7 +27,9 @@ import { makeId, parseDuration, Song, StructureRow } from '../types';
 const CHORD_TOKEN =
   /^\(?[A-G](?:#|b)?(?:maj|min|dim|aug|sus|add|m|M|\+|°|ø)?\d*(?:(?:sus|add|maj)\d+)?(?:\/[A-G](?:#|b)?)?\*{0,2}\)?$/;
 
-const NOISE_TOKEN = /^(\||%|-|–|—|x\d+|\(x\d+\)|N\.?C\.?|\.|,)$/i;
+// « (Bis) » / « bis » : consigne de répétition en fin de grille (b336) —
+// même tolérance que PLAIN_NOISE_TOKEN (chordpro.ts).
+const NOISE_TOKEN = /^(\||%|-|–|—|x\d+|\(x\d+\)|\(?bis\)?|N\.?C\.?|\.|,)$/i;
 
 const INLINE_CHORD = /\[[A-G](?:#|b)?[^\]\n]*\]/;
 

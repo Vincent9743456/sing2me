@@ -31,7 +31,11 @@ const PLAIN_CHORD_TOKEN =
   /^\(?[A-G](?:#|b)?(?:maj|min|dim|aug|sus|add|m|M|\+|°|ø)?\d*(?:(?:sus|add|maj)\d+)?(?:\/[A-G](?:#|b)?)?\*{0,2}\)?$/;
 // Jetons décoratifs tolérés dans une grille (les barres « | » sont
 // détachées avant le découpage, elles n'apparaissent donc pas ici).
-const PLAIN_NOISE_TOKEN = /^(%|-|–|—|:|x\d+|\(x\d+\)|N\.?C\.?|\.|,)$/i;
+// « (Bis) » / « bis » est une consigne de répétition, pas une parole : sans
+// lui, une grille d'intro « D Bm7 G A (Bis) » passait pour du texte et
+// restait visible dans la vue publique (b336). Il ne compte JAMAIS comme
+// accord : seul, il ne fait pas une ligne d'accords.
+const PLAIN_NOISE_TOKEN = /^(%|-|–|—|:|x\d+|\(x\d+\)|\(?bis\)?|N\.?C\.?|\.|,)$/i;
 
 /**
  * La ligne est-elle une ligne d'accords brute (sans crochets) ? On détache
