@@ -616,7 +616,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Coller la partition copiée': 'Paste the copied chart',
   '…ou colle-la ici à la main.': '…or paste it here by hand.',
   'Mettre en forme': 'Format it',
-  'Rouvrir la recherche': 'Reopen the search',
+  'Ouvrir la recherche sur Ultimate Guitar':
+    'Open the search on Ultimate Guitar',
   'Le presse-papiers est vide — copie d’abord la partition.':
     'The clipboard is empty — copy the chart first.',
   'Ce navigateur ne permet pas de coller ici — utilise la zone de texte.':

@@ -322,16 +322,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (timer.current !== null) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => {
+    const ecrire = () => {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch {
         // quota dépassé : on ignore (les photos trop lourdes peuvent saturer)
       }
-    }, 250);
+    };
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(ecrire, 250);
+    /*
+     * VIDAGE IMMÉDIAT au passage en arrière-plan (b323, brouillon perdu par
+     * Vincent) : iOS suspend la PWA à l'instant où un autre onglet/app
+     * s'ouvre — le différé de 250 ms n'avait alors jamais lieu, et un état
+     * tout juste créé (le brouillon de recherche, ouvert vers UG dans la
+     * même seconde) disparaissait si l'app était rechargée au retour.
+     * `pagehide` + `visibilitychange(hidden)` sont les deux signaux fiables
+     * d'iOS ; écrire deux fois est sans effet (même contenu).
+     */
+    const surMasquage = () => {
+      if (document.visibilityState === 'hidden') ecrire();
+    };
+    window.addEventListener('pagehide', ecrire);
+    document.addEventListener('visibilitychange', surMasquage);
     return () => {
       if (timer.current !== null) window.clearTimeout(timer.current);
+      window.removeEventListener('pagehide', ecrire);
+      document.removeEventListener('visibilitychange', surMasquage);
     };
   }, [state]);
 
