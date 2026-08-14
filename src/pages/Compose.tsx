@@ -16,6 +16,12 @@
  * lui-même, rien n'est récupéré par nos serveurs : portabilité, pas
  * captation).
  *
+ * DÉROGATION b322 (décision explicite de Vincent) : coller un LIEN de
+ * partition déclenche une récupération via NOTRE serveur (fn=fetch, le
+ * chemin qui existe déjà dans l'import) — parce que la page mobile d'UG
+ * force l'ouverture de son application au clic sur un résultat, où seule la
+ * copie du lien est possible. Le collage de TEXTE, lui, reste 100 % local.
+ *
  * Cycle de vie du brouillon :
  *  · nouvelle recherche → l'ancien brouillon meurt ;
  *  · abandon explicite (Annuler) → suppression immédiate ;
@@ -34,9 +40,11 @@ import { SongBody } from '../components/SongBody';
 import { t } from '../i18n';
 import { findSameSong, importText } from '../lib/importer';
 import { addSongAsVersion } from '../lib/model';
+import { fetchUgTab, ugTabToImportText } from '../lib/ug';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { estBrouillon, Song } from '../types';
+import { extractUgLinks } from './Import';
 
 /**
  * Adresse de recherche UG — ouverte dans un nouvel onglet, jamais requêtée.
@@ -100,13 +108,43 @@ export function Compose({ draftId }: { draftId: string | null }) {
     navigate(`/creer/${brouillon.id}`);
   }
 
+  const [lienEnCours, setLienEnCours] = useState(false);
+
   /* ── Étape 2 : collage → mise en forme locale ───────────────────── */
-  function appliquerTexte(texte: string) {
-    if (!draft || texte.trim() === '') return;
+  async function appliquerTexte(texte: string) {
+    if (!draft || texte.trim() === '' || lienEnCours) return;
+    let brut = texte;
+    let fallbackTitle = draft.title;
+    /*
+     * REPLI PAR LIEN (b322, DÉROGATION EXPLICITE de Vincent à sa propre
+     * spec « aucune requête vers UG depuis l'app/backend ») : la page
+     * mobile d'UG force l'ouverture de son application au clic sur un
+     * résultat — la copie du CONTENU y est impossible, mais la copie du
+     * LIEN (partage) fonctionne. Si le texte collé est un lien de
+     * partition, on récupère donc la partition via NOTRE serveur — le
+     * chemin qui existe déjà dans l'import (« Coller un lien », fn=fetch).
+     * Un texte ordinaire reste traité 100 % en local, comme avant.
+     */
+    const liens = extractUgLinks(texte);
+    if (liens.length > 0 && texte.trim().split(/\s+/).length <= 3) {
+      setLienEnCours(true);
+      try {
+        const tab = await fetchUgTab(liens[0]);
+        brut = ugTabToImportText(tab);
+        if (tab.title) fallbackTitle = tab.title;
+      } catch (e) {
+        toast.show(
+          e instanceof Error ? e.message : t("L'import du lien a échoué."),
+        );
+        setLienEnCours(false);
+        return;
+      }
+      setLienEnCours(false);
+    }
     // 100 % local : importText détecte accords, sections, métadonnées.
     // Les valeurs parsées ÉCRASENT la requête initiale (elle n'était
     // qu'une requête, potentiellement fautive).
-    const res = importText(texte, draft.title);
+    const res = importText(brut, fallbackTitle);
     saveSong({
       ...res.song,
       id: draft.id,
@@ -128,7 +166,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
         return;
       }
       setColle(texte);
-      appliquerTexte(texte);
+      await appliquerTexte(texte);
     } catch {
       toast.show(
         t('Ce navigateur ne permet pas de coller ici — utilise la zone de texte.'),
@@ -264,6 +302,9 @@ export function Compose({ draftId }: { draftId: string | null }) {
           <p className="help">
             {t(
               'Sur la page ouverte, sélectionne la partition (accords + paroles), copie-la, puis reviens ici.',
+            )}{' '}
+            {t(
+              'Si l’application UG s’est ouverte : copie le LIEN de la partition (bouton de partage) et colle-le ici — mojosong la récupère.',
             )}
           </p>
           <button className="btn block" onClick={() => void collerDepuisPressePapiers()}>
@@ -277,8 +318,12 @@ export function Compose({ draftId }: { draftId: string | null }) {
             onChange={(e) => setColle(e.target.value)}
           />
           {colle.trim() !== '' && (
-            <button className="btn block" onClick={() => appliquerTexte(colle)}>
-              {t('Mettre en forme')}
+            <button
+              className="btn block"
+              disabled={lienEnCours}
+              onClick={() => void appliquerTexte(colle)}
+            >
+              {lienEnCours ? t('⏳ Récupération…') : t('Mettre en forme')}
             </button>
           )}
           <div className="spacer" />

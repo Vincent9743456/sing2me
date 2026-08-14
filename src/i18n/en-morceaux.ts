@@ -647,4 +647,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Lien copié — colle-le dans la barre d’adresse de ton navigateur.':
     'Link copied — paste it into your browser’s address bar.',
   'La copie a échoué.': 'Copying failed.',
+
+  // b322 — repli par lien (l'app UG force son ouverture sur mobile)
+  'Si l’application UG s’est ouverte : copie le LIEN de la partition (bouton de partage) et colle-le ici — mojosong la récupère.':
+    'If the UG app opened: copy the chart’s LINK (share button) and paste it here — mojosong will fetch it.',
+  '⏳ Récupération…': '⏳ Fetching…',
+  "L'import du lien a échoué.": 'Importing the link failed.',
 };
