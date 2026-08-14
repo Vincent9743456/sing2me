@@ -657,6 +657,33 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     comptes, aucun préremplissage de bibliothèque ; un morceau ne circule
     que d'un membre vers SON groupe. Import déclenché par l'utilisateur,
     page par page, vers SA bibliothèque.
+  - **Hébergement des partitions : MODÈLE « DROPBOX », pas de chiffrement de
+    bout en bout** (arbitrage Vincent, 15 août 2026 : « on s'aligne et on ne
+    touche pas au code vu qu'on est ok pour l'instant »). La protection est
+    celle de l'HÉBERGEUR, pas de la cryptographie : transit chiffré (HTTPS),
+    repos chiffré par l'infrastructure Supabase (AES-256, comme Dropbox —
+    qui ne fait PAS d'E2EE et détient ses clés), posture d'hébergeur neutre
+    déjà garantie par la ligne rouge ci-dessus (aucune exploitation ni
+    indexation du contenu), page de signalement en place. RIEN à changer
+    dans le code. Petit lot possible plus tard, quand Vincent le demandera :
+    CGU (l'utilisateur est responsable de ce qu'il importe, retrait sur
+    signalement) + procédure de retrait effective.
+    **En réserve si le projet grossit — plan E2EE étudié, non retenu pour
+    l'instant** : l'architecture s'y prête (le serveur ne lit jamais les
+    blobs `user_library`/répertoires de groupe : chiffrer se fait à la
+    frontière pushCloud/pullCloud). Clé maîtresse générée sur le premier
+    appareil (localStorage), appairage des autres appareils par QR/code
+    (jamais par le serveur), phrase de récupération dans l'export de
+    sauvegarde — le local-first rend la perte de clé récupérable (on
+    repousse le cloud avec une clé neuve). Clé par groupe portée par le
+    FRAGMENT d'URL d'invitation (#…, n'atteint jamais le serveur) ; les
+    autres secrets stockables au serveur enveloppés par la clé maîtresse.
+    Transition VERSIONNÉE obligatoire (deux formats lus, activation par
+    compte — type LIVE_KEY_LEGACY, b192) : un appareil pas à jour qui tire
+    du chiffré ne doit jamais écraser en clair. Resteraient en clair par
+    nature : l'état du live (le spectateur lit), les passages transitoires
+    IA et api/tabs ; et les vieilles lignes `shares` (avant b110) seraient
+    à purger.
   - **ne jamais nommer la plateforme source des tabs** (§A.5) dans
     l'interface, l'aide, la landing ou le README public. Formulations
     neutres : « colle le lien d'une page de partition », « reprends ta
