@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 
 import { LiveBanner } from '../components/LiveBanner';
 import { ConfirmSheet } from '../components/Feedback';
+import { SwipeRow } from '../components/SwipeRow';
 import { Empty, Field, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { t } from '../i18n';
@@ -157,12 +158,39 @@ export function Setlists() {
 
   const setlistRow = (sl: Setlist) => {
     const info = playedInfo(sl);
+    // La suppression se RÉVÈLE (b352, demande de Vincent — même geste que
+    // les groupes, b254) : balayage vers la gauche ou appui long, plus de
+    // corbeille qui traîne sur la ligne. La corbeille ne s'offre qu'à qui
+    // PEUT supprimer (b146 : l'auteur, quand la setlist est partagée).
+    if (!canDelete(sl)) {
+      return (
+        <div
+          className="row"
+          key={sl.id}
+          onClick={() => navigate(`/setlist/${sl.id}`)}
+        >
+          {setlistRowContenu(sl, info)}
+        </div>
+      );
+    }
     return (
-      <div
-        className="row"
+      <SwipeRow
         key={sl.id}
+        label={sl.name || t('cette setlist')}
+        onDelete={() => setConfirmDel(sl)}
         onClick={() => navigate(`/setlist/${sl.id}`)}
       >
+        {setlistRowContenu(sl, info)}
+      </SwipeRow>
+    );
+  };
+
+  const setlistRowContenu = (
+    sl: Setlist,
+    info: ReturnType<typeof playedInfo>,
+  ) => {
+    return (
+      <>
         <div className="grow" style={{ minWidth: 0 }}>
           <div className="title">
             {sl.name || t('(sans nom)')}
@@ -224,23 +252,9 @@ export function Setlists() {
             </button>
           </>
         )}
-        {/* Retirer une setlist : réservé à son auteur quand elle est
-            partagée avec un groupe (b146). */}
-        {canDelete(sl) && (
-          <button
-            className="btn icon"
-            style={{ color: 'var(--danger)', flexShrink: 0 }}
-            title={t('Supprimer cette setlist')}
-            aria-label={t('Supprimer cette setlist')}
-            onClick={(e) => {
-              e.stopPropagation();
-              setConfirmDel(sl);
-            }}
-          >
-            <Icon name="trash" size={15} />
-          </button>
-        )}
-      </div>
+        {/* La corbeille visible est partie (b352) : la suppression se
+            révèle au balayage / appui long, comme pour les groupes. */}
+      </>
     );
   };
 
