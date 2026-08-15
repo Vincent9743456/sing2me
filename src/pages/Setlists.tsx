@@ -380,18 +380,18 @@ export function Setlists() {
           </div>
         )}
 
-        {/* Une seule liste : plus de capsules à déplier une par une. */}
+        {/* Une seule liste : plus de capsules à déplier une par une. La
+            création n'a qu'UN bouton — le jaune en bas à droite (b351,
+            demande de Vincent : la carte en pointillés sous la liste
+            faisait doublon). */}
         {setlists.length > 0 && (
           <div className="list" style={{ marginTop: 'var(--sp-2)' }}>
             {visibles.length === 0 && (
               <p className="help" style={{ margin: '6px 0' }}>
-                {t('Rien encore ici — la première setlist se crée juste en dessous.')}
+                {t('Rien encore ici — le bouton en bas à droite crée une setlist.')}
               </p>
             )}
             {visibles.map(setlistRow)}
-            <div className="row createcard" onClick={createHere}>
-              <Icon name="plus" size={16} /> {t('Créer une setlist')}
-            </div>
           </div>
         )}
       </div>

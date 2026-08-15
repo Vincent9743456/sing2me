@@ -37,8 +37,8 @@ export const EN_SETLISTS: Record<string, string> = {
   Solo: 'Solo',
   Toutes: 'All',
   'Mes setlists solo': 'My solo setlists',
-  'Rien encore ici — la première setlist se crée juste en dessous.':
-    'Nothing here yet — the first setlist is created just below.',
+  'Rien encore ici — le bouton en bas à droite crée une setlist.':
+    'Nothing here yet — the bottom-right button creates a setlist.',
   'Groupe sans nom': 'Unnamed band',
   "Setlist par l'IA": 'AI setlist',
   "Une setlist proposée selon l'ambiance": 'A setlist suggested to match the mood',
