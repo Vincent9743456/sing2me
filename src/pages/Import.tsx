@@ -845,6 +845,34 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
     // Les morceaux sont en bibliothèque : l'IA les reprend maintenant, un
     // par un (b220). Rien n'attendait ce passage pour être jouable.
     if (!bulkCancel.current) await onBulkAi(items);
+    /**
+     * L'IMPORT VALIDÉ RAMÈNE À LA BIBLIOTHÈQUE (b355, demande de Vincent) :
+     * les morceaux sont là-bas, c'est là qu'on doit atterrir — avec un
+     * toast qui résume le lot. On RESTE sur l'écran si rien n'est entré
+     * (tout en échec : les raisons sont sous les yeux, il faut les lire)
+     * ou si l'utilisateur a interrompu le lot.
+     */
+    if (!bulkCancel.current) {
+      const ok = items.filter((x) => x.status === 'ok').length;
+      const dup = items.filter((x) => x.status === 'dup').length;
+      const err = items.filter((x) => x.status === 'error').length;
+      if (ok > 0) {
+        const parts = [
+          ok > 1
+            ? t('{n} morceaux ajoutés', { n: ok })
+            : t('{n} morceau ajouté', { n: ok }),
+        ];
+        if (dup > 0)
+          parts.push(
+            dup > 1
+              ? t('{n} déjà présents', { n: dup })
+              : t('{n} déjà présent', { n: dup }),
+          );
+        if (err > 0) parts.push(t('{n} en échec', { n: err }));
+        toast.show(`✓ ${parts.join(' · ')}`);
+        navigate('/');
+      }
+    }
   }
 
   /**
@@ -1400,22 +1428,29 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
               style={{ display: 'none' }}
               onChange={(e) => void onBulkFiles(e)}
             />
-            <p className="help">
-              <strong>{t('Le plus simple pour reprendre ta collection :')}</strong>{' '}
-              {t(
-                'ouvre la page qui liste tes partitions (ta page « mes partitions » ou tes favoris) et',
-              )}{' '}
-              <strong>
-                {t("fais d'abord afficher toutes tes partitions sur la page")}
-              </strong>{' '}
-              {t(
-                "(réglage du nombre par page, ou fais défiler / passe les pages en bas de liste jusqu'à tout voir). Ensuite enregistre la page (Ctrl+S) et dépose le fichier .html ici. S'il reste plusieurs pages, enregistre chacune : tu peux déposer tous les fichiers .html en une fois, les liens s'additionnent sans doublons.",
-              )}{' '}
-              <strong>{t('Pages de partition personnelles')}</strong>{' '}
-              {t(
-                ': ouvre chaque page de partition et enregistre-la (Ctrl+S) — dépose ces .html ici, la partition est extraite directement du fichier, sans passer par le serveur. Tu peux aussi déposer plusieurs fichiers de partitions exportés d’une autre application (txt, ChordPro, OnSong, Word, PDF) : un fichier = un morceau.',
-              )}
-            </p>
+            {/* Le mode d'emploi ne s'affiche que TANT QU'IL SERT (b355,
+                retour de Vincent : une fois le fichier déposé, il fallait
+                défiler tout le pavé pour trouver quoi faire). Dès qu'un
+                fichier ou un lien est prêt, il s'efface : place aux
+                actions. */}
+            {bulkTotal === 0 && (
+              <p className="help">
+                <strong>{t('Le plus simple pour reprendre ta collection :')}</strong>{' '}
+                {t(
+                  'ouvre la page qui liste tes partitions (ta page « mes partitions » ou tes favoris) et',
+                )}{' '}
+                <strong>
+                  {t("fais d'abord afficher toutes tes partitions sur la page")}
+                </strong>{' '}
+                {t(
+                  "(réglage du nombre par page, ou fais défiler / passe les pages en bas de liste jusqu'à tout voir). Ensuite enregistre la page (Ctrl+S) et dépose le fichier .html ici. S'il reste plusieurs pages, enregistre chacune : tu peux déposer tous les fichiers .html en une fois, les liens s'additionnent sans doublons.",
+                )}{' '}
+                <strong>{t('Pages de partition personnelles')}</strong>{' '}
+                {t(
+                  ': ouvre chaque page de partition et enregistre-la (Ctrl+S) — dépose ces .html ici, la partition est extraite directement du fichier, sans passer par le serveur. Tu peux aussi déposer plusieurs fichiers de partitions exportés d’une autre application (txt, ChordPro, OnSong, Word, PDF) : un fichier = un morceau.',
+                )}
+              </p>
+            )}
             {bulkFiles.length > 0 && (
               <p className="help">
                 {bulkFiles.length > 1
@@ -1436,6 +1471,41 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                   {t('retirer')}
                 </a>
               </p>
+            )}
+            {/* L'ACTION D'ABORD (b355) : dès qu'il y a quelque chose à
+                importer, le bouton est là, sous la liste des fichiers —
+                plus rien à chercher en bas d'écran. */}
+            {!bulkRunning ? (
+              <button
+                className="btn block"
+                onClick={() => void onBulkImport()}
+                disabled={bulkTotal === 0}
+              >
+                {t('Tout ajouter à ma bibliothèque')}
+                {bulkTotal > 0 ? ` (${bulkTotal})` : ''}
+              </button>
+            ) : (
+              <>
+                {bulkItems && (
+                  <ProgressBar
+                    done={
+                      bulkItems.filter(
+                        (x) => x.status !== 'pending' && x.status !== 'loading',
+                      ).length
+                    }
+                    total={bulkItems.length}
+                    label={t('Import en cours')}
+                  />
+                )}
+                <button
+                  className="btn ghost block"
+                  onClick={() => {
+                    bulkCancel.current = true;
+                  }}
+                >
+                  {t('Arrêter après le morceau en cours')}
+                </button>
+              </>
             )}
             <div className="spacer" />
             <div className="field">
@@ -1482,40 +1552,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                 )}
               </p>
             </div>
-            {!bulkRunning ? (
-              <>
-                <button
-                  className="btn block"
-                  onClick={() => void onBulkImport()}
-                  disabled={bulkTotal === 0}
-                >
-                  {t('Tout ajouter à ma bibliothèque')}
-                  {bulkTotal > 0 ? ` (${bulkTotal})` : ''}
-                </button>
-              </>
-            ) : (
-              <>
-                {bulkItems && (
-                  <ProgressBar
-                    done={
-                      bulkItems.filter(
-                        (x) => x.status !== 'pending' && x.status !== 'loading',
-                      ).length
-                    }
-                    total={bulkItems.length}
-                    label={t('Import en cours')}
-                  />
-                )}
-                <button
-                  className="btn ghost block"
-                  onClick={() => {
-                    bulkCancel.current = true;
-                  }}
-                >
-                  {t('Arrêter après le morceau en cours')}
-                </button>
-              </>
-            )}
+            {/* Le bouton d'import vit AU-DESSUS du champ de liens (b355). */}
             {bulkItems && (
               <div className="card" style={{ marginTop: 12, padding: 8 }}>
                 {bulkItems.map((it, i) => (
