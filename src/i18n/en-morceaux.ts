@@ -371,8 +371,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   "(réglage du nombre par page, ou fais défiler / passe les pages en bas de liste jusqu'à tout voir). Ensuite enregistre la page (Ctrl+S) et dépose le fichier .html ici. S'il reste plusieurs pages, enregistre chacune : tu peux déposer tous les fichiers .html en une fois, les liens s'additionnent sans doublons.":
     '(page-size setting, or scroll / page through to the bottom until you see everything). Then save the page (Ctrl+S) and drop the .html file here. If several pages remain, save each one: you can drop all the .html files at once, links are combined without duplicates.',
   'Pages de partition personnelles': 'Personal chart pages',
-  ': ouvre chaque page de partition et enregistre-la (Ctrl+S) — dépose ces .html ici, la partition est extraite directement du fichier, sans passer par le serveur. Tu peux aussi déposer plusieurs fichiers de partitions exportés d’une autre application (txt, ChordPro, OnSong, Word, PDF) : un fichier = un morceau.':
-    ': open each chart page and save it (Ctrl+S) — drop these .html files here, the chart is extracted directly from the file, without going through the server. You can also drop several chart files exported from another app (txt, ChordPro, OnSong, Word, PDF): one file = one song.',
+  ': ouvre chaque page de partition et enregistre-la (Ctrl+S) — dépose ces .html ici, la partition est extraite directement du fichier, sans passer par le serveur. Tu peux aussi déposer des fichiers exportés d’une autre application (txt, ChordPro, OnSong, Word, PDF) — un recueil qui contient toutes tes chansons est découpé automatiquement en autant de morceaux.':
+    ': open each chart page and save it (Ctrl+S) — drop these .html files here, the chart is extracted directly from the file, without going through the server. You can also drop files exported from another app (txt, ChordPro, OnSong, Word, PDF) — a songbook holding all your songs is automatically split into that many songs.',
   '📄 {n} fichiers de partition prêts :': '📄 {n} chart files ready:',
   '📄 {n} fichier de partition prêt :': '📄 {n} chart file ready:',
   retirer: 'remove',
