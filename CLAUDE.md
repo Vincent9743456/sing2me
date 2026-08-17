@@ -1163,6 +1163,20 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   de Vincent venait d'un scanner de messagerie pro qui détonait le lien
   magique et consommait le jeton à usage unique — réglé côté Supabase par un
   gabarit d'e-mail SANS lien, code seul).
+- **Notifications par E-MAIL en attendant l'app native** (b353, demande de
+  Vincent). Un cron Vercel (`/api/notify`, toutes les 15 min,
+  `server/notify.js`) envoie aux membres d'un groupe un RÉSUMÉ par groupe de
+  ce qui s'est écrit dans `band_messages` — messages ET morceaux proposés y
+  passent tous (b174), un seul point à surveiller couvre donc les deux.
+  Règles : jamais un e-mail par message (résumé) ; l'auteur exclu par
+  `user_id`, jamais par le nom (b247) ; premier passage = pose du repère
+  (`notif_state`, supabase/notify.sql), rien d'envoyé — on ne réveille pas
+  tout le monde avec l'historique ; le repère n'avance que si les envois
+  partent (Resend muet → on réessaie) ; plafond de 50 envois par passage ;
+  tout best-effort. Envoi via l'API Resend (`RESEND_API_KEY` sur Vercel — la
+  même clé que le SMTP Supabase ; `MAIL_FROM` facultatif, défaut
+  marco@mojosong.com). Le jour des notifications push, ce facteur se coupe
+  en retirant le cron.
 - Supabase côté client : clé anon + RLS uniquement ; service_role
   seulement dans `api/*.js` (Vercel).
 - SQL : les fichiers `supabase/*.sql` restent idempotents
