@@ -543,6 +543,31 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
     const linksFound: string[] = [];
     const docs: { name: string; text: string }[] = [];
     const failed: string[] = [];
+    /**
+     * UN RECUEIL SE DÉCOUPE DÈS LE DÉPÔT (b357, demande de Vincent :
+     * « il faut que l'import en masse couvre ce cas d'usage — un seul
+     * fichier avec toutes les partitions dedans »). Le découpage n'agit
+     * que quand il est SÛR de lui (directives ChordPro, en-têtes Title:
+     * répétés, recueil paginé — même module que l'import à l'unité) :
+     * dans le doute, le fichier reste un seul morceau plutôt que de
+     * couper une chanson en deux. Fait au dépôt, pas à l'import : le
+     * compteur et le bouton annoncent le vrai nombre de morceaux.
+     */
+    const eclate = (
+      name: string,
+      entree: { text?: string; pages?: string[] },
+    ): { name: string; text: string }[] => {
+      const d = splitSongs(entree);
+      if (d.confident && d.songs.length >= 2) {
+        return d.songs.map((s, i) => ({
+          name: s.title || `${name} · ${i + 1}`,
+          text: s.text,
+        }));
+      }
+      return [
+        { name, text: entree.text ?? entree.pages?.join('\n\n') ?? '' },
+      ];
+    };
     for (const f of files) {
       const lower = f.name.toLowerCase();
       try {
@@ -568,18 +593,14 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           }
         } else if (lower.endsWith('.docx')) {
           const bytes = new Uint8Array(await f.arrayBuffer());
-          docs.push({ name: f.name, text: await extractDocxText(bytes) });
+          docs.push(...eclate(f.name, { text: await extractDocxText(bytes) }));
         } else if (lower.endsWith('.pdf')) {
           const bytes = new Uint8Array(await f.arrayBuffer());
-          // En masse, un fichier = un morceau par défaut ; le découpage
-          // d'un recueil se propose à l'unité, où l'utilisateur peut voir
-          // ce qu'on lui propose avant d'accepter.
-          docs.push({
-            name: f.name,
-            text: (await extractPdfPages(bytes)).join('\n\n'),
-          });
+          // Les PAGES du PDF sont le meilleur signal de découpage d'un
+          // recueil (une chanson par page) : on les garde séparées.
+          docs.push(...eclate(f.name, { pages: await extractPdfPages(bytes) }));
         } else {
-          docs.push({ name: f.name, text: await f.text() });
+          docs.push(...eclate(f.name, { text: await f.text() }));
         }
       } catch (err) {
         failed.push(
@@ -1463,7 +1484,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                 )}{' '}
                 <strong>{t('Pages de partition personnelles')}</strong>{' '}
                 {t(
-                  ': ouvre chaque page de partition et enregistre-la (Ctrl+S) — dépose ces .html ici, la partition est extraite directement du fichier, sans passer par le serveur. Tu peux aussi déposer plusieurs fichiers de partitions exportés d’une autre application (txt, ChordPro, OnSong, Word, PDF) : un fichier = un morceau.',
+                  ': ouvre chaque page de partition et enregistre-la (Ctrl+S) — dépose ces .html ici, la partition est extraite directement du fichier, sans passer par le serveur. Tu peux aussi déposer des fichiers exportés d’une autre application (txt, ChordPro, OnSong, Word, PDF) — un recueil qui contient toutes tes chansons est découpé automatiquement en autant de morceaux.',
                 )}
               </p>
             )}
