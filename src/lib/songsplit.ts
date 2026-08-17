@@ -84,6 +84,63 @@ export function ressembleAUnTitre(line: string): boolean {
   return true;
 }
 
+/**
+ * EN-TÊTES ET PIEDS D'IMPRESSION (b358, PDF de Vincent : le carnet exporté
+ * par mojosong lui-même porte, sur CHAQUE page, l'en-tête du navigateur —
+ * « 17/08/2026 12:39   mojosong ». Le découpage paginé exigeait qu'une page
+ * commence par un titre : aucune ne commençait par autre chose que cet
+ * en-tête, le recueil restait d'un bloc).
+ *
+ * Une ligne qui revient à la MÊME position (première ou dernière ligne
+ * pleine) sur au moins deux tiers des pages n'est pas du contenu : c'est de
+ * la mise en page — en-tête ou pied d'impression, numéros de page. On la
+ * retire AVANT toute analyse ; les chiffres sont normalisés (« 1/6 » et
+ * « 2/6 » sont le même pied). Un refrain répété ne peut pas s'y faire
+ * prendre : il ne retombe pas à la même position de page deux fois sur
+ * trois.
+ */
+function normeImpression(l: string): string {
+  return l.trim().replace(/\s+/g, ' ').replace(/\d+/g, '#');
+}
+
+export function sansEnTetesImpression(pages: string[]): string[] {
+  if (pages.length < 2) return pages;
+  let result = pages.map((p) => p.split('\n'));
+  const seuil = Math.max(2, Math.ceil((pages.length * 2) / 3));
+  const premierePleine = (lignes: string[]) =>
+    lignes.findIndex((l) => l.trim() !== '');
+  const dernierePleine = (lignes: string[]) => {
+    for (let i = lignes.length - 1; i >= 0; i--) {
+      if (lignes[i].trim() !== '') return i;
+    }
+    return -1;
+  };
+  const passe = (position: (lignes: string[]) => number) => {
+    const comptes = new Map<string, number>();
+    for (const lignes of result) {
+      const i = position(lignes);
+      if (i < 0) continue;
+      const n = normeImpression(lignes[i]);
+      comptes.set(n, (comptes.get(n) ?? 0) + 1);
+    }
+    const meilleur = [...comptes.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (!meilleur || meilleur[1] < seuil) return false;
+    result = result.map((lignes) => {
+      const i = position(lignes);
+      if (i >= 0 && normeImpression(lignes[i]) === meilleur[0]) {
+        return [...lignes.slice(0, i), ...lignes.slice(i + 1)];
+      }
+      return lignes;
+    });
+    return true;
+  };
+  // Jusqu'à trois lignes d'en-tête et deux de pied — au-delà, ce n'est
+  // plus de la mise en page.
+  for (let k = 0; k < 3 && passe(premierePleine); k++);
+  for (let k = 0; k < 2 && passe(dernierePleine); k++);
+  return result.map((l) => l.join('\n'));
+}
+
 /** Découpe un texte aux positions données (indices de ligne de début). */
 function coupe(
   lines: string[],
@@ -112,7 +169,11 @@ export function splitSongs(input: {
   text?: string;
   pages?: string[];
 }): SplitResult {
-  const texte = (input.text ?? input.pages?.join('\n\n') ?? '').replace(
+  // Les en-têtes/pieds d'impression partent AVANT toute analyse (b358) :
+  // ils masquaient les titres en tête de page, et n'ont de toute façon
+  // rien à faire dans des paroles.
+  const pagesNettes = sansEnTetesImpression(input.pages ?? []);
+  const texte = (input.text ?? pagesNettes.join('\n\n') ?? '').replace(
     /\r\n?/g,
     '\n',
   );
@@ -151,9 +212,43 @@ export function splitSongs(input: {
     if (songs.length >= 2) return { songs, confident: true, signal: 'onsong' };
   }
 
+  // ————— 3a. Recueil « Titre — Artiste » (b358 : le carnet PDF exporté par
+  //    mojosong, et tout recueil dont les pages de tête portent ce motif).
+  //    Le tiret cadratin entouré d'espaces ne se trouve pas dans une ligne
+  //    de paroles ordinaire : deux pages au moins qui s'ouvrent ainsi, et
+  //    le découpage est SÛR — les pages sans ce motif continuent le
+  //    morceau précédent.
+  const pages = pagesNettes;
+  const teteDePage = (p: string): string => {
+    const lignes = p.split('\n');
+    const i = lignes.findIndex((l) => l.trim() !== '');
+    return i >= 0 ? lignes[i] : '';
+  };
+  const titreArtiste = (l: string): boolean =>
+    /\s[—–]\s/.test(l) && ressembleAUnTitre(l.replace(/\s+/g, ' '));
+  if (
+    pages.length >= 2 &&
+    pages.filter((p) => titreArtiste(teteDePage(p))).length >= 2
+  ) {
+    const debuts: { title: string; textes: string[] }[] = [];
+    for (const p of pages) {
+      const tete = teteDePage(p);
+      if (titreArtiste(tete) || debuts.length === 0) {
+        debuts.push({ title: tete.trim().replace(/\s+/g, ' '), textes: [p] });
+      } else {
+        debuts[debuts.length - 1].textes.push(p);
+      }
+    }
+    const songs = debuts
+      .map((d) => ({ title: d.title, text: d.textes.join('\n\n').trim() }))
+      .filter((s) => assezDense(s.text));
+    if (songs.length >= 2 && songs.every((s) => s.title !== '')) {
+      return { songs, confident: true, signal: 'pages' };
+    }
+  }
+
   // ————— 3. Recueil paginé : une chanson par page, parfois deux pages.
   //    Une page qui ne commence PAS par un titre continue la précédente.
-  const pages = input.pages ?? [];
   if (pages.length >= 2) {
     const debuts: { title: string; textes: string[] }[] = [];
     for (const p of pages) {
