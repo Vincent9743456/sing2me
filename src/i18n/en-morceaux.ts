@@ -394,6 +394,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   '{n} déjà présents': '{n} already there',
   '{n} déjà présent': '{n} already there',
   '{n} morceau ajouté': '{n} song added',
+  'Réimporter quand même les {n} morceaux supprimés autrefois':
+    'Re-import the {n} previously deleted songs anyway',
+  'Réimporter quand même le morceau supprimé autrefois':
+    'Re-import the previously deleted song anyway',
   '{n} morceaux ajoutés': '{n} songs added',
   '{n} en échec': '{n} failed',
   '{n} supprimés de mojosong (non réimportés)': '{n} deleted from mojosong (not re-imported)',

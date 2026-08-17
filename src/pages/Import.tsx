@@ -37,6 +37,14 @@ import { useStore } from '../store';
 
 type AddMethod = 'ug' | 'doc' | 'bulk';
 
+/** Une tâche de l'import en masse : un fichier déposé ou un lien. */
+interface TacheBulk {
+  label: string;
+  url?: string;
+  text?: string;
+  fallbackTitle?: string;
+}
+
 interface BulkItem {
   url: string;
   status: 'pending' | 'loading' | 'ok' | 'dup' | 'skip' | 'error';
@@ -178,6 +186,9 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
   const bulkCancel = useRef(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const bulkFileRef = useRef<HTMLInputElement | null>(null);
+  // Les tâches du dernier lot (b356) : la reprise « réimporter quand même »
+  // rejoue les écartées sans redemander le fichier.
+  const bulkTasksRef = useRef<TacheBulk[]>([]);
 
   const bulkLinks = useMemo(() => extractUgLinks(bulkInput), [bulkInput]);
   const bulkTotal = bulkLinks.length + bulkFiles.length;
@@ -592,19 +603,22 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
     if (bulkFileRef.current) bulkFileRef.current.value = '';
   }
 
-  /** Import en masse : fichiers puis liens, ajoutés à la chaîne. */
-  async function onBulkImport() {
-    if (bulkTotal === 0 || bulkRunning) return;
+  /** Import en masse : fichiers puis liens, ajoutés à la chaîne.
+   *  `reprise` (b356) : relance sur un sous-ensemble de tâches — les
+   *  morceaux écartés par une pierre tombale — avec `sansTombstones` : un
+   *  refus SILENCIEUX protège (on ne ressuscite pas un supprimé sans le
+   *  dire), mais un refus sans issue emprisonne — la reprise est un geste
+   *  explicite de l'utilisateur, la garde n'a plus à s'y opposer. */
+  async function onBulkImport(
+    reprise?: TacheBulk[],
+    sansTombstones = false,
+  ) {
+    if ((reprise ? reprise.length : bulkTotal) === 0 || bulkRunning) return;
     setError(null);
     bulkCancel.current = false;
     setBulkRunning(true);
     setAiProg(null);
-    const tasks: {
-      label: string;
-      url?: string;
-      text?: string;
-      fallbackTitle?: string;
-    }[] = [
+    const tasks: TacheBulk[] = reprise ?? [
       ...bulkFiles.map((f) => ({
         label: f.name,
         text: f.text,
@@ -612,6 +626,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
       })),
       ...bulkLinks.map((url) => ({ label: url, url })),
     ];
+    bulkTasksRef.current = tasks;
     const items: BulkItem[] = tasks.map((t) => ({
       url: t.label,
       status: 'pending',
@@ -711,6 +726,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           song.artist,
         );
         if (
+          !sansTombstones &&
           !existing &&
           [...removedTitles].some((k) =>
             bandKeysMatch(k, songKey(song.title, song.artist)),
@@ -1639,6 +1655,34 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                 )}
               </div>
             )}
+            {/* UN REFUS SANS ISSUE EMPRISONNE (b356, constat de Vincent :
+                tout son lot écarté par les pierres tombales, écran figé).
+                La garde anti-résurrection reste la règle pour l'import
+                silencieux — mais quand l'utilisateur VOIT le refus, il
+                doit pouvoir passer outre d'un geste explicite. */}
+            {bulkItems &&
+              !bulkRunning &&
+              !bulkAiRunning &&
+              bulkItems.some((x) => x.status === 'skip') && (
+                <button
+                  className="btn ghost block"
+                  style={{ marginTop: 10 }}
+                  onClick={() => {
+                    const items = bulkItems;
+                    const redo = bulkTasksRef.current.filter(
+                      (_, i) => items[i]?.status === 'skip',
+                    );
+                    void onBulkImport(redo, true);
+                  }}
+                >
+                  ↩{' '}
+                  {bulkItems.filter((x) => x.status === 'skip').length > 1
+                    ? t('Réimporter quand même les {n} morceaux supprimés autrefois', {
+                        n: bulkItems.filter((x) => x.status === 'skip').length,
+                      })
+                    : t('Réimporter quand même le morceau supprimé autrefois')}
+                </button>
+              )}
             {aiProg && (
               <ProgressBar
                 done={aiProg.done}
