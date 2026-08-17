@@ -4,6 +4,8 @@
  */
 import { useEffect, useState } from 'react';
 
+import { sortieAutorisee } from './lib/gardebrouillon';
+
 export type Route =
   | { name: 'library' }
   | { name: 'song'; id: string }
@@ -144,6 +146,10 @@ export function useRoute(): Route {
 }
 
 export function navigate(path: string): void {
+  // Un écran en cours d'édition peut retenir la sortie (b354) : la garde
+  // pose sa question, puis rappelle cette même navigation si l'utilisateur
+  // confirme. Sans garde posée, coût nul.
+  if (!sortieAutorisee(() => navigate(path))) return;
   location.hash = path.startsWith('/') ? '#' + path : '#/' + path;
 }
 

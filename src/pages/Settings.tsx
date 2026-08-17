@@ -389,9 +389,32 @@ export function Settings() {
         onBack={() => navigate('/artist')}
       />
       <div className="page">
+        {/* SOMBRE / CLAIR (b233) — déménagé ici en b354 (demande de
+            Vincent, remplace la barre d'outils de Morceaux, b234). Le
+            sombre reste l'identité de l'app ; le clair est la sortie pour
+            le plein jour, et s'applique à TOUTE l'app. */}
+        <h2 className="pagetitle" style={{ marginTop: 0 }}>
+          {t('Thème de l’application')}
+        </h2>
+        <div className="chips">
+          <button
+            className={`chip ${prefs.theme !== 'clair' ? '' : 'off'}`}
+            onClick={() => savePrefs({ ...prefs, theme: 'sombre' })}
+          >
+            {t('🌙 Sombre (scène)')}
+          </button>
+          <button
+            className={`chip ${prefs.theme === 'clair' ? '' : 'off'}`}
+            onClick={() => savePrefs({ ...prefs, theme: 'clair' })}
+          >
+            {t('☀️ Clair (plein jour)')}
+          </button>
+        </div>
+        <div className="spacer" />
+
         {/* Langue de l'interface (b156) : automatique = langue du
             téléphone. Les contenus musicaux ne sont JAMAIS traduits. */}
-        <h2 className="pagetitle" style={{ marginTop: 0 }}>
+        <h2 className="pagetitle">
           {t('Langue de l’application')}
         </h2>
         <div className="chips">

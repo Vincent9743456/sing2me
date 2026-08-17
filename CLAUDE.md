@@ -33,9 +33,10 @@
     jamais au sondage, sinon elle appelle vers un écran vide.
 12. **Deux thèmes, un seul jeu de règles** (b233) : l'app est SOMBRE par
     défaut — c'est son identité de scène — et le mode clair est une SORTIE
-    pour le plein jour, réglée depuis la BIBLIOTHÈQUE (barre d'outils de
-    l'onglet Morceaux, `prefs.theme` ; jamais depuis la partition —
-    arbitrage de Vincent en b234), qui s'applique à TOUTE l'app. Conséquence sur tout code d'interface :
+    pour le plein jour, réglée depuis les RÉGLAGES (`prefs.theme` ; jamais
+    depuis la partition — arbitrage b234 ; déplacée de la barre d'outils de
+    Morceaux vers les Réglages en b354, demande de Vincent), qui s'applique
+    à TOUTE l'app. Conséquence sur tout code d'interface :
     `:root[data-theme='clair']` ne redéfinit que des TOKENS, jamais un
     composant. Une couleur écrite en dur dans un composant est un bug de
     thème — même un `#fff` posé sur ce qu'on croit être un fond coloré :

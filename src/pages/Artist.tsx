@@ -14,7 +14,8 @@ import { t } from '../i18n';
 import { stripChords } from '../lib/chordpro';
 import { pushLive } from '../lib/live';
 import { APP_BUILD } from '../version';
-import { useToast } from '../components/Feedback';
+import { MenuSheet, useToast } from '../components/Feedback';
+import { leverGarde, poserGarde } from '../lib/gardebrouillon';
 import { basculerDiag } from '../lib/modediag';
 import { PublicLyrics } from '../components/PublicLyrics';
 import { PublicNameCard } from '../components/PublicNameCard';
@@ -200,6 +201,56 @@ export function Artist() {
     setDraft({ ...artist, links: (artist.links ?? []).map((l) => ({ ...l })) });
   }, [artist]);
 
+  /**
+   * ENREGISTRER LE PROFIL — un seul chemin (b354) : le bouton du haut, le
+   * bouton du bas et la garde de sortie font tous exactement la même chose.
+   * La fiche publique suit le profil (b136), en best-effort.
+   */
+  function enregistrerProfil() {
+    saveArtist(draft);
+    setSaved(true);
+    setEditing(false);
+    void (async () => {
+      const s = await getValidSession();
+      if (!s) return;
+      await ensurePublicPage(
+        s,
+        await profilAPublier(draft, bands, prefs.pagePubliqueMasquee === true),
+      );
+      await publierFichesGroupes(s, bands, draft);
+    })();
+  }
+
+  /**
+   * SORTIR DU MODE ÉDITION NE PERD PLUS RIEN (b354, demande de Vincent :
+   * « les modifications en cours sont perdues si on sort du mode
+   * modification »). Tant qu'on édite ET que le brouillon diffère du profil
+   * enregistré, toute navigation de l'app est retenue par une garde
+   * (lib/gardebrouillon, consultée par navigate) : une feuille demande s'il
+   * faut enregistrer, sortir sans enregistrer, ou rester (fermer).
+   */
+  const [questionSortie, setQuestionSortie] = useState<(() => void) | null>(
+    null,
+  );
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const artistRef = useRef(artist);
+  artistRef.current = artist;
+  useEffect(() => {
+    if (!editing) return;
+    poserGarde({
+      actif: () => {
+        const a = artistRef.current;
+        return (
+          JSON.stringify(draftRef.current) !==
+          JSON.stringify({ ...a, links: (a.links ?? []).map((l) => ({ ...l })) })
+        );
+      },
+      demander: (continuer) => setQuestionSortie(() => continuer),
+    });
+    return () => leverGarde();
+  }, [editing]);
+
 
   const payload = useMemo<SharePayload | null>(() => {
     if (draft.name.trim() === '') return null;
@@ -352,14 +403,7 @@ export function Artist() {
         <div className="spacer" />
 
         {editing && (
-          <button
-            className="btn ghost small"
-            onClick={() => {
-              saveArtist(draft);
-              setSaved(true);
-              setEditing(false);
-            }}
-          >
+          <button className="btn ghost small" onClick={enregistrerProfil}>
             ← {t('Enregistrer et revenir au profil')}
           </button>
         )}
@@ -1111,33 +1155,7 @@ export function Artist() {
         )}
 
         <div className="rowactions">
-          <button
-            className="btn"
-            onClick={() => {
-              saveArtist(draft);
-              setSaved(true);
-              setEditing(false);
-              // La fiche publique suit le profil (b136) : elle est republiée
-              // sous le nom déjà réservé, ou un nom dérivé du nom d'artiste
-              // est réservé automatiquement. Best-effort, jamais bloquant.
-              void (async () => {
-                const s = await getValidSession();
-                if (!s) return;
-                // La fiche part avec les groupes NON masqués (b231)…
-                await ensurePublicPage(
-                  s,
-                  await profilAPublier(
-                    draft,
-                    bands,
-                    prefs.pagePubliqueMasquee === true,
-                  ),
-                );
-                // …et les fiches de mes groupes se rafraîchissent (b232) :
-                // ma photo y figure comme musicien, elle vient de changer.
-                await publierFichesGroupes(s, bands, draft);
-              })();
-            }}
-          >
+          <button className="btn" onClick={enregistrerProfil}>
             {saved ? `✓ ${t('Enregistré')}` : t('Enregistrer')}
           </button>
           <button
@@ -1193,6 +1211,42 @@ export function Artist() {
                 )
           }
           onClose={() => setShare(false)}
+        />
+      )}
+      {/* La question de sortie (b354) : enregistrer, sortir sans, ou
+          rester (fermer la feuille). La garde est levée AVANT de continuer,
+          sinon la navigation relancée retomberait dessus. */}
+      {questionSortie !== null && (
+        <MenuSheet
+          title={t('Enregistrer tes modifications ?')}
+          items={[
+            {
+              label: t('💾 Enregistrer et sortir'),
+              onClick: () => {
+                const suite = questionSortie;
+                setQuestionSortie(null);
+                leverGarde();
+                enregistrerProfil();
+                suite();
+              },
+            },
+            {
+              label: t('Sortir sans enregistrer'),
+              danger: true,
+              onClick: () => {
+                const suite = questionSortie;
+                setQuestionSortie(null);
+                leverGarde();
+                setEditing(false);
+                setDraft({
+                  ...artist,
+                  links: (artist.links ?? []).map((l) => ({ ...l })),
+                });
+                suite();
+              },
+            },
+          ]}
+          onClose={() => setQuestionSortie(null)}
         />
       )}
     </>

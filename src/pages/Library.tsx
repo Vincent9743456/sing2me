@@ -768,35 +768,8 @@ export function Library() {
               <span className="filtercount">{activeFilters}</span>
             )}
           </button>
-          {/* SOMBRE / CLAIR (b233, placé ici en b234 à la demande de
-              Vincent : « pas dans les partitions »). Le réglage vit dans la
-              bibliothèque — l'écran d'où l'on part — et s'applique à TOUTE
-              l'app : un thème par écran n'aurait aucun sens. Sans libellé,
-              pour ne pas voler la place de la recherche à 360 px ; c'est
-              l'`aria-label` qui le nomme. */}
-          <button
-            className="btn ghost"
-            style={{ flexShrink: 0, minHeight: 44, width: 44, padding: 0 }}
-            aria-pressed={prefs.theme === 'clair'}
-            aria-label={
-              prefs.theme === 'clair'
-                ? t('Repasser toute l’app en sombre')
-                : t('Passer toute l’app en clair')
-            }
-            title={
-              prefs.theme === 'clair'
-                ? t('Repasser toute l’app en sombre')
-                : t('Passer toute l’app en clair')
-            }
-            onClick={() =>
-              savePrefs({
-                ...prefs,
-                theme: prefs.theme === 'clair' ? 'sombre' : 'clair',
-              })
-            }
-          >
-            {prefs.theme === 'clair' ? '☾' : '☀'}
-          </button>
+          {/* SOMBRE / CLAIR : déménagé dans les Réglages (b354, demande de
+              Vincent — remplace le placement b234 dans cette barre). */}
         </div>
         {filtersOpen && (
           <>
