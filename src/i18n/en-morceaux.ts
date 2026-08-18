@@ -401,6 +401,15 @@ export const EN_MORCEAUX: Record<string, string> = {
   '{n} morceaux ajoutés': '{n} songs added',
   '{n} en échec': '{n} failed',
   '{n} supprimés de mojosong (non réimportés)': '{n} deleted from mojosong (not re-imported)',
+  // b368 — la feuille « réimporter les supprimés ? »
+  '{n} morceau déjà supprimé': '{n} song previously deleted',
+  '{n} morceaux déjà supprimés': '{n} songs previously deleted',
+  'Tu avais supprimé ce morceau de ta bibliothèque : il n’a pas été réimporté. Veux-tu le faire revenir ?':
+    'You had deleted this song from your library: it was not re-imported. Bring it back?',
+  'Tu avais supprimé ces morceaux de ta bibliothèque : ils n’ont pas été réimportés. Veux-tu les faire revenir ?':
+    'You had deleted these songs from your library: they were not re-imported. Bring them back?',
+  '↩ Réimporter ce morceau': '↩ Re-import this song',
+  '↩ Réimporter ces morceaux': '↩ Re-import these songs',
   '{n} supprimé de mojosong (non réimporté)': '{n} deleted from mojosong (not re-imported)',
   '{n} échecs': '{n} failed',
   '{n} échec': '{n} failed',

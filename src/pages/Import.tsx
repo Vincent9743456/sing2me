@@ -27,7 +27,7 @@ import {
   UgSearchResult,
   ugTabToImportText,
 } from '../lib/ug';
-import { useToast } from '../components/Feedback';
+import { ConfirmSheet, useToast } from '../components/Feedback';
 import { t } from '../i18n';
 import { addSongAsVersion } from '../lib/model';
 import { looksGarbled } from '../lib/textRepair';
@@ -181,6 +181,12 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
   const [bulkItems, setBulkItems] = useState<BulkItem[] | null>(null);
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkAiRunning, setBulkAiRunning] = useState(false);
+  // Morceaux écartés « déjà supprimés » à la fin d'un lot : la feuille de
+  // confirmation est ouverte tant que l'utilisateur n'a pas tranché (b368).
+  const [skipsAConfirmer, setSkipsAConfirmer] = useState(0);
+  // ConfirmSheet appelle onConfirm PUIS onClose : ce repère évite que le
+  // « décliner » (toast + retour bibliothèque) se rejoue après un « oui ».
+  const redoChoisi = useRef(false);
   const [aiProg, setAiProg] = useState<{ done: number; total: number } | null>(
     null,
   );
@@ -947,26 +953,53 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
      * ou si l'utilisateur a interrompu le lot.
      */
     if (!bulkCancel.current) {
-      const ok = items.filter((x) => x.status === 'ok').length;
-      const dup = items.filter((x) => x.status === 'dup').length;
-      const err = items.filter((x) => x.status === 'error').length;
-      if (ok > 0) {
-        const parts = [
-          ok > 1
-            ? t('{n} morceaux ajoutés', { n: ok })
-            : t('{n} morceau ajouté', { n: ok }),
-        ];
-        if (dup > 0)
-          parts.push(
-            dup > 1
-              ? t('{n} déjà présents', { n: dup })
-              : t('{n} déjà présent', { n: dup }),
-          );
-        if (err > 0) parts.push(t('{n} en échec', { n: err }));
-        toast.show(`✓ ${parts.join(' · ')}`);
-        navigate('/');
+      const skips = items.filter((x) => x.status === 'skip').length;
+      if (skips > 0) {
+        // LA DÉCISION SE POSE EN FACE (b368, retour de Vincent : « la
+        // demande de confirmation apparaît en bas de la page »). Des
+        // morceaux écartés parce qu'il les avait SUPPRIMÉS autrefois, ça
+        // mérite une vraie question, pas un bouton à dénicher sous le
+        // bilan : une feuille s'ouvre à la fin du lot — réimporter, ou
+        // laisser de côté. On ne quitte pas l'écran tant qu'elle attend.
+        setSkipsAConfirmer(skips);
+      } else {
+        bilanEtRetour(items);
       }
     }
+  }
+
+  /** Toast de fin d'import (chiffres non nuls seulement) + retour à la
+   *  bibliothèque si quelque chose est entré (b355). */
+  function bilanEtRetour(items: BulkItem[]) {
+    const ok = items.filter((x) => x.status === 'ok').length;
+    const dup = items.filter((x) => x.status === 'dup').length;
+    const err = items.filter((x) => x.status === 'error').length;
+    if (ok === 0) return;
+    const parts = [
+      ok > 1
+        ? t('{n} morceaux ajoutés', { n: ok })
+        : t('{n} morceau ajouté', { n: ok }),
+    ];
+    if (dup > 0)
+      parts.push(
+        dup > 1
+          ? t('{n} déjà présents', { n: dup })
+          : t('{n} déjà présent', { n: dup }),
+      );
+    if (err > 0) parts.push(t('{n} en échec', { n: err }));
+    toast.show(`✓ ${parts.join(' · ')}`);
+    navigate('/');
+  }
+
+  /** Relance l'import sur les seuls morceaux écartés « déjà supprimés » —
+   *  geste explicite de l'utilisateur, la garde anti-résurrection s'efface. */
+  function reimporterLesSupprimes() {
+    if (!bulkItems) return;
+    const items = bulkItems;
+    const redo = bulkTasksRef.current.filter(
+      (_, i) => items[i]?.status === 'skip',
+    );
+    void onBulkImport(redo, true);
   }
 
   /**
@@ -1675,62 +1708,62 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                     {it.message !== '' && ` — ${it.message}`}
                   </div>
                 ))}
-                {!bulkRunning && (
-                  <div style={{ marginTop: 8 }}>
-                    <strong>
-                      {bulkItems.filter((x) => x.status === 'ok').length > 1
-                        ? t('{n} importés', {
-                            n: bulkItems.filter((x) => x.status === 'ok').length,
-                          })
-                        : t('{n} importé', {
-                            n: bulkItems.filter((x) => x.status === 'ok').length,
-                          })}
-                    </strong>
-                    {' · '}
-                    {bulkItems.filter((x) => x.status === 'dup').length > 1
-                      ? t('{n} déjà présents', {
-                          n: bulkItems.filter((x) => x.status === 'dup').length,
-                        })
-                      : t('{n} déjà présent', {
-                          n: bulkItems.filter((x) => x.status === 'dup').length,
-                        })}
-                    {bulkItems.some((x) => x.status === 'skip') && (
-                      <>
-                        {' · '}
-                        {bulkItems.filter((x) => x.status === 'skip').length > 1
-                          ? t('{n} supprimés de mojosong (non réimportés)', {
-                              n: bulkItems.filter((x) => x.status === 'skip')
-                                .length,
-                            })
-                          : t('{n} supprimé de mojosong (non réimporté)', {
-                              n: bulkItems.filter((x) => x.status === 'skip')
-                                .length,
-                            })}
-                      </>
-                    )}
-                    {' · '}
-                    {bulkItems.filter((x) => x.status === 'error').length > 1
-                      ? t('{n} échecs', {
-                          n: bulkItems.filter((x) => x.status === 'error').length,
-                        })
-                      : t('{n} échec', {
-                          n: bulkItems.filter((x) => x.status === 'error').length,
-                        })}
-                    {/* Lucidité de l'import : combien sont à relire, et
-                        comment les retrouver. Sans ce chiffre, un import de
-                        quarante fichiers a l'air parfait. */}
-                    {bulkItems.some((x) => x.check) && (
-                      <>
-                        {' · '}
-                        <span style={{ color: 'var(--warn)' }}>
-                          {t('{n} à vérifier', {
-                            n: bulkItems.filter((x) => x.check).length,
-                          })}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
+                {/* BILAN SANS LES ZÉROS (b368, retour de Vincent : « moins
+                    d'infos ») : « 0 importé · 0 déjà présent · 0 échec »
+                    noyait le seul chiffre qui comptait. On ne dit que ce
+                    qui s'est produit. */}
+                {!bulkRunning &&
+                  (() => {
+                    const ok = bulkItems.filter((x) => x.status === 'ok').length;
+                    const dup = bulkItems.filter((x) => x.status === 'dup').length;
+                    const skip = bulkItems.filter((x) => x.status === 'skip').length;
+                    const err = bulkItems.filter((x) => x.status === 'error').length;
+                    const check = bulkItems.filter((x) => x.check).length;
+                    return (
+                      <div style={{ marginTop: 8 }}>
+                        <strong>
+                          {ok > 1
+                            ? t('{n} importés', { n: ok })
+                            : t('{n} importé', { n: ok })}
+                        </strong>
+                        {dup > 0 && (
+                          <>
+                            {' · '}
+                            {dup > 1
+                              ? t('{n} déjà présents', { n: dup })
+                              : t('{n} déjà présent', { n: dup })}
+                          </>
+                        )}
+                        {skip > 0 && (
+                          <>
+                            {' · '}
+                            {skip > 1
+                              ? t('{n} supprimés de mojosong (non réimportés)', { n: skip })
+                              : t('{n} supprimé de mojosong (non réimporté)', { n: skip })}
+                          </>
+                        )}
+                        {err > 0 && (
+                          <>
+                            {' · '}
+                            {err > 1
+                              ? t('{n} échecs', { n: err })
+                              : t('{n} échec', { n: err })}
+                          </>
+                        )}
+                        {/* Lucidité de l'import : combien sont à relire.
+                            Sans ce chiffre, un import de quarante fichiers
+                            a l'air parfait. */}
+                        {check > 0 && (
+                          <>
+                            {' · '}
+                            <span style={{ color: 'var(--warn)' }}>
+                              {t('{n} à vérifier', { n: check })}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
               </div>
             )}
             {/* UN REFUS SANS ISSUE EMPRISONNE (b356, constat de Vincent :
@@ -1745,13 +1778,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                 <button
                   className="btn ghost block"
                   style={{ marginTop: 10 }}
-                  onClick={() => {
-                    const items = bulkItems;
-                    const redo = bulkTasksRef.current.filter(
-                      (_, i) => items[i]?.status === 'skip',
-                    );
-                    void onBulkImport(redo, true);
-                  }}
+                  onClick={() => reimporterLesSupprimes()}
                 >
                   ↩{' '}
                   {bulkItems.filter((x) => x.status === 'skip').length > 1
@@ -1813,6 +1840,46 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           )}
         </p>
       </div>
+
+      {/* La question « réimporter les supprimés ? » s'ouvre EN FACE à la fin
+          du lot (b368) — deux issues claires, jamais un bouton à chercher en
+          bas de page. Décliner ferme la feuille : le bouton discret sous le
+          bilan reste là si l'on change d'avis. */}
+      {skipsAConfirmer > 0 && (
+        <ConfirmSheet
+          title={
+            skipsAConfirmer > 1
+              ? t('{n} morceaux déjà supprimés', { n: skipsAConfirmer })
+              : t('{n} morceau déjà supprimé', { n: skipsAConfirmer })
+          }
+          message={
+            skipsAConfirmer > 1
+              ? t(
+                  'Tu avais supprimé ces morceaux de ta bibliothèque : ils n’ont pas été réimportés. Veux-tu les faire revenir ?',
+                )
+              : t(
+                  'Tu avais supprimé ce morceau de ta bibliothèque : il n’a pas été réimporté. Veux-tu le faire revenir ?',
+                )
+          }
+          confirmLabel={
+            skipsAConfirmer > 1 ? t('↩ Réimporter ces morceaux') : t('↩ Réimporter ce morceau')
+          }
+          onConfirm={() => {
+            redoChoisi.current = true;
+            reimporterLesSupprimes();
+          }}
+          onClose={() => {
+            setSkipsAConfirmer(0);
+            if (redoChoisi.current) {
+              redoChoisi.current = false;
+              return;
+            }
+            // On les laisse de côté : si le reste du lot est entré, on
+            // termine l'import comme d'habitude (toast + bibliothèque).
+            if (bulkItems) bilanEtRetour(bulkItems);
+          }}
+        />
+      )}
     </>
   );
 }
