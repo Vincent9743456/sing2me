@@ -79,17 +79,41 @@ export function fragmentsToText(frags: PdfFragment[]): string {
   for (const line of lines) {
     line.frags.sort((a, b) => a.x - b.x);
     let text = '';
+    /**
+     * LA VRAIE GÉOMÉTRIE, PAS UNE ESTIMATION (b366, PDF de Vincent — son
+     * propre export mojosong). L'ancien code décidait des espaces avec
+     * `text.length * charW` : une largeur MOYENNE de page, fausse dès que
+     * deux polices cohabitent. Deux symptômes, tous deux constatés :
+     *  • les accords sont dessinés GLYPHE PAR GLYPHE (fragments contigus de
+     *    largeur 6.0 quand la moyenne vaut ~5.5) — la dérive d'arrondi
+     *    finissait par insérer un espace DANS l'accord (« Cm a j7 ») ;
+     *  • entre deux fragments de paroles, la fin estimée dépassait la fin
+     *    réelle, l'écart ressortait négatif, et l'espace réel disparaissait
+     *    (« hiveret », « s'arrêtepas », « vitesserattrape »).
+     * On suit donc la fin RÉELLE du fragment précédent (x + largeur) : un
+     * écart quasi nul recolle (glyphes d'un même mot), un écart d'une
+     * espace en vaut une, et un vrai trou se convertit en colonnes pour
+     * préserver l'alignement accords/paroles.
+     */
+    let finPrecedente: number | null = null;
     for (const f of line.frags) {
       const col = Math.max(0, Math.round((f.x - minX) / charW));
-      if (col > text.length) {
+      const ecart = finPrecedente === null ? 0 : f.x - finPrecedente;
+      if (finPrecedente === null) {
+        // Retrait de début de ligne : c'est lui qui place un accord isolé
+        // au-dessus de sa syllabe.
+        if (col > 0) text += ' '.repeat(col);
+      } else if (ecart > charW * 1.5 && col > text.length) {
         text += ' '.repeat(col - text.length);
-      } else if (text !== '' && !text.endsWith(' ') && !f.str.startsWith(' ')) {
-        // fragments contigus recollés : garder une séparation minimale
-        // seulement s'ils ne se touchaient pas déjà
-        const gap = f.x - (line.frags[0].x + text.length * charW);
-        if (gap > charW * 0.6) text += ' ';
+      } else if (
+        ecart > charW * 0.3 &&
+        !text.endsWith(' ') &&
+        !f.str.startsWith(' ')
+      ) {
+        text += ' ';
       }
       text += f.str;
+      finPrecedente = f.x + (f.w > 0 ? f.w : f.str.length * charW);
     }
     out.push(text.replace(/\s+$/, ''));
   }
