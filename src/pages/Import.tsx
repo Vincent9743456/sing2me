@@ -34,6 +34,7 @@ import { looksGarbled } from '../lib/textRepair';
 import { parseUgTabHtml } from '../lib/ugHtml';
 import { navigate } from '../router';
 import { useStore } from '../store';
+import { Song } from '../types';
 
 type AddMethod = 'ug' | 'doc' | 'bulk';
 
@@ -461,11 +462,23 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
    * Créer un morceau par partition détectée. Chacun repasse par le parseur
    * normal, et hérite du filet de sécurité (raison du doute) comme
    * n'importe quel import.
+   *
+   * PUIS L'IA REPREND CHAQUE MORCEAU (b364, constat de Vincent : « le
+   * formatage automatique n'est pas très efficace »). Ce chemin — un
+   * fichier-recueil découpé en plusieurs partitions — était le SEUL import
+   * qui n'appelait jamais l'IA : b220 dit pourtant qu'elle passe sur tous.
+   * Même architecture en deux temps que l'import en masse : les morceaux
+   * entrent d'abord en bibliothèque (rapide, hors ligne), puis l'IA les met
+   * au propre un par un. Quitter l'écran n'annule rien : les morceaux non
+   * repris gardent leur analyse locale, un état parfaitement valable.
    */
-  function onImportMulti() {
-    if (!multi) return;
+  async function onImportMulti() {
+    if (!multi || bulkAiRunning) return;
     let crees = 0;
     let doutes = 0;
+    // Les morceaux créés, avec leur texte d'origine : la passe IA travaille
+    // sur CES objets (jamais sur l'état `songs`, en retard d'un rendu).
+    const aReprendre: { song: Song; raw: string }[] = [];
     for (const d of multi.songs) {
       const outcome = importText(d.text, d.title || 'Morceau importé');
       const song = outcome.song;
@@ -476,17 +489,53 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
         doutes++;
       }
       // Un jumeau déjà présent devient une version, comme partout ailleurs.
+      // (Il ne part pas à l'IA : elle réécrirait le morceau entier, pas la
+      // version — même règle que les doublons de l'import en masse.)
       const twin = findSameSong(songs, song.title, song.lyrics, song.artist);
       if (twin) {
         saveSong(addSongAsVersion(twin, song, 'Version importée', false));
       } else {
         saveSong(song);
+        aReprendre.push({ song, raw: d.text });
         crees++;
       }
     }
     setMulti(null);
     setText('');
     setFileName(null);
+    // Deuxième temps : la mise en forme IA, avec le même Mojo de progression
+    // que l'import en masse. Jamais bloquante — un échec laisse l'analyse
+    // locale, et on n'arrête pas un lot pour poser une question (b220).
+    bulkCancel.current = false;
+    setBulkAiRunning(true);
+    let total = aReprendre.length;
+    let done = 0;
+    setAiProg({ done, total });
+    for (const item of aReprendre) {
+      if (bulkCancel.current) break;
+      try {
+        const hint = [item.song.title, item.song.artist]
+          .filter((x) => x && x.trim() !== '')
+          .join(' — ');
+        const local = importText(item.raw, item.song.title);
+        const cleaned = await aiCleanText(item.raw, hint || undefined);
+        const apres = importText(cleaned, item.song.title);
+        const mef = fusionMiseEnForme(item.raw, local, cleaned, apres);
+        saveSong({
+          ...mef.song,
+          id: item.song.id,
+          title: item.song.title,
+          artist: item.song.artist !== '' ? item.song.artist : mef.song.artist,
+          createdAt: item.song.createdAt,
+        });
+      } catch {
+        // Le morceau garde son analyse locale — rien n'est perdu.
+      }
+      done++;
+      setAiProg({ done, total });
+    }
+    setBulkAiRunning(false);
+    setAiProg(null);
     toast.show(
       (crees > 1
         ? t('{n} morceaux ajoutés à ta bibliothèque.', { n: crees })
@@ -1356,7 +1405,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
               {multi.songs.length > 8 ? ' …' : ''}
             </p>
             <div className="rowactions" style={{ flexWrap: 'wrap' }}>
-              <button className="btn" onClick={() => onImportMulti()}>
+              <button className="btn" onClick={() => void onImportMulti()}>
                 {t('Créer {n} morceaux', { n: multi.songs.length })}
               </button>
               <button
