@@ -20,9 +20,27 @@ import { usePastLives } from './usePastLives';
 import { MojoLoader } from './MojoLoader';
 import { t } from '../i18n';
 import { dureesLive, fetchDiag, triMots } from '../lib/live';
+import {
+  cleMois,
+  dateDeTitre,
+  dateRelative,
+  heureCourte,
+  libelleMois,
+  sansActivite,
+} from '../lib/livedates';
 import { diagActif } from '../lib/modediag';
 import { PastLive } from '../lib/pastlives';
 import { useStore } from '../store';
+
+/** A7 — le sous-titre : date relative traduite + heure. */
+function sousTitreDate(iso: string): string {
+  const r = dateRelative(iso);
+  const h = heureCourte(iso);
+  if (r.quand === 'aujourdhui') return `${t("Aujourd'hui")} · ${h}`;
+  if (r.quand === 'hier') return `${t('Hier')} · ${h}`;
+  if (r.quand === 'ilya') return `${t('Il y a {n} jours', { n: r.jours })} · ${h}`;
+  return `${r.texte} · ${h}`;
+}
 
 function jourLong(iso: string): string {
   const d = new Date(iso);
@@ -47,18 +65,9 @@ export function LiveHistory() {
   // fiche Artiste et au retour affiché sur un concert joué.
   const { lives, messages, loading, failed, ready } = usePastLives();
   const [open, setOpen] = useState<string | null>(null);
-  /**
-   * Historique replié (b204, demande de Vincent) : « ne présenter que les 3
-   * derniers lives avec un petit bouton afficher plus ». Une soirée par
-   * ligne, l'écran se remplit vite — et les concerts à venir, qui sont
-   * au-dessus, se retrouvaient noyés. Les lives sont TOUS déjà chargés (une
-   * seule requête) : c'est de la lisibilité, et le rendu cesse de croître
-   * avec l'ancienneté du compte. Le jour où l'historique se comptera en
-   * centaines, c'est ici qu'on classera par année ou par mois.
-   */
-  const PREMIERS = 3;
-  const PAS = 10;
-  const [montre, setMontre] = useState(PREMIERS);
+  // Le « Afficher plus » de b204 est remplacé par le regroupement PAR MOIS
+  // (b359, lot A de la refonte Live) : mois courant ouvert, précédents
+  // repliés — l'écran ne croît plus avec l'ancienneté du compte.
   const [renaming, setRenaming] = useState<PastLive | null>(null);
   const [deleting, setDeleting] = useState<PastLive | null>(null);
   const toast = useToast();
@@ -92,7 +101,7 @@ export function LiveHistory() {
   if (loading) {
     return (
       <>
-        <h2 className="pagetitle">{t('Tes derniers lives')}</h2>
+        <h2 className="pagetitle">{t('Historique')}</h2>
         {/* Mojo pendant le chargement des lives (b307), à l'endroit même où
             la liste va apparaître — inline, pas une surcouche. */}
         <MojoLoader inline active label={t('On retrouve tes lives…')} />
@@ -102,7 +111,7 @@ export function LiveHistory() {
   if (failed) {
     return (
       <>
-        <h2 className="pagetitle">{t('Tes derniers lives')}</h2>
+        <h2 className="pagetitle">{t('Historique')}</h2>
         <p className="help">
           {t('Historique indisponible pour l’instant — il reviendra.')}
         </p>
@@ -112,7 +121,7 @@ export function LiveHistory() {
   if (lives.length === 0) {
     return (
       <>
-        <h2 className="pagetitle">{t('Tes derniers lives')}</h2>
+        <h2 className="pagetitle">{t('Historique')}</h2>
         <p className="help">
           {t('Aucun live pour l’instant — lance-en un depuis le bouton GO LIVE.')}
         </p>
@@ -126,57 +135,123 @@ export function LiveHistory() {
   }
 
   const ouvert = lives.find((l) => l.id === open) ?? null;
-  const visibles = lives.slice(0, montre);
-  const restants = lives.length - visibles.length;
+
+  /**
+   * A4/A6 — la carte unifiée : titre (nom, sinon « Live du 17 août »),
+   * sous-titre (date relative · heure · formation), compteurs seulement
+   * s'ils sont non nuls, en icônes vectorielles avec libellés pluriels.
+   */
+  const carte = (l: PastLive, estompee = false) => {
+    const compteurs: React.ReactNode[] = [];
+    if (l.uniques > 0) {
+      compteurs.push(
+        <span key="u">
+          <Icon name="users" size={12} />{' '}
+          {l.uniques > 1
+            ? t('{n} spectateurs', { n: l.uniques })
+            : t('{n} spectateur', { n: l.uniques })}
+        </span>,
+      );
+    }
+    if (l.hearts > 0) {
+      compteurs.push(
+        <span key="h">
+          <Icon name="heart" size={12} />{' '}
+          {l.hearts > 1
+            ? t('{n} cœurs', { n: l.hearts })
+            : t('{n} cœur', { n: l.hearts })}
+        </span>,
+      );
+    }
+    if (l.messages.length > 0) {
+      compteurs.push(
+        <span key="m">
+          <Icon name="message" size={12} />{' '}
+          {l.messages.length > 1
+            ? t('{n} mots', { n: l.messages.length })
+            : t('{n} mot', { n: l.messages.length })}
+        </span>,
+      );
+    }
+    return (
+      <div
+        className="row"
+        key={l.id}
+        style={{ cursor: 'pointer', opacity: estompee ? 0.55 : undefined }}
+        onClick={() => setOpen(l.id === open ? null : l.id)}
+      >
+        <div className="grow">
+          <div className="title">
+            {nomDe(l) !== ''
+              ? nomDe(l)
+              : t('Live du {date}', { date: dateDeTitre(l.startedAt) })}
+            {l.endedAt === null && (
+              <span className="stauthor"> · {t('en cours')}</span>
+            )}
+          </div>
+          <div className="sub">
+            {sousTitreDate(l.startedAt)}
+            {' · '}
+            {l.band !== '' ? l.band : t('Solo')}
+          </div>
+          {compteurs.length > 0 && (
+            <div className="sub" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {compteurs}
+            </div>
+          )}
+        </div>
+        <Icon name="chevron-right" size={16} />
+      </div>
+    );
+  };
+
+  /**
+   * A5/A8 — les sessions SANS ACTIVITÉ (0 spectateur, 0 cœur, 0 mot) sont
+   * des tests : regroupées sous un repli fermé en bas de section. Le reste
+   * est regroupé PAR MOIS, le mois courant ouvert, les précédents repliés.
+   */
+  const actifs = lives.filter((l) => !sansActivite(l));
+  const inactifs = lives.filter((l) => sansActivite(l));
+  const parMois = new Map<string, PastLive[]>();
+  for (const l of actifs) {
+    const k = cleMois(l.startedAt);
+    parMois.set(k, [...(parMois.get(k) ?? []), l]);
+  }
+  const moisCourant = cleMois(new Date().toISOString());
+  const moisTries = [...parMois.keys()].sort((a, b) => b.localeCompare(a));
 
   return (
     <>
-      <h2 className="pagetitle">{t('Tes derniers lives')}</h2>
-      <div className="list">
-        {visibles.map((l) => (
-          <div
-            className="row"
-            key={l.id}
-            style={{ cursor: 'pointer' }}
-            onClick={() => setOpen(l.id === open ? null : l.id)}
-          >
-            <div className="grow">
-              <div className="title">
-                {nomDe(l) !== '' ? nomDe(l) : jourLong(l.startedAt)}
-                {l.endedAt === null && (
-                  <span className="stauthor"> · {t('en cours')}</span>
-                )}
-              </div>
-              <div className="sub">
-                {nomDe(l) !== '' && <>{jourLong(l.startedAt)} · </>}
-                {l.band !== '' ? l.band : t('Solo')}
-                {l.startedBy !== '' && (
-                  <> · {t('lancé par {qui}', { qui: l.startedBy })}</>
-                )}
-                {l.setlist !== '' && <> · {l.setlist}</>}
-                {' · '}
-                {t('❤ {h} · 💬 {m} · 👥 {u}', {
-                  h: l.hearts,
-                  m: l.messages.length,
-                  u: l.uniques,
-                })}
-              </div>
-            </div>
-            <Icon name="chevron-right" size={16} />
+      {/* A3 : « Tes derniers lives » → « Historique ». */}
+      <h2 className="pagetitle">{t('Historique')}</h2>
+      {moisTries.map((k) =>
+        k === moisCourant ? (
+          <div className="list" key={k}>
+            {(parMois.get(k) ?? []).map((l) => carte(l))}
           </div>
-        ))}
-      </div>
-      {restants > 0 && (
-        <div style={{ textAlign: 'center', marginTop: 'var(--sp-2)' }}>
-          <button
-            className="btn ghost small"
-            onClick={() => setMontre((n) => n + PAS)}
-          >
-            {restants > 1
-              ? t('Afficher plus ({n} lives plus anciens)', { n: restants })
-              : t('Afficher le live précédent')}
-          </button>
-        </div>
+        ) : (
+          <details className="stfold" key={k}>
+            <summary style={{ minHeight: 44, textTransform: 'uppercase' }}>
+              {libelleMois(k)} ({(parMois.get(k) ?? []).length})
+            </summary>
+            <div className="list">{(parMois.get(k) ?? []).map((l) => carte(l))}</div>
+          </details>
+        ),
+      )}
+      {actifs.length === 0 && inactifs.length > 0 && (
+        <p className="help" style={{ margin: '2px 0 8px' }}>
+          {t('Rien à montrer encore — tes sessions d’essai sont repliées ci-dessous.')}
+        </p>
+      )}
+      {inactifs.length > 0 && (
+        <details className="stfold">
+          <summary style={{ minHeight: 44 }}>
+            {inactifs.length > 1
+              ? t('{n} sessions sans activité', { n: inactifs.length })
+              : t('{n} session sans activité', { n: inactifs.length })}
+          </summary>
+          <div className="list">{inactifs.map((l) => carte(l, true))}</div>
+        </details>
       )}
 
       {ouvert && (

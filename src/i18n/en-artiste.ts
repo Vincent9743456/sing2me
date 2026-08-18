@@ -375,6 +375,23 @@ export const EN_ARTISTE: Record<string, string> = {
   '{n} musiciens': '{n} musicians',
   '{n} spectateur': '{n} viewer',
   '{n} spectateurs': '{n} viewers',
+
+  // Refonte Live, lot A (b359)
+  'Il y a {n} jours': '{n} days ago',
+  'Historique': 'History',
+  '{n} cœur': '{n} heart',
+  '{n} cœurs': '{n} hearts',
+  '{n} mot': '{n} word',
+  '{n} mots': '{n} words',
+  'Live du {date}': 'Live of {date}',
+  'Rien à montrer encore — tes sessions d’essai sont repliées ci-dessous.':
+    'Nothing to show yet — your test sessions are folded below.',
+  '{n} session sans activité': '{n} session with no activity',
+  '{n} sessions sans activité': '{n} sessions with no activity',
+  'En live': 'Live now',
+  'Session en cours': 'Session in progress',
+  '⏸ Session en pause': '⏸ Session paused',
+  'Toucher pour revenir au live.': 'Tap to get back to the live.',
   '{n} suiveur': '{n} follower',
   '{n} suiveurs': '{n} followers',
   '· pendant « {titre} »': 'during "{titre}"',
