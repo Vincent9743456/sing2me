@@ -62,10 +62,34 @@ export function suivreLeClavier(): void {
   const racine = document.documentElement;
   let dernier = -1;
 
+  /**
+   * PAS DE CLAVIER SANS CHAMP DE SAISIE (b367, constat de Vincent : « les
+   * boutons en bas de l'app ont disparu »). Au lancement d'une PWA iOS — et
+   * plus encore juste après un rechargement silencieux (b365) — la fenêtre
+   * visuelle peut être annoncée RÉDUITE le temps de l'animation : la mesure
+   * initiale concluait « clavier ouvert », masquait la barre d'onglets… et
+   * si aucun redimensionnement ne suivait, RIEN ne la détrompait jamais.
+   * Or un clavier n'existe que si un élément éditable a le focus : sans
+   * focus, la mesure ne peut pas dire « clavier », quoi qu'annonce iOS.
+   */
+  const saisieEnCours = (): boolean => {
+    const a = document.activeElement as HTMLElement | null;
+    if (!a) return false;
+    const tag = a.tagName.toLowerCase();
+    return (
+      tag === 'input' ||
+      tag === 'textarea' ||
+      tag === 'select' ||
+      a.isContentEditable === true
+    );
+  };
+
   const poser = () => {
     racine.style.setProperty('--vv-h', `${Math.round(vv.height)}px`);
     racine.style.setProperty('--vv-t', `${Math.round(vv.offsetTop)}px`);
-    const px = hauteurDuClavier(window.innerHeight, vv.height, vv.offsetTop);
+    const px = saisieEnCours()
+      ? hauteurDuClavier(window.innerHeight, vv.height, vv.offsetTop)
+      : 0;
     // Le défilement de la fenêtre visuelle déclenche cet écouteur en rafale :
     // on n'écrit que si la valeur a VRAIMENT changé, sinon chaque geste
     // provoquerait un recalcul de mise en page complet.
@@ -79,4 +103,17 @@ export function suivreLeClavier(): void {
   vv.addEventListener('resize', poser);
   vv.addEventListener('scroll', poser);
   window.addEventListener('orientationchange', poser);
+  // Le focus est désormais une ENTRÉE de la mesure : on rejoue au moment où
+  // il change. Au blur, iOS anime la fermeture (~250 ms) sans toujours
+  // émettre de resize — une relecture différée récupère l'état final.
+  window.addEventListener('focusin', poser);
+  window.addEventListener('focusout', () => {
+    poser();
+    window.setTimeout(poser, 300);
+  });
+  // Retour au premier plan : les mesures du lancement peuvent être fausses,
+  // celles-ci sont les vraies.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') poser();
+  });
 }
