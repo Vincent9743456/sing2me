@@ -2225,10 +2225,20 @@ textarea.mono {
    contenu (l'app installée décalait la version fixe sous la barre via
    safe-area-inset-top). Mêmes couleurs et clignotement qu'en fixe. */
 .onair.inbar {
-  position: static;
+  /* `relative` (et non static) pour ancrer le ::after ci-dessous — dans le
+     flux, le rendu est identique. */
+  position: relative;
   z-index: auto;
   box-shadow: none;
   flex-shrink: 0;
+}
+/* D24 (refonte Live, b362) : la pastille fait ~28 px de haut — la CIBLE
+   TACTILE est étendue à ≥ 44 px par un calque invisible, sans changer d'un
+   pixel ce qui s'affiche. La pastille elle-même est intouchable (cahier). */
+.onair.inbar::after {
+  content: '';
+  position: absolute;
+  inset: -9px -6px;
 }
 /* En direct : ROUGE clignotant — impossible à manquer */
 .onair.on {

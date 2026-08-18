@@ -134,9 +134,8 @@ export const EN_ARTISTE: Record<string, string> = {
   '{n} ligne(s)': '{n} row(s)',
   'Historique indisponible pour l’instant — il reviendra.':
     'History unavailable right now — it’ll be back.',
-  'Aucun live pour l’instant — lance-en un depuis le bouton GO LIVE.':
-    'No live yet — start one from the GO LIVE button.',
-  '❤ {h} · 💬 {m} · 👥 {u}': '❤ {h} · 💬 {m} · 👥 {u}',
+  'Aucun live pour l’instant — lance-en un depuis le bouton « Live ».':
+    'No live yet — start one from the "Live" button.',
   '← Fermer': '← Close',
   '✏️ Nommer ce live': '✏️ Name this live',
   '🗑 Supprimer': '🗑 Delete',
@@ -416,7 +415,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Supprimer « {nom} » ?': 'Delete "{nom}"?',
   'En live': 'Live now',
   'Session en cours': 'Session in progress',
-  '⏸ Session en pause': '⏸ Session paused',
+  'Session en pause': 'Session paused',
   'Toucher pour revenir au live.': 'Tap to get back to the live.',
   '{n} suiveur': '{n} follower',
   '{n} suiveurs': '{n} followers',
@@ -432,7 +431,7 @@ export const EN_ARTISTE: Record<string, string> = {
   '↻ Lui renvoyer la demande': '↻ Send the request again',
   '⏳ En attente d\'acceptation': '⏳ Waiting for acceptance',
   '✓ Page publique mise à jour.': '✓ Public page updated.',
-  '❤ PAR CHANSON — {n} au total': '❤ BY SONG — {n} total',
+  'Cœurs par morceau — {n} au total': 'Hearts by song — {n} total',
   '❤ et messages reportés sur {n} morceau.': '❤ and messages carried over to {n} song.',
   '❤ et messages reportés sur {n} morceaux.': '❤ and messages carried over to {n} songs.',
   '⭐ Suivre {nom}': '⭐ Follow {nom}',
@@ -441,9 +440,8 @@ export const EN_ARTISTE: Record<string, string> = {
   '🎸 Rejoindre un direct': '🎸 Join a live session',
   '💛 Pourboire : 2 € · 5 € · 10 € · libre': '💛 Tip: 2 € · 5 € · 10 € · any amount',
   '💛 Un pourboire pour {nom} ?': '💛 A tip for {nom}?',
-  '💬 MESSAGES ({n})': '💬 MESSAGES ({n})',
+  'Messages ({n})': 'Messages ({n})',
   '💬 « Un mot pour les musiciens ? »': '💬 "A word for the musicians?"',
-  '🔒 privé': '🔒 private',
 
   // Libellés/hints des blocs configurables (PUBLIC_SCREEN_LABELS, Artist.tsx)
   'Titre du morceau en cours': 'Current song title',

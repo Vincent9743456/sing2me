@@ -91,7 +91,7 @@ export function Concerts() {
                 <div className="grow">
                   <div className="title">
                     {enLive.status === 'pause'
-                      ? t('⏸ Session en pause')
+                      ? t('Session en pause')
                       : t('Session en cours')}
                   </div>
                   <div className="sub">{t('Toucher pour revenir au live.')}</div>
@@ -171,28 +171,28 @@ function ConcertRow({
       <div className="grow">
         <div className="title">{concert.title || t('(sans titre)')}</div>
         <div className="sub">
-          {[
-            concertDateLabel(concert),
-            who,
-            concert.venue,
-            concert.visibility === 'prive' ? t('🔒 privé') : '',
-          ]
+          {[concertDateLabel(concert), who, concert.venue]
             .filter((x) => x !== '')
             .join(' · ')}
+          {concert.visibility === 'prive' && (
+            <>
+              {' · '}
+              <Icon name="lock" size={11} /> {t('privé')}
+            </>
+          )}
         </div>
         {bilan && (
           <div className="sub" style={{ color: 'var(--accent)' }}>
-            {t('❤ {h} · 💬 {m} · 👥 {u}', {
-              h: bilan.hearts,
-              m: bilan.mots,
-              u: bilan.uniques,
-            })}
+            <Icon name="heart" size={12} /> {bilan.hearts} ·{' '}
+            <Icon name="message" size={12} /> {bilan.mots} ·{' '}
+            <Icon name="users" size={12} /> {bilan.uniques}
           </div>
         )}
       </div>
       {concert.venueUrl !== '' && (
         <button
           className="btn ghost small"
+          style={{ minWidth: 44, minHeight: 44 }}
           title={t('Page du lieu : {lieu}', {
             lieu: concert.venue || concert.venueUrl,
           })}
@@ -207,6 +207,7 @@ function ConcertRow({
       {concert.eventUrl !== '' && (
         <button
           className="btn ghost small"
+          style={{ minWidth: 44, minHeight: 44 }}
           title={t('Événement (Facebook, billetterie…)')}
           onClick={(e) => {
             e.stopPropagation();
@@ -609,22 +610,20 @@ export function ConcertEdit({ id }: { id: string | null }) {
             ) : (
               <div className="card" style={{ marginTop: 10 }}>
                 <div className="help" style={{ marginBottom: 6 }}>
-                  {t('❤ {h} · 💬 {m} · 👥 {u}', {
-                    h: bilan.hearts,
-                    m: bilan.messages.length,
-                    u: bilan.uniques,
-                  })}
+                  <Icon name="heart" size={12} /> {bilan.hearts} ·{' '}
+                  <Icon name="message" size={12} /> {bilan.messages.length} ·{' '}
+                  <Icon name="users" size={12} /> {bilan.uniques}
                 </div>
                 {bilan.songs.length > 0 && (
                   <>
                     <div className="help" style={{ margin: '12px 0 6px' }}>
-                      {t('❤ PAR CHANSON — {n} au total', { n: bilan.hearts })}
+                      {t('Cœurs par morceau — {n} au total', { n: bilan.hearts })}
                     </div>
                     {bilan.songs.map((st, i) => (
                       <div className="strow" key={i}>
                         <span style={{ flex: 1 }}>{st.song_title}</span>
                         <span style={{ color: 'var(--live)', fontWeight: 700 }}>
-                          ❤ {st.hearts}
+                          <Icon name="heart" size={12} /> {st.hearts}
                         </span>
                       </div>
                     ))}
@@ -633,7 +632,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
                 {bilan.messages.length > 0 && (
                   <>
                     <div className="help" style={{ margin: '12px 0 6px' }}>
-                      {t('💬 MESSAGES ({n})', { n: bilan.messages.length })}
+                      {t('Messages ({n})', { n: bilan.messages.length })}
                     </div>
                     {bilan.messages.map((m, i) => (
                       <div key={i} style={{ marginBottom: 8 }}>

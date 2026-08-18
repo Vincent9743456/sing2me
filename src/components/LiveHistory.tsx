@@ -84,7 +84,7 @@ export function LiveHistory() {
       <>
         <h2 className="pagetitle">{t('Historique')}</h2>
         <p className="help">
-          {t('Aucun live pour l’instant — lance-en un depuis le bouton GO LIVE.')}
+          {t('Aucun live pour l’instant — lance-en un depuis le bouton « Live ».')}
         </p>
         <Diagnostic
           liveKey={prefs.liveKey}
