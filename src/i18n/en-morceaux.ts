@@ -358,7 +358,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Ajouter un morceau': 'Add a song',
   'Rechercher un morceau': 'Search a song',
   'Titre et artiste — ex. Angie Rolling Stones': 'Title and artist — e.g. Angie Rolling Stones',
-  '🔎 Recherche en cours…': '🔎 Searching…',
+  'Recherche en cours…': 'Searching…',
   'Tape le titre (et l’artiste) : les résultats arrivent tout seuls.':
     'Type the title (and the artist): results show up on their own.',
   '{n} votes': '{n} votes',
