@@ -77,6 +77,25 @@ export const MAX_BULK_LINKS = 200;
 const RECHERCHE_SERVEUR = false;
 
 /**
+ * FORMATS ACCEPTÉS PAR LES SÉLECTEURS DE FICHIERS (b370, constat de
+ * Vincent : « le fichier PDF n'est pas détecté — je ne le vois pas dans le
+ * dossier ouvert pour l'import »). Le sélecteur d'iOS filtre par TYPE DE
+ * CONTENU (UTI), pas par extension : une liste d'extensions dont certaines
+ * lui sont inconnues (.cho, .crd, .onsong…) peut le faire griser des
+ * fichiers parfaitement valides — le PDF le premier. On annonce donc les
+ * types MIME des formats standards EN PLUS des extensions : chaque
+ * sélecteur retient ce qu'il comprend.
+ */
+const FICHIERS_ACCEPTES = [
+  'application/pdf',
+  'text/plain',
+  'text/html',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.txt', '.text', '.cho', '.crd', '.pro', '.chopro', '.chordpro',
+  '.onsong', '.docx', '.pdf', '.html', '.htm',
+].join(',');
+
+/**
  * Extrait les liens Ultimate Guitar d'un texte collé (un par ligne ou en
  * vrac). Seules les pages de partition individuelle sont retenues :
  * `/tab/artiste/chanson-…` et `/user/tab/view?h=…` (tablatures
@@ -1499,7 +1518,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
             <input
               ref={fileRef}
               type="file"
-              accept=".txt,.text,.cho,.crd,.pro,.chopro,.chordpro,.onsong,.docx,.pdf,.html,.htm"
+              accept={FICHIERS_ACCEPTES}
               style={{ display: 'none' }}
               onChange={onFile}
             />
@@ -1551,7 +1570,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
               ref={bulkFileRef}
               type="file"
               multiple
-              accept=".html,.htm,.txt,.text,.cho,.crd,.pro,.chopro,.chordpro,.onsong,.docx,.pdf"
+              accept={FICHIERS_ACCEPTES}
               style={{ display: 'none' }}
               onChange={(e) => void onBulkFiles(e)}
             />
