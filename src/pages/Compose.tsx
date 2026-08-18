@@ -32,7 +32,9 @@
 import React, { useMemo, useState } from 'react';
 
 import { useToast } from '../components/Feedback';
+import { Icon } from '../components/Icon';
 import { SongBody } from '../components/SongBody';
+import { TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { findSameSong, importText } from '../lib/importer';
 import { addSongAsVersion } from '../lib/model';
@@ -260,8 +262,18 @@ export function Compose({ draftId }: { draftId: string | null }) {
     draft === null ? 'recherche' : draft.lyrics.trim() === '' ? 'colle' : 'apercu';
 
   return (
-    <div className="page">
-      <h1 className="pagetitle">{t('Créer une partition')}</h1>
+    <>
+      {/* Barre de titre standard (b372, demande de Vincent : « il faut un
+          bouton pour revenir à l'écran qui précède ») : cet écran n'avait ni
+          retour ni gouttière d'encoche. Le ← va vers un parent EXPLICITE —
+          l'écran « Ajouter un morceau », d'où l'on vient (règle du projet,
+          jamais history.back()). */}
+      <TopBar
+        live={false}
+        title={t('Créer une partition')}
+        onBack={() => navigate('/import')}
+      />
+      <div className="page">
 
       {etape === 'recherche' && (
         <>
@@ -285,8 +297,13 @@ export function Compose({ draftId }: { draftId: string | null }) {
             onClick={() => void lancerRecherche()}
           >
             {rechercheEnCours
-              ? t('🔎 Recherche en cours…')
-              : `🔎 ${t('Chercher sur Ultimate Guitar')}`}
+              ? t('Recherche en cours…')
+              : (
+                  <>
+                    <Icon name="search" size={16} />{' '}
+                    {t('Chercher sur Ultimate Guitar')}
+                  </>
+                )}
           </button>
           {resultats !== null && resultats.length === 0 && (
             <p className="help">
@@ -510,5 +527,6 @@ export function Compose({ draftId }: { draftId: string | null }) {
         </>
       )}
     </div>
+    </>
   );
 }

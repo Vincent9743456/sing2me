@@ -1335,7 +1335,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
             />
             <p className="help" style={{ marginTop: 4 }}>
               {ugSearching
-                ? t('🔎 Recherche en cours…')
+                ? t('Recherche en cours…')
                 : t('Tape le titre (et l’artiste) : les résultats arrivent tout seuls.')}
             </p>
           </div>
