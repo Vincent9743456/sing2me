@@ -2225,9 +2225,14 @@ textarea.mono {
    contenu (l'app installée décalait la version fixe sous la barre via
    safe-area-inset-top). Mêmes couleurs et clignotement qu'en fixe. */
 .onair.inbar {
-  /* `relative` (et non static) pour ancrer le ::after ci-dessous — dans le
-     flux, le rendu est identique. */
+  /* `relative` (et non static) pour ancrer le ::after ci-dessous. ATTENTION
+     (b363) : en relative, les `top`/`right` hérités de la version flottante
+     s'appliquent comme DÉCALAGES — sur iPhone, `top` embarque la marge de
+     l'encoche et la pastille descendait sur la page (constat de Vincent).
+     On les neutralise : offsets à auto = rendu identique au static. */
   position: relative;
+  top: auto;
+  right: auto;
   z-index: auto;
   box-shadow: none;
   flex-shrink: 0;
