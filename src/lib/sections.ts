@@ -91,8 +91,28 @@ export interface SectionHeader {
  * sur le web.
  */
 export function lireEnTeteDeSection(ligne: string): SectionHeader | null {
-  const m = SECTION_HEADER_RE.exec(ligne);
-  if (!m) return null;
+  let m = SECTION_HEADER_RE.exec(ligne);
+  if (!m) {
+    /**
+     * EN-TÊTE ESPACÉ PAR L'INTERLETTRAGE (b369) : un PDF stylé — le carnet
+     * exporté par mojosong le premier — écrit « COUPLET 1 » avec un
+     * interlettrage que l'extraction restitue en « CO U P L E T 1 ». On ne
+     * recolle QUE si la ligne a la signature de ce phénomène (au moins
+     * trois groupes, presque tous d'une ou deux lettres) et si, recollée,
+     * elle est un en-tête du vocabulaire. Une parole ordinaire n'a pas
+     * cette forme.
+     */
+    const groupes = ligne.trim().split(/\s+/).filter((g) => g !== '');
+    const petits = groupes.filter((g) => g.length <= 2).length;
+    if (groupes.length < 3 || petits < groupes.length - 1) return null;
+    m = SECTION_HEADER_RE.exec(groupes.join(''));
+    if (!m) return null;
+    const label = canonicalSection(m[2]);
+    if (label === '') return null;
+    // Un titre composé au fer à espacer est typographiquement un TITRE :
+    // il compte comme décoré.
+    return { label, num: m[3] ?? '', decore: true };
+  }
   const label = canonicalSection(m[2]);
   if (label === '') return null;
   return {
