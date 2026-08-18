@@ -330,7 +330,20 @@ export const EN_MORCEAUX: Record<string, string> = {
   '✓ Accords et paroles récupérés': '✓ Chords and lyrics recovered',
   '✓ Paroles récupérées': '✓ Lyrics recovered',
   'tonalité {key}': 'key {key}',
-  '✅ Analyse : rien à corriger.': '✅ Analysis: nothing to fix.',
+  '✓ Analyse : rien à corriger.': '✓ Analysis: nothing to fix.',
+  // b371 — l'écran d'import simplifié
+  'Choisis un résultat : la partition se met en forme toute seule.':
+    'Pick a result: the chart formats itself.',
+  'Choisir des fichiers (txt, pdf, docx, html…)':
+    'Choose files (txt, pdf, docx, html…)',
+  '• Tes fichiers (txt, ChordPro, OnSong, Word, PDF) : un recueil est découpé en autant de morceaux.':
+    '• Your files (txt, ChordPro, OnSong, Word, PDF): a songbook is split into as many songs.',
+  '• Depuis un site de partitions (sur ordinateur) : affiche toutes tes partitions sur la page, enregistre-la (Ctrl+S) et dépose le fichier .html.':
+    '• From a chords website (on a computer): show all your charts on the page, save it (Ctrl+S) and drop the .html file.',
+  '• Plusieurs fichiers ? Dépose-les tous d’un coup — les morceaux s’additionnent, sans doublon.':
+    '• Several files? Drop them all at once — songs add up, no duplicates.',
+  '{n} fichier prêt :': '{n} file ready:',
+  '{n} fichiers prêts :': '{n} files ready:',
   'ℹ Tu as déjà « {title} »': 'ℹ You already have “{title}”',
   ' (en proposition)': ' (a proposal)',
   ' : cet import le rejoindra comme nouvelle version — aucun doublon.':

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { ProgressBar, TopBar } from '../components/ui';
+import { TopBar } from '../components/ui';
+import { Icon } from '../components/Icon';
 import { MojoLoader } from '../components/MojoLoader';
 import { SongBody } from '../components/SongBody';
 import { extractDocxText } from '../lib/docx';
@@ -1135,15 +1136,12 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
         </div>
         {preview && (
           <div className="card">
-            <div>
-              {t('Titre : ')}<strong>{title.trim() || preview.song.title}</strong>
-              {(artist.trim() || preview.song.artist) !== '' && (
-                <> — {t('Artiste : ')}{artist.trim() || preview.song.artist}</>
-              )}
-            </div>
+            {/* Plus de rappel « Titre : X — Artiste : Y » (b371) : les deux
+                champs sont juste AU-DESSUS — répéter leur contenu deux
+                centimètres plus bas n'informait personne. */}
             {/* Message humain — le détail technique (parties, lignes
                 fusionnées) n'apprend rien d'utile ici. */}
-            <div className="help" style={{ marginTop: 4 }}>
+            <div className="help">
               {[
                 preview.stats.mergedChordLines > 0 ||
                 /\[[A-G][#b]?/.test(preview.song.lyrics)
@@ -1158,7 +1156,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
             </div>
             {issues.length === 0 ? (
               <div style={{ color: 'var(--accent)', marginTop: 8 }}>
-                {t('✅ Analyse : rien à corriger.')}
+                {t('✓ Analyse : rien à corriger.')}
               </div>
             ) : (
               <div style={{ marginTop: 8 }}>
@@ -1291,22 +1289,29 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
 
   return (
     <>
-      {/* Mojo pour la VRAIE attente (b304) : l'import en masse d'une
-          collection. N'apparaît qu'au bout de ~500 ms. */}
-      <MojoLoader
-        active={bulkRunning}
-        label={t('On installe ton répertoire…')}
-        value={bulkDone}
-        max={bulkCount}
-      />
-      <MojoLoader
-        active={bulkAiRunning}
-        label={t('On met tes partitions au propre…')}
-        value={aiProg?.done}
-        max={aiProg?.total}
-      />
-      <TopBar live={false} title={t('Ajouter un morceau')} onBack={() => history.back()} />
+      {/* Le ← va vers un PARENT EXPLICITE (règle du projet) : l'import
+          s'ouvre depuis la bibliothèque, on y revient — jamais
+          history.back(), qui peut renvoyer n'importe où (b371). */}
+      <TopBar live={false} title={t('Ajouter un morceau')} onBack={() => navigate('/')} />
       <div className="page">
+        {/* Mojo EN LIGNE, plus en surcouche (b371) : l'overlay plein écran
+            recouvrait la liste de progression ET le bouton « Arrêter » —
+            pendant tout un import en masse, impossible de suivre le détail
+            ou d'interrompre. En ligne, tout reste visible et actionnable. */}
+        <MojoLoader
+          inline
+          active={bulkRunning}
+          label={t('On installe ton répertoire…')}
+          value={bulkDone}
+          max={bulkCount}
+        />
+        <MojoLoader
+          inline
+          active={bulkAiRunning}
+          label={t('On met tes partitions au propre…')}
+          value={aiProg?.done}
+          max={aiProg?.total}
+        />
         {/* 1 — RECHERCHE SERVEUR DÉSACTIVÉE (b330, décision de Vincent :
             « on a décidé de ne plus l'utiliser — garde-le en mémoire si nous
             décidions de le réactiver »). Le champ « Rechercher un morceau »
@@ -1340,17 +1345,27 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
             navigue LUI-MÊME sur le site (nouvel onglet), copie la partition,
             revient la coller — mise en forme 100 % locale. Décision Vincent :
             le nom s'affiche (texte seul, jamais de logo). */}
-        <button
-          className="btn ghost block"
-          onClick={() => navigate('/creer')}
-        >
-          🔎 {t('Chercher sur Ultimate Guitar')}
-        </button>
-        {/* Une ligne pour situer le parcours (b331, réécrite b334 : tout se
-            passe dans mojosong désormais). */}
-        <p className="help" style={{ marginTop: 4, marginBottom: 'var(--sp-3)' }}>
-          {t('Les résultats s’affichent dans mojosong : choisis, la partition se met en forme toute seule.')}
-        </p>
+        {/* LE CHEMIN RECOMMANDÉ PORTE LE BOUTON AMBRE (b371, charte : un
+            seul bouton ambre par écran — celui qui fait avancer). Il était
+            en ghost : l'écran d'accueil de l'import n'avait AUCUNE action
+            principale. Masqué dès qu'une partition est chargée (b355). */}
+        {!(text.trim() !== '' && method === 'ug') && (
+          <>
+            <button
+              // Ambre sur l'écran d'accueil seulement : dans les flux
+              // Document/Import en masse, l'action qui fait avancer est la
+              // leur — un seul bouton ambre par écran (charte).
+              className={method === 'ug' ? 'btn block' : 'btn ghost block'}
+              onClick={() => navigate('/creer')}
+            >
+              <Icon name="search" size={16} /> {t('Chercher sur Ultimate Guitar')}
+            </button>
+            {/* Une ligne pour situer le parcours (b331, réécrite b334). */}
+            <p className="help" style={{ marginTop: 4, marginBottom: 'var(--sp-3)' }}>
+              {t('Choisis un résultat : la partition se met en forme toute seule.')}
+            </p>
+          </>
+        )}
 
         {RECHERCHE_SERVEUR && method === 'ug' && ugResults !== null && ugResults.length > 0 && (
           <div
@@ -1562,9 +1577,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
               onClick={() => bulkFileRef.current?.click()}
               disabled={bulkRunning}
             >
-              {t(
-                'Déposer des fichiers — page de partition enregistrée (.html) ou fichiers',
-              )}
+              {t('Choisir des fichiers (txt, pdf, docx, html…)')}
             </button>
             <input
               ref={bulkFileRef}
@@ -1579,33 +1592,34 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                 défiler tout le pavé pour trouver quoi faire). Dès qu'un
                 fichier ou un lien est prêt, il s'efface : place aux
                 actions. */}
+            {/* L'AIDE TIENT EN TROIS LIGNES (b371, demande de Vincent :
+                « uniquement les infos nécessaires »). L'ancien pavé mêlait
+                trois procédures en un paragraphe — et parlait de Ctrl+S à
+                quelqu'un qui est sur son téléphone. */}
             {bulkTotal === 0 && (
-              <p className="help">
-                <strong>{t('Le plus simple pour reprendre ta collection :')}</strong>{' '}
-                {t(
-                  'ouvre la page qui liste tes partitions (ta page « mes partitions » ou tes favoris) et',
-                )}{' '}
-                <strong>
-                  {t("fais d'abord afficher toutes tes partitions sur la page")}
-                </strong>{' '}
-                {t(
-                  "(réglage du nombre par page, ou fais défiler / passe les pages en bas de liste jusqu'à tout voir). Ensuite enregistre la page (Ctrl+S) et dépose le fichier .html ici. S'il reste plusieurs pages, enregistre chacune : tu peux déposer tous les fichiers .html en une fois, les liens s'additionnent sans doublons.",
-                )}{' '}
-                <strong>{t('Pages de partition personnelles')}</strong>{' '}
-                {t(
-                  ': ouvre chaque page de partition et enregistre-la (Ctrl+S) — dépose ces .html ici, la partition est extraite directement du fichier, sans passer par le serveur. Tu peux aussi déposer des fichiers exportés d’une autre application (txt, ChordPro, OnSong, Word, PDF) — un recueil qui contient toutes tes chansons est découpé automatiquement en autant de morceaux.',
-                )}
-              </p>
+              <>
+                <p className="help" style={{ marginBottom: 4 }}>
+                  {t(
+                    '• Tes fichiers (txt, ChordPro, OnSong, Word, PDF) : un recueil est découpé en autant de morceaux.',
+                  )}
+                </p>
+                <p className="help" style={{ marginBottom: 4 }}>
+                  {t(
+                    '• Depuis un site de partitions (sur ordinateur) : affiche toutes tes partitions sur la page, enregistre-la (Ctrl+S) et dépose le fichier .html.',
+                  )}
+                </p>
+                <p className="help">
+                  {t(
+                    '• Plusieurs fichiers ? Dépose-les tous d’un coup — les morceaux s’additionnent, sans doublon.',
+                  )}
+                </p>
+              </>
             )}
             {bulkFiles.length > 0 && (
               <p className="help">
                 {bulkFiles.length > 1
-                  ? t('📄 {n} fichiers de partition prêts :', {
-                      n: bulkFiles.length,
-                    })
-                  : t('📄 {n} fichier de partition prêt :', {
-                      n: bulkFiles.length,
-                    })}{' '}
+                  ? t('{n} fichiers prêts :', { n: bulkFiles.length })
+                  : t('{n} fichier prêt :', { n: bulkFiles.length })}{' '}
                 {bulkFiles.map((f) => f.name).join(', ')}{' '}
                 <a
                   href="#"
@@ -1631,27 +1645,16 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                 {bulkTotal > 0 ? ` (${bulkTotal})` : ''}
               </button>
             ) : (
-              <>
-                {bulkItems && (
-                  <ProgressBar
-                    done={
-                      bulkItems.filter(
-                        (x) => x.status !== 'pending' && x.status !== 'loading',
-                      ).length
-                    }
-                    total={bulkItems.length}
-                    label={t('Import en cours')}
-                  />
-                )}
-                <button
-                  className="btn ghost block"
-                  onClick={() => {
-                    bulkCancel.current = true;
-                  }}
-                >
-                  {t('Arrêter après le morceau en cours')}
-                </button>
-              </>
+              // La progression vit dans le Mojo en ligne (b371) — ici, la
+              // seule chose qui compte : pouvoir s'arrêter.
+              <button
+                className="btn ghost block"
+                onClick={() => {
+                  bulkCancel.current = true;
+                }}
+              >
+                {t('Arrêter après le morceau en cours')}
+              </button>
             )}
             <div className="spacer" />
             <div className="field">
@@ -1807,17 +1810,9 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                     : t('Réimporter quand même le morceau supprimé autrefois')}
                 </button>
               )}
-            {aiProg && (
-              <ProgressBar
-                done={aiProg.done}
-                total={aiProg.total}
-                label={
-                  bulkAiRunning
-                    ? t('Mise en forme des partitions')
-                    : t('Mise en forme terminée')
-                }
-              />
-            )}
+            {/* Plus de deuxième barre pendant la mise en forme (b371) : le
+                Mojo en ligne porte déjà la progression, et chaque ligne du
+                lot affiche son état. */}
             {/* La mise en forme s'enchaîne toute seule après l'import
                 (b220). Ce qui reste manuel : la RELANCER si on a quitté
                 l'écran en cours de route, ou si le serveur a dit non. */}
