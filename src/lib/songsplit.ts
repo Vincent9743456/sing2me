@@ -224,6 +224,16 @@ export function splitSongs(input: {
     const i = lignes.findIndex((l) => l.trim() !== '');
     return i >= 0 ? lignes[i] : '';
   };
+  /** La page SANS sa ligne de tête (b369) : quand cette ligne devient le
+   *  TITRE du morceau, la laisser aussi dans le texte la faisait apparaître
+   *  en double — en tête des paroles (constat de Vincent). */
+  const sansLaTete = (p: string): string => {
+    const lignes = p.split('\n');
+    const i = lignes.findIndex((l) => l.trim() !== '');
+    return i >= 0
+      ? [...lignes.slice(0, i), ...lignes.slice(i + 1)].join('\n')
+      : p;
+  };
   const titreArtiste = (l: string): boolean =>
     /\s[—–]\s/.test(l) && ressembleAUnTitre(l.replace(/\s+/g, ' '));
   if (
@@ -233,7 +243,12 @@ export function splitSongs(input: {
     const debuts: { title: string; textes: string[] }[] = [];
     for (const p of pages) {
       const tete = teteDePage(p);
-      if (titreArtiste(tete) || debuts.length === 0) {
+      if (titreArtiste(tete)) {
+        debuts.push({
+          title: tete.trim().replace(/\s+/g, ' '),
+          textes: [sansLaTete(p)],
+        });
+      } else if (debuts.length === 0) {
         debuts.push({ title: tete.trim().replace(/\s+/g, ' '), textes: [p] });
       } else {
         debuts[debuts.length - 1].textes.push(p);
@@ -255,7 +270,10 @@ export function splitSongs(input: {
       const premieres = p.split('\n');
       const idx = premieres.findIndex((l) => l.trim() !== '');
       const tete = idx >= 0 ? premieres[idx] : '';
-      if (ressembleAUnTitre(tete) || debuts.length === 0) {
+      if (ressembleAUnTitre(tete)) {
+        // La tête devient le titre : elle sort du texte (b369).
+        debuts.push({ title: tete.trim(), textes: [sansLaTete(p)] });
+      } else if (debuts.length === 0) {
         debuts.push({ title: tete.trim(), textes: [p] });
       } else {
         debuts[debuts.length - 1].textes.push(p);

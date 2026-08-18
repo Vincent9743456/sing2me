@@ -33,6 +33,54 @@ const NOISE_TOKEN = /^(\||%|-|–|—|x\d+|\(x\d+\)|\(?bis\)?|N\.?C\.?|\.|,)$/i;
 
 const INLINE_CHORD = /\[[A-G](?:#|b)?[^\]\n]*\]/;
 
+/**
+ * ACCORDS PHYSIQUEMENT COLLÉS (b369, PDF de Vincent : « AC#mBmD » en intro).
+ * Dans un PDF, deux accords imprimés côte à côte peuvent se TOUCHER — aucune
+ * géométrie ne peut les séparer à l'extraction. On découpe ici, par la
+ * grammaire : le jeton n'est retenu que s'il se segmente EN ENTIER en au
+ * moins deux accords valides, dont un au moins porte un modificateur
+ * (#, b, m, chiffre, sus…). Sans ce dernier garde-fou, « ADAGE » se lirait
+ * A·D·A·G·E — cinq accords parfaitement valides, et un mot perdu.
+ */
+export function decoupeAccordsColles(token: string): string[] | null {
+  if (token.length < 2 || token.length > 24) return null;
+  if (!/^[A-G]/.test(token)) return null;
+  const res: string[] = [];
+  const rec = (s: string): boolean => {
+    if (s === '') return true;
+    // Le plus LONG d'abord : « C#m7 » avant « C# » avant « C ».
+    for (let len = Math.min(s.length, 10); len >= 1; len--) {
+      const cand = s.slice(0, len);
+      if (CHORD_TOKEN.test(cand)) {
+        res.push(cand);
+        if (rec(s.slice(len))) return true;
+        res.pop();
+      }
+    }
+    return false;
+  };
+  if (!rec(token)) return null;
+  if (res.length < 2) return null;
+  if (!res.some((c) => c.length > 1)) return null;
+  return res;
+}
+
+/**
+ * Ligne d'ANNOTATION de grille (« X 2 », « x2 », « (bis) ») : une consigne
+ * de répétition, pas une parole. La fusion accords/paroles ne doit jamais
+ * la prendre pour le vers du dessous — « A C#m Bm D » + « X 2 » donnait
+ * « [Bm]X [D]2 » (b369, intro du PDF de Vincent).
+ */
+export function estAnnotationDeGrille(line: string): boolean {
+  const tokens = line.trim().split(/\s+/).filter((t) => t !== '');
+  return (
+    tokens.length > 0 &&
+    tokens.every(
+      (t) => NOISE_TOKEN.test(t) || /^[xX]$/.test(t) || /^\d+$/.test(t),
+    )
+  );
+}
+
 export function isChordLine(line: string): boolean {
   if (INLINE_CHORD.test(line)) return false;
   const tokens = line.trim().split(/\s+/).filter((t) => t !== '');
@@ -40,9 +88,43 @@ export function isChordLine(line: string): boolean {
   let chords = 0;
   for (const t of tokens) {
     if (CHORD_TOKEN.test(t)) chords++;
+    else if (decoupeAccordsColles(t)) chords++;
     else if (!NOISE_TOKEN.test(t)) return false;
   }
   return chords > 0;
+}
+
+/**
+ * Rejoue le découpage ci-dessus sur un TEXTE entier : seules les lignes qui,
+ * une fois leurs jetons collés séparés, sont INTÉGRALEMENT des lignes
+ * d'accords sont réécrites — jamais une parole. Appelée en tête d'import.
+ */
+export function eclaterAccordsColles(texte: string): string {
+  return texte
+    .split('\n')
+    .map((line) => {
+      if (INLINE_CHORD.test(line)) return line;
+      const tokens = line.trim().split(/\s+/).filter((t) => t !== '');
+      if (tokens.length === 0) return line;
+      let aDecouper = false;
+      for (const t of tokens) {
+        if (CHORD_TOKEN.test(t) || NOISE_TOKEN.test(t)) continue;
+        const d = decoupeAccordsColles(t);
+        if (!d) return line;
+        aDecouper = true;
+      }
+      if (!aDecouper) return line;
+      // Réécriture EN PLACE, jeton par jeton : l'espacement d'origine porte
+      // les COLONNES (un accord au-dessus de sa syllabe) — le recoller avec
+      // des espaces simples enverrait tous les accords en début de ligne,
+      // et la fusion les poserait au milieu des mots.
+      return line.replace(/\S+/g, (t) =>
+        CHORD_TOKEN.test(t) || NOISE_TOKEN.test(t)
+          ? t
+          : (decoupeAccordsColles(t) as string[]).join(' '),
+      );
+    })
+    .join('\n');
 }
 
 /* ------------------------------------------------------------------ */
@@ -323,14 +405,39 @@ function extractMeta(lines: string[]): {
         case 'eov':
           markers.set(kept.length, 'eov');
           continue;
-        default:
+        default: {
+          // « {Couplet} », « {Refrain 2} »… : le carnet PDF de mojosong
+          // écrit ses sections ainsi — une directive inconnue était jetée,
+          // et notre propre export perdait ses sections au réimport (b369).
+          const sec = lireEnTeteDeSection(`${d[1]} ${d[2] ?? ''}`.trim());
+          if (sec) {
+            kept.push(`${sec.label}${sec.num !== '' ? ` ${sec.num}` : ''} :`);
+          }
           continue;
+        }
       }
     }
     if (inHeader) {
       const o = ONSONG_RE.exec(line);
       if (o && !SECTION_HEADER_RE.test(line)) {
         applyMeta(o[1].toLowerCase(), o[2].trim());
+        continue;
+      }
+      // L'EN-TÊTE DE NOTRE PROPRE EXPORT (b369) : le carnet PDF de mojosong
+      // écrit « Tonalité Am · Capo 2 » (ou « Capo 2 » seul) SANS deux-points.
+      // Réimporté, il restait en tête des paroles au lieu de redevenir des
+      // métadonnées — notre format doit se relire lui-même.
+      const tc = /^\s*Tonalit[eé]\s+(\S+)\s*(?:[·•|/-]\s*Capo\s+(\d+))?\s*$/i.exec(
+        line,
+      );
+      if (tc) {
+        meta.key = meta.key ?? tc[1];
+        if (tc[2]) meta.capo = meta.capo ?? (parseInt(tc[2], 10) || 0);
+        continue;
+      }
+      const cap = /^\s*Capo\s+(\d+)\s*$/i.exec(line);
+      if (cap) {
+        meta.capo = meta.capo ?? (parseInt(cap[1], 10) || 0);
         continue;
       }
       if (line.trim() !== '') inHeader = false;
@@ -355,10 +462,14 @@ export interface ImportOutcome {
 }
 
 export function importText(raw: string, fallbackTitle: string): ImportOutcome {
-  const normalized = raw
-    .replace(/\r\n?/g, '\n')
-    .replace(/\t/g, '    ')
-    .replace(/\u00a0/g, ' ');
+  // Accords coll\u00e9s par l'impression (\u00ab AC#mBmD \u00bb) : s\u00e9par\u00e9s AVANT l'analyse,
+  // sur les seules lignes enti\u00e8rement faites d'accords (b369).
+  const normalized = eclaterAccordsColles(
+    raw
+      .replace(/\r\n?/g, '\n')
+      .replace(/\t/g, '    ')
+      .replace(/\u00a0/g, ' '),
+  );
   const { lines, meta, markers } = extractMeta(
     normalized
       .split('\n')
@@ -447,6 +558,7 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
       const nextUsable =
         next.trim() !== '' &&
         !isChordLine(next) &&
+        !estAnnotationDeGrille(next) &&
         enTeteA(i + 1) === null &&
         !markers.has(i + 1);
       if (nextUsable) {
