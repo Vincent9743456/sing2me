@@ -44,6 +44,7 @@ export const EN_COMPOSANTS: Record<string, string> = {
   // UpdateHint.tsx
   'Mise à jour disponible': 'Update available',
   'Nouvelle version disponible': 'New version available',
+  '✨ Application mise à jour (b{v}).': '✨ App updated (b{v}).',
   "Un tap et c'est à jour — tes données ne bougent pas.":
     "One tap and you're up to date — your data doesn't move.",
   'Mettre à jour': 'Update',
