@@ -29,6 +29,7 @@ export type IconName =
   | 'eye'
   | 'undo'
   | 'x'
+  | 'search'
   | 'music'
   | 'list'
   | 'star'
@@ -126,6 +127,12 @@ const PATHS: Record<IconName, React.ReactNode> = {
   // Revenir en arrière (b220) : flèche qui rebrousse chemin.
   undo: <path d="M3 8h11a6 6 0 0 1 0 12H8M3 8l5-5M3 8l5 5" />,
   x: <path d="M18 6 6 18M6 6l12 12" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </>
+  ),
   music: (
     <>
       <path d="M9 18V5l12-2v13" />

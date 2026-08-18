@@ -76,6 +76,17 @@ export function cleMois(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/** B14 — le prochain vendredi (aujourd'hui compris si on est vendredi),
+ *  au format AAAA-MM-JJ du champ date. */
+export function prochainVendredi(maintenant = new Date()): string {
+  const d = new Date(maintenant);
+  const ecart = (5 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + ecart);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const jj = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${jj}`;
+}
+
 export function libelleMois(cle: string): string {
   const [a, m] = cle.split('-').map((x) => parseInt(x, 10));
   return new Date(a, (m || 1) - 1, 1).toLocaleDateString('fr-FR', {

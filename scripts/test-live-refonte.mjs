@@ -24,6 +24,7 @@ const {
   dateRelative,
   cleMois,
   libelleMois,
+  prochainVendredi,
 } = await import(out);
 
 let ko = 0;
@@ -51,6 +52,12 @@ egal('relative J-1', dateRelative('2026-08-16T23:50:00', ref), { quand: 'hier' }
 egal('relative J-3', dateRelative('2026-08-14T22:00:00', ref), { quand: 'ilya', jours: 3 });
 const j8 = dateRelative('2026-08-09T22:00:00', ref);
 egal('relative J-8 → absolu', j8.quand, 'absolu');
+
+// B14 — prochain vendredi (lundi 17 août 2026 → vendredi 21 ; un vendredi
+// reste le jour même ; un samedi → vendredi suivant)
+egal('vendredi depuis lundi', prochainVendredi(new Date('2026-08-17T12:00:00')), '2026-08-21');
+egal('vendredi le vendredi', prochainVendredi(new Date('2026-08-21T12:00:00')), '2026-08-21');
+egal('vendredi depuis samedi', prochainVendredi(new Date('2026-08-22T12:00:00')), '2026-08-28');
 
 // A8 — regroupement par mois
 egal('cleMois', cleMois('2026-08-17T22:13:00'), '2026-08');

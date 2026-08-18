@@ -1,13 +1,14 @@
 import { LiveBanner } from '../components/LiveBanner';
 import { LiveHistory } from '../components/LiveHistory';
 import { usePastLives } from '../components/usePastLives';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
 import { ShareModal } from '../components/ShareModal';
 import { Icon } from '../components/Icon';
 import { useLiveStatus } from '../components/OnAir';
 import { Field, TopBar } from '../components/ui';
 import { t } from '../i18n';
+import { prochainVendredi } from '../lib/livedates';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { Concert, emptyConcert, SharePayload } from '../types';
@@ -247,10 +248,31 @@ export function ConcertEdit({ id }: { id: string | null }) {
     };
   }, [lives, existing?.id]);
   const [draft, setDraft] = useState<Concert>(() =>
-    existing ? { ...existing } : emptyConcert(),
+    existing
+      ? { ...existing }
+      : // B14 (b360) : en CRÉATION seulement, la date propose le prochain
+        // vendredi à 21:00 — librement modifiable, jamais appliqué en
+        // édition. Le titre reste vide : on ne réécrit pas un champ que
+        // l'utilisateur est en train de remplir.
+        { ...emptyConcert(), date: prochainVendredi(), time: '21:00' },
   );
   const [share, setShare] = useState(false);
   const isNew = existing === undefined;
+  // B15 (b360) : Titre et Date sont REQUIS — erreur sous le champ, focus
+  // sur le premier champ en faute, aucune écriture tant que c'est invalide.
+  const [erreurs, setErreurs] = useState<{ titre?: string; date?: string }>({});
+  const titreRef = useRef<HTMLInputElement | null>(null);
+  const dateRef = useRef<HTMLInputElement | null>(null);
+  // B9 (b360) : les champs secondaires vivent sous un repli « Détails
+  // publics » — fermé en création, OUVERT si l'un d'eux est déjà rempli.
+  const [detailsOuverts, setDetailsOuverts] = useState(
+    () =>
+      existing !== undefined &&
+      (existing.venueUrl !== '' ||
+        existing.eventUrl !== '' ||
+        existing.description !== '' ||
+        existing.visibility === 'prive'),
+  );
 
   function update(patch: Partial<Concert>) {
     setDraft((d) => ({ ...d, ...patch }));
@@ -309,8 +331,16 @@ export function ConcertEdit({ id }: { id: string | null }) {
   }, [draft, setlists, songs, artist, concerts]);
 
   function onSave() {
-    if (draft.title.trim() === '') {
-      alert(t('Donne un titre à ton concert.'));
+    const e: { titre?: string; date?: string } = {};
+    if (draft.title.trim() === '') e.titre = t('Donne un titre à ton concert.');
+    if (draft.date === '') e.date = t('Choisis la date du concert.');
+    setErreurs(e);
+    if (e.titre) {
+      titreRef.current?.focus();
+      return;
+    }
+    if (e.date) {
+      dateRef.current?.focus();
       return;
     }
     saveConcert(draft);
@@ -325,37 +355,60 @@ export function ConcertEdit({ id }: { id: string | null }) {
         onBack={() => history.back()}
       />
       <div className="page">
-        <Field label={t('Titre')}>
+        {/* B15 : requis marqué, erreur SOUS le champ, focus dessus. */}
+        <Field label={`${t('Titre')} *`}>
           <input
+            ref={titreRef}
             type="text"
             value={draft.title}
             placeholder={t('Fête de la musique — Port-Louis')}
-            onChange={(e) => update({ title: e.target.value })}
+            onChange={(e) => {
+              update({ title: e.target.value });
+              if (erreurs.titre) setErreurs((x) => ({ ...x, titre: undefined }));
+            }}
           />
+          {erreurs.titre && (
+            <p className="help" style={{ color: 'var(--danger)', margin: '4px 0 0' }}>
+              {erreurs.titre}
+            </p>
+          )}
         </Field>
-        <Field label={t('Qui joue ?')}>
-          <select
-            value={draft.bandId ?? ''}
-            onChange={(e) => update({ bandId: e.target.value })}
-          >
-            <option value="">
-              {t('Solo')}
-              {artist.name !== '' ? ` — ${artist.name}` : ''}
-            </option>
-            {bands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name || t('Groupe sans nom')}
+        {/* B11 : sans groupe, rien à choisir — le concert est Solo. */}
+        {bands.length > 0 && (
+          <Field label={t('Qui joue ?')}>
+            <select
+              value={draft.bandId ?? ''}
+              onChange={(e) => update({ bandId: e.target.value })}
+            >
+              <option value="">
+                {t('Solo')}
+                {artist.name !== '' ? ` — ${artist.name}` : ''}
               </option>
-            ))}
-          </select>
-        </Field>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Field label={t('Date')}>
+              {bands.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name || t('Groupe sans nom')}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
+        {/* B12 : deux colonnes égales sur grand écran, empilées à 360 px. */}
+        <div className="deuxcol">
+          <Field label={`${t('Date')} *`}>
             <input
+              ref={dateRef}
               type="date"
               value={draft.date}
-              onChange={(e) => update({ date: e.target.value })}
+              onChange={(e) => {
+                update({ date: e.target.value });
+                if (erreurs.date) setErreurs((x) => ({ ...x, date: undefined }));
+              }}
             />
+            {erreurs.date && (
+              <p className="help" style={{ color: 'var(--danger)', margin: '4px 0 0' }}>
+                {erreurs.date}
+              </p>
+            )}
           </Field>
           <Field label={t('Heure')}>
             <input
@@ -371,68 +424,6 @@ export function ConcertEdit({ id }: { id: string | null }) {
             value={draft.venue}
             placeholder={t('Le Kestrel Bar, Tamarin…')}
             onChange={(e) => update({ venue: e.target.value })}
-          />
-        </Field>
-        <Field label={t('Page du lieu (site, Google Maps, Facebook…)')}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              type="url"
-              value={draft.venueUrl}
-              placeholder="https://…"
-              onChange={(e) => update({ venueUrl: e.target.value })}
-            />
-            <button
-              className="btn ghost"
-              style={{ flexShrink: 0 }}
-              title={t('Chercher le lieu sur Google, puis colle le lien ici')}
-              disabled={draft.venue.trim() === '' && draft.title.trim() === ''}
-              onClick={() =>
-                window.open(
-                  'https://www.google.com/search?q=' +
-                    encodeURIComponent(draft.venue.trim() || draft.title.trim()),
-                  '_blank',
-                  'noopener',
-                )
-              }
-            >
-              🔍 Google
-            </button>
-            {draft.venueUrl !== '' && (
-              <button
-                className="btn ghost"
-                style={{ flexShrink: 0 }}
-                title={t('Ouvrir la page du lieu')}
-                onClick={() => window.open(draft.venueUrl, '_blank', 'noopener')}
-              >
-                ↗
-              </button>
-            )}
-          </div>
-        </Field>
-        <Field label={t('Événement (Facebook, billetterie…)')}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              type="url"
-              value={draft.eventUrl}
-              placeholder="https://facebook.com/events/…"
-              onChange={(e) => update({ eventUrl: e.target.value })}
-            />
-            {draft.eventUrl !== '' && (
-              <button
-                className="btn ghost"
-                style={{ flexShrink: 0 }}
-                title={t("Ouvrir l'événement")}
-                onClick={() => window.open(draft.eventUrl, '_blank', 'noopener')}
-              >
-                ↗
-              </button>
-            )}
-          </div>
-        </Field>
-        <Field label={t('Description')}>
-          <textarea
-            value={draft.description}
-            onChange={(e) => update({ description: e.target.value })}
           />
         </Field>
         <Field label={t('Setlist')}>
@@ -464,19 +455,107 @@ export function ConcertEdit({ id }: { id: string | null }) {
             })}
           </select>
         </Field>
-        <Field label={t('Visibilité')}>
-          <select
-            value={draft.visibility}
-            onChange={(e) =>
-              update({ visibility: e.target.value as Concert['visibility'] })
-            }
-          >
-            <option value="public">
-              {t('Public (apparaît sur la page artiste)')}
-            </option>
-            <option value="prive">{t('Privé')}</option>
-          </select>
-        </Field>
+        {/* B9 — les champs secondaires sous un repli « Détails publics »,
+            fermé en création, ouvert si l'un d'eux est déjà rempli. Même
+            mécanique <details> que les plis de l'app (stfold). */}
+        <details
+          className="stfold"
+          open={detailsOuverts}
+          onToggle={(e) =>
+            setDetailsOuverts((e.currentTarget as HTMLDetailsElement).open)
+          }
+        >
+          <summary style={{ minHeight: 44 }}>{t('Détails publics')}</summary>
+          <Field label={t('Page du lieu (site, Google Maps, Facebook…)')}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="url"
+                value={draft.venueUrl}
+                placeholder="https://…"
+                onChange={(e) => update({ venueUrl: e.target.value })}
+              />
+              <button
+                className="btn ghost"
+                style={{ flexShrink: 0 }}
+                title={t('Chercher le lieu sur Google, puis colle le lien ici')}
+                disabled={draft.venue.trim() === '' && draft.title.trim() === ''}
+                onClick={() =>
+                  window.open(
+                    'https://www.google.com/search?q=' +
+                      encodeURIComponent(
+                        draft.venue.trim() || draft.title.trim(),
+                      ),
+                    '_blank',
+                    'noopener',
+                  )
+                }
+              >
+                <Icon name="search" size={14} /> Google
+              </button>
+              {draft.venueUrl !== '' && (
+                <button
+                  className="btn ghost"
+                  style={{ flexShrink: 0 }}
+                  title={t('Ouvrir la page du lieu')}
+                  onClick={() => window.open(draft.venueUrl, '_blank', 'noopener')}
+                >
+                  ↗
+                </button>
+              )}
+            </div>
+          </Field>
+          <Field label={t('Événement (Facebook, billetterie…)')}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="url"
+                value={draft.eventUrl}
+                placeholder="https://facebook.com/events/…"
+                onChange={(e) => update({ eventUrl: e.target.value })}
+              />
+              {draft.eventUrl !== '' && (
+                <button
+                  className="btn ghost"
+                  style={{ flexShrink: 0 }}
+                  title={t("Ouvrir l'événement")}
+                  onClick={() => window.open(draft.eventUrl, '_blank', 'noopener')}
+                >
+                  ↗
+                </button>
+              )}
+            </div>
+          </Field>
+          <Field label={t('Description')}>
+            <textarea
+              value={draft.description}
+              onChange={(e) => update({ description: e.target.value })}
+            />
+          </Field>
+          {/* B13 — la visibilité devient un interrupteur ; l'explication du
+              QR ne s'affiche que quand le concert est public, ici et plus
+              jamais sous les boutons d'action. */}
+          <label className="switchrow">
+            <input
+              type="checkbox"
+              role="switch"
+              checked={draft.visibility === 'public'}
+              onChange={(e) =>
+                update({ visibility: e.target.checked ? 'public' : 'prive' })
+              }
+            />
+            <span>
+              {draft.visibility === 'public'
+                ? t('Public — apparaît sur ta page artiste')
+                : t('Concert privé')}
+            </span>
+          </label>
+          {draft.visibility === 'public' && (
+            <p className="help" style={{ marginTop: 4 }}>
+              {t(
+                'Le QR public affiche au spectateur : la setlist et les paroles (sans accords), le profil artiste avec les liens de streaming, et les prochaines dates publiques.',
+              )}
+            </p>
+          )}
+        </details>
 
         <div className="rowactions">
           <button className="btn" onClick={onSave}>
@@ -490,9 +569,14 @@ export function ConcertEdit({ id }: { id: string | null }) {
               ▶ {t('Mode scène')}
             </button>
           )}
-          <button className="btn ghost" onClick={() => setShare(true)}>
-            {t('QR public')}
-          </button>
+          {/* B10 — pas de QR pour un concert qui n'existe pas encore : le
+              bouton n'apparaît qu'en édition. (En création, il créait déjà
+              un lien court en base pour un brouillon figé.) */}
+          {!isNew && (
+            <button className="btn ghost" onClick={() => setShare(true)}>
+              {t('QR public')}
+            </button>
+          )}
           {!isNew && (
             <button
               className="btn danger"
@@ -507,11 +591,6 @@ export function ConcertEdit({ id }: { id: string | null }) {
             </button>
           )}
         </div>
-        <p className="help">
-          {t(
-            'Le QR public affiche au spectateur : la setlist et les paroles (sans accords), le profil artiste avec les liens de streaming, et les prochaines dates publiques.',
-          )}
-        </p>
 
         {!isNew && (
           <>
