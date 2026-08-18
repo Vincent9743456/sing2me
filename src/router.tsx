@@ -27,6 +27,7 @@ export type Route =
     }
   | { name: 'concerts' }
   | { name: 'concert'; id: string | null }
+  | { name: 'pastlive'; id: string }
   | { name: 'artist' }
   | { name: 'settings' }
   | { name: 'dashboard' }
@@ -99,6 +100,9 @@ export function parseHash(hash: string): Route {
       return { name: 'concerts' };
     case 'concert':
       return { name: 'concert', id: parts[1] === 'new' ? null : (parts[1] ?? null) };
+    case 'pastlive':
+      // Récap d'un live joué (b361) : une vraie route, plus un panneau.
+      return { name: 'pastlive', id: parts[1] ?? '' };
     case 'artist':
       return { name: 'artist' };
     case 'reglages':

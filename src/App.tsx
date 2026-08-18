@@ -17,6 +17,7 @@ import { Bands } from './pages/Bands';
 import { BandEdit } from './pages/BandEdit';
 import { Live } from './pages/Live';
 import { ConcertEdit, Concerts } from './pages/Concerts';
+import { LiveRecap } from './pages/LiveRecap';
 import { Compose } from './pages/Compose';
 import { Import } from './pages/Import';
 import { Follow } from './pages/Follow';
@@ -182,6 +183,9 @@ function Screen() {
       break;
     case 'concert':
       page = <ConcertEdit id={route.id} key={route.id ?? 'new'} />;
+      break;
+    case 'pastlive':
+      page = <LiveRecap id={route.id} key={route.id} />;
       break;
     case 'artist':
       page = <Artist />;

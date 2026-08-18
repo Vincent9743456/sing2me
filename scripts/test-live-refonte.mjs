@@ -25,6 +25,7 @@ const {
   cleMois,
   libelleMois,
   prochainVendredi,
+  fusionneConsecutifs,
 } = await import(out);
 
 let ko = 0;
@@ -62,6 +63,19 @@ egal('vendredi depuis samedi', prochainVendredi(new Date('2026-08-22T12:00:00'))
 // A8 — regroupement par mois
 egal('cleMois', cleMois('2026-08-17T22:13:00'), '2026-08');
 egal('libelleMois', libelleMois('2026-07'), 'juillet 2026');
+
+// C19 — fusion des occurrences consécutives (plage + cœurs additionnés) ;
+// deux occurrences séparées par un autre morceau restent distinctes.
+const joues = [
+  { song_title: 'Stir It Up', played_at: '2026-08-10T19:40:00Z', hearts: 2 },
+  { song_title: 'Stir It Up', played_at: '2026-08-10T19:41:00Z', hearts: 1 },
+  { song_title: 'Jammin', played_at: '2026-08-10T19:45:00Z', hearts: 0 },
+  { song_title: 'Stir It Up', played_at: '2026-08-10T19:50:00Z', hearts: 4 },
+];
+const fus = fusionneConsecutifs(joues);
+egal('fusion — nombre de lignes', fus.length, 3);
+egal('fusion — plage et cœurs', [fus[0].de, fus[0].a, fus[0].hearts], ['2026-08-10T19:40:00Z', '2026-08-10T19:41:00Z', 3]);
+egal('fusion — non consécutifs distincts', fus[2].song_title, 'Stir It Up');
 
 rmSync(dir, { recursive: true, force: true });
 console.log(ko === 0 ? '\nTous les tests passent.' : `\n${ko} test(s) en échec.`);
