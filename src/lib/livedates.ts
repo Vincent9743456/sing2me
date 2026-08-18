@@ -76,6 +76,48 @@ export function cleMois(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/**
+ * C19 — FUSION DES OCCURRENCES CONSÉCUTIVES d'un même morceau dans le
+ * récap. Le serveur archive une ligne à chaque transition d'état du live
+ * (pause/reprise, re-sélection) : le même titre peut donc se suivre à une
+ * minute d'écart. On fusionne À L'AFFICHAGE — plage horaire, cœurs
+ * additionnés — sans toucher aux données. Deux occurrences NON consécutives
+ * (un autre morceau entre les deux) restent distinctes : c'est une vraie
+ * reprise en fin de set.
+ */
+export interface MorceauJoue {
+  song_title: string;
+  played_at: string;
+  hearts: number;
+}
+
+export interface MorceauFusionne {
+  song_title: string;
+  de: string;
+  a: string;
+  hearts: number;
+}
+
+export function fusionneConsecutifs(songs: MorceauJoue[]): MorceauFusionne[] {
+  const tri = [...songs].sort((x, y) => x.played_at.localeCompare(y.played_at));
+  const out: MorceauFusionne[] = [];
+  for (const s of tri) {
+    const dernier = out[out.length - 1];
+    if (dernier && dernier.song_title === s.song_title) {
+      dernier.a = s.played_at;
+      dernier.hearts += s.hearts;
+    } else {
+      out.push({
+        song_title: s.song_title,
+        de: s.played_at,
+        a: s.played_at,
+        hearts: s.hearts,
+      });
+    }
+  }
+  return out;
+}
+
 /** B14 — le prochain vendredi (aujourd'hui compris si on est vendredi),
  *  au format AAAA-MM-JJ du champ date. */
 export function prochainVendredi(maintenant = new Date()): string {

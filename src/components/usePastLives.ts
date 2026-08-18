@@ -76,6 +76,28 @@ function cacheLu(): CacheLives | null {
   }
 }
 
+/**
+ * Retire un mot du public du CACHE local (b361) : après une suppression en
+ * base, le cache instantané (b343) remontrerait le mot supprimé au prochain
+ * passage, le temps du rafraîchissement — un écran qui ressuscite ce qu'on
+ * vient d'effacer est un mensonge (règle 11).
+ */
+export function retireMotDuCache(idMessage: string): void {
+  const c = cacheLu();
+  if (!c) return;
+  try {
+    localStorage.setItem(
+      CACHE_LIVES,
+      JSON.stringify({
+        ...c,
+        messages: c.messages.filter((m) => (m.id ?? '') !== idMessage),
+      } satisfies CacheLives),
+    );
+  } catch {
+    /* stockage indisponible : le rafraîchissement fera le ménage */
+  }
+}
+
 export function usePastLives(): PastLivesData {
   const { prefs, artist, bands, resetAt } = useStore();
   const [sessions, setSessions] = useState<LiveSession[] | null>(

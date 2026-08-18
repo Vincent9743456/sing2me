@@ -392,6 +392,28 @@ export const EN_ARTISTE: Record<string, string> = {
     'Nothing to show yet — your test sessions are folded below.',
   '{n} session sans activité': '{n} session with no activity',
   '{n} sessions sans activité': '{n} sessions with no activity',
+
+  // Refonte Live, lot C (b361) — le récap est une route
+  'Récap du live': 'Live recap',
+  'Ce live n’est plus dans ton historique — il a peut-être été retiré.':
+    'This live is no longer in your history — it may have been removed.',
+  '← Retour à l’onglet Live': '← Back to the Live tab',
+  'Voir le concert « {titre} »': 'See the show "{titre}"',
+  'planifié': 'planned',
+  'Voir la setlist « {nom} »': 'See the setlist "{nom}"',
+  'spectateur': 'viewer',
+  'cœur reçu': 'heart received',
+  'cœurs reçus': 'hearts received',
+  'mot du public': 'word from the audience',
+  'Morceaux joués': 'Songs played',
+  'Mots du public': 'Words from the audience',
+  'Supprimer ce mot': 'Delete this word',
+  'Supprimer ce mot ?': 'Delete this word?',
+  'Il disparaît du livre d’or, pour de bon.':
+    'It leaves the guestbook, for good.',
+  'Mot supprimé.': 'Word deleted.',
+  'Supprimer ce live': 'Delete this live',
+  'Supprimer « {nom} » ?': 'Delete "{nom}"?',
   'En live': 'Live now',
   'Session en cours': 'Session in progress',
   '⏸ Session en pause': '⏸ Session paused',

@@ -93,6 +93,9 @@ export interface LiveConcertRef {
 }
 
 export interface LiveMessage {
+  /** Identifiant de la ligne en base (b361) — sert à la suppression depuis
+   *  le récap ; absent sur les lectures de repli (`select=*` mis à part). */
+  id?: string;
   /** Setlist jouée pendant le concert où ce mot a été laissé (b139). */
   setlist_name?: string;
   author: string;
@@ -550,6 +553,28 @@ export async function fetchMessages(
     detail: typeof body.detail === 'string' ? body.detail : '',
   };
   return Array.isArray(body.messages) ? body.messages : [];
+}
+
+/**
+ * Suppression d'un mot du public (b361, depuis le récap d'un live). Le
+ * serveur vérifie que le mot appartient bien à l'appelant (compte b192) ;
+ * ici on ne fait qu'appeler et dire si ça a marché.
+ */
+export async function supprimerMotDuPublic(
+  key: string,
+  id: string,
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetchAvecDelai(
+      `/api/live-x?fn=message&id=${encodeURIComponent(id)}`,
+      { method: 'DELETE', headers: liveHeaders(key) },
+    );
+  } catch (e) {
+    throw e instanceof Error ? e : new Error(OFFLINE_MSG);
+  }
+  const body = await readJson(res);
+  if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);
 }
 
 /** Ce que la dernière lecture du livre d'or a vu (diagnostic uniquement). */

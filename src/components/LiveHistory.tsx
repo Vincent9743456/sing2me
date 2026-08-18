@@ -13,9 +13,7 @@
  */
 import React, { useState } from 'react';
 
-import { ConfirmSheet, PromptSheet, useToast } from './Feedback';
 import { Icon } from './Icon';
-import { StageList } from './StageList';
 import { usePastLives } from './usePastLives';
 import { MojoLoader } from './MojoLoader';
 import { t } from '../i18n';
@@ -30,6 +28,7 @@ import {
 } from '../lib/livedates';
 import { diagActif } from '../lib/modediag';
 import { PastLive } from '../lib/pastlives';
+import { navigate } from '../router';
 import { useStore } from '../store';
 
 /** A7 — le sous-titre : date relative traduite + heure. */
@@ -42,59 +41,21 @@ function sousTitreDate(iso: string): string {
   return `${r.texte} · ${h}`;
 }
 
-function jourLong(iso: string): string {
-  const d = new Date(iso);
-  // Dates en fr-FR (voir rapport i18n) : format court, lisible d'un coup.
-  return `${d.toLocaleDateString('fr-FR', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })} · ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-}
-function heure(iso: string): string {
-  return new Date(iso).toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 export function LiveHistory() {
-  const { prefs, savePrefs } = useStore();
+  const { prefs } = useStore();
   // Récupération et calcul mis en commun (b207) : le même crochet sert à la
   // fiche Artiste et au retour affiché sur un concert joué.
   const { lives, messages, loading, failed, ready } = usePastLives();
-  const [open, setOpen] = useState<string | null>(null);
   // Le « Afficher plus » de b204 est remplacé par le regroupement PAR MOIS
   // (b359, lot A de la refonte Live) : mois courant ouvert, précédents
   // repliés — l'écran ne croît plus avec l'ancienneté du compte.
-  const [renaming, setRenaming] = useState<PastLive | null>(null);
-  const [deleting, setDeleting] = useState<PastLive | null>(null);
-  const toast = useToast();
-  // Lives retirés de MON historique : un simple classement personnel, jamais
-  // propagé aux autres membres du groupe (b183).
-  const caches = prefs.hiddenLives ?? [];
+  // Le PANNEAU superposé a disparu en b361 (lot C) : toucher une carte ouvre
+  // le récap, une vraie route (#/pastlive/:id) — nommer et supprimer un live
+  // vivent là-bas désormais.
 
   function nomDe(live: PastLive): string {
     const donne = (prefs.liveNames ?? {})[live.id] ?? '';
     return donne !== '' ? donne : live.concertTitle;
-  }
-  /**
-   * Retirer un live de MON historique. Rien n'est effacé côté serveur : si
-   * c'était un concert de groupe, il appartient aussi aux autres membres, et
-   * eux seuls décident de le garder (instruction Vincent, b183).
-   */
-  function supprimer(live: PastLive) {
-    const next = [...caches.filter((id) => id !== live.id), live.id];
-    savePrefs({ ...prefs, hiddenLives: next.slice(-500) });
-    setOpen(null);
-    toast.show(t('Live retiré de ton historique.'));
-  }
-  function renommer(live: PastLive, nom: string) {
-    const next = { ...(prefs.liveNames ?? {}) };
-    if (nom.trim() === '') delete next[live.id];
-    else next[live.id] = nom.trim().slice(0, 80);
-    savePrefs({ ...prefs, liveNames: next });
   }
 
   if (!ready) return null;
@@ -133,8 +94,6 @@ export function LiveHistory() {
       </>
     );
   }
-
-  const ouvert = lives.find((l) => l.id === open) ?? null;
 
   /**
    * A4/A6 — la carte unifiée : titre (nom, sinon « Live du 17 août »),
@@ -178,7 +137,7 @@ export function LiveHistory() {
         className="row"
         key={l.id}
         style={{ cursor: 'pointer', opacity: estompee ? 0.55 : undefined }}
-        onClick={() => setOpen(l.id === open ? null : l.id)}
+        onClick={() => navigate(`/pastlive/${l.id}`)}
       >
         <div className="grow">
           <div className="title">
@@ -254,141 +213,12 @@ export function LiveHistory() {
         </details>
       )}
 
-      {ouvert && (
-        <StageList onClose={() => setOpen(null)}>
-          <div className="inner">
-            <button className="btn block" onClick={() => setOpen(null)}>
-              {t('← Fermer')}
-            </button>
-            <h2 style={{ textAlign: 'center', margin: '16px 0 2px' }}>
-              {nomDe(ouvert) !== '' ? nomDe(ouvert) : jourLong(ouvert.startedAt)}
-            </h2>
-            <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-              {jourLong(ouvert.startedAt)}
-              {ouvert.endedAt !== null && <> → {heure(ouvert.endedAt)}</>}
-              {' · '}
-              {ouvert.band !== '' ? ouvert.band : t('Solo')}
-              {ouvert.startedBy !== '' && (
-                <> · {t('lancé par {qui}', { qui: ouvert.startedBy })}</>
-              )}
-              {ouvert.setlist !== '' && <> · {ouvert.setlist}</>}
-            </p>
-            <div className="rowactions" style={{ justifyContent: 'center' }}>
-              <button
-                className="btn ghost small"
-                onClick={() => setRenaming(ouvert)}
-              >
-                {t('✏️ Nommer ce live')}
-              </button>
-              <button
-                className="btn ghost small"
-                onClick={() => setDeleting(ouvert)}
-              >
-                {t('🗑 Supprimer')}
-              </button>
-            </div>
-
-            <div className="statgrid" style={{ marginTop: 'var(--sp-3)' }}>
-              <div className="statcard">
-                <div className="statvalue">{ouvert.hearts}</div>
-                <div className="statlabel">❤ {t('reçus')}</div>
-              </div>
-              <div className="statcard">
-                <div className="statvalue">{ouvert.messages.length}</div>
-                <div className="statlabel">💬 {t('mots du public')}</div>
-              </div>
-              <div className="statcard">
-                <div className="statvalue">{ouvert.uniques}</div>
-                <div className="statlabel">👥 {t('spectateurs')}</div>
-              </div>
-            </div>
-
-            {ouvert.songs.length > 0 && (
-              <div className="card" style={{ marginBottom: 10 }}>
-                <div className="help" style={{ marginBottom: 8 }}>
-                  🎵 {t('MORCEAUX JOUÉS')}
-                </div>
-                {ouvert.songs
-                  .slice()
-                  .sort((a, b) => a.played_at.localeCompare(b.played_at))
-                  .map((s, i) => (
-                    <div className="strow" key={i}>
-                      <span className="stlabel">{heure(s.played_at)}</span>
-                      <span style={{ flex: 1 }}>{s.song_title}</span>
-                      {s.hearts > 0 && (
-                        <span style={{ color: 'var(--live)', fontWeight: 700 }}>
-                          ❤ {s.hearts}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            )}
-
-            {ouvert.messages.length > 0 && (
-              <div className="card" style={{ marginBottom: 10 }}>
-                <div className="help" style={{ marginBottom: 8 }}>
-                  💬 {t('MOTS DU PUBLIC')}
-                </div>
-                {ouvert.messages.map((m, i) => (
-                  <div key={i} style={{ marginBottom: 10 }}>
-                    « {m.body} »
-                    <div className="stauthor">
-                      — {m.author !== '' ? m.author : t('anonyme')} ·{' '}
-                      {heure(m.created_at)}
-                      {m.song_title !== '' && (
-                        <>{t(' · pendant « {titre} »', { titre: m.song_title })}</>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {ouvert.songs.length === 0 && ouvert.messages.length === 0 && (
-              <p className="help" style={{ textAlign: 'center' }}>
-                {t('Rien n’a été enregistré pendant ce live.')}
-              </p>
-            )}
-          </div>
-        </StageList>
-      )}
-
       <Diagnostic
         liveKey={prefs.liveKey}
         recus={messages?.length ?? 0}
         rattaches={lives.reduce((n, l) => n + l.messages.length, 0)}
       />
 
-      {deleting && (
-        <ConfirmSheet
-          title={t('Supprimer ce live ?')}
-          message={t(
-            'Il disparaît de TON historique. Si c’était un concert de groupe, les autres membres gardent le leur.',
-          )}
-          confirmLabel={t('Supprimer')}
-          danger
-          onConfirm={() => {
-            supprimer(deleting);
-            setDeleting(null);
-          }}
-          onClose={() => setDeleting(null)}
-        />
-      )}
-
-      {renaming && (
-        <PromptSheet
-          title={t('Nommer ce live')}
-          placeholder={t('Par exemple : soirée chez Marco')}
-          initialValue={nomDe(renaming)}
-          confirmLabel={t('Enregistrer')}
-          onSubmit={(v) => {
-            renommer(renaming, v);
-            setRenaming(null);
-          }}
-          onClose={() => setRenaming(null)}
-        />
-      )}
     </>
   );
 }

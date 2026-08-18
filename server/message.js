@@ -2,6 +2,7 @@
  * Fonction serveur Vercel : livre d'or du public.
  * POST /api/message {name?, text, liveId?, artist?, bandId?, songTitle?} — public
  * GET  /api/message?performer=a,b  — réservé à l'artiste (x-live-key)
+ * DELETE /api/message?id=…         — réservé au compte propriétaire (b361)
  *
  * RÈGLE D'ATTACHEMENT (b168) — un mot du public appartient à QUELQU'UN :
  *   • toujours à l'artiste (ou au groupe) qui joue — `performer` / `band_id` ;
@@ -250,7 +251,7 @@ export default async function handler(req, res) {
       // était devenu le chemin critique du chargement de l'onglet Live.
       // Tout part ensemble ; rien n'est lu si l'appelant n'est pas identifié.
       const premierSelect =
-        'author,body,song_title,setlist_name,performer,band_id,live_id,concert_id,concert_title,created_at';
+        'id,author,body,song_title,setlist_name,performer,band_id,live_id,concert_id,concert_title,created_at';
       // b341 : chronométrage renvoyé dans la réponse (champ `t`, ms) —
       // lisible sur l'écran ?diag=1.
       const t0 = Date.now();
@@ -302,11 +303,11 @@ export default async function handler(req, res) {
       // `live_id` (b186) : rattachement EXACT d'un mot à son concert —
       // l'heure seule mélangeait les directs de deux musiciens.
       const selects = [
-        'author,body,song_title,setlist_name,performer,band_id,concert_id,concert_title,created_at',
-        'author,body,song_title,setlist_name,performer,concert_id,concert_title,created_at',
-        'author,body,song_title,performer,concert_id,concert_title,created_at',
-        'author,body,song_title,performer,created_at',
-        'author,body,created_at',
+        'id,author,body,song_title,setlist_name,performer,band_id,concert_id,concert_title,created_at',
+        'id,author,body,song_title,setlist_name,performer,concert_id,concert_title,created_at',
+        'id,author,body,song_title,performer,concert_id,concert_title,created_at',
+        'id,author,body,song_title,performer,created_at',
+        'id,author,body,created_at',
         // DERNIER REPLI : tout ce que la table a (b195). Les six lignes
         // au-dessus nommaient des colonnes ; elles supposaient donc toutes
         // la même chose — et quand cette hypothèse était fausse (`author`
@@ -426,6 +427,69 @@ export default async function handler(req, res) {
       res
         .status(200)
         .json({ t: chrono, messages, read: all.length, kept: messages.length });
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      // b361 : l'artiste peut retirer un mot de SON livre d'or, depuis le
+      // récap d'un live. Réservé au compte (b192) — la vieille clé partagée
+      // ne suffit pas pour un effacement : elle est commune à l'installation.
+      const qui = await identifie(req);
+      if (!qui.ok || !qui.user?.id) {
+        refuse(res);
+        return;
+      }
+      const moi = String(qui.user.id);
+      const id = String(req.query?.id ?? '').trim();
+      if (!UUID_RE.test(id)) {
+        res.status(400).json({ error: 'Identifiant de message invalide' });
+        return;
+      }
+      // On relit le message AVANT d'effacer : il faut prouver qu'il
+      // m'appartient — écrit pendant un de mes lives (owner_id du live,
+      // b192), ou porteur direct de mon owner_id pour les lignes qui l'ont.
+      const rm = await fetch(
+        `${base}/rest/v1/live_messages?id=eq.${encodeURIComponent(id)}&select=*&limit=1`,
+        { headers: sbHeaders(false) },
+      ).catch(() => null);
+      if (!rm || !rm.ok) {
+        res.status(502).json({ error: 'Message introuvable', detail: await failureDetail(rm) });
+        return;
+      }
+      const lignes = await rm.json();
+      const msg = Array.isArray(lignes) && lignes[0] ? lignes[0] : null;
+      if (!msg) {
+        // Déjà effacé (autre appareil) : l'objectif est atteint.
+        res.status(200).json({ ok: true, deja: true });
+        return;
+      }
+      let aMoi = String(msg.owner_id ?? '').trim() === moi;
+      if (!aMoi) {
+        const lid = String(msg.live_id ?? '').trim();
+        if (lid !== '' && UUID_RE.test(lid)) {
+          const rl = await fetch(
+            `${base}/rest/v1/lives?id=eq.${encodeURIComponent(lid)}&select=owner_id&limit=1`,
+            { headers: sbHeaders(false) },
+          ).catch(() => null);
+          if (rl && rl.ok) {
+            const ls = await rl.json();
+            aMoi = String(ls?.[0]?.owner_id ?? '').trim() === moi;
+          }
+        }
+      }
+      if (!aMoi) {
+        res.status(403).json({ error: 'Ce mot ne t’appartient pas' });
+        return;
+      }
+      const rd = await fetch(
+        `${base}/rest/v1/live_messages?id=eq.${encodeURIComponent(id)}`,
+        { method: 'DELETE', headers: sbHeaders(false) },
+      ).catch(() => null);
+      if (!rd || !rd.ok) {
+        res.status(502).json({ error: 'Suppression impossible', detail: await failureDetail(rd) });
+        return;
+      }
+      res.status(200).json({ ok: true });
       return;
     }
 
