@@ -94,6 +94,12 @@ const StatusContext = createContext<{
   openPanel: () => void;
 } | null>(null);
 
+/** État du live pour les écrans (b359, section EN LIVE de l'onglet Live) :
+ *  statut courant + ouverture du panneau. Null hors OnAirProvider. */
+export function useLiveStatus() {
+  return useContext(StatusContext);
+}
+
 export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const {
     prefs,

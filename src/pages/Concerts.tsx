@@ -5,7 +5,8 @@ import React, { useMemo, useState } from 'react';
 
 import { ShareModal } from '../components/ShareModal';
 import { Icon } from '../components/Icon';
-import { Empty, Field, TopBar } from '../components/ui';
+import { useLiveStatus } from '../components/OnAir';
+import { Field, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -63,32 +64,64 @@ export function Concerts() {
   const upcoming = sorted.filter(isUpcoming);
   const past = sorted.filter((c) => !isUpcoming(c)).reverse();
 
+  /* Refonte Live, lot A (b359) : trois temporalités NOMMÉES — EN LIVE
+     (seulement si une session est active), À VENIR (toujours, avec son
+     bouton de création en tête de section et une ligne d'état vide
+     discrète), HISTORIQUE (LiveHistory). Les concerts PLANIFIÉS passés
+     gardent leur section : ce sont d'autres objets que les lives joués. */
+  const enLive = useLiveStatus();
+
   return (
     <>
-      {/* Même patron que Morceaux/Setlists : un vrai bouton de création en
-          haut du contenu, pas de « + » discret dans l'en-tête. */}
       <TopBar title={t('Live')} />
       <div className="page">
         <LiveBanner />
+        {enLive && enLive.status !== 'off' && (
+          <>
+            <h2 className="pagetitle" style={{ marginTop: 0 }}>
+              {t('En live')}
+            </h2>
+            <div className="list" style={{ marginBottom: 12 }}>
+              <div
+                className="row"
+                style={{ cursor: 'pointer' }}
+                onClick={enLive.openPanel}
+              >
+                <div className="grow">
+                  <div className="title">
+                    {enLive.status === 'pause'
+                      ? t('⏸ Session en pause')
+                      : t('Session en cours')}
+                  </div>
+                  <div className="sub">{t('Toucher pour revenir au live.')}</div>
+                </div>
+                <span className="chevron">
+                  <Icon name="chevron-right" size={18} />
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+        <h2 className="pagetitle" style={{ marginTop: enLive && enLive.status !== 'off' ? undefined : 0 }}>
+          {t('À venir')}
+        </h2>
         <div
           className="hstack"
-          style={{ gap: 8, flexWrap: 'wrap', marginBottom: 12 }}
+          style={{ gap: 8, flexWrap: 'wrap', marginBottom: 10 }}
         >
-          <button className="btn" onClick={() => navigate('/concert/new')}>
+          {/* A1 : action de PRÉPARATION, pas de scène — style secondaire.
+              Le seul plein-ambre de l'écran reste ce qui fait avancer. */}
+          <button className="btn ghost" onClick={() => navigate('/concert/new')}>
             <Icon name="plus" size={16} /> {t('Planifier un concert')}
           </button>
         </div>
-        {concerts.length === 0 && (
-          <Empty>
-            {t('Aucun concert planifié.')}
-            <br />
+        {upcoming.length === 0 && (
+          <p className="help" style={{ margin: '2px 0 10px' }}>
+            {t('Aucun concert planifié.')}{' '}
             {t(
               'Date, lieu, setlist : tout au même endroit pour préparer ta prochaine date.',
             )}
-          </Empty>
-        )}
-        {upcoming.length > 0 && (
-          <h2 className="pagetitle">{t('À venir')}</h2>
+          </p>
         )}
         <div className="list">
           {upcoming.map((c) => (
