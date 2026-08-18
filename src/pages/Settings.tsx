@@ -202,6 +202,11 @@ export function Settings() {
     const liste = aRemettre;
     let done = 0;
     let doutes = 0;
+    // Les ÉCHECS se comptent et se DISENT (b365, constat de Vincent : « ça
+    // n'a pas fonctionné »). Avant, un appel IA en échec était avalé par le
+    // catch et comptait dans « N partitions reprises » : l'écran annonçait
+    // un succès total sur une passe qui n'avait rien changé.
+    let echecs = 0;
     setRepriseIA({ done, total: liste.length, doutes });
     for (const vieux of liste) {
       if (arretReprise.current) break;
@@ -238,19 +243,24 @@ export function Settings() {
           updatedAt: new Date().toISOString(),
         });
       } catch {
-        // Un échec ne casse rien : le morceau reste tel qu'il était.
+        // Un échec ne casse rien : le morceau reste tel qu'il était —
+        // mais il se COMPTE, et le bilan le dira.
+        echecs++;
       }
       done++;
       setRepriseIA({ done, total: liste.length, doutes });
     }
     setRepriseEnCours(false);
-    toast.show(
-      doutes > 0
-        ? t('{n} partitions reprises · {d} à vérifier.', { n: done, d: doutes })
-        : done === 1
-          ? t('{n} partition reprise.', { n: done })
-          : t('{n} partitions reprises.', { n: done }),
-    );
+    const reprises = done - echecs;
+    const morceaux =
+      reprises === 1
+        ? t('{n} partition reprise', { n: reprises })
+        : t('{n} partitions reprises', { n: reprises });
+    const parts = [morceaux];
+    if (doutes > 0) parts.push(t('{d} à vérifier', { d: doutes }));
+    if (echecs > 0)
+      parts.push(t('{e} en échec — réessaie dans un moment', { e: echecs }));
+    toast.show(parts.join(' · ') + '.');
   }
 
   /** Compose l'état complet, dans la forme attendue par la restauration. */

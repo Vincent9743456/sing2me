@@ -90,14 +90,27 @@ export async function searchUgTabs(query: string): Promise<UgSearchResult[]> {
  *  `hint` : indice titre/artiste (utile pour décoder les PDF brouillés). */
 export async function aiCleanText(text: string, hint?: string): Promise<string> {
   let res: Response;
+  // Une action doit toujours pouvoir se terminer (règle b216). L'IA prend
+  // son temps sur une longue partition — 90 s de marge, mais jamais infini :
+  // sans borne, une reprise de bibliothèque restait plantée sur un appel
+  // muet (b365).
+  const ctrl = new AbortController();
+  const minuteur = window.setTimeout(() => ctrl.abort(), 90000);
   try {
     res = await fetch('/api/ai?fn=clean', {
       method: 'POST',
       headers: liveHeaders('', { 'content-type': 'application/json' }),
       body: JSON.stringify(hint ? { text, hint } : { text }),
+      signal: ctrl.signal,
     });
-  } catch {
-    throw new Error(OFFLINE_MSG);
+  } catch (e) {
+    throw new Error(
+      e instanceof DOMException && e.name === 'AbortError'
+        ? 'La mise en forme a pris trop de temps — réessaie.'
+        : OFFLINE_MSG,
+    );
+  } finally {
+    window.clearTimeout(minuteur);
   }
   const body = await readJson(res);
   if (!res.ok || body.error) throw new Error(body.error ?? `Erreur ${res.status}`);

@@ -223,6 +223,11 @@ export const EN_COMPTE: Record<string, string> = {
   '{n} partition corrigée.': '{n} chart fixed.',
   '{n} partitions reprises · {d} à vérifier.': '{n} charts redone · {d} need a check.',
   '{n} partitions reprises.': '{n} charts redone.',
+  // b365 — le bilan de la reprise dit aussi les échecs
+  '{n} partition reprise': '{n} chart redone',
+  '{n} partitions reprises': '{n} charts redone',
+  '{d} à vérifier': '{d} need a check',
+  '{e} en échec — réessaie dans un moment': '{e} failed — try again in a moment',
 
   // PedaleMidi.tsx — pédale MIDI (b296)
   'Pédale MIDI': 'MIDI pedal',

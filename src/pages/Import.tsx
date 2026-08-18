@@ -510,6 +510,9 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
     setBulkAiRunning(true);
     let total = aReprendre.length;
     let done = 0;
+    // Les échecs se comptent et se disent (b365) : un appel IA raté ne doit
+    // jamais se fondre dans un bilan de succès.
+    let echecs = 0;
     setAiProg({ done, total });
     for (const item of aReprendre) {
       if (bulkCancel.current) break;
@@ -529,7 +532,9 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           createdAt: item.song.createdAt,
         });
       } catch {
-        // Le morceau garde son analyse locale — rien n'est perdu.
+        // Le morceau garde son analyse locale — rien n'est perdu, mais
+        // l'échec se compte et le bilan le dira.
+        echecs++;
       }
       done++;
       setAiProg({ done, total });
@@ -540,7 +545,10 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
       (crees > 1
         ? t('{n} morceaux ajoutés à ta bibliothèque.', { n: crees })
         : t('{n} morceau ajouté à ta bibliothèque.', { n: crees })) +
-        (doutes > 0 ? ' ' + t('{n} à vérifier.', { n: doutes }) : ''),
+        (doutes > 0 ? ' ' + t('{n} à vérifier.', { n: doutes }) : '') +
+        (echecs > 0
+          ? ' ' + t('{e} en échec — réessaie dans un moment', { e: echecs }) + '.'
+          : ''),
     );
     navigate('/');
   }
