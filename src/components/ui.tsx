@@ -222,7 +222,8 @@ const TABS: { route: string; match: Route['name'][]; ico: IconName; label: strin
   },
   // « Live » (décision Vincent, b176) : cet onglet ne sert plus seulement à
   // planifier des concerts, il porte aussi l'historique des directs joués.
-  { route: '/concerts', match: ['concerts', 'concert', 'pastlive'], ico: 'star', label: 'Live' },
+  // 3.4 (b380) : l'étoile ne disait rien — l'antenne dit la diffusion.
+  { route: '/concerts', match: ['concerts', 'concert', 'pastlive'], ico: 'antenna', label: 'Live' },
   { route: '/bands', match: ['bands', 'band', 'bandChat'], ico: 'users', label: 'Groupes' },
   {
     route: '/artist',

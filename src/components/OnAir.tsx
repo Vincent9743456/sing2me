@@ -54,6 +54,7 @@ import { useStore } from '../store';
 import { t } from '../i18n';
 import { useWakeLock } from '../lib/wakelock';
 import { ConfirmSheet } from './Feedback';
+import { LIVE_LAUNCHED_KEY } from './Onboarding';
 import { Modal } from './ui';
 
 /**
@@ -473,6 +474,11 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     if (next === 'on' && statusRef.current === 'off') {
       try {
         localStorage.setItem('sing2me/onairStart', String(Date.now()));
+        // Étape « Lance ton premier live » de la prise en main (b380) :
+        // clé additive, posée une seule fois — jamais réécrite.
+        if (localStorage.getItem(LIVE_LAUNCHED_KEY) === null) {
+          localStorage.setItem(LIVE_LAUNCHED_KEY, new Date().toISOString());
+        }
       } catch {
         /* sans stockage, pas de durée affichée — rien de cassé */
       }

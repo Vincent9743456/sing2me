@@ -381,7 +381,7 @@ export function Artist() {
           visible ») — une grande rangée, comme les portes des fiches de
           groupe. L'icône de la barre du haut est retirée : jamais deux
           chemins vers une action existante (règle 3). */}
-      <TopBar title={t('Profil artiste')} />
+      <TopBar title={t('Artiste')} />
       <div className="page">
         <LiveBanner />
         <AccountSection />

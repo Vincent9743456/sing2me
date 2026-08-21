@@ -16,6 +16,10 @@ import { Icon } from './Icon';
 const WELCOME_KEY = 'sing2me/welcomeDismissed';
 const CHECKLIST_HIDDEN = 'sing2me/checklistHidden';
 export const STAGE_PLAYED_KEY = 'sing2me/onb/stagePlayed';
+/** Premier live lancé (b380) : posé par OnAir au démarrage d'une session.
+ *  Clé ADDITIVE — la progression existante (étapes calculées + horodatages
+ *  de `sing2me/onb/steps`) n'est jamais réinitialisée. */
+export const LIVE_LAUNCHED_KEY = 'sing2me/onb/liveLaunched';
 const STEPS_KEY = 'sing2me/onb/steps';
 
 function stamp(step: string): void {
@@ -32,7 +36,7 @@ function stamp(step: string): void {
 }
 
 export function Onboarding() {
-  const { songs, setlists, bands } = useStore();
+  const { songs, setlists } = useStore();
   const realSongs = songs.filter((s) => !(s.tags ?? []).includes(EXAMPLE_TAG));
   const realSetlists = setlists.filter(
     (sl) => !/\(exemple\)/i.test(sl.name),
@@ -117,6 +121,13 @@ export function Onboarding() {
     }
   };
 
+  /**
+   * 3.1b (b380, cahier UX) : la checklist fait enfin découvrir le LIVE —
+   * le différenciateur produit — avant la setlist. « Invite ton groupe »
+   * sort de la liste principale (collaboratif, pas de la découverte).
+   * Rétrocompatible : les étapes sont CALCULÉES (rien à migrer), la
+   * nouvelle vient d'une clé additive posée au premier lancement de live.
+   */
   const normalSteps = [
     {
       key: 'import',
@@ -127,23 +138,23 @@ export function Onboarding() {
     {
       key: 'stage',
       done: stagePlayed,
-      label: t('Joue-le en mode scène'),
+      label: t('Joue-le en mode Scène'),
       onClick: () => {
         const s = realSongs[0] ?? example;
         if (s) navigate(`/stage/song/${s.id}`);
       },
     },
     {
+      key: 'live',
+      done: flag(LIVE_LAUNCHED_KEY),
+      label: t('Lance ton premier live'),
+      onClick: () => navigate('/concerts'),
+    },
+    {
       key: 'setlist',
       done: realSetlists.length > 0,
       label: t('Crée ta première setlist'),
       onClick: () => navigate('/setlist/new'),
-    },
-    {
-      key: 'invite',
-      done: bands.some((b) => b.members.length >= 2),
-      label: t('Invite ton groupe'),
-      onClick: () => navigate('/bands'),
     },
   ];
 
@@ -267,8 +278,39 @@ export function Onboarding() {
   // E3 — Checklist de démarrage (variante « invité » si arrivée par lien).
   const showChecklist =
     (invited || welcomeDismissed) && !checklistHidden && !allDone;
+  // 3.1c (b380) : toutes les étapes cochées → une ligne discrète, avec sa
+  // sortie (règle 11), au lieu d'un bloc plein de lignes barrées.
+  const ligneTerminee =
+    (invited || welcomeDismissed) && !checklistHidden && allDone ? (
+      <div
+        className="hstack"
+        style={{ justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <span className="help">✓ {t('Prise en main terminée')}</span>
+        <button
+          className="btn ghost small"
+          aria-label={t('Masquer')}
+          onClick={() => {
+            try {
+              localStorage.setItem(CHECKLIST_HIDDEN, '1');
+            } catch {
+              // ignore
+            }
+            setChecklistHidden(true);
+          }}
+        >
+          <Icon name="x" size={14} />
+        </button>
+      </div>
+    ) : null;
   const checklist = showChecklist ? (
     <div className="card onbcard">
+      {/* 3.1a (b380) : la PROMESSE d'abord — le différenciateur produit. */}
+      <p className="help" style={{ marginTop: 0 }}>
+        {t(
+          'Avec mojosong, tes paroles s’affichent en direct sur le téléphone de ton public pendant que tu joues. Rien à installer pour eux, rien conservé après le concert.',
+        )}
+      </p>
       <div className="hstack" style={{ justifyContent: 'space-between' }}>
         <div className="onbtitle" style={{ fontSize: '0.98rem' }}>
           {t('Prise en main')}
@@ -308,12 +350,13 @@ export function Onboarding() {
     </div>
   ) : null;
 
-  if (!banner && !welcome && !checklist) return null;
+  if (!banner && !welcome && !checklist && !ligneTerminee) return null;
   return (
     <>
       {banner}
       {welcome}
       {checklist}
+      {ligneTerminee}
     </>
   );
 }

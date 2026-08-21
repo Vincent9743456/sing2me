@@ -24,3 +24,18 @@ export function cibleDuLive(regieSetlistId: string): CibleLive {
 export function libelleBadge(viewers: number | null): string {
   return viewers !== null && viewers > 0 ? `Live · ${viewers}` : 'Live';
 }
+
+/**
+ * 3.2 (b380) — le PROCHAIN concert planifié rattaché à une setlist (par
+ * IDENTIFIANT, Q5 vérifiée) : sa setlist est épinglée en tête de l'onglet
+ * Setlists, avec la date du concert.
+ */
+export function prochainConcertSetlist(
+  concerts: { setlistId?: string; date: string }[],
+  todayIso: string,
+): { setlistId: string; date: string } | null {
+  const c = [...concerts]
+    .filter((x) => (x.setlistId ?? '') !== '' && x.date >= todayIso)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  return c ? { setlistId: c.setlistId as string, date: c.date } : null;
+}
