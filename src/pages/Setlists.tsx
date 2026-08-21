@@ -320,6 +320,10 @@ export function Setlists() {
       <TopBar title={t('Setlists')} />
       <div className="page">
         <LiveBanner />
+        {/* Pas de bouton ici (b377, capture de Vincent : « 2 boutons pour
+            créer une setlist ») : le bouton ambre flottant en bas est LE
+            chemin — même arbitrage qu'à l'époque du deuxième bouton sous la
+            liste. L'état vide explique, il ne double pas l'action. */}
         {setlists.length === 0 && (
           <Empty>
             <div
@@ -330,10 +334,6 @@ export function Setlists() {
             {t(
               'Crée ta première setlist pour ton prochain concert — tu glisseras tes morceaux dans l’ordre.',
             )}
-            <div className="spacer" />
-            <button className="btn" onClick={() => setCreateOpen(true)}>
-              <Icon name="plus" size={16} /> {t('Créer une setlist')}
-            </button>
           </Empty>
         )}
 
