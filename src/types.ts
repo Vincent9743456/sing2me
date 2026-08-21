@@ -399,6 +399,15 @@ export interface Band {
    * le groupe, jamais synchronisé vers les autres membres.
    */
   hiddenFromPublic?: boolean;
+  /**
+   * Horodatage des MODIFICATIONS DE L'UTILISATEUR (b373, constat de Marco :
+   * renommer un groupe ne se propageait jamais aux autres appareils). Posé
+   * par `tamponneBand` sur les gestes délibérés UNIQUEMENT — jamais par les
+   * réparations automatiques (recalage des membres, cloudId, owned), qui ne
+   * doivent pas gagner une fusion (cicatrices b244/b249). La fusion prend
+   * le plus récent comme base, l'union des champs reste le filet.
+   */
+  updatedAt?: string;
 }
 
 /** Position d'un musicien ou d'un matériel sur le plan de scène (0…1). */
@@ -813,6 +822,16 @@ export function emptyBand(): Band {
     links: [],
     tipUrl: '',
   };
+}
+
+/**
+ * Horodate une MODIFICATION DÉLIBÉRÉE d'un groupe (b373) : renommage,
+ * photo, bio, liens, musicien ajouté/retiré à la main, masquage. À appeler
+ * au moment du geste, jamais depuis une réparation automatique — c'est cet
+ * horodatage qui décide de la base à la fusion entre appareils.
+ */
+export function tamponneBand(b: Band): Band {
+  return { ...b, updatedAt: new Date().toISOString() };
 }
 
 export function emptyConcert(): Concert {

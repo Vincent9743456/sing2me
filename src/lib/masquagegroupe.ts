@@ -46,15 +46,19 @@ import {
   releaseBandPage,
 } from './publicPages';
 import { AuthSession, getValidSession } from './auth';
-import { ArtistProfile, Band } from '../types';
+import { ArtistProfile, Band, tamponneBand } from '../types';
 
 /** Le groupe, une fois l'interrupteur basculé. Un seul endroit pour la
  *  forme du drapeau : `undefined` plutôt que `false`, pour ne pas alourdir
  *  le blob de synchro d'un champ qui ne dit rien. */
 export function groupeMasque(band: Band, masque: boolean): Band {
-  return masque
-    ? { ...band, hiddenFromPublic: true }
-    : { ...band, hiddenFromPublic: undefined };
+  // Geste délibéré : horodaté (b373), pour que le choix voyage entre MES
+  // appareils. (Il reste personnel : jamais partagé avec les autres membres.)
+  return tamponneBand(
+    masque
+      ? { ...band, hiddenFromPublic: true }
+      : { ...band, hiddenFromPublic: undefined },
+  );
 }
 
 /** Ce que l'écran doit dire quand la mise en ligne n'a pas suivi. */

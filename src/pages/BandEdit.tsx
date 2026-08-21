@@ -62,7 +62,7 @@ import { normalizeTitle } from '../lib/importer';
 import { resizePhoto } from '../lib/photo';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { Band, estBrouillon, makeId, SharePayload, Song } from '../types';
+import { Band, estBrouillon, makeId, SharePayload, Song, tamponneBand } from '../types';
 import { isUpcoming } from './Concerts';
 
 const LINK_PRESETS = [
@@ -397,13 +397,13 @@ export function BandEdit({ id }: { id: string }) {
       // La ligne « en attente » n'a pas d'identifiant : par lien, on ne sait
       // pas encore qui viendra. Elle en recevra un à l'adhésion (b249/b250).
       if (!band.members.some((m) => memeMusicien(m, { name: nm }))) {
-        saveBand({
+        saveBand(tamponneBand({
           ...band,
           members: [
             ...band.members,
             { id: makeId(), name: nm, instrument: '', pending: true },
           ],
-        });
+        }));
       }
       setInvitePrompt(false);
       setInvite(true);
@@ -545,7 +545,7 @@ export function BandEdit({ id }: { id: string }) {
         memeMusicien(m, { name: person.name, userId: person.user_id }),
       );
       if (band && !already && person.name.trim() !== '') {
-        saveBand({
+        saveBand(tamponneBand({
           ...band,
           members: [
             ...band.members,
@@ -557,7 +557,7 @@ export function BandEdit({ id }: { id: string }) {
               pending: true,
             },
           ],
-        });
+        }));
       }
     } catch (e) {
       setDirMsg(e instanceof Error ? e.message : t('Invitation impossible.'));
@@ -659,7 +659,8 @@ export function BandEdit({ id }: { id: string }) {
 
   function confirmEdit() {
     if (editDraft === null) return;
-    saveBand(editDraft);
+    // Geste délibéré : horodaté, pour gagner la fusion entre appareils (b373).
+    saveBand(tamponneBand(editDraft));
     setEditSaved(true);
     window.setTimeout(() => setEditSaved(false), 1400);
   }
@@ -1747,12 +1748,12 @@ export function BandEdit({ id }: { id: string }) {
                 // Retirer la ligne LOCALE dans tous les cas (invité comme
                 // membre) : sinon la personne réapparaît juste en dessous. Un
                 // groupe purement local (sans cloudId) passe aussi par ici.
-                saveBand({
+                saveBand(tamponneBand({
                   ...band,
                   members: band.members.filter(
                     (x) => !sameMusician(x.name, name),
                   ),
-                });
+                }));
               } catch {
                 /* silencieux : la liste se rafraîchira à la prochaine ouverture */
               }

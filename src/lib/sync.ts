@@ -99,14 +99,28 @@ function mergeBandsById(local: Band[], cloud: Band[]): Band[] {
       result.set(b.id, b);
       continue;
     }
+    /**
+     * LE PLUS RÉCENT DEVIENT LA BASE (b373, constat de Marco : renommer un
+     * groupe, changer sa photo ou ajouter un musicien à la main ne se
+     * propageait JAMAIS — le local restait toujours la base, et l'union ne
+     * remplit que les champs vides). `updatedAt` n'est posé que par les
+     * GESTES de l'utilisateur (`tamponneBand`) : une réparation automatique
+     * garde l'horodatage existant et ne gagne donc jamais la fusion.
+     * Sans horodatage des deux côtés (données d'avant b373), on retombe
+     * exactement sur l'ancien comportement : base locale + union.
+     */
+    const a = b.updatedAt ?? '';
+    const c = other.updatedAt ?? '';
+    const [recent, ancien] = c > a ? [other, b] : [b, other];
     result.set(b.id, {
-      ...b,
-      name: b.name || other.name,
-      photo: b.photo || other.photo,
-      bio: b.bio || other.bio,
-      tipUrl: b.tipUrl || other.tipUrl,
-      links: b.links.length > 0 ? b.links : (other.links ?? []),
-      cloudId: b.cloudId || other.cloudId,
+      ...recent,
+      name: recent.name || ancien.name,
+      photo: recent.photo || ancien.photo,
+      bio: recent.bio || ancien.bio,
+      tipUrl: recent.tipUrl || ancien.tipUrl,
+      links:
+        (recent.links?.length ?? 0) > 0 ? recent.links : (ancien.links ?? []),
+      cloudId: recent.cloudId || ancien.cloudId,
     });
   }
   return [...result.values()];
