@@ -219,7 +219,7 @@ export function SongView({
         : null,
     [ctxSetlist, songs],
   );
-  useOnAirSetlist(publicSetlist, ctxSetlist?.name ?? '');
+  useOnAirSetlist(publicSetlist, ctxSetlist?.name ?? '', ctxSetlist?.id ?? '');
 
 
   if (!song) {

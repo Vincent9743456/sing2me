@@ -9,6 +9,7 @@ import { useLiveStatus } from '../components/OnAir';
 import { Field, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { prochainVendredi } from '../lib/livedates';
+import { cibleDuLive } from '../lib/livenav';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { Concert, emptyConcert, SharePayload } from '../types';
@@ -77,41 +78,39 @@ export function Concerts() {
       <TopBar title={t('Live')} />
       <div className="page">
         <LiveBanner />
-        {enLive && enLive.status !== 'off' && (
-          <>
-            <h2 className="pagetitle" style={{ marginTop: 0 }}>
-              {t('En live')}
-            </h2>
-            <div className="list" style={{ marginBottom: 12 }}>
-              <div
-                className="row"
-                style={{ cursor: 'pointer' }}
-                onClick={enLive.openPanel}
-              >
-                <div className="grow">
-                  <div className="title">
-                    {enLive.status === 'pause'
-                      ? t('Session en pause')
-                      : t('Session en cours')}
-                  </div>
-                  <div className="sub">{t('Toucher pour revenir au live.')}</div>
-                </div>
-                <span className="chevron">
-                  <Icon name="chevron-right" size={18} />
-                </span>
-              </div>
-            </div>
-          </>
-        )}
-        <h2 className="pagetitle" style={{ marginTop: enLive && enLive.status !== 'off' ? undefined : 0 }}>
-          {t('À venir')}
-        </h2>
-        {/* Même forme que « ＋ Créer un groupe » / « Créer une setlist »
-            (b375, demande de Vincent) : le bouton plein-ambre pleine
-            largeur — c'est l'action qui fait avancer cet écran, et le seul
-            ambre de la page. */}
+        {/* REFONTE NAVIGATION, lot 1.2 (b378, cahier de Vincent — remplace
+            l'arbitrage b375) : le LANCEMENT du live est l'action primaire de
+            l'onglet (le seul ambre), « Planifier un concert » redevient
+            secondaire. Session déjà active → « Reprendre le live en cours »,
+            vers la Régie si une setlist est diffusée, sinon le panneau. */}
+        {enLive &&
+          (enLive.status !== 'off' ? (
+            <button
+              className="btn block"
+              style={{ marginBottom: 4 }}
+              onClick={() => {
+                const cible = cibleDuLive(enLive.regieSetlistId);
+                if (cible.type === 'regie') navigate(cible.chemin);
+                else enLive.openPanel();
+              }}
+            >
+              <Icon name="play" size={16} /> {t('Reprendre le live en cours')}
+            </button>
+          ) : (
+            <button
+              className="btn block"
+              style={{ marginBottom: 4 }}
+              onClick={enLive.openPanel}
+            >
+              <Icon name="antenna" size={16} /> {t('Lancer un live')}
+            </button>
+          ))}
+        <p className="help" style={{ marginTop: 0, marginBottom: 12 }}>
+          {t('Tes paroles s’affichent sur les téléphones du public.')}
+        </p>
+        <h2 className="pagetitle">{t('À venir')}</h2>
         <button
-          className="btn block"
+          className="btn ghost"
           style={{ marginBottom: 10 }}
           onClick={() => navigate('/concert/new')}
         >

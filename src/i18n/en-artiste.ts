@@ -414,6 +414,15 @@ export const EN_ARTISTE: Record<string, string> = {
   'Supprimer ce live': 'Delete this live',
   'Supprimer « {nom} » ?': 'Delete "{nom}"?',
   'En live': 'Live now',
+  // Refonte navigation, lot 1 (b378)
+  'Live en cours': 'Live in progress',
+  'Live en pause': 'Live paused',
+  'ouvrir la régie': 'open the remote',
+  'gérer le live': 'manage the live',
+  'Lancer un live': 'Start a live',
+  'Reprendre le live en cours': 'Resume the current live',
+  'Tes paroles s’affichent sur les téléphones du public.':
+    'Your lyrics show up on your audience’s phones.',
   'Session en cours': 'Session in progress',
   'Session en pause': 'Session paused',
   'Toucher pour revenir au live.': 'Tap to get back to the live.',
