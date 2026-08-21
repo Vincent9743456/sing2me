@@ -371,7 +371,20 @@ export function mergeStates(
   ): T[] => {
     if (!mark) return items;
     const mine = new Set(localItems.map((x) => x.id));
-    return items.filter((x) => mine.has(x.id) || (x.updatedAt ?? '') > mark);
+    /**
+     * UN ÉLÉMENT SANS DATE SURVIT AU FILTRE (b374, constat de Marco : ses
+     * groupes créés sur Chrome n'arrivaient JAMAIS sur ses autres
+     * appareils). Les groupes n'ont pas eu d'`updatedAt` avant b373 : dès
+     * qu'un point zéro de réinitialisation existait — et il se PROPAGE à
+     * tous les appareils —, `'' > mark` écartait ici tout groupe venu du
+     * cloud, indéfiniment, sur tout appareil qui ne l'avait pas en local.
+     * Le doute profite au contenu (règle b137) : ressusciter un vieil
+     * élément après une réinitialisation se répare d'un geste ; un élément
+     * qui ne se synchronise jamais est une perte silencieuse permanente.
+     */
+    return items.filter(
+      (x) => mine.has(x.id) || !x.updatedAt || x.updatedAt > mark,
+    );
   };
   // Fusion par id d'abord (union local+cloud), PUIS dédoublonnage par contenu
   // sur cette union : c'est le seul endroit où l'on voit les deux copies d'un
