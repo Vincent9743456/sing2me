@@ -73,6 +73,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Créer le profil artiste': 'Create the artist profile',
   'Créer ta fiche débloque aussi le mode': 'Creating your profile also unlocks',
   'Créer un groupe': 'Create a band',
+  'Nouveau groupe': 'New band',
   'Date': 'Date',
   'Date à définir': 'Date to be set',
   'Date, lieu, setlist : tout au même endroit pour préparer ta prochaine date.': 'Date, venue, setlist: everything in one place to prep your next gig.',

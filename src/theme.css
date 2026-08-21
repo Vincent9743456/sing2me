@@ -567,20 +567,21 @@ textarea.mono {
   font-size: 1.2rem;
 }
 
-/* Bouton d'action flottant (FAB) — « Importer » sur l'onglet Morceaux. */
-.libfab {
-  position: fixed;
-  right: 16px;
-  bottom: calc(74px + env(safe-area-inset-bottom));
-  z-index: 9;
-  border-radius: var(--radius-pill);
-  padding: 12px 18px;
-  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 40%, transparent);
+/* Le FAB `.libfab` a disparu (b379, refonte navigation — lot 2) : il
+   masquait la dernière carte des listes. L'action de création vit dans la
+   barre de titre (`.headerplus`). */
+.headerplus {
+  gap: 4px;
 }
-@media (min-width: 900px) {
-  .libfab {
-    right: 24px;
-    bottom: 28px;
+.headerplus-label {
+  display: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+@media (min-width: 768px) {
+  /* Le libellé n'apparaît que si le badge Live ne partage pas la barre. */
+  .headerplus:not(.compact) .headerplus-label {
+    display: inline;
   }
 }
 

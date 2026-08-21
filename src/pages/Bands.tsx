@@ -10,7 +10,7 @@ import { ConfirmSheet, useToast } from '../components/Feedback';
 import { Icon } from '../components/Icon';
 import { SwipeRow } from '../components/SwipeRow';
 import { useNotifications } from '../components/Notifications';
-import { Empty, Field, TopBar } from '../components/ui';
+import { Empty, Field, HeaderPlus, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { getValidSession, monId } from '../lib/auth';
 import {
@@ -194,7 +194,12 @@ export function Bands() {
 
   return (
     <>
-      <TopBar title={t('Groupes')} />
+      <TopBar
+        title={t('Groupes')}
+        right={
+          <HeaderPlus label={t('Nouveau groupe')} onClick={() => setCreating(true)} />
+        }
+      />
       <div className="page">
         <LiveBanner />
         {memberNews.length > 0 && (
@@ -434,11 +439,7 @@ export function Bands() {
               </button>
             </div>
           </div>
-        ) : (
-          <button className="btn block" onClick={() => setCreating(true)}>
-            ＋ {t('Créer un groupe')}
-          </button>
-        )}
+        ) : null}
         <p className="help" style={{ textAlign: 'center' }}>
           {t('Tu invites les autres ensuite, depuis la fiche du groupe.')}
         </p>

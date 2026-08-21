@@ -25,6 +25,7 @@ import {
   versionForBand,
 } from '../lib/model';
 import { getValidSession, monId } from '../lib/auth';
+import { nomParDefautSetlist } from '../lib/livedates';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -60,8 +61,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
       return { ...existing, items: existing.items.map((x) => ({ ...x })) };
     }
     // Nouvelle setlist : reprendre le contexte (groupe/solo) de l'encart
-    // d'où l'on vient, s'il a été transmis.
-    const base = emptySetlist();
+    // d'où l'on vient, s'il a été transmis. Nom par défaut daté (b379,
+    // cahier 2.4) : jamais « (sans nom) » — le champ reste éditable et
+    // sélectionné à l'ouverture.
+    const base = { ...emptySetlist(), name: nomParDefautSetlist() };
     try {
       const b = sessionStorage.getItem('sing2me/newSetlistBand');
       const ctx = sessionStorage.getItem('sing2me/newSetlistContext');
@@ -195,14 +198,28 @@ export function SetlistEdit({ id }: { id: string | null }) {
     draft.comment !== (lastSaved?.comment ?? '') ||
     (draft.bandId ?? '') !== (lastSaved?.bandId ?? '');
 
-  const stamp = (sl: Setlist): Setlist =>
-    (sl.createdBy ?? '') === ''
+  const stamp = (sl: Setlist): Setlist => {
+    // Jamais « (sans nom) » (b379) : un nom vidé retombe sur le nom daté.
+    const nomme =
+      sl.name.trim() === '' ? { ...sl, name: nomParDefautSetlist() } : sl;
+    return (nomme.createdBy ?? '') === ''
       ? {
-          ...sl,
+          ...nomme,
           createdBy: myId,
           createdByName: prefs.userName || artist.name || '',
         }
-      : sl;
+      : nomme;
+  };
+
+  // 2.4 — le nom par défaut est PRÉ-SÉLECTIONNÉ à l'ouverture d'une
+  // nouvelle setlist : taper remplace tout, valider garde la date.
+  useEffect(() => {
+    if (!existing) {
+      nameRef.current?.focus();
+      nameRef.current?.select();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const firstRender = useRef(true);
   useEffect(() => {
