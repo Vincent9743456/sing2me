@@ -19,11 +19,13 @@ import React, { useEffect, useState } from 'react';
 
 import { PublicPagePeek } from './PublicPagePeek';
 import { getValidSession } from '../lib/auth';
+import { ensureCloudBand } from '../lib/bands';
 import {
   ensureBandPage,
   fetchBandPageName,
   publierFicheGroupe,
 } from '../lib/publicPages';
+import { normalizePublicName, publicNameError } from '../lib/publicName';
 import { useStore } from '../store';
 import { t } from '../i18n';
 import { Band } from '../types';
@@ -35,7 +37,7 @@ export function BandPublicPeek({
   band: Band;
   onClose: () => void;
 }) {
-  const { artist } = useStore();
+  const { artist, saveBand } = useStore();
   const [adresse, setAdresse] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,17 +47,48 @@ export function BandPublicPeek({
       // écran ne dit plus « pas encore d'adresse — le créateur peut lui en
       // donner une », il la MONTRE. On lit d'abord (un membre voit l'adresse
       // sans pouvoir la réserver), on ne réserve qu'à défaut.
-      let nom = await fetchBandPageName(band.cloudId ?? '');
+      let cid = band.cloudId ?? '';
+      let bandPourPage = band;
+      let nom = cid !== '' ? await fetchBandPageName(cid) : '';
       if (nom === '' && band.owned === true && band.hiddenFromPublic !== true) {
         const s = await getValidSession();
-        if (s) nom = await ensureBandPage(s, band);
+        if (s) {
+          /**
+           * UN GROUPE JAMAIS PUBLIÉ A QUAND MÊME DROIT À SA PAGE (b376,
+           * constat de Vincent : « le groupe a pourtant un nom » face au
+           * message d'erreur). Un groupe créé seul, sans personne d'invité,
+           * n'a pas de cloudId — et `ensureBandPage` rendait '' sans un
+           * mot, que l'écran maquillait en problème de NOM. On publie donc
+           * le groupe ici. Sans risque b213 : il est à moi (`owned`) et n'a
+           * JAMAIS été publié — le corollaire interdit seulement de
+           * republier un groupe qui ne m'appartient plus.
+           */
+          if (cid === '') {
+            try {
+              const ref = await ensureCloudBand(s, band.id, band.name);
+              cid = ref.cloudId;
+              bandPourPage = { ...band, cloudId: cid };
+              // Rattachement dérivé du serveur : pas de tamponneBand (b373).
+              saveBand(bandPourPage);
+            } catch {
+              /* hors ligne ou serveur muet : le message le dira */
+            }
+          }
+          if (cid !== '') nom = await ensureBandPage(s, bandPourPage);
+        }
       }
       if (!annule) setAdresse(nom);
     })();
     return () => {
       annule = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [band.cloudId]);
+
+  // La VRAIE raison d'une absence d'adresse (b376) : le message « nom trop
+  // court » ne s'affiche que si le nom est réellement en cause.
+  const base = normalizePublicName(band.name ?? '');
+  const nomEnCause = base === '' || publicNameError(base) !== null;
 
   return (
     <PublicPagePeek
@@ -71,9 +104,13 @@ export function BandPublicPeek({
               'Ce groupe est masqué au public : il n’a pas d’adresse, et aucun direct ne peut être lancé à son nom. Retire le masquage depuis l’onglet Groupes pour lui en donner une.',
             )
           : band.owned === true
-            ? t(
-                'Le nom de ce groupe ne permet pas d’en tirer une adresse (il faut au moins 3 lettres ou chiffres). Donne-lui-en une depuis « Modifier ».',
-              )
+            ? nomEnCause
+              ? t(
+                  'Le nom de ce groupe ne permet pas d’en tirer une adresse (il faut au moins 3 lettres ou chiffres). Donne-lui-en une depuis « Modifier ».',
+                )
+              : t(
+                  'L’adresse n’a pas pu être créée — vérifie ta connexion et rouvre cet aperçu.',
+                )
             : t(
                 'Ce groupe n’a pas encore d’adresse publique. Son créateur peut lui en donner une.',
               )
