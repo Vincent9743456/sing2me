@@ -106,16 +106,17 @@ export function Concerts() {
         <h2 className="pagetitle" style={{ marginTop: enLive && enLive.status !== 'off' ? undefined : 0 }}>
           {t('À venir')}
         </h2>
-        <div
-          className="hstack"
-          style={{ gap: 8, flexWrap: 'wrap', marginBottom: 10 }}
+        {/* Même forme que « ＋ Créer un groupe » / « Créer une setlist »
+            (b375, demande de Vincent) : le bouton plein-ambre pleine
+            largeur — c'est l'action qui fait avancer cet écran, et le seul
+            ambre de la page. */}
+        <button
+          className="btn block"
+          style={{ marginBottom: 10 }}
+          onClick={() => navigate('/concert/new')}
         >
-          {/* A1 : action de PRÉPARATION, pas de scène — style secondaire.
-              Le seul plein-ambre de l'écran reste ce qui fait avancer. */}
-          <button className="btn ghost" onClick={() => navigate('/concert/new')}>
-            <Icon name="plus" size={16} /> {t('Planifier un concert')}
-          </button>
-        </div>
+          <Icon name="plus" size={16} /> {t('Planifier un concert')}
+        </button>
         {upcoming.length === 0 && (
           <p className="help" style={{ margin: '2px 0 10px' }}>
             {t('Aucun concert planifié.')}{' '}
