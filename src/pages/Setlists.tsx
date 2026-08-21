@@ -7,13 +7,16 @@
 import React, { useEffect, useState } from 'react';
 
 import { LiveBanner } from '../components/LiveBanner';
-import { ConfirmSheet } from '../components/Feedback';
+import { MenuSheet, ConfirmSheet } from '../components/Feedback';
 import { SwipeRow } from '../components/SwipeRow';
 import { Empty, Field, HeaderPlus, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { t } from '../i18n';
 import { versionForBand } from '../lib/model';
 import { getValidSession } from '../lib/auth';
+import { prochainConcertSetlist } from '../lib/livenav';
+import { dateDeTitre } from '../lib/livedates';
+import { replier } from '../lib/recherche';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -48,12 +51,11 @@ export function Setlists() {
     deleteSetlist,
     removeSetlistFromBand,
   } = useStore();
-  // E5 : la setlist du prochain concert (date la plus proche) est mise en avant.
+  // 3.2 (b380) : la setlist du prochain concert planifié (liaison par
+  // IDENTIFIANT, Q5 vérifiée) est ÉPINGLÉE en tête, avec la date.
   const todayIso = new Date().toISOString().slice(0, 10);
-  const nextConcertSetlistId =
-    [...concerts]
-      .filter((c) => (c.setlistId ?? '') !== '' && c.date >= todayIso)
-      .sort((a, b) => a.date.localeCompare(b.date))[0]?.setlistId ?? '';
+  const prochain = prochainConcertSetlist(concerts, todayIso);
+  const nextConcertSetlistId = prochain?.setlistId ?? '';
   /**
    * Sélecteur de contexte, en haut de l'écran (arbitrage Vincent, b211) —
    * même geste que les répertoires de l'onglet Morceaux : une rangée qui
@@ -62,6 +64,9 @@ export function Setlists() {
    * l'écran ne montrait plus que des en-têtes.
    * Valeurs : null = toutes, '' = solo, un id de groupe, ou 'ctx:<label>'.
    */
+  // 3.2 (b380) : recherche par nom — visible seulement au-delà de 8
+  // setlists (en dessous, l'écran reste tel quel).
+  const [rech, setRech] = useState('');
   const [ctxFilter, setCtxFilter] = useState<string | null>(() => {
     try {
       const v = localStorage.getItem('sing2me/setlistCtx');
@@ -81,6 +86,8 @@ export function Setlists() {
   const [createOpen, setCreateOpen] = useState(false);
   // Suppression : confirmée par une feuille (jamais confirm() natif).
   const [confirmDel, setConfirmDel] = useState<Setlist | null>(null);
+  // 3.3 (b380) : menu « … » des cartes, même grammaire que Morceaux.
+  const [rowMenu, setRowMenu] = useState<Setlist | null>(null);
   // Mon compte : pour savoir de quelles setlists je suis l'auteur (b146).
   const [myId, setMyId] = useState('');
   useEffect(() => {
@@ -128,7 +135,9 @@ export function Setlists() {
     ),
   ].sort((a, b) => a.localeCompare(b, 'fr'));
 
-  /** Les setlists du contexte choisi, la plus récemment modifiée en tête. */
+  /** Les setlists du contexte choisi — épinglée du prochain concert en
+   *  tête (b380), puis la plus récemment modifiée (Q4 : aucune « dernière
+   *  utilisation » n'existe dans les données — tri actuel conservé). */
   const visibles = [...setlists]
     .filter((sl) => {
       if (ctxFilter === null) return true;
@@ -138,7 +147,14 @@ export function Setlists() {
         return (sl.bandId ?? '') === '' && sl.context === ctxFilter.slice(4);
       return (sl.bandId ?? '') === ctxFilter;
     })
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    .filter(
+      (sl) => rech.trim() === '' || replier(sl.name).includes(replier(rech)),
+    )
+    .sort((a, b) => {
+      if (a.id === nextConcertSetlistId) return -1;
+      if (b.id === nextConcertSetlistId) return 1;
+      return b.updatedAt.localeCompare(a.updatedAt);
+    });
 
   /** À qui appartient cette setlist, en toutes lettres (b211). */
   const contexteDe = (sl: Setlist): string =>
@@ -194,8 +210,12 @@ export function Setlists() {
         <div className="grow" style={{ minWidth: 0 }}>
           <div className="title">
             {sl.name || t('(sans nom)')}
-            {sl.id === nextConcertSetlistId && (
-              <span className="badge-next">{t('Prochain concert')}</span>
+            {sl.id === nextConcertSetlistId && prochain && (
+              <span className="badge-next">
+                {t('Concert le {date}', {
+                  date: dateDeTitre(`${prochain.date}T00:00:00`),
+                })}
+              </span>
             )}
           </div>
           <div
@@ -233,13 +253,14 @@ export function Setlists() {
           <>
             <button
               className="btn ghost small"
-              title={t('Régie (chanteur sans partition)')}
+              style={{ minWidth: 44, minHeight: 44 }}
+              title={t('Plus d’actions')}
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/remote/${sl.id}`);
+                setRowMenu(sl);
               }}
             >
-              <Icon name="sliders" size={16} />
+              <Icon name="more" size={16} />
             </button>
             <button
               className="btn small"
@@ -340,6 +361,39 @@ export function Setlists() {
           </Empty>
         )}
 
+        {/* 3.2 (b380) : la recherche n'apparaît qu'au-delà de 8 setlists —
+            en dessous, l'écran reste tel quel. Même composant que Morceaux
+            (champ + effacement). */}
+        {setlists.length > 8 && (
+          <div style={{ position: 'relative', marginBottom: 8 }}>
+            <input
+              type="text"
+              placeholder={t('Rechercher une setlist…')}
+              value={rech}
+              style={rech !== '' ? { paddingRight: 40, width: '100%' } : { width: '100%' }}
+              onChange={(e) => setRech(e.target.value)}
+            />
+            {rech !== '' && (
+              <button
+                aria-label={t('Effacer la recherche')}
+                title={t('Effacer la recherche')}
+                onClick={() => setRech('')}
+                style={{
+                  position: 'absolute',
+                  right: 6,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-dim)',
+                  padding: 8,
+                }}
+              >
+                <Icon name="x" size={16} />
+              </button>
+            )}
+          </div>
+        )}
         {/* Sélecteur de contexte, en haut (arbitrage Vincent, b211) : une
             rangée qui défile, comme les répertoires de l'onglet Morceaux. */}
         {setlists.length > 0 && (bands.length > 0 || contextes.length > 0) && (
@@ -438,6 +492,25 @@ export function Setlists() {
             }
           }}
           onClose={() => setConfirmDel(null)}
+        />
+      )}
+
+      {rowMenu && (
+        <MenuSheet
+          title={rowMenu.name || t('Cette setlist')}
+          items={[
+            {
+              label: t('Régie (chanteur sans partition)'),
+              icon: 'sliders',
+              onClick: () => navigate(`/remote/${rowMenu.id}`),
+            },
+            {
+              label: t('Modifier'),
+              icon: 'edit',
+              onClick: () => navigate(`/setlist/${rowMenu.id}`),
+            },
+          ]}
+          onClose={() => setRowMenu(null)}
         />
       )}
 

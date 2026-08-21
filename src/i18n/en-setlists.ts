@@ -1,5 +1,11 @@
 /** Traductions anglaises — domaine setlists (clé = chaîne française exacte). */
 export const EN_SETLISTS: Record<string, string> = {
+  // b380 — refonte navigation, lot 3
+  'Concert le {date}': 'Gig on {date}',
+  'Plus d’actions': 'More actions',
+  'Rechercher une setlist…': 'Search a setlist…',
+  'Cette setlist': 'This setlist',
+
   // b379 — refonte navigation, lot 2
   'Nouvelle setlist': 'New setlist',
 
