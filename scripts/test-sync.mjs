@@ -100,6 +100,36 @@ const groupe = (extra = {}) => ({
   egal('setlist vieille ne régresse pas', surA.setlists[0].name, 'Été v2');
 }
 
+// 8. LE BUG DE MARCO (b374) : un point zéro de réinitialisation existe
+//    (resetAt.bands, propagé par le cloud) — un groupe SANS date créé sur un
+//    autre appareil doit quand même arriver. Avant : jeté pour toujours.
+{
+  const cloudA = { ...base(), bands: [groupe()], resetAt: { bands: '2026-08-01T00:00:00Z' } };
+  const surB = mergeStates(base(), cloudA);
+  egal('groupe sans date survit au point zéro', surB.bands.length, 1);
+}
+
+// 9. Le point zéro continue de filtrer ce qu'il doit : un élément DATÉ
+//    d'avant la réinitialisation, absent en local, ne ressuscite pas.
+{
+  const vieux = { ...groupe(), updatedAt: '2026-07-01T00:00:00Z' };
+  const cloudA = { ...base(), bands: [vieux], resetAt: { bands: '2026-08-01T00:00:00Z' } };
+  const surB = mergeStates(base(), cloudA);
+  egal('groupe daté d’avant le reset écarté', surB.bands.length, 0);
+  const recent = { ...groupe(), updatedAt: '2026-08-15T00:00:00Z' };
+  const surB2 = mergeStates(base(), { ...base(), bands: [recent], resetAt: { bands: '2026-08-01T00:00:00Z' } });
+  egal('groupe daté d’après le reset gardé', surB2.bands.length, 1);
+}
+
+// 10. Une setlist datée d'après le reset passe aussi (le cas « playlist de
+//     3 morceaux » de Marco, une fois le point zéro derrière elle).
+{
+  const sl = { id: 's9', name: 'Répète', items: [], bandId: '', updatedAt: '2026-08-18T12:00:00Z' };
+  const cloudA = { ...base(), setlists: [sl], resetAt: { setlists: '2026-08-01T00:00:00Z' } };
+  const surB = mergeStates(base(), cloudA);
+  egal('setlist créée après le reset arrive', surB.setlists.length, 1);
+}
+
 rmSync(dir, { recursive: true, force: true });
 console.log(ko === 0 ? '\nTous les tests passent.' : `\n${ko} test(s) en échec.`);
 process.exit(ko === 0 ? 0 : 1);

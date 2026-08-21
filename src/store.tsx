@@ -559,12 +559,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const saveBand = useCallback((band: Band) => {
-    setState((prev) => ({
-      ...prev,
-      bands: prev.bands.some((b) => b.id === band.id)
-        ? prev.bands.map((b) => (b.id === band.id ? band : b))
-        : [...prev.bands, band],
-    }));
+    setState((prev) => {
+      const existe = prev.bands.some((b) => b.id === band.id);
+      // Une CRÉATION est toujours datée (b374) : sans date, un groupe créé
+      // après une réinitialisation était écarté à jamais par le filtre
+      // `afterReset` sur tous les autres appareils (constat de Marco). Les
+      // modifications d'un groupe EXISTANT, elles, ne se datent que sur un
+      // geste délibéré (`tamponneBand`, b373) — jamais sur une réparation.
+      const neuf =
+        !existe && !band.updatedAt
+          ? { ...band, updatedAt: new Date().toISOString() }
+          : band;
+      return {
+        ...prev,
+        bands: existe
+          ? prev.bands.map((b) => (b.id === band.id ? band : b))
+          : [...prev.bands, neuf],
+      };
+    });
   }, []);
 
   /**

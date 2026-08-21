@@ -850,7 +850,14 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     persoSyncBusy.current = true;
     try {
       const valid = await getValidSession();
-      if (!valid) return;
+      if (!valid) {
+        // Une session qu'on ne peut pas valider N'EST PAS un succès (b374) :
+        // abandonner en silence laissait croire que tout partait, pendant
+        // que les modifications restaient sur l'appareil. Le statut passe en
+        // erreur — le compteur « en attente » et le bloc du compte le disent.
+        setStatus('error');
+        return;
+      }
       // FUSIONNER AVANT DE POUSSER (b287) : `pushCloud` remplace toute la
       // ligne (aucune fusion serveur). Sans ce pull+merge, un appareil à
       // l'état périmé écraserait le travail plus récent d'un autre. Le cloud
