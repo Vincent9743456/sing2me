@@ -2245,6 +2245,49 @@ textarea.mono {
   position: absolute;
   inset: -9px -6px;
 }
+/* BADGE D'ÉTAT DU LIVE dans la barre de titre (b378) : il n'existe que
+   pendant une session. Le direct se signale par un mot ET un mouvement
+   (charte) : le point pulse lentement. Couleurs par JETONS uniquement —
+   cicatrice b233 (.livebadge) : jamais de couleur en dur ici. */
+.livebar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--live);
+  background: color-mix(in srgb, var(--surface) 82%, var(--live));
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.livebar .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--live);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+.livebar.pause {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--surface) 84%, var(--accent));
+}
+.livebar.pause .dot {
+  background: var(--accent);
+  animation: none;
+}
+/* Cible tactile ≥ 44 px sans changer le rendu (même mécanique que la
+   pastille d'avant, b362). */
+.livebar::after {
+  content: '';
+  position: absolute;
+  inset: -9px -6px;
+}
 /* En direct : ROUGE clignotant — impossible à manquer */
 .onair.on {
   border-color: var(--live);

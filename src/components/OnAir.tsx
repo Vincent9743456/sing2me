@@ -48,6 +48,7 @@ import {
   publierFichesGroupes,
   monAdressePublique,
 } from '../lib/publicPages';
+import { cibleDuLive, libelleBadge } from '../lib/livenav';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { t } from '../i18n';
@@ -84,13 +85,19 @@ interface OnAirValue {
   /** La page courante déclare ce que voit le chanteur. */
   setCurrent: (song: LiveSong | null) => void;
   /** Une page de setlist déclare la setlist à diffuser au public. */
-  setSetlist: (songs: LivePublicSong[] | null, name?: string) => void;
+  setSetlist: (songs: LivePublicSong[] | null, name?: string, id?: string) => void;
 }
 
 const OnAirContext = createContext<OnAirValue | null>(null);
 const StatusContext = createContext<{
   status: LiveStatus;
   hearts: number;
+  /** Spectateurs connectés — seulement sur l'appareil du LANCEUR (c'est son
+   *  sondage `?id=`, b345) ; null ailleurs ou hors session. */
+  viewers: number | null;
+  /** Setlist en cours de diffusion (id LOCAL, si le diffuseur l'a donné) :
+   *  c'est elle qui rend la Régie atteignable depuis le badge (b378). */
+  regieSetlistId: string;
   openPanel: () => void;
 } | null>(null);
 
@@ -217,9 +224,13 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   // lui-même. Poussée si le direct est actif. L'effacement est différé pour
   // ne pas clignoter quand on passe d'un morceau à l'autre de la setlist.
   const setlistClearTimer = useRef<number | null>(null);
+  // Setlist en cours de diffusion, par son id LOCAL (b378) : c'est ce qui
+  // rend la Régie atteignable depuis le badge du header. '' = aucune.
+  const [setlistIdEnCours, setSetlistIdEnCours] = useState('');
   const setSetlist = useCallback(
-    (songs: LivePublicSong[] | null, name = '') => {
+    (songs: LivePublicSong[] | null, name = '', id = '') => {
       setlistRef.current = songs;
+      setSetlistIdEnCours(songs && songs.length > 0 ? id : '');
       if (statusRef.current !== 'on') return;
       if (songs && songs.length > 0) {
         if (setlistClearTimer.current !== null) {
@@ -707,7 +718,13 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   return (
     <OnAirContext.Provider value={{ status, mode, setCurrent, setSetlist }}>
       <StatusContext.Provider
-        value={{ status, hearts, openPanel: () => setPanel(true) }}
+        value={{
+          status,
+          hearts,
+          viewers,
+          regieSetlistId: setlistIdEnCours,
+          openPanel: () => setPanel(true),
+        }}
       >
         {children}
         {/* REFONTE b345 (cahier UX de Vincent) : « live » est LE mot — GO
@@ -947,6 +964,45 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
  *  N'apparaît qu'une fois la fiche artiste créée (décision Vincent) : un
  *  débutant n'a pas à voir le mode direct avant d'avoir posé son nom.
  *  Exception : un direct déjà actif reste toujours pilotable. */
+/**
+ * BADGE D'ÉTAT DU LIVE (b378, refonte navigation — lot 1). Rien hors
+ * session : le LANCEMENT vit dans l'onglet Live. En session : point qui
+ * pulse + « Live · N » (spectateurs, connus seulement chez le lanceur).
+ * Le clic mène à la Régie quand une setlist est diffusée, sinon au panneau
+ * Live — jamais un écran mort (décision validée par Vincent).
+ */
+export function LiveBadge() {
+  const ctx = useContext(StatusContext);
+  if (!ctx || ctx.status === 'off') return null;
+  const { status, viewers, regieSetlistId, openPanel } = ctx;
+  const cible = cibleDuLive(regieSetlistId);
+  const versRegie = cible.type === 'regie';
+  const label =
+    (status === 'pause' ? t('Live en pause') : t('Live en cours')) +
+    (viewers !== null && viewers > 0
+      ? ', ' +
+        (viewers > 1
+          ? t('{n} spectateurs', { n: viewers })
+          : t('{n} spectateur', { n: viewers }))
+      : '') +
+    ' — ' +
+    (versRegie ? t('ouvrir la régie') : t('gérer le live'));
+  return (
+    <button
+      className={`livebar ${status}`}
+      aria-label={label}
+      title={label}
+      onClick={() => {
+        if (versRegie && cible.type === 'regie') navigate(cible.chemin);
+        else openPanel();
+      }}
+    >
+      <span className="dot" aria-hidden="true" />
+      <span aria-live="polite">{libelleBadge(viewers)}</span>
+    </button>
+  );
+}
+
 export function OnAirButton({ inBar = false }: { inBar?: boolean } = {}) {
   const ctx = useContext(StatusContext);
   const { artist } = useStore();
@@ -1015,14 +1071,17 @@ export function useOnAirSetlist(
   songs: LivePublicSong[] | null,
   /** Nom de la setlist : les mots du public s'y rattachent (b139). */
   name = '',
+  /** Id LOCAL de la setlist (b378) : rend la Régie atteignable depuis le
+   *  badge du header. Facultatif — sans lui, le badge ouvre le panneau. */
+  id = '',
 ) {
   const ctx = useContext(OnAirContext);
   const setSetlist = ctx?.setSetlist;
   const key = songs
-    ? `${name}#${songs.length}#${songs.map((s) => s.title).join('|')}`
+    ? `${name}#${id}#${songs.length}#${songs.map((s) => s.title).join('|')}`
     : '';
   useEffect(() => {
-    if (setSetlist) setSetlist(songs && songs.length > 0 ? songs : null, name);
+    if (setSetlist) setSetlist(songs && songs.length > 0 ? songs : null, name, id);
     return () => {
       if (setSetlist) setSetlist(null);
     };

@@ -5,7 +5,7 @@ import { t } from '../i18n';
 import { navigate, Route } from '../router';
 import { Icon, IconName } from './Icon';
 import { Brand, LogoMark } from './Logo';
-import { OnAirButton } from './OnAir';
+import { LiveBadge } from './OnAir';
 
 /**
  * Astuce « mode concert », affichée une seule fois : l'écran reste allumé
@@ -143,9 +143,9 @@ export function TopBar({
   title: React.ReactNode;
   onBack?: () => void;
   right?: React.ReactNode;
-  /** GO LIVE intégré à la barre (même place partout, jamais flottant).
-   *  `false` sur les pages où lancer un direct n'a pas de sens (fiche
-   *  morceau, édition, import, discussion…) : le titre respire. */
+  /** Badge d'état du live intégré à la barre (b378) — rendu seulement
+   *  pendant une session. `false` sur les pages où il n'a pas de sens
+   *  (import, partage…). */
   live?: boolean;
 }) {
   return (
@@ -173,7 +173,11 @@ export function TopBar({
       <h1>{title}</h1>
       <div className="side right">
         {right}
-        {live && <OnAirButton inBar />}
+        {/* b378 (refonte navigation, lot 1) : le header ne porte plus le
+            LANCEMENT du live (il vit dans l'onglet Live) — seulement
+            l'INDICATEUR d'état, rendu uniquement quand une session est
+            active. Hors session, l'emplacement est libre (lot 2). */}
+        {live && <LiveBadge />}
       </div>
     </div>
   );
