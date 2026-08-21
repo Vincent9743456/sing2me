@@ -1,5 +1,8 @@
 /** Traductions anglaises — domaine setlists (clé = chaîne française exacte). */
 export const EN_SETLISTS: Record<string, string> = {
+  // b379 — refonte navigation, lot 2
+  'Nouvelle setlist': 'New setlist',
+
   // Onglet Barre (repris de en-commun.ts — doublon inoffensif, même valeur)
   Morceaux: 'Songs',
   Setlists: 'Setlists',

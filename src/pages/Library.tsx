@@ -11,7 +11,7 @@ import { ConfirmSheet, MenuSheet, useToast } from '../components/Feedback';
 import { Onboarding } from '../components/Onboarding';
 import { BackupNudge } from '../components/BackupNudge';
 import { EXAMPLE_TAG } from '../seed';
-import { Empty, TopBar } from '../components/ui';
+import { Empty, HeaderPlus, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { replier } from '../lib/recherche';
 
@@ -685,7 +685,22 @@ export function Library() {
 
   return (
     <>
-      <TopBar title={t('Morceaux')} />
+      <TopBar
+        title={t('Morceaux')}
+        right={
+          bandFilter !== null && bandFilter !== '' ? (
+            <HeaderPlus
+              label={t('Ajouter des morceaux')}
+              onClick={() => setBandCollect(true)}
+            />
+          ) : (
+            <HeaderPlus
+              label={t('Nouveau morceau')}
+              onClick={() => navigate('/import')}
+            />
+          )
+        }
+      />
       <div className="page">
         {showNudge && (
           <div
@@ -1043,27 +1058,6 @@ export function Library() {
         </div>
       </div>
 
-      {/* Action principale unique : importer — ou, en vue répertoire d'un
-          groupe (filtre actif), ajouter des morceaux à ce répertoire. */}
-      {bandFilter !== null && bandFilter !== '' ? (
-        <button
-          className="btn libfab"
-          title={t('Ajouter des morceaux au répertoire du groupe')}
-          onClick={() => setBandCollect(true)}
-        >
-          <Icon name="plus" size={17} /> {t('Ajouter des morceaux')}
-        </button>
-      ) : (
-        <button
-          className="btn libfab"
-          title={t(
-            "Ajouter un morceau (importer un texte, un lien, un PDF… ou écrire à la main)",
-          )}
-          onClick={() => navigate('/import')}
-        >
-          <Icon name="plus" size={17} /> {t('Nouveau morceau')}
-        </button>
-      )}
       {bandCollect && bandFilter !== null && bandFilter !== '' && (
         <SongCollector
           title={t('Ajouter au répertoire — {band}', {

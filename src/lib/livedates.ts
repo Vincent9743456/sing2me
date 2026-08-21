@@ -136,3 +136,13 @@ export function libelleMois(cle: string): string {
     year: 'numeric',
   });
 }
+
+/**
+ * 2.4 (refonte navigation, b379) — nom par défaut d'une setlist créée sans
+ * titre : « Setlist du 21 août », jamais « (sans nom) ». C'est du CONTENU
+ * (un nom de setlist), pas de l'interface : il reste en français, comme la
+ * setlist d'exemple.
+ */
+export function nomParDefautSetlist(maintenant = new Date()): string {
+  return `Setlist du ${dateDeTitre(maintenant.toISOString(), maintenant)}`;
+}

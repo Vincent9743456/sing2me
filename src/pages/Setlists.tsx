@@ -9,7 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { LiveBanner } from '../components/LiveBanner';
 import { ConfirmSheet } from '../components/Feedback';
 import { SwipeRow } from '../components/SwipeRow';
-import { Empty, Field, Modal, TopBar } from '../components/ui';
+import { Empty, Field, HeaderPlus, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { t } from '../i18n';
 import { versionForBand } from '../lib/model';
@@ -317,7 +317,10 @@ export function Setlists() {
     <>
       {/* Plus de raccourci « satellite » manuel (décision Vincent) : quand le
           leader passe ON AIR, la bannière LiveBanner invite les membres. */}
-      <TopBar title={t('Setlists')} />
+      <TopBar
+        title={t('Setlists')}
+        right={<HeaderPlus label={t('Nouvelle setlist')} onClick={createHere} />}
+      />
       <div className="page">
         <LiveBanner />
         {/* Pas de bouton ici (b377, capture de Vincent : « 2 boutons pour
@@ -410,12 +413,6 @@ export function Setlists() {
         )}
       </div>
 
-      {/* Action principale unique, au même endroit que « Nouveau morceau »
-          dans l'onglet Morceaux (bas droite). Elle crée dans le contexte
-          affiché — et ne demande lequel que si aucun n'est choisi (b211). */}
-      <button className="btn libfab" onClick={createHere}>
-        <Icon name="plus" size={17} /> {t('Créer une setlist')}
-      </button>
 
       {confirmDel && (
         <ConfirmSheet

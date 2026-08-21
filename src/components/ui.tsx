@@ -5,7 +5,7 @@ import { t } from '../i18n';
 import { navigate, Route } from '../router';
 import { Icon, IconName } from './Icon';
 import { Brand, LogoMark } from './Logo';
-import { LiveBadge } from './OnAir';
+import { LiveBadge, useLiveStatus } from './OnAir';
 
 /**
  * Astuce « mode concert », affichée une seule fois : l'écran reste allumé
@@ -131,6 +131,35 @@ export function SaveBar({
         ✓ {t(label)}
       </button>
     </div>
+  );
+}
+
+/**
+ * ACTION « ＋ » DE LA BARRE DE TITRE (b379, refonte navigation — lot 2) :
+ * remplace les boutons flottants qui masquaient la dernière carte des
+ * listes. Icône seule sur téléphone, icône + libellé à partir de 768 px —
+ * sauf quand le badge Live occupe la barre : l'icône seule partout, les
+ * deux ne se chevauchent jamais.
+ */
+export function HeaderPlus({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  const live = useLiveStatus();
+  const compact = live !== null && live.status !== 'off';
+  return (
+    <button
+      className={`btn icon headerplus${compact ? ' compact' : ''}`}
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+    >
+      <Icon name="plus" size={20} />
+      <span className="headerplus-label">{label}</span>
+    </button>
   );
 }
 
