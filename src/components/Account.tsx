@@ -75,6 +75,7 @@ import { AppState, useStore } from '../store';
 import { Band, emptyBand, estBrouillon, makeId } from '../types';
 import { t } from '../i18n';
 import { Field } from './ui';
+import { signalerLimite } from './UpgradeSheet';
 
 /**
  * Boutons OAuth (Google / Facebook) : masqués tant que ces fournisseurs ne
@@ -837,6 +838,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
    * l'app pour les relire sans y toucher — rien ne partait.
    */
   const aEnvoyer = useRef(false);
+  /** Le message « plan gratuit dépassé » se lève tout seul dès qu'une
+   *  poussée passe (règle 11) — sans toucher aux autres messages. */
+  const limiteSignalee = useRef(false);
 
   /** L'envoi lui-même, appelable par le débounce ET par le retour du réseau. */
   const envoyer = useCallback(async () => {
@@ -871,8 +875,26 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       aEnvoyer.current = false;
       noterEnvoi(new Date().toISOString());
       setStatus('ok');
+      if (limiteSignalee.current) {
+        limiteSignalee.current = false;
+        setError(null);
+      }
       void syncBands(valid);
-    } catch {
+    } catch (e) {
+      // LIMITE DU PLAN (b381) : le serveur a refusé la poussée parce que la
+      // bibliothèque dépasse le plan gratuit (travail hors ligne, autre
+      // appareil…). Ce n'est PAS une panne : on l'explique — la feuille
+      // s'ouvre, et le bloc du compte dit pourquoi rien ne part. Tout
+      // reste en local, rien n'est perdu.
+      if (String(e).includes('LIMIT_SONGS')) {
+        signalerLimite('LIMIT_SONGS');
+        limiteSignalee.current = true;
+        setError(
+          t(
+            'Ta bibliothèque dépasse le plan gratuit : les nouveaux morceaux restent sur cet appareil tant que tu n’en retires pas (ou ne passes pas en illimité).',
+          ),
+        );
+      }
       // Hors ligne ou serveur muet : rien n'est perdu, tout est en local.
       // Le drapeau reste levé, le prochain retour de réseau réessaiera.
       setStatus('error');

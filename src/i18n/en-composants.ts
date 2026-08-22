@@ -110,4 +110,17 @@ export const EN_COMPOSANTS: Record<string, string> = {
   'Écoute Spotify': 'Spotify listen',
   '▶ Regarder sur YouTube': '▶ Watch on YouTube',
   '♪ Écouter sur Spotify': '♪ Listen on Spotify',
+
+  // UpgradeSheet.tsx — limites du plan (b381)
+  'Ta bibliothèque gratuite est pleine': 'Your free library is full',
+  'Tes groupes gratuits sont au complet': 'Your free bands are all set up',
+  'Passer en illimité': 'Go unlimited',
+  'Le plan gratuit couvre {n} morceaux dans ta bibliothèque. Tout ce qui y est déjà reste à toi — tu peux jouer, modifier et supprimer sans limite.':
+    'The free plan covers {n} songs in your library. Everything already there stays yours — you can play, edit and delete without limits.',
+  'Le plan gratuit couvre {n} groupes créés par toi. Rejoindre un groupe sur invitation reste toujours possible, sans limite.':
+    'The free plan covers {n} bands created by you. Joining a band on invitation always stays possible, without limits.',
+  'L’offre illimitée — morceaux et groupes sans plafond — arrive bientôt. Rien ne presse : tu seras prévenu ici même.':
+    'The unlimited offer — songs and bands without a cap — is coming soon. No rush: you will be told right here.',
+  'Passer en illimité (bientôt)': 'Go unlimited (soon)',
+  'Continuer en gratuit': 'Keep going for free',
 };

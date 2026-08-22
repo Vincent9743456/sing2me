@@ -588,4 +588,10 @@ export const EN_ARTISTE: Record<string, string> = {
   'Changer': 'Change',
   '✓ Adresse enregistrée.': '✓ Address saved.',
   'Adresse actuelle :': 'Current address:',
+
+  // Limites du plan (b381) — Bands.tsx
+  '{n} / {max} groupes créés (plan gratuit)':
+    '{n} / {max} bands created (free plan)',
+  'rejoindre un groupe reste toujours possible.':
+    'joining a band always stays possible.',
 };

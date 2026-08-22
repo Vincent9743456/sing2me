@@ -8,6 +8,7 @@ import { UpdateHint } from './components/UpdateHint';
 import { NotificationsProvider, useNotifications } from './components/Notifications';
 import { OnAirButton, OnAirProvider } from './components/OnAir';
 import { TabBar } from './components/ui';
+import { LimiteHost } from './components/UpgradeSheet';
 import { Artist } from './pages/Artist';
 import { Settings } from './pages/Settings';
 import { Dashboard } from './pages/Dashboard';
@@ -226,6 +227,9 @@ function Screen() {
       <TabBar current={route.name} bandsBadge={badge} />
       <InstallHint />
       <UpdateHint />
+      {/* Limites du plan (b381) : un seul hôte pour la feuille, ouvert par
+          les gardes client comme par un refus serveur (signalerLimite). */}
+      <LimiteHost />
     </div>
   );
 }

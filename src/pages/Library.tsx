@@ -10,6 +10,9 @@ import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { ConfirmSheet, MenuSheet, useToast } from '../components/Feedback';
 import { Onboarding } from '../components/Onboarding';
 import { BackupNudge } from '../components/BackupNudge';
+import { signalerLimite } from '../components/UpgradeSheet';
+import { useLimits } from '../components/useLimits';
+import { presDeLaLimite } from '../lib/limites';
 import { EXAMPLE_TAG } from '../seed';
 import { Empty, HeaderPlus, TopBar } from '../components/ui';
 import { t } from '../i18n';
@@ -225,6 +228,9 @@ export function Library() {
   // défaut (règle : recherche + liste, rien d'autre).
   const [filtersOpen, setFiltersOpen] = useState(false);
   const account = useAccount();
+  // Limites du plan (b381) : le ＋ annonce la limite au lieu d'échouer plus
+  // tard à la synchro, et le compteur dit où on en est (calculé au rendu).
+  const limites = useLimits();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   /**
@@ -696,7 +702,13 @@ export function Library() {
           ) : (
             <HeaderPlus
               label={t('Nouveau morceau')}
-              onClick={() => navigate('/import')}
+              onClick={() => {
+                if (!limites.peutAjouterMorceau) {
+                  signalerLimite('LIMIT_SONGS');
+                  return;
+                }
+                navigate('/import');
+              }}
             />
           )
         }
@@ -922,6 +934,31 @@ export function Library() {
           </>
         )}
         </div>
+        {/* COMPTEUR DU PLAN GRATUIT (b381) : discret, calculé au rendu
+            (règle 11). Il ne s'affiche que si le plan borne les morceaux ;
+            à l'approche de la limite (≥ 80 %), il prévient — jamais de
+            surprise au moment d'ajouter. */}
+        {limites.maxMorceaux !== null && (
+          <p
+            className="help"
+            style={{
+              margin: '6px 0 0',
+              ...(presDeLaLimite(limites.morceaux, limites.maxMorceaux)
+                ? { color: 'var(--warn)' }
+                : {}),
+            }}
+          >
+            {t('{n} / {max} morceaux du plan gratuit', {
+              n: limites.morceaux,
+              max: limites.maxMorceaux,
+            })}
+            {limites.morceaux >= limites.maxMorceaux
+              ? ' — ' + t('ta bibliothèque gratuite est pleine.')
+              : presDeLaLimite(limites.morceaux, limites.maxMorceaux)
+                ? ' — ' + t('elle sera bientôt pleine.')
+                : ''}
+          </p>
+        )}
         {/* 📥 PROPOSITIONS — À L'ÉCRAN, PAS DERRIÈRE « FILTRER » (b225,
             demande de Vincent ; renommé en b274). C'est le seul filtre qui
             CACHE des morceaux : une proposition n'apparaît nulle part
