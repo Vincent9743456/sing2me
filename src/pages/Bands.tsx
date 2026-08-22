@@ -30,8 +30,6 @@ import {
   groupeMasque,
 } from '../lib/masquagegroupe';
 import { creatorMember } from '../lib/model';
-import { signalerLimite } from '../components/UpgradeSheet';
-import { useLimits } from '../components/useLimits';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { Band, emptyBand } from '../types';
@@ -41,9 +39,6 @@ export function Bands() {
   const account = useAccount();
   const notifications = useNotifications();
   const toast = useToast();
-  // Limites du plan (b381) : le ＋ annonce la limite au lieu de laisser le
-  // serveur refuser la publication plus tard.
-  const limites = useLimits();
 
   /**
    * L'ŒIL DE LA LIGNE AGIT EN LIGNE (b282). Le drapeau local part d'abord —
@@ -202,41 +197,13 @@ export function Bands() {
       <TopBar
         title={t('Groupes')}
         right={
-          <HeaderPlus
-            label={t('Nouveau groupe')}
-            onClick={() => {
-              // Limite du plan (b381) : créer est borné, REJOINDRE jamais.
-              if (!limites.peutCreerGroupe) {
-                signalerLimite('LIMIT_GROUPS');
-                return;
-              }
-              setCreating(true);
-            }}
-          />
+          <HeaderPlus label={t('Nouveau groupe')} onClick={() => setCreating(true)} />
         }
       />
       <div className="page">
         <LiveBanner />
-        {/* Compteur du plan gratuit (b381) — groupes CRÉÉS uniquement :
-            ceux qu'on rejoint ne comptent pas et ne compteront jamais. */}
-        {limites.maxGroupes !== null && (
-          <p
-            className="help"
-            style={{
-              margin: '0 0 6px',
-              ...(limites.groupes >= limites.maxGroupes
-                ? { color: 'var(--warn)' }
-                : {}),
-            }}
-          >
-            {t('{n} / {max} groupes créés (plan gratuit)', {
-              n: limites.groupes,
-              max: limites.maxGroupes,
-            })}
-            {' — '}
-            {t('rejoindre un groupe reste toujours possible.')}
-          </p>
-        )}
+        {/* Plus aucune limite de groupes (b385, offre v2) : la garde et le
+            compteur de b381 sont retirés. */}
         {memberNews.length > 0 && (
           <>
             {memberNews.map((n) => (

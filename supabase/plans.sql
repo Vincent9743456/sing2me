@@ -1,5 +1,5 @@
 -- ============================================================
--- mojosong — Plans et limites (b381, spec validée par Vincent).
+-- mojosong — Plans et limites (b381, réaligné b385 sur l'offre v2).
 -- À exécuter dans SQL Editor du projet Supabase (ré-exécutable).
 --
 -- Trois plans : 'free' (défaut), 'pro', 'admin'. Le plan vit CÔTÉ
@@ -7,19 +7,23 @@
 -- d'écriture) : l'app le LIT, c'est tout. Un compte sans ligne est
 -- 'free' — pas de ligne à créer à l'inscription.
 --
--- Verrous serveur (la seule autorité — le client ne fait qu'annoncer) :
---  • LIMIT_SONGS  : un compte gratuit ne dépasse pas 30 morceaux perso
---    (les PROPOSITIONS en attente — idea = true — ne comptent pas :
---    un répertoire de groupe reçu sur invitation ne consomme rien).
+-- Verrou serveur (la seule autorité — le client ne fait qu'annoncer) :
+--  • LIMIT_SONGS : un compte gratuit ne dépasse pas 50 morceaux ACTIFS.
+--    Ne comptent pas : les PROPOSITIONS en attente (idea = true — un
+--    répertoire reçu sur invitation ne consomme rien) et la RÉSERVE
+--    (reserve = true — illimitée : « dépose tout dès le premier jour,
+--    tu choisis lesquels sont actifs »). Rien n'est jamais bloqué en
+--    écriture : au plafond, l'app fait entrer les nouveaux morceaux en
+--    réserve, et ce trigger n'est que le filet si un client contourne.
 --    RÈGLE « un compte gratuit ne croît pas » : un compte déjà au-delà
---    de 30 (bêta) garde tout, continue de modifier, supprimer et
---    synchroniser — seule une poussée qui AUGMENTE le compte est
---    refusée. Rejoindre un groupe n'écrit pas dans user_library au
---    moment de l'adhésion : jamais bloqué, par construction.
---  • LIMIT_GROUPS : un compte gratuit ne PUBLIE pas plus de 2 groupes
---    créés (cloud_bands dont il est owner). join_band écrit dans
---    cloud_band_members, jamais dans cloud_bands : rejoindre un groupe
---    n'est jamais bloqué, par construction.
+--    de 50 actifs (bêta) garde tout, continue de modifier, supprimer et
+--    synchroniser — seule une poussée qui AUGMENTE le compte d'actifs
+--    est refusée.
+--  • Les GROUPES ne sont PLUS limités (offre v2 : illimités à tous les
+--    étages) — le verrou LIMIT_GROUPS de b381 est retiré ci-dessous.
+--  • Le cap de SALLE (15 spectateurs simultanés en gratuit) viendra
+--    dans api/live.js, pas ici : comportement à trancher (sièges,
+--    grâce de reconnexion) avant toute application.
 -- ============================================================
 
 create table if not exists public.user_plans (
@@ -48,17 +52,18 @@ as $$
   );
 $$;
 
--- Morceaux comptés dans le blob de bibliothèque : tout sauf les
--- propositions en attente (idea = true). Comparaison en jsonb (pas de
--- cast ::boolean) : une valeur inattendue ne fait jamais échouer la
--- synchro entière.
+-- Morceaux ACTIFS comptés dans le blob de bibliothèque : tout sauf les
+-- propositions en attente (idea = true) et la réserve (reserve = true,
+-- b385). Comparaison en jsonb (pas de cast ::boolean) : une valeur
+-- inattendue ne fait jamais échouer la synchro entière.
 create or replace function public.compte_morceaux(p_data jsonb)
 returns integer
 language sql immutable
 as $$
   select count(*)::int
   from jsonb_array_elements(coalesce(p_data->'songs', '[]'::jsonb)) as m(s)
-  where coalesce(m.s->'idea', 'false'::jsonb) <> 'true'::jsonb;
+  where coalesce(m.s->'idea', 'false'::jsonb) <> 'true'::jsonb
+    and coalesce(m.s->'reserve', 'false'::jsonb) <> 'true'::jsonb;
 $$;
 
 -- ------------------------------------------------------------
@@ -71,7 +76,7 @@ as $$
 declare
   v_avant integer := 0;
   v_apres integer;
-  v_max constant integer := 30; -- limites du plan free : voir src/lib/limites.ts
+  v_max constant integer := 50; -- limites du plan free : voir src/lib/limites.ts
 begin
   if public.plan_du_compte(new.id) <> 'free' then
     return new;
@@ -81,7 +86,7 @@ begin
     v_avant := public.compte_morceaux(old.data);
   end if;
   -- « Un compte gratuit ne croît pas » : refus seulement si la poussée
-  -- AUGMENTE le nombre de morceaux au-delà du max(déjà en base, 30).
+  -- AUGMENTE le nombre de morceaux ACTIFS au-delà du max(déjà en base, 50).
   if v_apres > greatest(v_avant, v_max) then
     raise exception 'LIMIT_SONGS';
   end if;
@@ -95,30 +100,12 @@ create trigger limite_morceaux
   for each row execute function public.verifie_limite_morceaux();
 
 -- ------------------------------------------------------------
--- Verrou 2 — les groupes CRÉÉS (cloud_bands ; l'adhésion passe par
--- cloud_band_members et n'est jamais touchée).
+-- RETRAIT b385 (offre v2) : les groupes sont illimités à tous les
+-- étages. Le verrou LIMIT_GROUPS de b381 est supprimé — ces deux
+-- lignes restent pour nettoyer une base où il aurait été posé.
 -- ------------------------------------------------------------
-create or replace function public.verifie_limite_groupes()
-returns trigger
-language plpgsql security definer set search_path = public
-as $$
-declare
-  v_max constant integer := 2; -- limites du plan free : voir src/lib/limites.ts
-begin
-  if public.plan_du_compte(new.owner) <> 'free' then
-    return new;
-  end if;
-  if (select count(*) from public.cloud_bands where owner = new.owner) >= v_max then
-    raise exception 'LIMIT_GROUPS';
-  end if;
-  return new;
-end;
-$$;
-
 drop trigger if exists limite_groupes on public.cloud_bands;
-create trigger limite_groupes
-  before insert on public.cloud_bands
-  for each row execute function public.verifie_limite_groupes();
+drop function if exists public.verifie_limite_groupes();
 
 -- ------------------------------------------------------------
 -- Mesure : chaque limite ATTEINTE se note (tableau de bord fondateur).

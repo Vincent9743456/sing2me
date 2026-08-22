@@ -268,20 +268,21 @@ export const EN_COMPTE: Record<string, string> = {
   '{n} modification en attente — elle partira au retour du réseau.':
     '{n} change waiting — it will go out when the network is back.',
 
-  // Limites du plan (b381, habillage b384) — Account.tsx & Settings.tsx
-  'Ta bibliothèque dépasse le plan gratuit : les nouveaux morceaux restent sur cet appareil tant que tu n’en retires pas (ou ne passes pas en illimité).':
-    'Your library exceeds the free plan: new songs stay on this device until you remove some (or go unlimited).',
+  // Limites du plan (b381, habillage b384, offre v2 b385) — Account & Settings
+  'Ta bibliothèque dépasse les morceaux actifs du plan gratuit : mets des morceaux en réserve (menu ⋯ de la bibliothèque) ou passe en illimité. Rien n’est perdu — tout reste sur cet appareil.':
+    'Your library exceeds the free plan’s active songs: move some songs to your reserve (⋯ menu in the library) or go unlimited. Nothing is lost — everything stays on this device.',
   'Mon compte': 'My account',
   'Ton offre': 'Your plan',
   'Illimité': 'Unlimited',
   'Compte gratuit': 'Free account',
   'Tu profites de mojosong gratuitement.': 'You are enjoying mojosong for free.',
-  '✦ Morceaux et groupes sans plafond. Merci de faire vivre mojosong !':
-    '✦ Songs and bands without a cap. Thanks for keeping mojosong alive!',
+  '✦ Morceaux actifs sans plafond. Merci de faire vivre mojosong !':
+    '✦ Active songs without a cap. Thanks for keeping mojosong alive!',
   'Ton usage': 'Your usage',
-  '{n} / {max} morceaux': '{n} / {max} songs',
-  'Setlists, import en masse et live : sans limite':
-    'Setlists, bulk import and live: without limits',
-  'Débloque les morceaux et groupes illimités.':
-    'Unlock unlimited songs and bands.',
+  'Morceaux actifs': 'Active songs',
+  '📦 {n} en réserve — entiers, modifiables, prêts à s’activer.':
+    '📦 {n} in reserve — whole, editable, ready to activate.',
+  'Réserve, groupes, setlists et import en masse : sans limite':
+    'Reserve, bands, setlists and bulk import: without limits',
+  'Débloque les morceaux actifs illimités.': 'Unlock unlimited active songs.',
 };

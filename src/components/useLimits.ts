@@ -1,15 +1,15 @@
 /**
- * useLimits (b381) — l'état des limites du compte, prêt à afficher.
- * Le plan part du CACHE (réponse immédiate, hors ligne compris) puis se
- * recale sur le serveur au montage. Les compteurs se calculent AU RENDU
- * sur la vraie bibliothèque (règle 11 : une pastille compte exactement
- * ce que l'écran montrera).
+ * useLimits (b381, réaligné b385 sur l'offre v2) — l'état des limites du
+ * compte, prêt à afficher. Le plan part du CACHE (réponse immédiate,
+ * hors ligne compris) puis se recale sur le serveur au montage. Les
+ * compteurs se calculent AU RENDU sur la vraie bibliothèque (règle 11 :
+ * une pastille compte exactement ce que l'écran montrera).
  */
 import { useEffect, useState } from 'react';
 
 import {
-  compteGroupesCrees,
-  compteMorceauxPerso,
+  compteMorceauxActifs,
+  compteReserve,
   limitesDuPlan,
   Plan,
 } from '../lib/limites';
@@ -18,18 +18,17 @@ import { useStore } from '../store';
 
 export interface EtatLimites {
   plan: Plan;
-  /** Morceaux perso (hors propositions) / plafond (null = illimité). */
-  morceaux: number;
-  maxMorceaux: number | null;
-  /** Groupes créés / plafond (null = illimité). */
-  groupes: number;
-  maxGroupes: number | null;
-  peutAjouterMorceau: boolean;
-  peutCreerGroupe: boolean;
+  /** Morceaux ACTIFS (hors propositions et hors réserve) / plafond. */
+  actifs: number;
+  maxActifs: number | null;
+  /** Morceaux en réserve (jamais limités — affichage seulement). */
+  reserve: number;
+  /** Peut-on ACTIVER un morceau de plus ? (au-delà : il entre en réserve) */
+  peutActiver: boolean;
 }
 
 export function useLimits(): EtatLimites {
-  const { songs, bands } = useStore();
+  const { songs } = useStore();
   const [plan, setPlan] = useState<Plan>(() => planEnCache());
   useEffect(() => {
     let alive = true;
@@ -41,15 +40,12 @@ export function useLimits(): EtatLimites {
     };
   }, []);
   const lim = limitesDuPlan(plan);
-  const morceaux = compteMorceauxPerso(songs);
-  const groupes = compteGroupesCrees(bands);
+  const actifs = compteMorceauxActifs(songs);
   return {
     plan,
-    morceaux,
-    maxMorceaux: lim.maxSongs,
-    groupes,
-    maxGroupes: lim.maxOwnedGroups,
-    peutAjouterMorceau: lim.maxSongs === null || morceaux < lim.maxSongs,
-    peutCreerGroupe: lim.maxOwnedGroups === null || groupes < lim.maxOwnedGroups,
+    actifs,
+    maxActifs: lim.maxSongs,
+    reserve: compteReserve(songs),
+    peutActiver: lim.maxSongs === null || actifs < lim.maxSongs,
   };
 }
