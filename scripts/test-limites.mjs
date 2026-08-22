@@ -39,20 +39,26 @@ function egal(nom, obtenu, attendu) {
   console.log(`${ok ? 'OK ' : 'KO '} ${nom} — ${a}${ok ? '' : ` ≠ ${b}`}`);
 }
 
-// b386 : gratuit = 50 morceaux, c'est tout. Groupes et setlists illimités,
-// import en masse ouvert (il s'arrête au plafond) ; le cap de salle (15)
-// existe en config mais n'est pas encore appliqué. Pro/admin sans plafond.
+// b387 — les trois offres : gratuit (50 morceaux · 15 spectateurs),
+// musicien (morceaux illimités · 15 spectateurs), scène (tout illimité).
+// Groupes, setlists et import ouverts partout ; 'pro' = héritage b381.
 egal('free maxSongs', LIMITES.free.maxSongs, 50);
 egal('free groupes illimités', LIMITES.free.maxOwnedGroups, null);
-egal('free cap de salle (config seulement)', LIMITES.free.maxSpectateurs, 15);
+egal('free cap de salle', LIMITES.free.maxSpectateurs, 15);
 egal('free bulkImport ouvert', LIMITES.free.bulkImport, true);
 egal('free setlists illimitées', LIMITES.free.maxSetlists, null);
-egal('pro sans plafond', LIMITES.pro.maxSongs, null);
+egal('musicien morceaux illimités', LIMITES.musicien.maxSongs, null);
+egal('musicien cap de salle', LIMITES.musicien.maxSpectateurs, 15);
+egal('scene tout illimité (morceaux)', LIMITES.scene.maxSongs, null);
+egal('scene tout illimité (salle)', LIMITES.scene.maxSpectateurs, null);
+egal('pro = scène (héritage)', LIMITES.pro.maxSpectateurs, null);
 egal('admin sans plafond', LIMITES.admin.maxSongs, null);
 
 // Un plan inconnu (valeur future, cache abîmé) retombe sur free.
 egal('plan inconnu → free', limitesDuPlan('platine').maxSongs, 50);
 egal('estUnPlan free', estUnPlan('free'), true);
+egal('estUnPlan musicien', estUnPlan('musicien'), true);
+egal('estUnPlan scene', estUnPlan('scene'), true);
 egal('estUnPlan vide', estUnPlan(''), false);
 
 // Comptage : tout sauf les propositions en attente — un morceau de groupe
@@ -73,7 +79,8 @@ egal('estUnPlan vide', estUnPlan(''), false);
 egal('49/50 : on peut ajouter', peutAjouterMorceau('free', 49), true);
 egal('50/50 : on ne peut plus', peutAjouterMorceau('free', 50), false);
 egal('au-delà (bêta 60) : non plus', peutAjouterMorceau('free', 60), false);
-egal('pro : toujours', peutAjouterMorceau('pro', 500), true);
+egal('musicien : toujours', peutAjouterMorceau('musicien', 500), true);
+egal('scene : toujours', peutAjouterMorceau('scene', 500), true);
 egal('admin : toujours', peutAjouterMorceau('admin', 500), true);
 
 // Places restantes : jamais négatif, null = illimité.

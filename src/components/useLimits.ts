@@ -20,6 +20,8 @@ export interface EtatLimites {
   /** Morceaux (hors propositions en attente) / plafond (null = illimité). */
   morceaux: number;
   maxMorceaux: number | null;
+  /** Spectateurs simultanés en live (null = salle illimitée) — b387. */
+  maxSpectateurs: number | null;
   peutAjouter: boolean;
 }
 
@@ -41,6 +43,7 @@ export function useLimits(): EtatLimites {
     plan,
     morceaux,
     maxMorceaux: lim.maxSongs,
+    maxSpectateurs: lim.maxSpectateurs,
     peutAjouter: lim.maxSongs === null || morceaux < lim.maxSongs,
   };
 }

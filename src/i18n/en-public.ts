@@ -171,4 +171,10 @@ export const EN_PUBLIC: Record<string, string> = {
   '✓ Bienvenue dans « {band} » !': '✓ Welcome to “{band}”!',
   'Ouvrir le groupe': 'Open the band',
   'Ouvrir « {band} »': 'Open “{band}”',
+
+  // b387 — cap de salle (15 spectateurs simultanés en gratuit)
+  'La salle est pleine — quinze personnes suivent déjà le concert en même temps.':
+    'The room is full — fifteen people are already following the concert at the same time.',
+  'Reste sur cette page : ta place se libère dès que quelqu’un part, et tu entres automatiquement.':
+    'Stay on this page: a spot opens up as soon as someone leaves, and you get in automatically.',
 };
