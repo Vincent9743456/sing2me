@@ -268,12 +268,15 @@ export function Live({
   // vit AVANT le garde `if (state === null)` plus bas : il doit donc être
   // écrit comme si l'état n'existait pas encore.
   const liveId = state?.id ?? '';
+  // Salle pleine (b387) : un spectateur resté à la porte ne compte pas
+  // comme spectateur — il n'a rien vu du concert.
+  const refuse = state?.status === 'full';
   useEffect(() => {
-    if (liveId === '') return;
+    if (liveId === '' || refuse) return;
     void pingAttendance(liveId);
     const id = window.setInterval(() => void pingAttendance(liveId), 90000);
     return () => window.clearInterval(id);
-  }, [liveId]);
+  }, [liveId, refuse]);
 
   // Setlist souvenir : chargée une fois (le dernier concert terminé).
   useEffect(() => {
@@ -329,6 +332,11 @@ export function Live({
   // PAS une pause déclarée — on ne dit donc pas la même chose.
   const waitingNow = publicSession && state.status === 'on' && !state.song;
   const pauseNow = publicSession && state.status === 'pause';
+  // Salle pleine (b387) : le concert est en cours mais les 15 places du
+  // plan gratuit sont prises — le serveur n'envoie que le titre en cours.
+  // On RESTE sur la page : la place se libère toute seule quand quelqu'un
+  // part, et le prochain sondage fait entrer sans rien relancer.
+  const fullNow = publicSession && state.status === 'full';
   // L'artiste choisit ce qui s'affiche (réglages « Écran public »).
   const ps = { ...defaultPublicScreen(), ...(state.artist?.publicScreen ?? {}) };
   // Consultable dès qu'on a un set (serveur OU cache) — vrai même hors ligne,
@@ -486,6 +494,29 @@ export function Live({
             onKeep={onKeep}
           />
         </Suspense>
+      ) : fullNow ? (
+        <>
+          <div className="livebadge">
+            <span className="dot" /> {t('EN DIRECT')}
+          </div>
+          {state.song?.title && (
+            <>
+              <h1 className="livetitle">{state.song.title}</h1>
+              {(state.song.artist ?? '') !== '' && (
+                <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
+                  {state.song.artist}
+                </p>
+              )}
+            </>
+          )}
+          <p style={{ textAlign: 'center', fontSize: '1.1rem' }}>
+            {t('La salle est pleine — quinze personnes suivent déjà le concert en même temps.')}
+          </p>
+          <p className="help" style={{ textAlign: 'center' }}>
+            {t('Reste sur cette page : ta place se libère dès que quelqu’un part, et tu entres automatiquement.')}
+          </p>
+          {ps.profile && <ArtistBlock state={state} showLinks={ps.links} />}
+        </>
       ) : liveNow && state.song ? (
         <>
           <div className="livebadge">

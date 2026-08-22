@@ -278,6 +278,15 @@ export const EN_COMPTE: Record<string, string> = {
   'Tu profites de mojosong gratuitement.': 'You are enjoying mojosong for free.',
   '✦ Morceaux sans plafond. Merci de faire vivre mojosong !':
     '✦ Songs without a cap. Thanks for keeping mojosong alive!',
+  '✦ Morceaux et salle de live sans plafond. Merci de faire vivre mojosong !':
+    '✦ Songs and live audience without a cap. Thanks for keeping mojosong alive!',
+  '✦ Morceaux sans plafond · live jusqu’à {n} spectateurs en simultané.':
+    '✦ Songs without a cap · live up to {n} simultaneous audience members.',
+  'Live : jusqu’à {n} spectateurs en simultané':
+    'Live: up to {n} simultaneous audience members',
+  'Live : salle illimitée': 'Live: unlimited audience',
+  'Scène': 'Stage',
+  'Musicien': 'Musician',
   'Ton usage': 'Your usage',
   'Groupes et setlists : sans limite': 'Bands and setlists: without limits',
   'Débloque les morceaux illimités.': 'Unlock unlimited songs.',

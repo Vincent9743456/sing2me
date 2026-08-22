@@ -6,7 +6,11 @@ import { liveHeaders } from './liveAuth';
 import { normalizeTitle } from './normalizeTitle';
 import { ArtistProfile } from '../types';
 
-export type LiveStatus = 'off' | 'on' | 'pause';
+/** `full` (b387) : le direct est EN COURS mais la salle gratuite est pleine
+ *  (15 spectateurs simultanés) — le serveur ne transporte alors que le titre
+ *  en cours, jamais les paroles. Le spectateur garde sa page ouverte : sa
+ *  place se libère toute seule quand quelqu'un part. */
+export type LiveStatus = 'off' | 'on' | 'pause' | 'full';
 
 /** Type de session : concert (public + musiciens) ou répétition (musiciens). */
 export type LiveMode = 'concert' | 'repet';
@@ -164,18 +168,21 @@ export async function fetchLive(
   page = '',
 ): Promise<LiveState> {
   let res: Response;
+  // Cap de salle (b387) : la lecture publique porte l'identifiant anonyme de
+  // l'appareil — c'est lui qui tient le siège du spectateur côté serveur.
+  const dev = `dev=${encodeURIComponent(deviceId())}`;
   try {
     res = await fetch(
       // L'ADRESSE d'abord (b227) : elle est unique, le nom affiché ne l'est
       // pas. Le nom reste en repli pour les entrées qui n'ont pas d'adresse
       // (lien /live d'un vieux QR, bœuf sans page publique).
       page !== ''
-        ? `/api/live?page=${encodeURIComponent(page)}`
+        ? `/api/live?page=${encodeURIComponent(page)}&${dev}`
         : artist !== ''
-          ? `/api/live?artist=${encodeURIComponent(artist)}`
+          ? `/api/live?artist=${encodeURIComponent(artist)}&${dev}`
           : code !== ''
-            ? `/api/live?code=${encodeURIComponent(code)}`
-            : '/api/live',
+            ? `/api/live?code=${encodeURIComponent(code)}&${dev}`
+            : `/api/live?${dev}`,
     );
   } catch {
     throw new Error(OFFLINE_MSG);
@@ -185,7 +192,10 @@ export async function fetchLive(
   return {
     id: typeof body.id === 'string' ? body.id : '',
     joinCode: typeof body.joinCode === 'string' ? body.joinCode : '',
-    status: body.status === 'on' || body.status === 'pause' ? body.status : 'off',
+    status:
+      body.status === 'on' || body.status === 'pause' || body.status === 'full'
+        ? body.status
+        : 'off',
     mode: body.mode === 'repet' ? 'repet' : 'concert',
     song: body.song ?? null,
     artist: body.artist ?? null,
@@ -327,14 +337,17 @@ export async function fetchLiveSetlist(
   page = '',
 ): Promise<LivePublicSong[]> {
   try {
+    // Même identifiant d'appareil que le sondage (b387) : sans siège, pas
+    // de préchargement du set — sinon la porte de la salle serait contournée.
+    const dev = `dev=${encodeURIComponent(deviceId())}`;
     const res = await fetch(
       page !== ''
-        ? `/api/live?setlist=1&page=${encodeURIComponent(page)}`
+        ? `/api/live?setlist=1&page=${encodeURIComponent(page)}&${dev}`
         : artist !== ''
-        ? `/api/live?setlist=1&artist=${encodeURIComponent(artist)}`
+        ? `/api/live?setlist=1&artist=${encodeURIComponent(artist)}&${dev}`
         : code !== ''
-          ? `/api/live?setlist=1&code=${encodeURIComponent(code)}`
-          : '/api/live?setlist=1',
+          ? `/api/live?setlist=1&code=${encodeURIComponent(code)}&${dev}`
+          : `/api/live?setlist=1&${dev}`,
     );
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('application/json')) return [];

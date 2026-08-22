@@ -673,15 +673,30 @@ export function Settings() {
           <>
             <div className="spacer" />
             <h2 className="pagetitle">{t('Mon compte')}</h2>
-            {limites.maxMorceaux === null ? (
+            {limites.maxMorceaux === null && limites.maxSpectateurs === null ? (
+              /* Scène (ou fondateur) : tout est sans plafond. */
               <div className="card">
                 <div className="usagerow">
                   <strong>{t('Ton offre')}</strong>
-                  <span className="planbadge">{t('Illimité')}</span>
+                  <span className="planbadge">{t('Scène')}</span>
                 </div>
                 <p className="help" style={{ marginBottom: 0 }}>
                   {t(
-                    '✦ Morceaux sans plafond. Merci de faire vivre mojosong !',
+                    '✦ Morceaux et salle de live sans plafond. Merci de faire vivre mojosong !',
+                  )}
+                </p>
+              </div>
+            ) : limites.maxMorceaux === null ? (
+              /* Musicien : morceaux illimités, salle de live à 15 places. */
+              <div className="card">
+                <div className="usagerow">
+                  <strong>{t('Ton offre')}</strong>
+                  <span className="planbadge">{t('Musicien')}</span>
+                </div>
+                <p className="help" style={{ marginBottom: 0 }}>
+                  {t(
+                    '✦ Morceaux sans plafond · live jusqu’à {n} spectateurs en simultané.',
+                    { n: limites.maxSpectateurs ?? 15 },
                   )}
                 </p>
               </div>
@@ -726,11 +741,21 @@ export function Settings() {
                   </div>
                 </div>
                 <div className="card">
-                  <div className="uprow">
+                  <div className="uprow" style={{ marginBottom: 8 }}>
                     <span className="upcheck" aria-hidden="true">
                       ✓
                     </span>
                     {t('Groupes et setlists : sans limite')}
+                  </div>
+                  <div className="uprow">
+                    <span className="upcheck" aria-hidden="true">
+                      ✓
+                    </span>
+                    {limites.maxSpectateurs !== null
+                      ? t('Live : jusqu’à {n} spectateurs en simultané', {
+                          n: limites.maxSpectateurs,
+                        })
+                      : t('Live : salle illimitée')}
                   </div>
                 </div>
                 <button

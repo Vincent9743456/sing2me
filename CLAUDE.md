@@ -726,51 +726,51 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     Le vidage d'enregistrement sur `pagehide` (b323), lui, RESTE : il
     protège tout état contre une mise en arrière-plan, pas seulement les
     brouillons.
-- **Modèle économique — SIMPLIFIÉ b386** (arbitrage Vincent : « Simplifie
-  tout. Pas de distinction actif / réserve. Pas de gratuité au début.
-  50 chansons c'est tout. Pas possible d'importer plus » — remplace
-  l'« offre v2 actifs/réserve » de b385, les seuils b381, la « Licence
-  Scène » d'août 2026 et le Premium individuel à 2,99 €) :
-  - **Gratuit : 50 MORCEAUX, c'est tout.** L'import — à l'unité comme en
-    masse — S'ARRÊTE au plafond, avec bilan (jamais en silence) ; le ＋
+- **Modèle économique — LES TROIS OFFRES (b387, arbitrage Vincent)** :
+  **gratuit** (50 morceaux · 15 spectateurs simultanés en live),
+  **musicien** (morceaux illimités · 15 spectateurs — 39 €/an ou
+  3,99 €/mois), **scène** (tout illimité — 89 €/an ou 8,99 €/mois).
+  Remplace b386 (50 tout court), b385 (actifs/réserve), b381 (30/2),
+  la « Licence Scène » et le Premium 2,99 €. Le nom reste **mojosong**.
+  - **Morceaux : 50 en gratuit, c'est tout** (b386, inchangé). L'import
+    — à l'unité comme en masse — S'ARRÊTE au plafond, avec bilan ; le ＋
     de Morceaux annonce la limite (feuille « Passer en illimité »). Un
-    morceau venu d'un GROUPE compte dès qu'il est ACCEPTÉ par
-    l'utilisateur — une proposition en attente (`idea === true`) ne
-    compte pas. Les seuils s'appliquent DÈS MAINTENANT (pas de période
-    de lancement illimitée). Le nom reste **mojosong** (confirmé).
-  - **Groupes ILLIMITÉS à tous les étages** (verrou 2-groupes de b381
-    retiré — `plans.sql` fait le ménage). Rejoindre n'a jamais été
-    bloqué (structurel : `cloud_band_members`).
-  - La « RÉSERVE » de b385 est RETIRÉE le jour même : `Song.reserve`
-    reste dans le type comme champ INERTE (écrit chez d'éventuels
-    installés pendant la fenêtre b385 — jamais lu ni réécrit, cicatrice
-    b290) ; s'il est posé, le morceau compte comme les autres.
-  - Le plan vit CÔTÉ SERVEUR (`user_plans` : free/pro/admin, RLS lecture
-    seule) ; verrou `LIMIT_SONGS` (trigger `user_library`) avec la règle
-    « un compte gratuit ne croît pas » (`max(existant, 50)` : un compte
-    bêta au-delà garde tout, modifie, supprime, synchronise). Refus
-    intercepté dans Account — connexion ET envoi — (feuille + message
-    qui se lève seul au succès, règle 11) ; mesure `limit_events` / RPC
-    `note_limite`. Config centrale unique : `src/lib/limites.ts` ;
-    fondateurs en `admin` via `plans.sql`.
-  - **Cap de salle À VENIR (pas encore appliqué)** : 15 spectateurs
-    SIMULTANÉS en gratuit (sièges par deviceId, période de grâce de
-    reconnexion, le 16ᵉ voit « salle pleine », jamais d'éjection).
-    `maxSpectateurs` existe dans la config mais N'EST PAS annoncé à
-    l'écran tant que le serveur ne l'applique pas. À implémenter dans
-    `api/live.js` après arbitrage du modèle de sièges.
-  - **Le paiement à la session (« Soir de concert » 9,90 € / 24 h) est
-    RETIRÉ du modèle** (arbitrage b386 — n'a jamais existé en code).
-    Paliers payants et exemption « un abonné couvre son groupe » : HORS
-    PÉRIMÈTRE tant que le paiement n'existe pas. **Aucun montant n'est
-    arrêté : ne JAMAIS afficher de prix dans l'app.**
+    morceau venu d'un GROUPE compte dès qu'il est ACCEPTÉ — une
+    proposition en attente (`idea === true`) ne compte pas. Pas de
+    période de lancement illimitée. `Song.reserve` (b385) reste un champ
+    INERTE. Groupes et setlists ILLIMITÉS partout.
+  - **CAP DE SALLE APPLIQUÉ (b387)** : 15 spectateurs SIMULTANÉS en
+    gratuit et en musicien — logique dans `api/live.js` (CAP_SALLE,
+    même valeur que `limites.ts`), table `live_seats` (service_role
+    seulement). Modèle de SIÈGES : un siège = un deviceId vu depuis
+    moins de 2 min (grâce de reconnexion : un téléphone verrouillé garde
+    sa place, un départ la libère en ~2 min) ; le 16ᵉ reçoit l'état
+    `full` (titre en cours, JAMAIS les paroles — écran « salle pleine »
+    sur `Live.tsx`, il entre tout seul quand une place se libère) ;
+    JAMAIS d'éviction d'un siège accordé ; une PANNE ne bloque jamais
+    (dans le doute on sert le concert) ; un spectateur refusé ne compte
+    pas dans les uniques ; les gardes s'appliquent aussi au
+    préchargement de setlist (`dev=` sur toutes les lectures publiques).
+    Jamais sur `?id=` (lanceur) ni `?band=` (musiciens) ni en
+    pause/répétition. `last_seen` réécrit au plus toutes les 30 s
+    (anti-bloat b313) ; sièges purgés à la clôture.
+  - **E-MAIL « salle pleine » à la clôture** : si le live a refusé du
+    monde (sentinelle `__salle_pleine__` dans `live_seats`), la clôture
+    envoie UN e-mail à l'artiste (Resend, comme `notify.js`) qui
+    l'encourage vers Scène. Best-effort, jamais bloquant.
+  - Le plan vit CÔTÉ SERVEUR (`user_plans` : free/musicien/scene/pro/
+    admin — 'pro' = héritage b381, traité comme scène) ; verrou
+    `LIMIT_SONGS` (trigger, « un compte gratuit ne croît pas »,
+    `max(existant, 50)`) ; refus intercepté dans Account (feuille +
+    message qui se lève seul, règle 11) ; mesure `limit_events`.
+    Config centrale : `src/lib/limites.ts` ; fondateurs `admin`.
+  - **Tarifs ARRÊTÉS (0 / 39 €/an ou 3,99 €/mois / 89 €/an ou
+    8,99 €/mois) mais PAIEMENT INEXISTANT** : l'app n'affiche AUCUN prix
+    tant qu'on ne peut pas acheter (la page de l'offre, elle, les
+    porte). Pas de paiement à la session (retiré b386).
   - Garde-fous intangibles : **jamais de coupure en plein concert** ;
-    **pourboires** = lien personnel de l'artiste, aucune commission ;
-    **rien n'est pris en otage** (tout reste consultable et exportable).
-  - *(Historique : b385 = 50 actifs + réserve illimitée — retiré ;
-    b381 = 30 morceaux + 2 groupes créés — remplacé ; « Licence Scène »
-    = tout gratuit, seul ON AIR monétisé — remplacée. Ne pas restaurer
-    sans arbitrage.)*
+    **pourboires** = lien personnel, aucune commission ; **rien n'est
+    pris en otage** (tout reste consultable et exportable).
 - **Dictée (b157)** : deux chemins, choisis automatiquement — la
   reconnaissance du navigateur (gratuite, texte en direct) quand elle
   marche, sinon l'ENREGISTREMENT + transcription serveur

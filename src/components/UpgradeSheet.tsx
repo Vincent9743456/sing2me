@@ -99,7 +99,13 @@ export function UpgradeSheet({
             <span className="upcheck" aria-hidden="true">
               ✓
             </span>
-            {t('Tout le reste, sans limite')}
+            {t('Salle de live illimitée')}
+          </li>
+          <li>
+            <span className="upcheck" aria-hidden="true">
+              ✓
+            </span>
+            {t('Groupes, setlists et import : déjà sans limite pour tous')}
           </li>
         </ul>
         {/* CTA ambre : l'emplacement du paiement à venir (hors périmètre).

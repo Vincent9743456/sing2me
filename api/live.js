@@ -129,6 +129,175 @@ async function finalizeSession(base, sessionId) {
   });
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * CAP DE SALLE (b387, offre : 15 spectateurs SIMULTANÉS en gratuit et
+ * en Musicien ; illimité en Scène). Modèle de SIÈGES :
+ *  • un siège = un appareil (deviceId anonyme, déjà utilisé pour les
+ *    uniques et les cœurs) vu il y a moins de SIEGE_TTL_MS — la grâce
+ *    de reconnexion : un téléphone qui se verrouille une minute garde
+ *    sa place, quelqu'un qui part la libère en ~2 minutes ;
+ *  • le 16ᵉ reçoit un état `full` (titre en cours, JAMAIS les paroles)
+ *    et reste sur sa page : au prochain sondage après une libération,
+ *    il entre tout seul ;
+ *  • un siège accordé n'est JAMAIS repris pendant le direct (aucune
+ *    éviction — « jamais de coupure en plein concert ») ;
+ *  • `last_seen` n'est réécrit qu'au-delà de SIEGE_REFRESH_MS (la leçon
+ *    anti-bloat de b313) ;
+ *  • une PANNE (table absente, base muette) ne bloque JAMAIS personne :
+ *    dans le doute, on sert le concert.
+ * Le refus se note par une ligne sentinelle (device __salle_pleine__),
+ * lue à la clôture pour l'e-mail à l'artiste — pas de colonne à migrer.
+ */
+const CAP_SALLE = 15; // même valeur que src/lib/limites.ts (maxSpectateurs)
+const SIEGE_TTL_MS = 120000;
+const SIEGE_REFRESH_MS = 30000;
+const SENTINELLE_PLEINE = '__salle_pleine__';
+
+async function planDuProprio(base, ownerId) {
+  if (!ownerId) return 'free';
+  try {
+    const r = await fetch(
+      `${base}/rest/v1/user_plans?user_id=eq.${encodeURIComponent(ownerId)}&select=plan&limit=1`,
+      { headers: sbHeaders() },
+    );
+    if (!r.ok) return 'free';
+    const rows = await r.json();
+    return (Array.isArray(rows) && rows[0]?.plan) || 'free';
+  } catch {
+    return 'free';
+  }
+}
+
+/** Le plan couvre-t-il une salle illimitée ? ('pro' = héritage b381) */
+function salleIllimitee(plan) {
+  return plan === 'scene' || plan === 'admin' || plan === 'pro';
+}
+
+/** Tente d'asseoir cet appareil. Rend true si le spectateur entre. */
+async function reserverSiege(base, liveId, device) {
+  try {
+    const lid = encodeURIComponent(liveId);
+    const dev = encodeURIComponent(device);
+    const now = Date.now();
+    // Mon siège tient-il encore ? (grâce de reconnexion comprise)
+    const r = await fetch(
+      `${base}/rest/v1/live_seats?live_id=eq.${lid}&device_id=eq.${dev}&select=last_seen&limit=1`,
+      { headers: sbHeaders() },
+    );
+    if (!r.ok) return true; // table absente / panne : on ne bloque jamais
+    const rows = await r.json();
+    const mien = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    if (mien && Date.parse(mien.last_seen) > now - SIEGE_TTL_MS) {
+      if (Date.parse(mien.last_seen) < now - SIEGE_REFRESH_MS) {
+        await fetch(
+          `${base}/rest/v1/live_seats?live_id=eq.${lid}&device_id=eq.${dev}`,
+          {
+            method: 'PATCH',
+            headers: sbHeaders(),
+            body: JSON.stringify({ last_seen: new Date(now).toISOString() }),
+          },
+        );
+      }
+      return true;
+    }
+    // Pas de siège frais : reste-t-il une place ? (la sentinelle ne compte pas)
+    const seuil = new Date(now - SIEGE_TTL_MS).toISOString();
+    const c = await fetch(
+      `${base}/rest/v1/live_seats?live_id=eq.${lid}&last_seen=gt.${encodeURIComponent(seuil)}&device_id=neq.${SENTINELLE_PLEINE}&select=device_id`,
+      { headers: { ...sbHeaders(), prefer: 'count=exact' } },
+    );
+    const m = /\/(\d+)$/.exec(c.headers.get('content-range') || '');
+    const occupes = m ? parseInt(m[1], 10) : 0;
+    if (occupes >= CAP_SALLE) {
+      // On note UNE fois que la salle a été pleine (e-mail de clôture).
+      await fetch(`${base}/rest/v1/live_seats`, {
+        method: 'POST',
+        headers: { ...sbHeaders(), prefer: 'resolution=ignore-duplicates' },
+        body: JSON.stringify({
+          live_id: liveId,
+          device_id: SENTINELLE_PLEINE,
+          last_seen: new Date(0).toISOString(),
+        }),
+      });
+      return false;
+    }
+    // Une place : on s'assied (merge ranime un siège expiré du même appareil).
+    await fetch(`${base}/rest/v1/live_seats`, {
+      method: 'POST',
+      headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        live_id: liveId,
+        device_id: device,
+        last_seen: new Date(now).toISOString(),
+      }),
+    });
+    return true;
+  } catch {
+    return true; // jamais de porte fermée sur une panne
+  }
+}
+
+/** La réponse du 16ᵉ : le direct existe, le titre en cours — rien d'autre. */
+function fullView(row) {
+  return {
+    ...offView(),
+    id: row.id ?? '',
+    status: 'full',
+    artist: row?.artist?.name ? { name: String(row.artist.name) } : null,
+    song: row?.song?.title
+      ? { title: String(row.song.title), artist: String(row.song.artist ?? ''), lyrics: '' }
+      : null,
+    updatedAt: row.updated_at ?? null,
+  };
+}
+
+/**
+ * E-mail à l'artiste après un live dont la salle a été pleine (b387) :
+ * envoyé À LA CLÔTURE, une seule fois, best-effort (même canal Resend que
+ * les notifications de groupe — server/notify.js).
+ */
+async function envoyerMailSallePleine(base, row) {
+  try {
+    const resendKey = process.env.RESEND_API_KEY;
+    if (!resendKey || !row?.owner_id) return;
+    const u = await fetch(
+      `${base}/auth/v1/admin/users/${encodeURIComponent(row.owner_id)}`,
+      { headers: sbHeaders() },
+    );
+    if (!u.ok) return;
+    const user = await u.json();
+    const email = user?.email ?? '';
+    if (email === '') return;
+    const nom = row?.artist?.name || '';
+    const texte =
+      `Bonjour${nom ? ' ' + nom : ''} 👋\n\n` +
+      `Bravo pour ton live de ce soir : ta salle était PLEINE. Plus de quinze ` +
+      `personnes ont voulu suivre ton concert en même temps — c'est la limite ` +
+      `du plan gratuit, et certaines sont restées à la porte.\n\n` +
+      `Avec l'offre Scène, ta salle est illimitée : personne ne rate tes ` +
+      `paroles, même quand le public afflue. Elle arrive très bientôt dans ` +
+      `l'application (Réglages → Mon compte) — tu y seras prévenu dès ` +
+      `l'ouverture.\n\n` +
+      `Encore bravo, et à ton prochain concert 🎸\n` +
+      `L'équipe mojosong — https://mojosong.com`;
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${resendKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: process.env.MAIL_FROM || 'mojosong <marco@mojosong.com>',
+        to: [email],
+        subject: 'Ta salle était pleine 🎉',
+        text: texte,
+      }),
+    });
+  } catch {
+    /* un e-mail raté ne doit jamais gêner une clôture */
+  }
+}
+
 /** Clôt un live (auto-arrêt ou arrêt manuel) : archive, finalise, purge. */
 async function closeLive(base, row) {
   try {
@@ -174,6 +343,24 @@ async function closeLive(base, row) {
     if (Array.isArray(claimed) && claimed.length > 0) {
       await archivePlayedSong(base, row);
       await finalizeSession(base, row.session_id);
+      // Cap de salle (b387) : si la salle a été pleine pendant ce live, on
+      // le dit à l'artiste par e-mail — puis on rend les sièges.
+      try {
+        const s = await fetch(
+          `${base}/rest/v1/live_seats?live_id=eq.${encodeURIComponent(row.id)}&device_id=eq.${SENTINELLE_PLEINE}&select=device_id&limit=1`,
+          { headers: sbHeaders() },
+        );
+        const sr = s.ok ? await s.json() : [];
+        if (Array.isArray(sr) && sr.length > 0) {
+          await envoyerMailSallePleine(base, row);
+        }
+        await fetch(
+          `${base}/rest/v1/live_seats?live_id=eq.${encodeURIComponent(row.id)}`,
+          { method: 'DELETE', headers: sbHeaders() },
+        );
+      } catch {
+        /* sièges best-effort : usage-rollup fera le ménage au besoin */
+      }
       // b180 — LES MOTS DU PUBLIC NE SONT PLUS EFFACÉS À LA CLÔTURE.
       // Ils l'étaient pour qu'un nouveau direct n'hérite pas des messages
       // du précédent. Mais chaque message porte son `live_id` et son
@@ -462,6 +649,37 @@ export default async function handler(req, res) {
       }
       const wantSetlist =
         req.query?.setlist === '1' || req.query?.setlist === 'true';
+      /*
+       * CAP DE SALLE (b387) : sur une lecture PUBLIQUE d'un concert EN
+       * COURS, l'appareil doit tenir un siège pour recevoir les paroles.
+       * Jamais sur le sondage du lanceur (`id`) ni le suivi musiciens
+       * (`band`), jamais en pause/répétition (déjà purgées), jamais pour
+       * un plan à salle illimitée. Un spectateur d'un vieux bundle (pas
+       * de `dev`) passe — la transition ne coupe personne.
+       */
+      if (
+        row &&
+        lecturePublique &&
+        row.status === 'on' &&
+        row.mode !== 'repet'
+      ) {
+        const dev = String(req.query?.dev ?? '').slice(0, 80);
+        if (dev !== '' && dev !== SENTINELLE_PLEINE) {
+          const plan = await planDuProprio(base, row.owner_id);
+          if (!salleIllimitee(plan)) {
+            const assis = await reserverSiege(base, row.id, dev);
+            if (!assis) {
+              if (wantSetlist) {
+                // Pas de siège → pas de set en cache non plus.
+                res.status(200).json({ setlist: [] });
+                return;
+              }
+              res.status(200).json(fullView(row));
+              return;
+            }
+          }
+        }
+      }
       if (row && row.status !== 'off') {
         if (wantSetlist) {
           const r = await fetch(

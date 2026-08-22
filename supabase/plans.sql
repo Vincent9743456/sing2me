@@ -1,11 +1,15 @@
 -- ============================================================
--- mojosong — Plans et limites (b381, réaligné b385 sur l'offre v2).
+-- mojosong — Plans et limites (b381 → b387 : les trois offres).
 -- À exécuter dans SQL Editor du projet Supabase (ré-exécutable).
 --
--- Trois plans : 'free' (défaut), 'pro', 'admin'. Le plan vit CÔTÉ
--- SERVEUR et n'est jamais modifiable par le client (aucune politique
--- d'écriture) : l'app le LIT, c'est tout. Un compte sans ligne est
--- 'free' — pas de ligne à créer à l'inscription.
+-- Les OFFRES (arbitrage Vincent, b387) :
+--   'free'     : 50 morceaux · 15 spectateurs simultanés en live ;
+--   'musicien' : morceaux illimités · 15 spectateurs simultanés ;
+--   'scene'    : tout illimité.
+-- ('pro' reste accepté — héritage b381, équivaut à scene ; 'admin' =
+-- fondateurs.) Le plan vit CÔTÉ SERVEUR et n'est jamais modifiable par
+-- le client (aucune politique d'écriture) : l'app le LIT, c'est tout.
+-- Un compte sans ligne est 'free' — rien à créer à l'inscription.
 --
 -- Verrou serveur (la seule autorité — le client ne fait qu'annoncer) :
 --  • LIMIT_SONGS : un compte gratuit ne dépasse pas 50 MORCEAUX.
@@ -27,9 +31,15 @@
 
 create table if not exists public.user_plans (
   user_id uuid primary key references auth.users (id) on delete cascade,
-  plan text not null default 'free' check (plan in ('free', 'pro', 'admin')),
+  plan text not null default 'free',
   updated_at timestamptz not null default now()
 );
+
+-- Les valeurs admises (b387) : `create table if not exists` ne modifie
+-- pas une table existante — on recrée donc la contrainte explicitement.
+alter table public.user_plans drop constraint if exists user_plans_plan_check;
+alter table public.user_plans add constraint user_plans_plan_check
+  check (plan in ('free', 'musicien', 'scene', 'pro', 'admin'));
 
 alter table public.user_plans enable row level security;
 
@@ -106,6 +116,30 @@ drop trigger if exists limite_groupes on public.cloud_bands;
 drop function if exists public.verifie_limite_groupes();
 
 -- ------------------------------------------------------------
+-- CAP DE SALLE (b387) — les SIÈGES d'un live : un par appareil
+-- spectateur (deviceId anonyme, celui des uniques et des cœurs).
+-- Écrit et lu UNIQUEMENT par le serveur (service_role) — RLS sans
+-- politique = personne d'autre. `api/live.js` porte toute la logique
+-- (15 places en gratuit/musicien, grâce de reconnexion, sentinelle
+-- __salle_pleine__ pour l'e-mail de clôture) ; les sièges d'un live
+-- sont effacés à sa clôture.
+-- ------------------------------------------------------------
+create table if not exists public.live_seats (
+  live_id text not null,
+  device_id text not null,
+  first_seen timestamptz not null default now(),
+  last_seen timestamptz not null default now(),
+  primary key (live_id, device_id)
+);
+
+alter table public.live_seats enable row level security;
+
+-- `last_seen` est réécrit au fil du concert (toutes les ~30 s par
+-- spectateur) : on resserre l'autovacuum comme pour live_attendance.
+alter table public.live_seats set (autovacuum_vacuum_scale_factor = 0.02,
+  autovacuum_analyze_scale_factor = 0.02);
+
+-- ------------------------------------------------------------
 -- Mesure : chaque limite ATTEINTE se note (tableau de bord fondateur).
 -- Écriture par RPC seulement (l'appelant EST son compte — b192) ;
 -- aucune lecture client (le tableau de bord passe par service_role).
@@ -148,7 +182,12 @@ from auth.users
 where email in ('vtessier6@gmail.com', 'marco@mojosong.com')
 on conflict (user_id) do update set plan = 'admin', updated_at = now();
 
--- Recette pour passer un compte en 'pro' (à la main, plus tard) :
+-- Recettes pour passer un compte en 'musicien' ou 'scene' (à la main,
+-- en attendant le paiement) :
 -- insert into public.user_plans (user_id, plan)
--- select id, 'pro' from auth.users where email = 'adresse@exemple.com'
--- on conflict (user_id) do update set plan = 'pro', updated_at = now();
+-- select id, 'musicien' from auth.users where email = 'adresse@exemple.com'
+-- on conflict (user_id) do update set plan = 'musicien', updated_at = now();
+--
+-- insert into public.user_plans (user_id, plan)
+-- select id, 'scene' from auth.users where email = 'adresse@exemple.com'
+-- on conflict (user_id) do update set plan = 'scene', updated_at = now();

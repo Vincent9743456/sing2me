@@ -120,6 +120,9 @@ export const EN_COMPOSANTS: Record<string, string> = {
   'Morceaux sans plafond, pour un répertoire qui grandit avec toi.':
     'Songs without a cap, for a repertoire that grows with you.',
   'Morceaux illimités': 'Unlimited songs',
+  'Salle de live illimitée': 'Unlimited live audience',
+  'Groupes, setlists et import : déjà sans limite pour tous':
+    'Bands, setlists and import: already unlimited for everyone',
   'Tout le reste, sans limite': 'Everything else, without limits',
   'L’offre illimitée arrive bientôt. Rien ne presse : tu seras prévenu ici même.':
     'The unlimited offer is coming soon. No rush: you will be told right here.',
