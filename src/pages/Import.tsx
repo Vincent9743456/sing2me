@@ -38,7 +38,7 @@ import { looksGarbled } from '../lib/textRepair';
 import { parseUgTabHtml } from '../lib/ugHtml';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { Song } from '../types';
+import { estBrouillon, Song } from '../types';
 
 type AddMethod = 'ug' | 'doc' | 'bulk';
 
@@ -514,7 +514,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
     let places =
       limites.maxMorceaux === null
         ? Infinity
-        : Math.max(0, limites.maxMorceaux - compteMorceauxPerso(songs));
+        : Math.max(0, limites.maxMorceaux - compteMorceauxPerso(songs.filter((x) => !estBrouillon(x))));
     let horsPlan = 0;
     // Les morceaux créés, avec leur texte d'origine : la passe IA travaille
     // sur CES objets (jamais sur l'état `songs`, en retard d'un rendu).
@@ -774,7 +774,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
     let places =
       limites.maxMorceaux === null
         ? Infinity
-        : Math.max(0, limites.maxMorceaux - compteMorceauxPerso(songs));
+        : Math.max(0, limites.maxMorceaux - compteMorceauxPerso(songs.filter((x) => !estBrouillon(x))));
     // Titres supprimés volontairement de mojosong : on ne les réimporte pas
     // (même garde-fou que la synchro de groupe). L'utilisateur peut toujours
     // les récupérer explicitement via « 2 · Document ou lien ».

@@ -14,6 +14,7 @@ import {
 } from '../lib/limites';
 import { chargerPlan, planEnCache } from '../lib/plan';
 import { useStore } from '../store';
+import { estBrouillon } from '../types';
 
 export interface EtatLimites {
   plan: Plan;
@@ -38,7 +39,10 @@ export function useLimits(): EtatLimites {
     };
   }, []);
   const lim = limitesDuPlan(plan);
-  const morceaux = compteMorceauxPerso(songs);
+  // Les BROUILLONS de création (b319) ne partent jamais au cloud
+  // (`sansBrouillons`) : ils ne comptent pas non plus ici, sinon le
+  // compteur annoncerait un chiffre que le serveur ne connaît pas (b390).
+  const morceaux = compteMorceauxPerso(songs.filter((s) => !estBrouillon(s)));
   return {
     plan,
     morceaux,
