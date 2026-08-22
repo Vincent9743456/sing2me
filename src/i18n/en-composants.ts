@@ -111,16 +111,20 @@ export const EN_COMPOSANTS: Record<string, string> = {
   '▶ Regarder sur YouTube': '▶ Watch on YouTube',
   '♪ Écouter sur Spotify': '♪ Listen on Spotify',
 
-  // UpgradeSheet.tsx — limites du plan (b381)
-  'Ta bibliothèque gratuite est pleine': 'Your free library is full',
-  'Tes groupes gratuits sont au complet': 'Your free bands are all set up',
+  // UpgradeSheet.tsx — limites du plan (b381, habillage b384)
   'Passer en illimité': 'Go unlimited',
-  'Le plan gratuit couvre {n} morceaux dans ta bibliothèque. Tout ce qui y est déjà reste à toi — tu peux jouer, modifier et supprimer sans limite.':
-    'The free plan covers {n} songs in your library. Everything already there stays yours — you can play, edit and delete without limits.',
-  'Le plan gratuit couvre {n} groupes créés par toi. Rejoindre un groupe sur invitation reste toujours possible, sans limite.':
-    'The free plan covers {n} bands created by you. Joining a band on invitation always stays possible, without limits.',
+  'Ton répertoire mérite plus grand': 'Your repertoire deserves bigger',
+  'Ton collectif s’agrandit ?': 'Your collective is growing?',
+  'Ton compte gratuit va jusqu’à {n} morceaux. Passe en illimité pour continuer à l’enrichir.':
+    'Your free account goes up to {n} songs. Go unlimited to keep it growing.',
+  'Ton compte gratuit va jusqu’à {n} groupes. Passe en illimité pour en créer autant que tu veux.':
+    'Your free account goes up to {n} bands. Go unlimited to create as many as you want.',
+  '{n} / {max} groupes': '{n} / {max} bands',
+  'Morceaux et groupes sans plafond, pour un répertoire qui grandit avec toi.':
+    'Songs and bands without a cap, for a repertoire that grows with you.',
+  'Morceaux illimités': 'Unlimited songs',
+  'Groupes illimités': 'Unlimited bands',
+  'Tout le reste, sans limite': 'Everything else, without limits',
   'L’offre illimitée — morceaux et groupes sans plafond — arrive bientôt. Rien ne presse : tu seras prévenu ici même.':
     'The unlimited offer — songs and bands without a cap — is coming soon. No rush: you will be told right here.',
-  'Passer en illimité (bientôt)': 'Go unlimited (soon)',
-  'Continuer en gratuit': 'Keep going for free',
 };
