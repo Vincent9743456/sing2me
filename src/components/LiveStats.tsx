@@ -15,88 +15,73 @@
  * de report manuel) a été retiré — les ❤ et les mots du public descendent
  * de toute façon tout seuls dans la bibliothèque, et l'historique des lives
  * porte déjà le détail par concert. Un écran = une mission.
+ *
+ * INSTANTANÉ depuis b382 (« Pb de chargement des stats (très lent) »,
+ * constat de Vincent) : ce composant refaisait SA propre récupération
+ * réseau à chaque ouverture de l'onglet — « Chargement… » le temps du
+ * réveil du serveur, alors que l'onglet Live affichait les mêmes chiffres
+ * immédiatement depuis le cache b343. C'était précisément la divergence
+ * que b207 avait notée (« trois écrans, les mêmes chiffres, un seul
+ * calcul ») : il passe donc par `usePastLives`, le crochet commun — cache
+ * affiché tout de suite, rafraîchissement silencieux derrière. Les
+ * suiveurs, qui viennent d'un autre service (fanbase), gagnent le même
+ * réflexe avec leur propre petit cache.
  */
 import React, { useEffect, useRef, useState } from 'react';
 
 import { useToast } from './Feedback';
 import { t } from '../i18n';
-import {
-  fetchHistoriqueLive,
-  fetchMessages,
-  heartTotals,
-  LiveMessage,
-  LiveSession,
-  LiveStat,
-  messagesBySong,
-  PastLiveRow,
-} from '../lib/live';
+import { heartTotals, messagesBySong } from '../lib/live';
 import { liveReady } from '../lib/liveAuth';
-import { buildPastLives } from '../lib/pastlives';
 import { fetchFollowerStats, FollowerStats } from '../lib/fanbase';
+import { usePastLives } from './usePastLives';
 import { useStore } from '../store';
 
-export function LiveStats() {
-  const { prefs, artist, bands, songs, saveSong, resetAt } = useStore();
-  const toast = useToast();
-  const [stats, setStats] = useState<LiveStat[] | null>(null);
-  const [messages, setMessages] = useState<LiveMessage[] | null>(null);
-  const [sessions, setSessions] = useState<LiveSession[] | null>(null);
-  const [rows, setRows] = useState<PastLiveRow[]>([]);
-  const [followers, setFollowers] = useState<FollowerStats | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+/** Dernier compteur de suiveurs connu (cache du COMPTE — CLES_DU_COMPTE). */
+const CACHE_FANS = 'sing2me/fanCache';
+function fansLus(): FollowerStats | null {
+  try {
+    const raw = localStorage.getItem(CACHE_FANS);
+    if (!raw) return null;
+    const c = JSON.parse(raw) as Partial<FollowerStats>;
+    if (typeof c.count !== 'number') return null;
+    return {
+      count: c.count,
+      sharedEmails: Array.isArray(c.sharedEmails) ? c.sharedEmails : [],
+    };
+  } catch {
+    return null;
+  }
+}
 
-  // Mon nom d'artiste ET celui de mes groupes : les ❤ et les mots reçus
-  // pendant un concert du groupe appartiennent à chaque membre (b139/b168).
-  const names = [artist.name, ...bands.map((b) => b.name)]
-    .map((n) => n.trim())
-    .filter((n) => n !== '');
-  const namesKey = names.join(',');
-  // cloudId de mes groupes : c'est ce qui dit au serveur quels lives sont
-  // les miens (un live de groupe appartient à tous ses membres, b188).
-  const cloudKey = bands
-    .map((b) => (b.cloudId ?? '').trim())
-    .filter((c) => c !== '')
-    .join(',');
+export function LiveStats() {
+  const { prefs, artist, songs, saveSong } = useStore();
+  const toast = useToast();
+  // UNE récupération, UN calcul (b207) : exactement les lives de l'onglet
+  // Live — cache instantané compris (b343). Plus de fetch parallèle ici.
+  const { lives, stats, messages, loading, failed, ready } = usePastLives();
+  const [followers, setFollowers] = useState<FollowerStats | null>(() =>
+    fansLus(),
+  );
 
   useEffect(() => {
-    if (!liveReady(prefs.liveKey) || namesKey === '') {
-      setLoading(false);
-      return;
-    }
+    if (!liveReady(prefs.liveKey) || artist.name.trim() === '') return;
     let cancelled = false;
-    const cids = cloudKey === '' ? [] : cloudKey.split(',');
-    void (async () => {
-      setLoading(true);
+    void fetchFollowerStats(prefs.liveKey, artist.name).then((fo) => {
+      // `null` = panne : on garde ce qu'on savait (règle b245) — un zéro
+      // de panne écraserait un vrai compteur.
+      if (cancelled || fo === null) return;
+      setFollowers(fo);
       try {
-        // UN appel pour lives + morceaux + séances (b339) : le serveur
-        // renvoyait déjà les trois ensemble, on l'appelait trois fois.
-        const [h, ms, fo] = await Promise.all([
-          fetchHistoriqueLive(prefs.liveKey, namesKey.split(','), cids),
-          fetchMessages(prefs.liveKey, namesKey.split(',')),
-          fetchFollowerStats(prefs.liveKey, artist.name),
-        ]);
-        if (cancelled) return;
-        setRows(h.rows);
-        setStats(h.stats);
-        setMessages(ms);
-        setSessions(h.sessions);
-        setFollowers(fo);
-        setError(null);
-      } catch (e) {
-        // Hors ligne ou serveur muet : on le dit sans casser la fiche.
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : t('Chargement impossible.'));
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+        localStorage.setItem(CACHE_FANS, JSON.stringify(fo));
+      } catch {
+        /* stockage indisponible : l'affichage direct suffit */
       }
-    })();
+    });
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefs.liveKey, namesKey, cloudKey]);
+  }, [prefs.liveKey, artist.name]);
 
   // Report AUTOMATIQUE (instruction Vincent, b175) : les ❤ descendaient déjà
   // tout seuls dans la bibliothèque, les mots du public attendaient un clic.
@@ -113,34 +98,13 @@ export function LiveStats() {
 
   // Le direct n'est pas configuré : rien à montrer, et surtout rien à
   // expliquer ici — le réglage vit dans « Modifier ».
-  if (!liveReady(prefs.liveKey)) return null;
+  if (!ready) return null;
 
   /*
    * TOUS les chiffres de cette carte viennent de MES lives — la même liste
-   * que l'onglet Live, à la ligne près (b182, complété b203).
-   *
-   * Seul le nombre de lives passait par là. Les ❤ étaient la somme de TOUTES
-   * les lignes rendues par le serveur, et les spectateurs celle de TOUTES les
-   * séances — y compris celles des lives que j'ai retirés de mon historique,
-   * ceux d'avant une réinitialisation, et celles qui ne m'appartiennent pas.
-   * Le compteur de spectateurs ignorait au passage le plancher de b201 :
-   * l'onglet Live annonçait « 👥 1 » sur six lignes pendant que la fiche
-   * artiste affichait « 0 spectateurs » (constat de Vincent).
-   *
-   * Un seul calcul, quatre cartes qui ne peuvent plus se contredire.
+   * que l'onglet Live, à la ligne près (b182, complété b203, unifié b382 :
+   * c'est littéralement la même donnée, servie par le même crochet).
    */
-  const caches = prefs.hiddenLives ?? [];
-  const lives = buildPastLives({
-    rows,
-    sessions,
-    stats: stats ?? [],
-    messages: messages ?? [],
-    names,
-    bands: bands.map((b) => ({ cloudId: b.cloudId ?? '', name: b.name })),
-    me: [artist.name, prefs.userName],
-    artistName: artist.name,
-    depuis: resetAt?.lives,
-  }).filter((l) => !caches.includes(l.id));
   const nbLives = lives.length;
   const totalHearts = lives.reduce((n, l) => n + l.hearts, 0);
   const totalPublic = lives.reduce((n, l) => n + l.uniques, 0);
@@ -149,7 +113,7 @@ export function LiveStats() {
   const nbFollowers = followers?.count ?? 0;
   const rien =
     !loading &&
-    error === null &&
+    !failed &&
     nbLives === 0 &&
     totalHearts === 0 &&
     totalPublic === 0 &&
@@ -198,7 +162,7 @@ export function LiveStats() {
       <h2 className="pagetitle">{t('Tes lives')}</h2>
       {loading && stats === null ? (
         <p className="help">{t('Chargement…')}</p>
-      ) : error !== null ? (
+      ) : failed && stats === null ? (
         <p className="help">
           {t('Chiffres indisponibles pour l’instant — ils reviendront.')}
         </p>
