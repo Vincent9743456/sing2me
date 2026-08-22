@@ -214,6 +214,15 @@ function fromCloud(raw: unknown): Partial<SyncState> | null {
   };
 }
 
+/** Le refus LIMIT_SONGS, dit en français — UN texte pour les deux chemins
+ *  (synchro de connexion et envoi en cours de route, b381/b383). Fonction,
+ *  pas constante : `t()` ne s'appelle jamais au niveau module. */
+function messageLimiteMorceaux(): string {
+  return t(
+    'Ta bibliothèque dépasse le plan gratuit : les nouveaux morceaux restent sur cet appareil tant que tu n’en retires pas (ou ne passes pas en illimité).',
+  );
+}
+
 export function AccountProvider({ children }: { children: React.ReactNode }) {
   const store = useStore();
   const [session, setSession] = useState<AuthSession | null>(
@@ -696,10 +705,27 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         })();
       } catch (e) {
         if (!cancelled) {
-          setStatus('error');
-          setError(
-            e instanceof Error ? e.message : t('Synchronisation impossible.'),
-          );
+          // LIMITE DU PLAN À LA CONNEXION (b383, capture de Vincent : le
+          // JSON brut du serveur s'affichait sur la fiche Artiste). Seule
+          // la POUSSÉE est refusée — la lecture, la fusion et l'hydratation
+          // ont déjà réussi. La synchro reste donc EN VIE (`readyRef`) :
+          // le rattrapage, les groupes et les prochains essais d'envoi
+          // continuent ; sans ça, un refus au démarrage éteignait toute la
+          // synchro de la session. Même message et même feuille que le
+          // refus en cours de route ; `noterCompteLocal` reste NON posé
+          // (b259 : jamais avant un envoi réussi).
+          if (String(e).includes('LIMIT_SONGS')) {
+            readyRef.current = true;
+            limiteSignalee.current = true;
+            signalerLimite('LIMIT_SONGS');
+            setStatus('error');
+            setError(messageLimiteMorceaux());
+          } else {
+            setStatus('error');
+            setError(
+              e instanceof Error ? e.message : t('Synchronisation impossible.'),
+            );
+          }
         }
       }
     })();
@@ -889,11 +915,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       if (String(e).includes('LIMIT_SONGS')) {
         signalerLimite('LIMIT_SONGS');
         limiteSignalee.current = true;
-        setError(
-          t(
-            'Ta bibliothèque dépasse le plan gratuit : les nouveaux morceaux restent sur cet appareil tant que tu n’en retires pas (ou ne passes pas en illimité).',
-          ),
-        );
+        setError(messageLimiteMorceaux());
       }
       // Hors ligne ou serveur muet : rien n'est perdu, tout est en local.
       // Le drapeau reste levé, le prochain retour de réseau réessaiera.
