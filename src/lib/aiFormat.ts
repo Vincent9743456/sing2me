@@ -33,6 +33,38 @@ function nombreDAccords(lyrics: string): number {
   return (lyrics.match(/\[[^\]\n]*\]/g) ?? []).length;
 }
 
+/** La suite des accords d'une partition, dans l'ordre d'apparition. */
+function suiteAccords(lyrics: string): string[] {
+  return (lyrics.match(/\[([^\]\n]+)\]/g) ?? []).map((c) =>
+    c.slice(1, -1).trim(),
+  );
+}
+
+/**
+ * L'IA MET EN FORME, ELLE NE RÉÉCRIT PAS LA MUSIQUE (b394, signalement de
+ * Vincent : sur « The Greatest Bastard », la mise en forme a transformé
+ * les G9 en G — « la neuvième a disparu » — et déplacé des accords).
+ *
+ * Chaque accord de l'analyse LOCALE doit se retrouver, à l'IDENTIQUE et
+ * dans le même ordre, dans la version remise en forme. L'IA peut en
+ * AJOUTER (retrouver des accords que l'analyse locale avait ratés est
+ * précisément son métier), mais jamais en RENOMMER ni en PERDRE un seul :
+ * G9 n'est pas G, C/G n'est pas C. Test de sous-suite, pas d'égalité —
+ * et purement déterministe : aucun jugement, une comparaison.
+ */
+export function accordsPreserves(
+  localLyrics: string,
+  iaLyrics: string,
+): boolean {
+  const attendus = suiteAccords(localLyrics);
+  const produits = suiteAccords(iaLyrics);
+  let i = 0;
+  for (const c of produits) {
+    if (i < attendus.length && c === attendus[i]) i++;
+  }
+  return i === attendus.length;
+}
+
 /** En deçà, la mise en forme a mangé du texte. */
 const PERTE_MAX = 0.6;
 /** Au-delà, elle en a inventé — ou recopié le morceau deux fois. */
@@ -108,9 +140,14 @@ export function fusionMiseEnForme(
   aiOutcome: ImportOutcome | null,
   doutePrealable = '',
 ): MiseEnForme {
-  if (!aiOutcome) {
-    // L'IA n'a pas répondu : on garde l'analyse locale, sans rien signaler
-    // de plus que ce que l'import aurait signalé de toute façon.
+  // L'IA n'a pas répondu, OU sa version a renommé/perdu des accords
+  // (b394 : G9 devenu G) : on garde l'analyse locale — la mise en forme
+  // ne se paie jamais d'une note. Même chemin dans les deux cas, sans
+  // rien signaler de plus que ce que l'import aurait signalé.
+  if (
+    !aiOutcome ||
+    !accordsPreserves(localOutcome.song.lyrics, aiOutcome.song.lyrics)
+  ) {
     const doute =
       doutePrealable !== ''
         ? doutePrealable

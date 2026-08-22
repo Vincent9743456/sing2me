@@ -14,12 +14,19 @@ const racine = new URL('../src/lib/', import.meta.url).pathname;
 writeFileSync(
   pont,
   `export { decoupeAccordsColles, estAnnotationDeGrille, importText } from '${racine}importer';\n` +
-    `export { lireEnTeteDeSection } from '${racine}sections';\n`,
+    `export { lireEnTeteDeSection } from '${racine}sections';\n` +
+    `export { accordsPreserves, fusionMiseEnForme } from '${racine}aiFormat';\n`,
 );
 const out = join(dir, 'pont.mjs');
 buildSync({ entryPoints: [pont], bundle: true, format: 'esm', outfile: out });
-const { decoupeAccordsColles, estAnnotationDeGrille, importText, lireEnTeteDeSection } =
-  await import(out);
+const {
+  decoupeAccordsColles,
+  estAnnotationDeGrille,
+  importText,
+  lireEnTeteDeSection,
+  accordsPreserves,
+  fusionMiseEnForme,
+} = await import(out);
 
 let ko = 0;
 function egal(nom, obtenu, attendu) {
@@ -76,6 +83,44 @@ egal('X 2 hors fusion', res.song.lyrics.includes('X 2'), true);
 egal('section Couplet', /Couplet(?: 1)? :/.test(res.song.lyrics), true);
 egal('section Refrain', /Refrain :/.test(res.song.lyrics), true);
 egal('Tonalité hors paroles', res.song.lyrics.includes('Tonalité'), false);
+
+// ── b394 — « The Greatest Bastard » (signalement de Vincent) : les accords
+// étendus (G9, D/F#) survivent à l'analyse locale, un accord de fin de
+// phrase reste sur sa ligne, et la fusion IA REFUSE une version qui
+// renomme ou perd un accord (G9 devenu G → on garde le local).
+{
+  const src = [
+    '[Verse 1]',
+    'D',
+    'I made you laugh, I made you cry',
+    'D/F#',
+    'I made you open up your eyes',
+    'G9                 A',
+    "Didn't I?",
+  ].join('\n');
+  const local = importText(src, 'The Greatest Bastard');
+  egal('G9 conservé au local', local.song.lyrics.includes('[G9]'), true);
+  egal('D/F# conservé au local', local.song.lyrics.includes('[D/F#]'), true);
+  egal(
+    'accord de fin de phrase sur sa ligne',
+    /\[G9\]Didn't I\?\s+\[A\]/.test(local.song.lyrics),
+    true,
+  );
+
+  // L'IA renvoie une version qui a simplifié G9 → G : refusée, on garde
+  // le local (même chemin que « l'IA n'a pas répondu »).
+  const iaTexte = local.song.lyrics.replace(/\[G9\]/g, '[G]');
+  const iaOutcome = importText(iaTexte, 'The Greatest Bastard');
+  const fusion = fusionMiseEnForme(src, local, iaTexte, iaOutcome);
+  egal('IA qui renomme → refusée', fusion.parIA, false);
+  egal('IA refusée → G9 garde sa neuvième', fusion.song.lyrics.includes('[G9]'), true);
+
+  // Comparaisons directes du garde-fou.
+  egal('préservés à l’identique', accordsPreserves('[G9]la [A]suite', '[G9]la [A]suite'), true);
+  egal('renommé G9→G : non', accordsPreserves('[G9]la [A]suite', '[G]la [A]suite'), false);
+  egal('accord perdu : non', accordsPreserves('[G9]la [A]suite', '[G9]la suite'), false);
+  egal('accords AJOUTÉS : oui', accordsPreserves('[G9]la suite', '[G9]la [A]suite'), true);
+}
 
 rmSync(dir, { recursive: true, force: true });
 console.log(ko === 0 ? '\nTous les tests passent.' : `\n${ko} test(s) en échec.`);
