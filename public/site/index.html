@@ -279,7 +279,7 @@
   .pillar p { color: var(--creme-2); font-size: 0.92rem; }
 
   /* ---------- Tarifs ---------- */
-  .pricing { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; align-items: start; }
+  .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
   @media (max-width: 820px) { .pricing { grid-template-columns: 1fr; } }
   .pricecard { padding: 30px 26px; border: 1px solid var(--ligne); border-radius: var(--r-l); background: var(--nuit-2); display: flex; flex-direction: column; }
   .pricecard.mis { border-color: var(--ambre); }
@@ -560,7 +560,7 @@
   <div class="wrap">
     <div class="sechead">
       <h2>Pensé pour la vraie vie de musicien</h2>
-      <p>Pas d'abonnement, pas de mauvaise surprise au moment de brancher le jack.</p>
+      <p>Pas de mauvaise surprise au moment de brancher le jack.</p>
     </div>
     <div class="pillars">
       <div class="pillar">
@@ -568,8 +568,8 @@
         <p>Tes morceaux vivent dans ton appareil. Cave, festival sans réseau, avion : le mode scène fonctionne toujours.</p>
       </div>
       <div class="pillar">
-        <div class="big">Gratuit</div>
-        <p>L'application est gratuite. Ton compte synchronise ta bibliothèque entre tes appareils et avec ton groupe.</p>
+        <div class="big">Gratuit pour jouer</div>
+        <p>Jusqu'à 50 morceaux et 15 spectateurs en live, sans payer un centime — synchro entre tes appareils et ton groupe comprise.</p>
       </div>
       <div class="pillar">
         <div class="big">Tes données à toi</div>
@@ -582,37 +582,47 @@
 <section id="tarifs" style="padding-top: 0;">
   <div class="wrap">
     <div class="sechead">
-      <h2>Gratuit, et illimité</h2>
-      <p>Pendant le lancement, tout mojosong est gratuit et illimité — statut Fondateur pour les premiers inscrits.</p>
+      <h2>Le concert, c'est gratuit</h2>
+      <p>Tu paies le jour où ton répertoire dépasse cinquante morceaux, ou le jour où la salle dépasse quinze personnes.</p>
     </div>
     <div class="pricing">
       <div class="pricecard">
-        <h3>Tout mojosong — gratuit</h3>
-        <div class="price">0 €</div>
+        <h3>Gratuit</h3>
+        <div class="price">0 € — pour jouer et faire chanter tes amis</div>
         <ul>
-          <li>Morceaux illimités, import en masse</li>
-          <li>Mode scène, transposition, capo</li>
-          <li>Page publique &amp; QR code</li>
-          <li>Setlists illimitées</li>
-          <li>Synchro cloud</li>
-          <li>Groupes illimités : répertoire partagé, discussion, plan de scène</li>
+          <li>50 morceaux dans ta bibliothèque</li>
+          <li>Groupes et setlists illimités</li>
+          <li>Mode scène, transposition, capo, hors connexion</li>
+          <li>Live : les paroles sur le téléphone du public, jusqu'à 15 spectateurs en simultané</li>
+          <li>Page publique &amp; QR code, cœurs et messages</li>
+          <li>Import en masse, synchro cloud</li>
         </ul>
         <div class="keep">Tes morceaux et tes groupes ne sont jamais bloqués.</div>
       </div>
-      <div class="pricecard mis">
-        <h3>Licence Scène <span class="soon">à terme</span></h3>
-        <div class="price">Pour les artistes de scène</div>
+      <div class="pricecard">
+        <h3>Musicien <span class="soon">bientôt</span></h3>
+        <div class="price">39 € par an — ou 3,99 € par mois</div>
         <ul>
-          <li>Pour celles et ceux qui se produisent devant un large public</li>
-          <li>Audience en direct sans limite</li>
-          <li>Cœurs, messages et statistiques de concert</li>
-          <li>Ta fanbase : les spectateurs qui te suivent te reviennent</li>
+          <li>Morceaux illimités</li>
+          <li>Pour la bibliothèque qui déborde</li>
+          <li>Live jusqu'à 15 spectateurs en simultané</li>
+          <li>Tout le reste du gratuit, évidemment</li>
         </ul>
-        <div class="keep">Tout le reste restera gratuit — toujours.</div>
+        <div class="keep">Rien à réimporter : ta bibliothèque continue, simplement.</div>
+      </div>
+      <div class="pricecard mis">
+        <h3>Scène <span class="soon">bientôt</span></h3>
+        <div class="price">89 € par an — ou 8,99 € par mois</div>
+        <ul>
+          <li>Morceaux illimités</li>
+          <li>Salle illimitée : autant de spectateurs que ta salle en contient</li>
+          <li>Pour celles et ceux qui se produisent devant du public</li>
+        </ul>
+        <div class="keep">Personne ne reste à la porte de tes concerts.</div>
       </div>
     </div>
     <div class="pricebanner">
-      <p>🎁 Pendant la phase de lancement, tout est gratuit et illimité, et les premiers comptes gardent un statut Fondateur avantageux. Quoi qu'il arrive, tout ce qui sert à jouer reste gratuit et tes morceaux restent toujours accessibles.</p>
+      <p>Nos engagements, quoi qu'il arrive : <strong>jamais de coupure en plein concert</strong> — les quinze premiers connectés gardent leur place jusqu'à la fin, le suivant entre dès qu'une place se libère ; <strong>aucune commission sur tes pourboires</strong> ; <strong>rien n'est pris en otage</strong> — tout ce que tu importes reste consultable, jouable et exportable, abonné ou non.</p>
     </div>
   </div>
 </section>
@@ -641,7 +651,11 @@
       </details>
       <details>
         <summary>Combien ça coûte ?</summary>
-        <p>Pendant le lancement, tout est gratuit et illimité. À terme, une Licence Scène annuelle s'adressera aux artistes qui se produisent devant un large public (audience en direct sans limite, cœurs, statistiques, fanbase) — tout le reste, lui, restera gratuit. Quoi qu'il arrive, tes morceaux restent accessibles gratuitement.</p>
+        <p>Le gratuit couvre 50 morceaux et 15 spectateurs en simultané pendant un live — de quoi jouer, répéter et faire chanter tes amis. Au-delà : Musicien (39 € par an ou 3,99 € par mois) pour les morceaux illimités, Scène (89 € par an ou 8,99 € par mois) pour la salle illimitée en plus. Quoi qu'il arrive, tout ce que tu as importé reste consultable, jouable et exportable.</p>
+      </details>
+      <details>
+        <summary>Que voit le public quand la salle gratuite est pleine ?</summary>
+        <p>Les quinze premiers connectés gardent leur place jusqu'à la fin — personne n'est jamais déconnecté en plein concert. Le seizième voit un écran qui le lui explique, avec le titre en cours : dès que quelqu'un part, il entre automatiquement, sans rien relancer. Et l'artiste reçoit un e-mail après le live pour le lui dire.</p>
       </details>
     </div>
   </div>
