@@ -1,6 +1,6 @@
 /**
- * Tests des limites de plan (b381, réalignées b385 sur l'offre v2) —
- * logique pure de src/lib/limites.ts.
+ * Tests des limites de plan (b381, simplifiées b386 : « 50 chansons c'est
+ * tout ») — logique pure de src/lib/limites.ts.
  * Lancement : node scripts/test-limites.mjs
  */
 import { buildSync } from 'esbuild';
@@ -14,9 +14,8 @@ const racine = new URL('../src/lib/', import.meta.url).pathname;
 writeFileSync(
   pont,
   `export {
-    LIMITES, limitesDuPlan, estUnPlan,
-    compteMorceauxActifs, compteReserve,
-    peutActiverMorceau, placesRestantes, presDeLaLimite,
+    LIMITES, limitesDuPlan, estUnPlan, compteMorceauxPerso,
+    peutAjouterMorceau, placesRestantes, presDeLaLimite,
   } from '${racine}limites';\n`,
 );
 const out = join(dir, 'pont.mjs');
@@ -25,9 +24,8 @@ const {
   LIMITES,
   limitesDuPlan,
   estUnPlan,
-  compteMorceauxActifs,
-  compteReserve,
-  peutActiverMorceau,
+  compteMorceauxPerso,
+  peutAjouterMorceau,
   placesRestantes,
   presDeLaLimite,
 } = await import(out);
@@ -41,46 +39,42 @@ function egal(nom, obtenu, attendu) {
   console.log(`${ok ? 'OK ' : 'KO '} ${nom} — ${a}${ok ? '' : ` ≠ ${b}`}`);
 }
 
-// L'offre v2 : gratuit = 50 morceaux ACTIFS, réserve et groupes illimités,
-// import en masse ouvert ; le cap de salle (15) existe en config mais n'est
-// pas encore appliqué. Pro et admin sans plafond.
-egal('free maxSongs (actifs)', LIMITES.free.maxSongs, 50);
+// b386 : gratuit = 50 morceaux, c'est tout. Groupes et setlists illimités,
+// import en masse ouvert (il s'arrête au plafond) ; le cap de salle (15)
+// existe en config mais n'est pas encore appliqué. Pro/admin sans plafond.
+egal('free maxSongs', LIMITES.free.maxSongs, 50);
 egal('free groupes illimités', LIMITES.free.maxOwnedGroups, null);
 egal('free cap de salle (config seulement)', LIMITES.free.maxSpectateurs, 15);
 egal('free bulkImport ouvert', LIMITES.free.bulkImport, true);
 egal('free setlists illimitées', LIMITES.free.maxSetlists, null);
-egal('free live illimité', LIMITES.free.liveSessions, null);
 egal('pro sans plafond', LIMITES.pro.maxSongs, null);
-egal('admin salle sans plafond', LIMITES.admin.maxSpectateurs, null);
+egal('admin sans plafond', LIMITES.admin.maxSongs, null);
 
-// Un plan inconnu (valeur future, cache abîmé) retombe sur free : le côté
-// sûr est de ne rien débloquer qu'on ne connaît pas.
+// Un plan inconnu (valeur future, cache abîmé) retombe sur free.
 egal('plan inconnu → free', limitesDuPlan('platine').maxSongs, 50);
 egal('estUnPlan free', estUnPlan('free'), true);
 egal('estUnPlan vide', estUnPlan(''), false);
 
-// Morceaux ACTIFS = hors propositions (idea) ET hors réserve (reserve).
+// Comptage : tout sauf les propositions en attente — un morceau de groupe
+// compte dès qu'il est ACCEPTÉ par l'utilisateur (arbitrage b386).
 {
   const songs = [
-    {},                              // actif
-    { idea: false },                 // proposition acceptée : actif
-    { idea: true },                  // proposition en attente : ne compte pas
-    { reserve: true },               // en réserve : ne compte pas
-    { reserve: false },              // explicitement actif
-    { idea: true, reserve: true },   // ni l'un ni l'autre ne compte
+    {},                // morceau ordinaire
+    { idea: false },   // proposition ACCEPTÉE : compte
+    { idea: true },    // proposition en attente : ne compte pas
+    { idea: true },
+    { reserve: true }, // champ b385 inerte : il compte comme les autres
   ];
-  egal('compte des actifs', compteMorceauxActifs(songs), 3);
-  egal('compte de la réserve', compteReserve(songs), 1);
-  egal('bibliothèque vide', compteMorceauxActifs([]), 0);
+  egal('compte hors propositions', compteMorceauxPerso(songs), 3);
+  egal('bibliothèque vide', compteMorceauxPerso([]), 0);
 }
 
-// La garde d'ACTIVATION : sous la limite oui, à la limite non — mais rien
-// n'est jamais refusé à l'écriture, l'excédent entre en réserve.
-egal('49/50 : on peut activer', peutActiverMorceau('free', 49), true);
-egal('50/50 : on ne peut plus', peutActiverMorceau('free', 50), false);
-egal('au-delà (bêta 60) : non plus', peutActiverMorceau('free', 60), false);
-egal('pro : toujours', peutActiverMorceau('pro', 500), true);
-egal('admin : toujours', peutActiverMorceau('admin', 500), true);
+// La garde : sous la limite oui, à la limite non, illimité toujours.
+egal('49/50 : on peut ajouter', peutAjouterMorceau('free', 49), true);
+egal('50/50 : on ne peut plus', peutAjouterMorceau('free', 50), false);
+egal('au-delà (bêta 60) : non plus', peutAjouterMorceau('free', 60), false);
+egal('pro : toujours', peutAjouterMorceau('pro', 500), true);
+egal('admin : toujours', peutAjouterMorceau('admin', 500), true);
 
 // Places restantes : jamais négatif, null = illimité.
 egal('places 50-48', placesRestantes(50, 48), 2);
