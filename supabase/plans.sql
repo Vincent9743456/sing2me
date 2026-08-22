@@ -175,11 +175,16 @@ grant execute on function public.note_limite(text) to authenticated;
 -- ------------------------------------------------------------
 -- Comptes fondateurs (demande explicite de Vincent) : admin.
 -- Idempotent — rejouable sans effet de bord.
+-- (vincent.tessier@exa.re : deuxième compte de Vincent, ajouté b389.)
 -- ------------------------------------------------------------
 insert into public.user_plans (user_id, plan)
 select id, 'admin'
 from auth.users
-where email in ('vtessier6@gmail.com', 'marco@mojosong.com')
+where email in (
+  'vtessier6@gmail.com',
+  'marco@mojosong.com',
+  'vincent.tessier@exa.re'
+)
 on conflict (user_id) do update set plan = 'admin', updated_at = now();
 
 -- Recettes pour passer un compte en 'musicien' ou 'scene' (à la main,
