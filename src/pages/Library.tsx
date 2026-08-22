@@ -636,6 +636,13 @@ export function Library() {
                           })}
                           onClick={(e) => {
                             e.stopPropagation();
+                            // Accepter fait ENTRER le morceau dans le compte
+                            // du plan (b386) : au plafond, le bouton reste
+                            // actif et la feuille propose l'illimité (b390).
+                            if (!limites.peutAjouter) {
+                              signalerLimite('LIMIT_SONGS');
+                              return;
+                            }
                             // Accepter = entrer en bibliothèque ET dans le
                             // répertoire du groupe (b205). La règle vit dans
                             // le store, comme celle des setlists.

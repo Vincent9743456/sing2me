@@ -29,6 +29,8 @@ import { PublicEye, PublicView } from '../components/PublicView';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { songKey } from '../lib/importer';
 import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
+import { signalerLimite } from '../components/UpgradeSheet';
+import { useLimits } from '../components/useLimits';
 import { AssignSheet } from '../components/SongPicker';
 import {
   ConfirmSheet,
@@ -99,6 +101,8 @@ export function SongView({
     deleteNote,
     replaceNote,
   } = useStore();
+  // Plafond du plan (b390) : valider une proposition, c'est ajouter.
+  const limites = useLimits();
 
   // Contexte setlist : le morceau vient de l'item courant
   const ctxSetlist = fromSetlist
@@ -402,8 +406,16 @@ export function SongView({
               /* Même règle que « ✓ Accepter » et que la programmation dans
                  une setlist : elle vit dans le store (b206). C'était le
                  TROISIÈME endroit à écrire l'adoption d'un morceau à sa
-                 façon — et deux d'entre eux avaient déjà divergé (b205). */
-              onClick={() => acceptSong(song.id)}
+                 façon — et deux d'entre eux avaient déjà divergé (b205).
+                 Au plafond du plan (b390) : le bouton reste actif, la
+                 feuille propose l'illimité. */
+              onClick={() => {
+                if (!limites.peutAjouter) {
+                  signalerLimite('LIMIT_SONGS');
+                  return;
+                }
+                acceptSong(song.id);
+              }}
             >
               {t('✓ Valider dans la bibliothèque')}
             </button>

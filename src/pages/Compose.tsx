@@ -32,6 +32,8 @@
 import React, { useMemo, useState } from 'react';
 
 import { useToast } from '../components/Feedback';
+import { signalerLimite } from '../components/UpgradeSheet';
+import { useLimits } from '../components/useLimits';
 import { Icon } from '../components/Icon';
 import { SongBody } from '../components/SongBody';
 import { TopBar } from '../components/ui';
@@ -51,6 +53,8 @@ import { extractUgLinks } from './Import';
 
 export function Compose({ draftId }: { draftId: string | null }) {
   const { songs, saveSong, purgeBrouillon } = useStore();
+  // Plafond du plan (b390) : créer, c'est ajouter — même garde que le ＋.
+  const limites = useLimits();
   const toast = useToast();
 
   const draft = useMemo(
@@ -92,6 +96,12 @@ export function Compose({ draftId }: { draftId: string | null }) {
   /** Choisir un résultat : récupération + mise en forme locale → aperçu. */
   async function choisirResultat(r: UgSearchResult) {
     if (choixEnCours !== '') return;
+    // Plafond du plan (b390) : le bouton reste ACTIF — au clic, la feuille
+    // propose de passer en illimité au lieu de créer un 51ᵉ morceau.
+    if (!limites.peutAjouter) {
+      signalerLimite('LIMIT_SONGS');
+      return;
+    }
     setChoixEnCours(r.url);
     try {
       const tab = await fetchUgTab(r.url);
