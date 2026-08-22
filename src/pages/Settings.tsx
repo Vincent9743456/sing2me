@@ -24,7 +24,17 @@ import { ConfirmSheet, useToast } from '../components/Feedback';
 import { fusionMiseEnForme } from '../lib/aiFormat';
 import { importText } from '../lib/importer';
 import { aRemettreEnForme, bilanRecalage, recalerMorceau } from '../lib/reprise';
-import { aiCleanText } from '../lib/ug';
+import {
+  appliquerRecuperation,
+  candidatsRecuperation,
+  verdictRecuperation,
+} from '../lib/recupaccords';
+import {
+  aiCleanText,
+  fetchUgTab,
+  searchUgTabs,
+  ugTabToImportText,
+} from '../lib/ug';
 import { Icon } from '../components/Icon';
 import { AccordionNav, ProgressBar, TopBar } from '../components/ui';
 import { rememberLang, storedLang, t } from '../i18n';
@@ -160,6 +170,18 @@ export function Settings() {
   const [repriseEnCours, setRepriseEnCours] = useState(false);
   const [demandeIA, setDemandeIA] = useState(false);
   const arretReprise = useRef(false);
+  // Retrouver les accords d'origine (b395) : récupération à la source des
+  // partitions abîmées par la mise en forme IA d'avant b394.
+  const [recupAccords, setRecupAccords] = useState<{
+    done: number;
+    total: number;
+    repares: number;
+    accords: number;
+  } | null>(null);
+  const [recupEnCours, setRecupEnCours] = useState(false);
+  const [demandeRecup, setDemandeRecup] = useState(false);
+  const arretRecup = useRef(false);
+  const candidatsRecup = candidatsRecuperation(songs);
   const bilan = bilanRecalage(songs);
   /**
    * Les deux compteurs se calculent AU RENDU, sur la vraie bibliothèque
@@ -263,6 +285,101 @@ export function Settings() {
         : t('{n} partitions reprises', { n: reprises });
     const parts = [morceaux];
     if (doutes > 0) parts.push(t('{d} à vérifier', { d: doutes }));
+    if (echecs > 0)
+      parts.push(t('{e} en échec — réessaie dans un moment', { e: echecs }));
+    toast.show(parts.join(' · ') + '.');
+  }
+
+  /** La source limite le débit (429) : reprises avec attente progressive. */
+  async function avecReprises<T>(f: () => Promise<T>): Promise<T> {
+    for (let essai = 0; ; essai++) {
+      try {
+        return await f();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '';
+        if (!msg.includes('429') || essai >= 3 || arretRecup.current) throw e;
+        const attente = [5, 15, 30][essai] ?? 30;
+        await new Promise((r) => setTimeout(r, attente * 1000));
+      }
+    }
+  }
+
+  /**
+   * RETROUVER LES ACCORDS D'ORIGINE (b395). Chaque morceau est recherché à
+   * la source (titre + artiste), la partition trouvée est relue par
+   * l'analyse 100 % LOCALE — aucun appel IA — et le contenu n'est remplacé
+   * que sur preuve écrasante (`verdictRecuperation` : mêmes paroles, mêmes
+   * accords au même endroit, chacun simplement appauvri — G pour G9).
+   * Tout le reste est écarté et compté. Interruptible : ce qui est réparé
+   * reste réparé.
+   */
+  async function retrouverAccords() {
+    if (recupEnCours) return;
+    setDemandeRecup(false);
+    arretRecup.current = false;
+    setRecupEnCours(true);
+    const liste = candidatsRecup;
+    let done = 0;
+    let repares = 0;
+    let accords = 0;
+    let identiques = 0;
+    let ecartes = 0;
+    let echecs = 0;
+    setRecupAccords({ done, total: liste.length, repares, accords });
+    for (const vieux of liste) {
+      if (arretRecup.current) break;
+      try {
+        const q = [vieux.title, vieux.artist]
+          .filter((x) => x.trim() !== '')
+          .join(' ');
+        const resultats = await avecReprises(() => searchUgTabs(q));
+        const tries = resultats
+          .filter((r) => /chord/i.test(r.type))
+          .sort((a, b) => b.votes - a.votes);
+        if (tries.length === 0) {
+          // Introuvable à la source : une composition, un titre trop rare —
+          // le morceau reste tel quel, il compte parmi les écartés.
+          ecartes++;
+        } else {
+          const tab = await avecReprises(() => fetchUgTab(tries[0].url));
+          const releve = importText(ugTabToImportText(tab), vieux.title);
+          const verdict = verdictRecuperation(vieux, releve);
+          if (verdict.verdict === 'reparer') {
+            store.saveSong(appliquerRecuperation(vieux, releve));
+            repares++;
+            accords += verdict.accords;
+          } else if (verdict.verdict === 'identique') {
+            identiques++;
+          } else {
+            ecartes++;
+          }
+        }
+      } catch {
+        // Un échec réseau ne casse rien : le morceau reste tel qu'il était —
+        // mais il se compte, et le bilan le dira (cicatrice b365).
+        echecs++;
+      }
+      done++;
+      setRecupAccords({ done, total: liste.length, repares, accords });
+      // Courtoisie envers la source entre deux morceaux (évite le 429).
+      if (!arretRecup.current && done < liste.length) {
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+    setRecupEnCours(false);
+    const accordsTxt =
+      accords === 1
+        ? t('1 accord retrouvé')
+        : t('{a} accords retrouvés', { a: accords });
+    const parts = [
+      (repares === 1
+        ? t('1 partition réparée')
+        : t('{n} partitions réparées', { n: repares })) +
+        (repares > 0 ? ` (${accordsTxt})` : ''),
+    ];
+    if (identiques > 0) parts.push(t('{n} déjà fidèles', { n: identiques }));
+    if (ecartes > 0)
+      parts.push(t('{n} écartées — preuve insuffisante', { n: ecartes }));
     if (echecs > 0)
       parts.push(t('{e} en échec — réessaie dans un moment', { e: echecs }));
     toast.show(parts.join(' · ') + '.');
@@ -507,7 +624,11 @@ export function Settings() {
             reprise est en cours / vient de finir, sinon sa barre de
             progression disparaîtrait sous les yeux au moment où le compteur
             retombe à zéro. */}
-        {(bilan.accords > 0 || aRemettre.length > 0 || repriseIA !== null) && (
+        {(bilan.accords > 0 ||
+          aRemettre.length > 0 ||
+          repriseIA !== null ||
+          candidatsRecup.length > 0 ||
+          recupAccords !== null) && (
           <>
             <div className="spacer" />
             <h2 className="pagetitle">{t('Reprendre mes partitions')}</h2>
@@ -553,6 +674,66 @@ export function Settings() {
                 onClick={() => setDemandeIA(true)}
               />
             )}
+            {/* Retrouver les accords d'origine (b395) : le dégât d'avant
+                b394 ne se voit pas en local (un G qui devrait être G9 est
+                un accord parfaitement valable) — seul un retour à la source
+                peut le prouver. Le bouton reste donc visible tant qu'il y a
+                des morceaux à vérifier : il ne promet pas des réparations,
+                il promet une vérification. */}
+            {candidatsRecup.length > 0 && (
+              <AccordionNav
+                title={t('🎸 Retrouver les accords d’origine')}
+                sub={
+                  candidatsRecup.length === 1
+                    ? t(
+                        '1 morceau est vérifié à la source — seuls les accords prouvés sont corrigés, avec retour en arrière possible',
+                      )
+                    : t(
+                        '{n} morceaux sont vérifiés à la source — seuls les accords prouvés sont corrigés, avec retour en arrière possible',
+                        { n: candidatsRecup.length },
+                      )
+                }
+                onClick={() => setDemandeRecup(true)}
+              />
+            )}
+            {recupAccords && (
+              <ProgressBar
+                done={recupAccords.done}
+                total={recupAccords.total}
+                label={
+                  recupEnCours
+                    ? recupAccords.repares === 0
+                      ? t('Vérification à la source…')
+                      : recupAccords.repares === 1
+                        ? t('Vérification à la source… 1 partition réparée')
+                        : t(
+                            'Vérification à la source… {n} partitions réparées',
+                            { n: recupAccords.repares },
+                          )
+                    : t('Vérification terminée')
+                }
+              />
+            )}
+            {recupEnCours && (
+              <button
+                className="btn ghost block"
+                onClick={() => {
+                  arretRecup.current = true;
+                }}
+              >
+                {t('Arrêter la vérification')}
+              </button>
+            )}
+            {recupAccords !== null &&
+              !recupEnCours &&
+              recupAccords.repares > 0 && (
+                <p className="help">
+                  ↩{' '}
+                  {t(
+                    'Chaque morceau réparé garde sa partition d’avant : « Revenir à ma partition d’origine » dans son menu ⋯.',
+                  )}
+                </p>
+              )}
             {repriseIA && (
               <ProgressBar
                 done={repriseIA.done}
@@ -955,6 +1136,23 @@ export function Settings() {
           }
           onConfirm={() => void reprendreALIA()}
           onClose={() => setDemandeIA(false)}
+        />
+      )}
+      {demandeRecup && (
+        <ConfirmSheet
+          title={
+            candidatsRecup.length === 1
+              ? t('Vérifier 1 morceau à la source ?')
+              : t('Vérifier {n} morceaux à la source ?', {
+                  n: candidatsRecup.length,
+                })
+          }
+          message={t(
+            'Certaines mises en forme passées ont pu simplifier des accords (un G9 devenu G) ou les décaler. Chaque morceau est recherché par titre et artiste, puis relu sans IA. Ta partition n’est remplacée que si les paroles sont identiques et que chaque accord retrouvé enrichit le tien — au moindre doute, rien ne bouge. Les morceaux réparés gardent leur partition d’avant, pour revenir en arrière d’un geste. C’est long (quelques secondes par morceau) et tu peux arrêter en cours de route.',
+          )}
+          confirmLabel={t('Lancer la vérification')}
+          onConfirm={() => void retrouverAccords()}
+          onClose={() => setDemandeRecup(false)}
         />
       )}
     </>

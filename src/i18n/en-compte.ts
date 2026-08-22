@@ -229,6 +229,33 @@ export const EN_COMPTE: Record<string, string> = {
   '{d} à vérifier': '{d} need a check',
   '{e} en échec — réessaie dans un moment': '{e} failed — try again in a moment',
 
+  // Settings.tsx — retrouver les accords d'origine (b395)
+  '🎸 Retrouver les accords d’origine': '🎸 Recover the original chords',
+  '1 morceau est vérifié à la source — seuls les accords prouvés sont corrigés, avec retour en arrière possible':
+    '1 song is checked against the source — only proven chords are fixed, with a way back',
+  '{n} morceaux sont vérifiés à la source — seuls les accords prouvés sont corrigés, avec retour en arrière possible':
+    '{n} songs are checked against the source — only proven chords are fixed, with a way back',
+  'Vérifier 1 morceau à la source ?': 'Check 1 song against the source?',
+  'Vérifier {n} morceaux à la source ?': 'Check {n} songs against the source?',
+  'Certaines mises en forme passées ont pu simplifier des accords (un G9 devenu G) ou les décaler. Chaque morceau est recherché par titre et artiste, puis relu sans IA. Ta partition n’est remplacée que si les paroles sont identiques et que chaque accord retrouvé enrichit le tien — au moindre doute, rien ne bouge. Les morceaux réparés gardent leur partition d’avant, pour revenir en arrière d’un geste. C’est long (quelques secondes par morceau) et tu peux arrêter en cours de route.':
+    'Some past clean-ups may have simplified chords (a G9 turned into G) or shifted them. Each song is searched by title and artist, then re-read without AI. Your chart is only replaced when the lyrics are identical and every recovered chord enriches yours — at the slightest doubt, nothing moves. Repaired songs keep their previous chart, so you can go back in one tap. It takes a while (a few seconds per song) and you can stop along the way.',
+  'Lancer la vérification': 'Start the check',
+  'Vérification à la source…': 'Checking against the source…',
+  'Vérification à la source… 1 partition réparée':
+    'Checking against the source… 1 chart repaired',
+  'Vérification à la source… {n} partitions réparées':
+    'Checking against the source… {n} charts repaired',
+  'Vérification terminée': 'Check finished',
+  'Arrêter la vérification': 'Stop the check',
+  'Chaque morceau réparé garde sa partition d’avant : « Revenir à ma partition d’origine » dans son menu ⋯.':
+    'Every repaired song keeps its previous chart: “Back to my original chart” in its ⋯ menu.',
+  '1 partition réparée': '1 chart repaired',
+  '{n} partitions réparées': '{n} charts repaired',
+  '1 accord retrouvé': '1 chord recovered',
+  '{a} accords retrouvés': '{a} chords recovered',
+  '{n} déjà fidèles': '{n} already faithful',
+  '{n} écartées — preuve insuffisante': '{n} left aside — not enough proof',
+
   // PedaleMidi.tsx — pédale MIDI (b296)
   'Pédale MIDI': 'MIDI pedal',
   'Pilote le mode scène avec une pédale MIDI (USB ou Bluetooth). Une pédale « tourne-pages » qui se comporte en clavier fonctionne déjà sans réglage.':
