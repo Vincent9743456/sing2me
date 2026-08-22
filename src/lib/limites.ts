@@ -1,34 +1,50 @@
 /**
- * LIMITES PAR PLAN (b381, spec validée par Vincent) — la configuration
- * centrale, à UN seul endroit. `null` = illimité. Extensible : une
- * nouvelle limite s'ajoute ici et nulle part ailleurs.
+ * LIMITES PAR PLAN — la configuration centrale, à UN seul endroit.
+ * `null` = illimité. Extensible : une nouvelle limite s'ajoute ici et
+ * nulle part ailleurs.
+ *
+ * RÉALIGNÉ b385 sur l'OFFRE v2 (maquette de Vincent, « réadapte les
+ * limites en fonction de cela ») :
+ *  • gratuit = 50 morceaux ACTIFS ; la RÉSERVE est illimitée (« dépose
+ *    tout dès le premier jour, tu choisis lesquels sont actifs ») et
+ *    RIEN n'est jamais supprimé ni bloqué en écriture — un import qui
+ *    dépasse le plafond entre en réserve, il n'est plus refusé ;
+ *  • les GROUPES sont illimités À TOUS LES ÉTAGES (l'ancienne limite de
+ *    2 groupes créés, b381, est retirée) ;
+ *  • le cap de SALLE (15 spectateurs simultanés en gratuit) est dans
+ *    l'offre mais PAS ENCORE APPLIQUÉ : son comportement exact (sièges,
+ *    grâce de reconnexion) est un « reste à trancher » de la maquette.
+ *    `maxSpectateurs` existe déjà ici pour que le jour venu, seul le
+ *    serveur du live change ;
+ *  • pendant le LANCEMENT les montants ne sont pas arrêtés : JAMAIS de
+ *    prix à l'écran.
  *
  * Le PLAN vit côté serveur (`user_plans`, jamais modifiable par le
  * client) ; ces chiffres ne sont que l'ANNONCE côté app — l'autorité est
- * dans les verrous SQL de `supabase/plans.sql` (LIMIT_SONGS /
- * LIMIT_GROUPS), qui portent les mêmes valeurs.
+ * dans `supabase/plans.sql` (LIMIT_SONGS), qui porte les mêmes valeurs.
  *
- * Règles validées :
- *  • morceaux comptés = bibliothèque perso HORS propositions en attente
- *    (`idea === true` ne compte pas) — un répertoire reçu sur invitation
- *    ne consomme rien ; accepter une proposition, si ;
- *  • groupes comptés = groupes CRÉÉS (`owned`) — rejoindre un groupe
- *    n'est JAMAIS bloqué ;
- *  • « un compte gratuit ne croît pas » : au-delà de la limite (bêta),
- *    on garde tout, on modifie, on supprime — on n'ajoute plus ;
- *  • l'import en masse reste ouvert en gratuit, il s'arrête au plafond.
+ * Règles de comptage :
+ *  • morceaux ACTIFS = bibliothèque perso HORS propositions en attente
+ *    (`idea === true`) et HORS réserve (`reserve === true`) ;
+ *  • « un compte gratuit ne croît pas » : au-delà du plafond (bêta), on
+ *    garde tout actif, on modifie, on supprime — on n'ACTIVE plus.
  */
 
 export type Plan = 'free' | 'pro' | 'admin';
 
 export interface Limites {
-  /** Morceaux perso (hors propositions). null = illimité. */
+  /** Morceaux ACTIFS (hors propositions et hors réserve). null = illimité. */
   maxSongs: number | null;
-  /** Groupes créés (owned). null = illimité. */
+  /** Groupes créés. null = illimité (plus limité depuis b385, offre v2). */
   maxOwnedGroups: number | null;
+  /** Spectateurs SIMULTANÉS d'un live. null = illimité. PAS ENCORE
+   *  APPLIQUÉ côté serveur (voir en-tête) — ne rien annoncer à l'écran
+   *  tant que le cap n'existe pas : une limite affichée et non tenue est
+   *  aussi fausse qu'une limite tenue et cachée. */
+  maxSpectateurs: number | null;
   /** L'import en masse est-il ouvert ? */
   bulkImport: boolean;
-  /** Setlists. null = illimité (aucun plan ne les limite aujourd'hui). */
+  /** Setlists. null = illimité (aucun plan ne les limite). */
   maxSetlists: number | null;
   /** Sessions live. null = illimité (idem). */
   liveSessions: number | null;
@@ -37,6 +53,7 @@ export interface Limites {
 const ILLIMITE: Limites = {
   maxSongs: null,
   maxOwnedGroups: null,
+  maxSpectateurs: null,
   bulkImport: true,
   maxSetlists: null,
   liveSessions: null,
@@ -44,8 +61,9 @@ const ILLIMITE: Limites = {
 
 export const LIMITES: Record<Plan, Limites> = {
   free: {
-    maxSongs: 30,
-    maxOwnedGroups: 2,
+    maxSongs: 50,
+    maxOwnedGroups: null,
+    maxSpectateurs: 15,
     bulkImport: true,
     maxSetlists: null,
     liveSessions: null,
@@ -64,28 +82,30 @@ export function estUnPlan(x: string): x is Plan {
   return x === 'free' || x === 'pro' || x === 'admin';
 }
 
-/** Morceaux qui COMPTENT : la bibliothèque perso, hors propositions en
- *  attente. Même définition que `compte_morceaux` côté SQL. */
-export function compteMorceauxPerso(songs: { idea?: boolean }[]): number {
-  return songs.filter((s) => s.idea !== true).length;
+/** Morceaux qui COMPTENT : les ACTIFS de la bibliothèque perso — hors
+ *  propositions en attente et hors réserve. Même définition que
+ *  `compte_morceaux` côté SQL. */
+export function compteMorceauxActifs(
+  songs: { idea?: boolean; reserve?: boolean }[],
+): number {
+  return songs.filter((s) => s.idea !== true && s.reserve !== true).length;
 }
 
-/** Groupes qui COMPTENT : ceux que J'AI créés. */
-export function compteGroupesCrees(bands: { owned?: boolean }[]): number {
-  return bands.filter((b) => b.owned === true).length;
+/** Morceaux en réserve (pour l'affichage — jamais une limite). */
+export function compteReserve(
+  songs: { idea?: boolean; reserve?: boolean }[],
+): number {
+  return songs.filter((s) => s.idea !== true && s.reserve === true).length;
 }
 
-export function peutAjouterMorceau(plan: string, nActuel: number): boolean {
+/** Peut-on ACTIVER un morceau de plus (création active ou sortie de
+ *  réserve) ? Au-delà, le morceau existe quand même — en réserve. */
+export function peutActiverMorceau(plan: string, nActifs: number): boolean {
   const max = limitesDuPlan(plan).maxSongs;
-  return max === null || nActuel < max;
+  return max === null || nActifs < max;
 }
 
-export function peutCreerGroupe(plan: string, nActuel: number): boolean {
-  const max = limitesDuPlan(plan).maxOwnedGroups;
-  return max === null || nActuel < max;
-}
-
-/** Places restantes avant la limite (null = illimité, jamais négatif). */
+/** Places actives restantes (null = illimité, jamais négatif). */
 export function placesRestantes(
   max: number | null,
   nActuel: number,

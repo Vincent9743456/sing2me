@@ -32,7 +32,7 @@ import { ConfirmSheet, useToast } from '../components/Feedback';
 import { signalerLimite } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
 import { t } from '../i18n';
-import { compteMorceauxPerso } from '../lib/limites';
+import { compteMorceauxActifs } from '../lib/limites';
 import { addSongAsVersion } from '../lib/model';
 import { looksGarbled } from '../lib/textRepair';
 import { parseUgTabHtml } from '../lib/ugHtml';
@@ -143,8 +143,9 @@ export function extractUgLinks(input: string): string[] {
 
 export function Import({ mode }: { mode?: 'bulk' } = {}) {
   const { songs, deleted, saveSong } = useStore();
-  // Limites du plan (b381) : l'import s'arrête au plafond du gratuit —
-  // jamais en silence, le bilan et la feuille le disent.
+  // Limites du plan (b381, réaligné b385) : l'import ne REFUSE plus rien —
+  // au plafond des morceaux actifs, les suivants entrent en RÉSERVE, et le
+  // bilan comme la feuille le disent. « Dépose tout dès le premier jour. »
   const limites = useLimits();
   // #/import/bulk arrive directement sur l'import en masse (b295) : c'est le
   // parcours de qui migre toute une collection d'un coup.
@@ -508,13 +509,13 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
     if (!multi || bulkAiRunning) return;
     let crees = 0;
     let doutes = 0;
-    // Plafond du plan (b381) : on remplit jusqu'à la limite, puis on
-    // s'arrête — les jumeaux (nouvelles versions) ne comptent pas.
+    // Plafond des ACTIFS (b385) : on active jusqu'à la limite, puis les
+    // suivants entrent en réserve — les jumeaux (versions) ne comptent pas.
     let places =
-      limites.maxMorceaux === null
+      limites.maxActifs === null
         ? Infinity
-        : Math.max(0, limites.maxMorceaux - compteMorceauxPerso(songs));
-    let horsPlan = 0;
+        : Math.max(0, limites.maxActifs - compteMorceauxActifs(songs));
+    let enReserve = 0;
     // Les morceaux créés, avec leur texte d'origine : la passe IA travaille
     // sur CES objets (jamais sur l'état `songs`, en retard d'un rendu).
     const aReprendre: { song: Song; raw: string }[] = [];
@@ -533,16 +534,20 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
       const twin = findSameSong(songs, song.title, song.lyrics, song.artist);
       if (twin) {
         saveSong(addSongAsVersion(twin, song, 'Version importée', false));
-      } else if (places <= 0) {
-        horsPlan++;
       } else {
-        places--;
+        // Au plafond des actifs : le morceau entre quand même — en réserve.
+        if (places <= 0) {
+          song.reserve = true;
+          enReserve++;
+        } else {
+          places--;
+        }
         saveSong(song);
         aReprendre.push({ song, raw: d.text });
         crees++;
       }
     }
-    if (horsPlan > 0) signalerLimite('LIMIT_SONGS');
+    if (enReserve > 0) signalerLimite('LIMIT_SONGS');
     setMulti(null);
     setText('');
     setFileName(null);
@@ -589,8 +594,8 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
         ? t('{n} morceaux ajoutés à ta bibliothèque.', { n: crees })
         : t('{n} morceau ajouté à ta bibliothèque.', { n: crees })) +
         (doutes > 0 ? ' ' + t('{n} à vérifier.', { n: doutes }) : '') +
-        (horsPlan > 0
-          ? ' ' + t('{n} au-delà du plan gratuit — non importés.', { n: horsPlan })
+        (enReserve > 0
+          ? ' ' + t('{n} en réserve (bibliothèque active pleine).', { n: enReserve })
           : '') +
         (echecs > 0
           ? ' ' + t('{e} en échec — réessaie dans un moment', { e: echecs }) + '.'
@@ -631,10 +636,16 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
       navigate(`/song/${merged.id}`);
       return;
     }
-    // Plafond du plan (b381) : un NOUVEAU morceau seulement s'il reste de
-    // la place (une nouvelle version d'un existant passe toujours).
-    if (!limites.peutAjouterMorceau) {
+    // Plafond des actifs (b385) : le morceau entre TOUJOURS — en réserve
+    // quand la bibliothèque active est pleine, et on le dit.
+    if (!limites.peutActiver) {
+      song.reserve = true;
+      saveSong(song);
+      toast.show(
+        t('Ajouté en réserve — ta bibliothèque active est pleine.'),
+      );
       signalerLimite('LIMIT_SONGS');
+      navigate(`/song/${song.id}`);
       return;
     }
     saveSong(song);
@@ -767,13 +778,13 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
     // Bibliothèque vue par la boucle : l'état React ne se met pas à jour
     // pendant le parcours, on tient donc notre propre liste pour les doublons.
     const known = [...songs];
-    // Plafond du plan (b381) : le lot remplit jusqu'à la limite du gratuit
-    // puis s'arrête — jamais en silence (statut « limite » + bilan). Les
-    // doublons, réparations et nouvelles versions ne comptent pas.
+    // Plafond des ACTIFS (b385) : le lot active jusqu'à la limite, puis les
+    // suivants entrent en RÉSERVE — rien n'est refusé, et le bilan le dit
+    // (statut « limite »). Doublons, réparations et versions ne comptent pas.
     let places =
-      limites.maxMorceaux === null
+      limites.maxActifs === null
         ? Infinity
-        : Math.max(0, limites.maxMorceaux - compteMorceauxPerso(songs));
+        : Math.max(0, limites.maxActifs - compteMorceauxActifs(songs));
     // Titres supprimés volontairement de mojosong : on ne les réimporte pas
     // (même garde-fou que la synchro de groupe). L'utilisateur peut toujours
     // les récupérer explicitement via « 2 · Document ou lien ».
@@ -963,28 +974,28 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
               };
             }
           }
-        } else if (places <= 0) {
-          // Plan gratuit plein : le morceau n'entre pas, et on le dit.
-          items[i] = {
-            ...items[i],
-            status: 'limite',
-            title: song.title,
-            message: t('au-delà du plan gratuit — non importé'),
-          };
         } else {
           // Filet : la raison du doute reste sur le morceau, pour qu'il se
           // retrouve d'un geste dans « à vérifier ».
-          places--;
+          // Bibliothèque active pleine (b385) : le morceau entre quand
+          // même — en réserve — et sa ligne le dit.
+          const reserve = places <= 0;
+          if (reserve) song.reserve = true;
+          else places--;
           const doute = raisonDeVerifier(raw, res);
           if (doute !== '') song.needsCheck = { reason: doute };
           saveSong(song);
           known.push(song);
           items[i] = {
             ...items[i],
-            status: 'ok',
+            status: reserve ? 'limite' : 'ok',
             check: doute !== '',
             title: song.title,
-            message: garbled ? t('⚠ police PDF brouillée — décodage IA') : '',
+            message: reserve
+              ? t('mis en réserve — bibliothèque active pleine')
+              : garbled
+                ? t('⚠ police PDF brouillée — décodage IA')
+                : '',
             needsAi,
             songId: song.id,
             raw,
@@ -1052,8 +1063,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           ? t('{n} déjà présents', { n: dup })
           : t('{n} déjà présent', { n: dup }),
       );
-    if (lim > 0)
-      parts.push(t('{n} au-delà du plan gratuit', { n: lim }));
+    if (lim > 0) parts.push(t('{n} en réserve', { n: lim }));
     if (err > 0) parts.push(t('{n} en échec', { n: err }));
     toast.show(`✓ ${parts.join(' · ')}`);
     navigate('/');
@@ -1771,7 +1781,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                     {it.status === 'ok' && '✓ '}
                     {it.status === 'dup' && '≈ '}
                     {it.status === 'skip' && '⊘ '}
-                    {it.status === 'limite' && '⊘ '}
+                    {it.status === 'limite' && '📦 '}
                     {it.status === 'error' && '✗ '}
                     {it.title !== ''
                       ? it.title
@@ -1818,7 +1828,7 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                           <>
                             {' · '}
                             <span style={{ color: 'var(--warn)' }}>
-                              {t('{n} au-delà du plan gratuit', { n: lim })}
+                              {t('{n} en réserve', { n: lim })}
                             </span>
                           </>
                         )}

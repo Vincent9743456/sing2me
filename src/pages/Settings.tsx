@@ -673,7 +673,7 @@ export function Settings() {
           <>
             <div className="spacer" />
             <h2 className="pagetitle">{t('Mon compte')}</h2>
-            {limites.maxMorceaux === null && limites.maxGroupes === null ? (
+            {limites.maxActifs === null ? (
               <div className="card">
                 <div className="usagerow">
                   <strong>{t('Ton offre')}</strong>
@@ -681,7 +681,7 @@ export function Settings() {
                 </div>
                 <p className="help" style={{ marginBottom: 0 }}>
                   {t(
-                    '✦ Morceaux et groupes sans plafond. Merci de faire vivre mojosong !',
+                    '✦ Morceaux actifs sans plafond. Merci de faire vivre mojosong !',
                   )}
                 </p>
               </div>
@@ -698,71 +698,39 @@ export function Settings() {
                 </div>
                 <p className="eyebrow">{t('Ton usage')}</p>
                 <div className="card">
-                  {limites.maxMorceaux !== null && (
-                    <>
-                      <div className="usagerow">
-                        <strong>{t('Morceaux')}</strong>
-                        <span>
-                          <strong>{limites.morceaux}</strong>
-                          <span className="usagemax">
-                            {' '}
-                            / {limites.maxMorceaux}
-                          </span>
-                        </span>
-                      </div>
-                      <div
-                        className="progressbar"
-                        role="progressbar"
-                        aria-valuemin={0}
-                        aria-valuemax={limites.maxMorceaux}
-                        aria-valuenow={limites.morceaux}
-                        aria-label={t('Morceaux')}
-                      >
-                        <div
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              Math.round(
-                                (limites.morceaux / limites.maxMorceaux) * 100,
-                              ),
-                            )}%`,
-                          }}
-                        />
-                      </div>
-                    </>
-                  )}
-                  {limites.maxGroupes !== null && (
-                    <>
-                      <div className="usagerow" style={{ marginTop: 10 }}>
-                        <strong>{t('Groupes')}</strong>
-                        <span>
-                          <strong>{limites.groupes}</strong>
-                          <span className="usagemax">
-                            {' '}
-                            / {limites.maxGroupes}
-                          </span>
-                        </span>
-                      </div>
-                      <div
-                        className="progressbar"
-                        role="progressbar"
-                        aria-valuemin={0}
-                        aria-valuemax={limites.maxGroupes}
-                        aria-valuenow={limites.groupes}
-                        aria-label={t('Groupes')}
-                      >
-                        <div
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              Math.round(
-                                (limites.groupes / limites.maxGroupes) * 100,
-                              ),
-                            )}%`,
-                          }}
-                        />
-                      </div>
-                    </>
+                  <div className="usagerow">
+                    <strong>{t('Morceaux actifs')}</strong>
+                    <span>
+                      <strong>{limites.actifs}</strong>
+                      <span className="usagemax"> / {limites.maxActifs}</span>
+                    </span>
+                  </div>
+                  <div
+                    className="progressbar"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={limites.maxActifs}
+                    aria-valuenow={limites.actifs}
+                    aria-label={t('Morceaux actifs')}
+                  >
+                    <div
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round(
+                            (limites.actifs / limites.maxActifs) * 100,
+                          ),
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  {limites.reserve > 0 && (
+                    <p className="help" style={{ margin: '6px 0 0' }}>
+                      {t(
+                        '📦 {n} en réserve — entiers, modifiables, prêts à s’activer.',
+                        { n: limites.reserve },
+                      )}
+                    </p>
                   )}
                 </div>
                 <div className="card">
@@ -770,7 +738,7 @@ export function Settings() {
                     <span className="upcheck" aria-hidden="true">
                       ✓
                     </span>
-                    {t('Setlists, import en masse et live : sans limite')}
+                    {t('Réserve, groupes, setlists et import en masse : sans limite')}
                   </div>
                 </div>
                 <button
@@ -780,7 +748,7 @@ export function Settings() {
                   {t('Passer en illimité')}
                 </button>
                 <p className="help" style={{ textAlign: 'center' }}>
-                  {t('Débloque les morceaux et groupes illimités.')}
+                  {t('Débloque les morceaux actifs illimités.')}
                 </p>
               </>
             )}

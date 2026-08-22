@@ -726,40 +726,49 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     Le vidage d'enregistrement sur `pagehide` (b323), lui, RESTE : il
     protège tout état contre une mise en arrière-plan, pas seulement les
     brouillons.
-- **Modèle économique — PLANS free / pro / admin** (b381, spec de Vincent,
-  validée « Ok pour tout » — REMPLACE la « Licence Scène » d'août 2026,
-  qui remplaçait elle-même le Premium individuel à 2,99 €) :
-  - Le plan vit CÔTÉ SERVEUR (`user_plans`, RLS lecture seule, aucune
-    écriture client) ; un compte sans ligne est `free`. Les verrous sont
-    des TRIGGERS SQL (`supabase/plans.sql`) : `LIMIT_SONGS` sur
-    `user_library`, `LIMIT_GROUPS` sur `cloud_bands`. Le client ANNONCE
-    (compteurs, feuille « Passer en illimité »), il ne fait jamais
-    autorité. Config centrale unique : `src/lib/limites.ts`.
-  - **Gratuit : 30 morceaux perso et 2 groupes CRÉÉS.** Les morceaux
-    comptés excluent les propositions en attente (`idea === true`) — un
-    répertoire reçu sur invitation ne consomme rien, l'accepter si.
-    Setlists, live, mode scène, import en masse : sans limite (l'import
-    en masse s'arrête au plafond, avec bilan — jamais en silence).
-  - **Rejoindre un groupe n'est JAMAIS bloqué** (l'adhésion écrit dans
-    `cloud_band_members`, pas dans `cloud_bands` : structurel).
-  - **« Un compte gratuit ne croît pas »** : un compte déjà au-delà
-    (bêta) garde tout, modifie, supprime, synchronise — le trigger ne
-    refuse que la poussée qui AUGMENTE le compte au-delà de
-    `max(existant, 30)`. Jamais de perte, jamais de coupure.
-  - Un refus serveur `LIMIT_SONGS` est intercepté dans `Account.envoyer`
-    (feuille + message au bloc compte, qui se lève seul au succès —
-    règle 11) ; toute limite atteinte se note (`limit_events`, RPC
-    `note_limite`). Fondateurs (vtessier6@gmail.com, marco@mojosong.com)
-    en plan `admin` via le bloc idempotent de `plans.sql`.
-  - **Paiement HORS PÉRIMÈTRE** : le CTA ambre « Passer en illimité »
-    est un emplacement. Aucun prix n'est arrêté : ne JAMAIS en afficher.
-  - Garde-fous conservés de la « Licence Scène » : **jamais de coupure
-    en plein concert** ; **pourboires** = lien personnel de l'artiste,
-    l'argent ne transite jamais par nous, **aucune commission**.
-  - *(Historique — « Licence Scène », remplacée par ce qui précède :
-    tout gratuit dont groupes illimités, seul ON AIR monétisé au-delà de
-    ~10 spectateurs avec récolte réservée à la licence annuelle du
-    compte artiste. Ne pas restaurer sans nouvel arbitrage.)*
+- **Modèle économique — OFFRE v2 « actifs / réserve »** (b385, maquette
+  de Vincent « réadapte les limites en fonction de cela » — remplace les
+  seuils b381, qui remplaçaient la « Licence Scène » d'août 2026, qui
+  remplaçait le Premium individuel à 2,99 €) :
+  - **Gratuit : 50 morceaux ACTIFS ; la RÉSERVE est illimitée et RIEN
+    n'est jamais supprimé ni bloqué en écriture.** Un import qui dépasse
+    le plafond ENTRE quand même — en réserve (`Song.reserve`, champ
+    additif), avec bilan (jamais en silence). Activer/mettre en réserve :
+    menu « ⋯ » de la bibliothèque ; seule l'ACTIVATION est bornée (feuille
+    « Passer en illimité »). Un morceau en réserve reste lisible,
+    modifiable, exportable et jouable en mode scène ; il n'entre pas dans
+    une setlist ni au répertoire d'un groupe (filtre dans `SongPicker`,
+    LE sélecteur unique) tant qu'il n'est pas activé. Ne comptent pas :
+    propositions (`idea`) et réserve (`reserve`).
+  - **Groupes ILLIMITÉS à tous les étages** (le verrou 2-groupes de b381
+    est retiré — `plans.sql` fait le ménage). Rejoindre n'a jamais été
+    bloqué (structurel : `cloud_band_members`).
+  - Le plan vit CÔTÉ SERVEUR (`user_plans` : free/pro/admin, RLS lecture
+    seule) ; verrou-filet `LIMIT_SONGS` (trigger `user_library`, compte
+    les ACTIFS) avec la règle « un compte gratuit ne croît pas »
+    (`max(existant, 50)`). Refus intercepté dans Account (feuille +
+    message qui se lève seul au succès — règle 11) ; mesure
+    `limit_events` / RPC `note_limite`. Config centrale unique :
+    `src/lib/limites.ts` ; fondateurs en `admin` via `plans.sql`.
+  - **Cap de salle À VENIR (pas encore appliqué)** : 15 spectateurs
+    SIMULTANÉS en gratuit (maquette : sièges par deviceId, période de
+    grâce de reconnexion, le 16ᵉ voit « salle pleine » avec le titre en
+    cours, jamais d'éjection). `maxSpectateurs` existe dans la config
+    mais N'EST PAS annoncé à l'écran tant que le serveur ne l'applique
+    pas — une limite affichée et non tenue est un mensonge. À
+    implémenter dans `api/live.js` après arbitrage du modèle de sièges.
+  - Paliers payants de la maquette (Répertoire annuel, Scène annuel,
+    Soir de concert 24 h, exemption « un abonné couvre son groupe ») :
+    HORS PÉRIMÈTRE tant que le paiement n'existe pas. **Aucun montant
+    n'est arrêté : ne JAMAIS afficher de prix dans l'app.** Les
+    fonctionnalités « après le concert » des paliers payants n'existent
+    pas encore — ne rien gater d'existant sans arbitrage.
+  - Garde-fous intangibles : **jamais de coupure en plein concert** ;
+    **pourboires** = lien personnel de l'artiste, aucune commission ;
+    **rien n'est pris en otage** (tout reste consultable et exportable).
+  - *(Historique : b381 = 30 morceaux + 2 groupes créés avec refus
+    d'écriture — remplacé ; « Licence Scène » = tout gratuit, seul ON
+    AIR monétisé — remplacée. Ne pas restaurer sans arbitrage.)*
 - **Dictée (b157)** : deux chemins, choisis automatiquement — la
   reconnaissance du navigateur (gratuite, texte en direct) quand elle
   marche, sinon l'ENREGISTREMENT + transcription serveur

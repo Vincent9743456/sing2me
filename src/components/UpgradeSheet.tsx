@@ -3,25 +3,25 @@
  * unique par lequel toute limite se signale.
  *
  * Un seul mécanisme pour les DEUX côtés :
- *  • les gardes CLIENT (bouton ＋ de Morceaux/Groupes, import en masse)
+ *  • les gardes CLIENT (activation d'un morceau, import au plafond)
  *    appellent `signalerLimite(kind)` ;
  *  • le REFUS SERVEUR (LIMIT_SONGS sur la poussée cloud, intercepté dans
  *    Account) appelle la même fonction.
  * `signalerLimite` note l'événement côté serveur (mesure produit) puis
  * émet un événement fenêtre ; `LimiteHost`, montée une fois dans App,
- * l'écoute et ouvre la feuille. Deux chemins qui ouvriraient chacun leur
- * modale finiraient par se contredire.
+ * l'écoute et ouvre la feuille.
  *
- * HABILLAGE b384, d'après les MAQUETTES de Vincent : étoile ambre, titre
- * par motif (« Ton répertoire mérite plus grand » / « Ton collectif
- * s'agrandit ? »), pastille du compteur, liste à coches, CTA ambre plein,
- * sortie « Plus tard ». Tout en JETONS du thème (règle 12) — aucune
- * couleur en dur.
+ * RÉALIGNÉ b385 (offre v2) : la limite porte sur les morceaux ACTIFS
+ * (50 en gratuit) — rien n'est refusé, l'excédent entre en RÉSERVE et la
+ * feuille l'explique. Les groupes ne sont plus limités : le motif
+ * LIMIT_GROUPS ne subsiste qu'en transition (une base où l'ancien
+ * verrou b381 n'a pas encore été retiré) et affiche la feuille générique.
  *
- * Garde-fous du modèle (spec Vincent) : JAMAIS de prix ni de seuil
- * chiffré au-delà des limites elles-mêmes — les chiffres de l'offre ne
- * sont pas arrêtés. Le CTA ambre est un emplacement, pas une vente : il
- * répond la vérité (« bientôt ») au lieu de faire semblant.
+ * Habillage b384 d'après les maquettes de Vincent — tout en JETONS du
+ * thème (règle 12). Garde-fou du modèle : JAMAIS de prix — les montants
+ * de l'offre ne sont pas arrêtés. Le CTA ambre est un emplacement, pas
+ * une vente : il répond la vérité (« bientôt ») au lieu de faire
+ * semblant.
  */
 import React, { useEffect, useState } from 'react';
 
@@ -54,51 +54,38 @@ export function UpgradeSheet({
   motif: MotifLimite | null;
   onClose: () => void;
 }) {
-  const { morceaux, maxMorceaux, groupes, maxGroupes } = useLimits();
+  const { actifs, maxActifs } = useLimits();
   // Le CTA dit la vérité quand on le touche : l'offre n'est pas ouverte.
   const [bientot, setBientot] = useState(false);
-  const titre =
-    motif === 'LIMIT_SONGS'
-      ? t('Ton répertoire mérite plus grand')
-      : motif === 'LIMIT_GROUPS'
-        ? t('Ton collectif s’agrandit ?')
-        : t('Passer en illimité');
+  const surMorceaux = motif === 'LIMIT_SONGS' && maxActifs !== null;
   return (
     <Sheet onClose={onClose}>
       <div className="upsheet">
         <div className="upstar" aria-hidden="true">
           <Icon name="star" size={26} />
         </div>
-        <h3 className="uptitle">{titre}</h3>
-        {motif === 'LIMIT_SONGS' && maxMorceaux !== null && (
+        <h3 className="uptitle">
+          {surMorceaux
+            ? t('Ton répertoire mérite plus grand')
+            : t('Passer en illimité')}
+        </h3>
+        {surMorceaux ? (
           <>
             <p className="help uptext">
               {t(
-                'Ton compte gratuit va jusqu’à {n} morceaux. Passe en illimité pour continuer à l’enrichir.',
-                { n: maxMorceaux },
+                'Ton compte gratuit va jusqu’à {n} morceaux actifs. Les suivants t’attendent en réserve — rien n’est perdu, rien n’est bloqué. Passe en illimité pour tout activer.',
+                { n: maxActifs },
               )}
             </p>
             <span className="upchip">
-              {t('{n} / {max} morceaux', { n: morceaux, max: maxMorceaux })}
+              {t('{n} / {max} morceaux actifs', { n: actifs, max: maxActifs })}
             </span>
           </>
-        )}
-        {motif === 'LIMIT_GROUPS' && maxGroupes !== null && (
-          <>
-            <p className="help uptext">
-              {t(
-                'Ton compte gratuit va jusqu’à {n} groupes. Passe en illimité pour en créer autant que tu veux.',
-                { n: maxGroupes },
-              )}
-            </p>
-            <span className="upchip">
-              {t('{n} / {max} groupes', { n: groupes, max: maxGroupes })}
-            </span>
-          </>
-        )}
-        {motif === null && (
+        ) : (
           <p className="help uptext">
-            {t('Morceaux et groupes sans plafond, pour un répertoire qui grandit avec toi.')}
+            {t(
+              'Morceaux actifs sans plafond, pour un répertoire qui grandit avec toi.',
+            )}
           </p>
         )}
         <ul className="uplist">
@@ -106,13 +93,13 @@ export function UpgradeSheet({
             <span className="upcheck" aria-hidden="true">
               ✓
             </span>
-            {t('Morceaux illimités')}
+            {t('Morceaux actifs illimités')}
           </li>
           <li>
             <span className="upcheck" aria-hidden="true">
               ✓
             </span>
-            {t('Groupes illimités')}
+            {t('Toute ta réserve, activée d’un coup si tu veux')}
           </li>
           <li>
             <span className="upcheck" aria-hidden="true">
@@ -129,7 +116,7 @@ export function UpgradeSheet({
         {bientot && (
           <p className="help" aria-live="polite" style={{ marginBottom: 0 }}>
             {t(
-              'L’offre illimitée — morceaux et groupes sans plafond — arrive bientôt. Rien ne presse : tu seras prévenu ici même.',
+              'L’offre illimitée arrive bientôt. Rien ne presse : tu seras prévenu ici même.',
             )}
           </p>
         )}

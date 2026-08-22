@@ -150,6 +150,19 @@ export interface Song {
    */
   idea?: boolean;
   /**
+   * MORCEAU EN RÉSERVE (b385, offre v2 : « Tu as déjà 200 morceaux ?
+   * Dépose-les tous dès le premier jour »).
+   *
+   * Le plan gratuit compte les morceaux ACTIFS ; la réserve, elle, est
+   * illimitée et RIEN n'est jamais bloqué en écriture. Un morceau en
+   * réserve reste dans la bibliothèque, se lit, se modifie, s'exporte et
+   * se joue en mode scène — mais il n'entre pas dans une setlist et ne se
+   * diffuse pas en live tant qu'il n'est pas activé (« Activer » dans son
+   * menu). Absent = actif (toute bibliothèque existante reste active).
+   * Personnel — jamais partagé.
+   */
+  reserve?: boolean;
+  /**
    * Copie personnelle rapportée d'un bœuf (b110). Marque l'autre entrée de
    * la boîte de réception : sans elle, on ne saurait pas la distinguer d'une
    * ancienne « idée » personnelle au moment de la migration.
