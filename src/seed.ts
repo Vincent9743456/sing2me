@@ -1,8 +1,14 @@
 /**
  * Contenu témoin (lot E) : injecté à la première ouverture pour que le
- * nouvel utilisateur voie SA musique tout de suite. Paroles du domaine
- * public (Jean-Baptiste Clément † 1903 / Antoine Renard † 1872 ; et un
- * traditionnel) — arrangements d'accords libres. Marqueur : tag « Exemple ».
+ * nouvel utilisateur voie SA musique tout de suite.
+ *
+ * On PRIVILÉGIE les COMPOSITIONS (b391, demande de Vincent : « il n'y
+ * aura pas de problème de droits d'auteur ») : « À l'autre bout du
+ * monde » est une composition de Vincent Tessier, reprise à l'identique
+ * de l'export PDF de sa bibliothèque (paroles, accords, tonalité, capo).
+ * Le second exemple reste du domaine public (Jean-Baptiste Clément
+ * † 1903 / Antoine Renard † 1872) — c'est aussi le morceau montré par la
+ * landing. Marqueur : tag « Exemple ».
  */
 import { migrateSong } from './lib/model';
 import { normalizeTitle } from './lib/normalizeTitle';
@@ -18,33 +24,51 @@ export function exampleSongs(): Song[] {
   const base: unknown[] = [
     {
       id: makeId(),
-      title: 'À la claire fontaine',
-      artist: 'Traditionnel',
-      key: 'C',
-      tempo: 90,
-      capo: 0,
+      title: "À l'autre bout du monde",
+      artist: 'Vincent Tessier',
+      key: 'Am',
+      tempo: 0,
+      capo: 2,
       durationSec: 0,
       tags: [EXAMPLE_TAG],
       structure: [],
       structureNotes:
-        'Couplets identiques, refrain a cappella possible sur le dernier ' +
-        'passage. Exemple : transpose-moi avec le bouton tonalité !',
+        'Composition originale — cet exemple est à toi : transpose-le, ' +
+        'joue-le en mode scène, supprime-le quand tu veux.',
       lyrics:
-        "[C]À la claire fon[F]taine\n" +
-        "M'en allant prome[C]ner\n" +
-        "[C]J'ai trouvé l'eau si [F]belle\n" +
-        'Que je m’y suis bai[G]gné\n' +
+        'Couplet 1 :\n' +
+        "[Am]Viens avec moi je t'invite au [Em]voyage\n" +
+        "[Am]Une autre vie sur d'autres [Em]rivages\n" +
+        '[C]Les cieux sanglants rempliraient tes [Em]yeux\n' +
+        "[C]C'est le pays des gens [Em]heureux\n" +
         '\n' +
-        'Il y a [F]longtemps que je [C]t’aime\n' +
-        'Ja[G]mais je ne t’oublie[C]rai\n' +
+        'Couplet 2 :\n' +
+        '[Am]Là-bas le soir les soleils [Em]couchants\n' +
+        "[Am]Revêtent d'or les villes et les [Em]champs\n" +
+        "[C]Baudelaire l'a dit je te prie de le [Em]croire\n" +
+        '[C]La mer azurée serait notre [Em]miroir\n' +
         '\n' +
-        '[C]Sous les feuilles d’un [F]chêne\n' +
-        'Je me suis fait sé[C]cher\n' +
-        '[C]Sur la plus haute [F]branche\n' +
-        'Un rossignol chan[G]tait\n' +
+        'Refrain :\n' +
+        "[C]Crois-moi comme on serait bien [Am]si l'on était [Em]loin\n" +
+        "[C]En suivant sur d'autres chemins [Am]un nouveau des[Em]tin\n" +
+        "À l'autre bout du [Am]monde\n" +
         '\n' +
-        'Il y a [F]longtemps que je [C]t’aime\n' +
-        'Ja[G]mais je ne t’oublie[C]rai',
+        'Couplet 3 :\n' +
+        '[Am]Laisse derrière toi tes peines fragiles\n' +
+        '[Em]Chasse les larmes accrochées à tes cils\n' +
+        '[C]Viens avec moi contemple le naufrage\n' +
+        "[Em]D'une vie passée à gaspiller nos âges\n" +
+        '\n' +
+        'Couplet 4 :\n' +
+        "[Am]À nous la vie et l'amour fa[Em]ciles\n" +
+        '[Am]Rendre nos cœurs et nos mots do[Em]ciles\n' +
+        "[C]Une vie pour 2 c'est toujours un peu [Em]court\n" +
+        '[C]Là-bas nous ne compterions plus les [Em]jours\n' +
+        '\n' +
+        'Refrain :\n' +
+        "[C]Crois-moi comme on serait bien [Am]si l'on était [Em]loin\n" +
+        "[C]En suivant sur d'autres chemins [Am]un nouveau des[Em]tin\n" +
+        "À l'autre bout du [C]monde",
       createdAt: now,
       updatedAt: now,
     },

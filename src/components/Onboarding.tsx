@@ -41,10 +41,18 @@ export function Onboarding() {
   const realSetlists = setlists.filter(
     (sl) => !/\(exemple\)/i.test(sl.name),
   );
+  // La démonstration privilégie la COMPOSITION (b391) : « À l'autre bout
+  // du monde » d'abord, le domaine public en repli.
   const example =
     songs.find(
+      (s) =>
+        (s.tags ?? []).includes(EXAMPLE_TAG) &&
+        /autre bout du monde/i.test(s.title),
+    ) ??
+    songs.find(
       (s) => (s.tags ?? []).includes(EXAMPLE_TAG) && /cerises/i.test(s.title),
-    ) ?? songs.find((s) => (s.tags ?? []).includes(EXAMPLE_TAG));
+    ) ??
+    songs.find((s) => (s.tags ?? []).includes(EXAMPLE_TAG));
 
   // F3 : arrivée par invitation → bannière de bienvenue + checklist « invité ».
   const [justJoined, setJustJoined] = useState<{
