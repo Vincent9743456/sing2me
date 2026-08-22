@@ -34,7 +34,7 @@ function nombreDAccords(lyrics: string): number {
 }
 
 /** La suite des accords d'une partition, dans l'ordre d'apparition. */
-function suiteAccords(lyrics: string): string[] {
+export function suiteAccords(lyrics: string): string[] {
   return (lyrics.match(/\[([^\]\n]+)\]/g) ?? []).map((c) =>
     c.slice(1, -1).trim(),
   );

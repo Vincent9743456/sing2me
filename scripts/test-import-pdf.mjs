@@ -15,7 +15,8 @@ writeFileSync(
   pont,
   `export { decoupeAccordsColles, estAnnotationDeGrille, importText } from '${racine}importer';\n` +
     `export { lireEnTeteDeSection } from '${racine}sections';\n` +
-    `export { accordsPreserves, fusionMiseEnForme } from '${racine}aiFormat';\n`,
+    `export { accordsPreserves, fusionMiseEnForme } from '${racine}aiFormat';\n` +
+    `export { accordAppauvri, appliquerRecuperation, verdictRecuperation } from '${racine}recupaccords';\n`,
 );
 const out = join(dir, 'pont.mjs');
 buildSync({ entryPoints: [pont], bundle: true, format: 'esm', outfile: out });
@@ -26,6 +27,9 @@ const {
   lireEnTeteDeSection,
   accordsPreserves,
   fusionMiseEnForme,
+  accordAppauvri,
+  appliquerRecuperation,
+  verdictRecuperation,
 } = await import(out);
 
 let ko = 0;
@@ -120,6 +124,124 @@ egal('Tonalité hors paroles', res.song.lyrics.includes('Tonalité'), false);
   egal('renommé G9→G : non', accordsPreserves('[G9]la [A]suite', '[G]la [A]suite'), false);
   egal('accord perdu : non', accordsPreserves('[G9]la [A]suite', '[G9]la suite'), false);
   egal('accords AJOUTÉS : oui', accordsPreserves('[G9]la suite', '[G9]la [A]suite'), true);
+}
+
+// ── b395 — « Retrouver les accords d'origine » : la récupération à la
+// source ne remplace une partition que sur preuve écrasante. Un accord
+// stocké doit être un APPAUVRISSEMENT de l'accord retrouvé (G pour G9),
+// jamais un autre accord (A n'est pas Am, C n'est pas C#m).
+{
+  egal('G appauvri de G9', accordAppauvri('G', 'G9'), true);
+  egal('D appauvri de D/F#', accordAppauvri('D', 'D/F#'), true);
+  egal('C appauvri de Cmaj7', accordAppauvri('C', 'Cmaj7'), true);
+  egal('Am appauvri de Am7', accordAppauvri('Am', 'Am7'), true);
+  egal('B appauvri de B7sus4', accordAppauvri('B', 'B7sus4'), true);
+  egal('identique : oui', accordAppauvri('G9', 'G9'), true);
+  egal('A n’est pas Am', accordAppauvri('A', 'Am'), false);
+  egal('C n’est pas C#m', accordAppauvri('C', 'C#m'), false);
+  egal('G n’est pas G#', accordAppauvri('G', 'G#'), false);
+  egal('C n’est pas Cdim', accordAppauvri('C', 'Cdim'), false);
+  egal('G9 n’est pas G (sens unique)', accordAppauvri('G9', 'G'), false);
+
+  const paroles = [
+    'Je marche seul dans la ville endormie',
+    'Et la pluie tombe encore sur mes souvenirs',
+    'Rien ne pourra jamais nous retenir',
+  ];
+  const stocke = {
+    lyrics: [
+      `[G]${paroles[0]}`,
+      `[D]${paroles[1]}`,
+      `[A]${paroles[2]}`,
+    ].join('\n'),
+  };
+  const releve = (accords) => ({
+    song: {
+      lyrics: [
+        `[${accords[0]}]${paroles[0]}`,
+        `[${accords[1]}]${paroles[1]}`,
+        `[${accords[2]}]${paroles[2]}`,
+      ].join('\n'),
+      structure: [],
+      key: 'G',
+      capo: 2,
+    },
+  });
+
+  const bon = verdictRecuperation(stocke, releve(['G9', 'D/F#', 'A']));
+  egal('preuve faite → réparer', bon.verdict, 'reparer');
+  egal('2 accords retrouvés', bon.accords, 2);
+  egal(
+    'mêmes accords → identique (on ne touche pas)',
+    verdictRecuperation(stocke, releve(['G', 'D', 'A'])).verdict,
+    'identique',
+  );
+  egal(
+    'un accord étranger → incertain',
+    verdictRecuperation(stocke, releve(['G9', 'Bm', 'A'])).verdict,
+    'incertain',
+  );
+  egal(
+    'autres paroles → incertain',
+    verdictRecuperation(stocke, {
+      song: {
+        lyrics: '[G9]Des mots totalement différents\n[D/F#]qui ne parlent pas du tout\n[A]de la même chanson ce soir',
+      },
+    }).verdict,
+    'incertain',
+  );
+  egal(
+    'nombre d’accords différent → incertain',
+    verdictRecuperation(stocke, {
+      song: { lyrics: `[G9]${paroles[0]}\n[D/F#]${paroles[1]}\n${paroles[2]}` },
+    }).verdict,
+    'incertain',
+  );
+  egal(
+    'trop peu d’accords → incertain',
+    verdictRecuperation(
+      { lyrics: `[G]${paroles[0]}` },
+      { song: { lyrics: `[G9]${paroles[0]}` } },
+    ).verdict,
+    'incertain',
+  );
+
+  // La réparation remplace la partition, garde une photo pour revenir en
+  // arrière, suit la version active — et ne touche à rien d'autre.
+  const morceau = {
+    id: 'm1',
+    title: 'Ma chanson',
+    artist: 'Quelqu’un',
+    key: 'G',
+    capo: 0,
+    structure: [],
+    lyrics: stocke.lyrics,
+    activeVersionId: 'v1',
+    versions: [
+      { id: 'v1', name: 'Standard', bandId: '', key: 'G', tempo: 0, capo: 0, structure: [], lyrics: stocke.lyrics },
+      { id: 'v2', name: 'Groupe', bandId: 'b1', key: 'G', tempo: 0, capo: 0, structure: [], lyrics: 'autre' },
+    ],
+    needsCheck: { reason: 'doute d’avant' },
+  };
+  const repare = appliquerRecuperation(morceau, releve(['G9', 'D/F#', 'A']));
+  egal('accords réparés', repare.lyrics.includes('[G9]'), true);
+  egal('capo suivi', repare.capo, 2);
+  egal('titre intact', repare.title, 'Ma chanson');
+  egal('photo d’avant posée', repare.beforeAi?.lyrics === stocke.lyrics, true);
+  egal('doute levé (règle 11)', repare.needsCheck, undefined);
+  egal(
+    'version active suivie',
+    repare.versions[0].lyrics.includes('[D/F#]'),
+    true,
+  );
+  egal('autre version intacte', repare.versions[1].lyrics, 'autre');
+  const photo = { lyrics: 'photo ancienne', structure: [], key: 'C', capo: 1 };
+  egal(
+    'photo existante jamais écrasée',
+    appliquerRecuperation({ ...morceau, beforeAi: photo }, releve(['G9', 'D', 'A']))
+      .beforeAi.lyrics,
+    'photo ancienne',
+  );
 }
 
 rmSync(dir, { recursive: true, force: true });
