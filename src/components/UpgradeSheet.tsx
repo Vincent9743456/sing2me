@@ -11,11 +11,11 @@
  * émet un événement fenêtre ; `LimiteHost`, montée une fois dans App,
  * l'écoute et ouvre la feuille.
  *
- * RÉALIGNÉ b385 (offre v2) : la limite porte sur les morceaux ACTIFS
- * (50 en gratuit) — rien n'est refusé, l'excédent entre en RÉSERVE et la
- * feuille l'explique. Les groupes ne sont plus limités : le motif
- * LIMIT_GROUPS ne subsiste qu'en transition (une base où l'ancien
- * verrou b381 n'a pas encore été retiré) et affiche la feuille générique.
+ * SIMPLIFIÉ b386 (arbitrage Vincent) : 50 morceaux en gratuit, c'est
+ * tout — l'import s'arrête là, plus de réserve. Les groupes ne sont pas
+ * limités : le motif LIMIT_GROUPS ne subsiste qu'en transition (une base
+ * où l'ancien verrou b381 n'a pas encore été retiré) et affiche la
+ * feuille générique.
  *
  * Habillage b384 d'après les maquettes de Vincent — tout en JETONS du
  * thème (règle 12). Garde-fou du modèle : JAMAIS de prix — les montants
@@ -54,10 +54,10 @@ export function UpgradeSheet({
   motif: MotifLimite | null;
   onClose: () => void;
 }) {
-  const { actifs, maxActifs } = useLimits();
+  const { morceaux, maxMorceaux } = useLimits();
   // Le CTA dit la vérité quand on le touche : l'offre n'est pas ouverte.
   const [bientot, setBientot] = useState(false);
-  const surMorceaux = motif === 'LIMIT_SONGS' && maxActifs !== null;
+  const surMorceaux = motif === 'LIMIT_SONGS' && maxMorceaux !== null;
   return (
     <Sheet onClose={onClose}>
       <div className="upsheet">
@@ -73,18 +73,18 @@ export function UpgradeSheet({
           <>
             <p className="help uptext">
               {t(
-                'Ton compte gratuit va jusqu’à {n} morceaux actifs. Les suivants t’attendent en réserve — rien n’est perdu, rien n’est bloqué. Passe en illimité pour tout activer.',
-                { n: maxActifs },
+                'Ton compte gratuit va jusqu’à {n} morceaux. Passe en illimité pour continuer à l’enrichir.',
+                { n: maxMorceaux },
               )}
             </p>
             <span className="upchip">
-              {t('{n} / {max} morceaux actifs', { n: actifs, max: maxActifs })}
+              {t('{n} / {max} morceaux', { n: morceaux, max: maxMorceaux })}
             </span>
           </>
         ) : (
           <p className="help uptext">
             {t(
-              'Morceaux actifs sans plafond, pour un répertoire qui grandit avec toi.',
+              'Morceaux sans plafond, pour un répertoire qui grandit avec toi.',
             )}
           </p>
         )}
@@ -93,13 +93,7 @@ export function UpgradeSheet({
             <span className="upcheck" aria-hidden="true">
               ✓
             </span>
-            {t('Morceaux actifs illimités')}
-          </li>
-          <li>
-            <span className="upcheck" aria-hidden="true">
-              ✓
-            </span>
-            {t('Toute ta réserve, activée d’un coup si tu veux')}
+            {t('Morceaux illimités')}
           </li>
           <li>
             <span className="upcheck" aria-hidden="true">

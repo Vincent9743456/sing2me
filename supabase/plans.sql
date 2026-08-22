@@ -8,19 +8,18 @@
 -- 'free' — pas de ligne à créer à l'inscription.
 --
 -- Verrou serveur (la seule autorité — le client ne fait qu'annoncer) :
---  • LIMIT_SONGS : un compte gratuit ne dépasse pas 50 morceaux ACTIFS.
---    Ne comptent pas : les PROPOSITIONS en attente (idea = true — un
---    répertoire reçu sur invitation ne consomme rien) et la RÉSERVE
---    (reserve = true — illimitée : « dépose tout dès le premier jour,
---    tu choisis lesquels sont actifs »). Rien n'est jamais bloqué en
---    écriture : au plafond, l'app fait entrer les nouveaux morceaux en
---    réserve, et ce trigger n'est que le filet si un client contourne.
+--  • LIMIT_SONGS : un compte gratuit ne dépasse pas 50 MORCEAUX.
+--    SIMPLIFIÉ b386 (arbitrage Vincent : « 50 chansons c'est tout. Pas
+--    possible d'importer plus ») — plus de distinction actif/réserve :
+--    tout morceau de la bibliothèque compte, SAUF les PROPOSITIONS en
+--    attente (idea = true) — un morceau venu d'un groupe compte dès
+--    qu'il est ACCEPTÉ par l'utilisateur, pas avant.
 --    RÈGLE « un compte gratuit ne croît pas » : un compte déjà au-delà
---    de 50 actifs (bêta) garde tout, continue de modifier, supprimer et
---    synchroniser — seule une poussée qui AUGMENTE le compte d'actifs
---    est refusée.
---  • Les GROUPES ne sont PLUS limités (offre v2 : illimités à tous les
---    étages) — le verrou LIMIT_GROUPS de b381 est retiré ci-dessous.
+--    de 50 (bêta) garde tout, continue de modifier, supprimer et
+--    synchroniser — seule une poussée qui AUGMENTE le compte est
+--    refusée.
+--  • Les GROUPES ne sont PAS limités (illimités à tous les étages) —
+--    le verrou LIMIT_GROUPS de b381 est retiré ci-dessous.
 --  • Le cap de SALLE (15 spectateurs simultanés en gratuit) viendra
 --    dans api/live.js, pas ici : comportement à trancher (sièges,
 --    grâce de reconnexion) avant toute application.
@@ -52,18 +51,17 @@ as $$
   );
 $$;
 
--- Morceaux ACTIFS comptés dans le blob de bibliothèque : tout sauf les
--- propositions en attente (idea = true) et la réserve (reserve = true,
--- b385). Comparaison en jsonb (pas de cast ::boolean) : une valeur
--- inattendue ne fait jamais échouer la synchro entière.
+-- Morceaux comptés dans le blob de bibliothèque : tout sauf les
+-- propositions en attente (idea = true) — un morceau de groupe compte
+-- dès qu'il est accepté (b386). Comparaison en jsonb (pas de cast
+-- ::boolean) : une valeur inattendue ne fait jamais échouer la synchro.
 create or replace function public.compte_morceaux(p_data jsonb)
 returns integer
 language sql immutable
 as $$
   select count(*)::int
   from jsonb_array_elements(coalesce(p_data->'songs', '[]'::jsonb)) as m(s)
-  where coalesce(m.s->'idea', 'false'::jsonb) <> 'true'::jsonb
-    and coalesce(m.s->'reserve', 'false'::jsonb) <> 'true'::jsonb;
+  where coalesce(m.s->'idea', 'false'::jsonb) <> 'true'::jsonb;
 $$;
 
 -- ------------------------------------------------------------
@@ -86,7 +84,7 @@ begin
     v_avant := public.compte_morceaux(old.data);
   end if;
   -- « Un compte gratuit ne croît pas » : refus seulement si la poussée
-  -- AUGMENTE le nombre de morceaux ACTIFS au-delà du max(déjà en base, 50).
+  -- AUGMENTE le nombre de morceaux au-delà du max(déjà en base, 50).
   if v_apres > greatest(v_avant, v_max) then
     raise exception 'LIMIT_SONGS';
   end if;

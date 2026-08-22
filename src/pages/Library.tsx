@@ -577,9 +577,6 @@ export function Library() {
                           }}
                         >
                           {[
-                            // En réserve (b385) : le morceau est là, entier —
-                            // il attend juste son activation pour compter.
-                            song.reserve === true ? t('📦 En réserve') : '',
                             (song.tags ?? []).includes(EXAMPLE_TAG)
                               ? t('Exemple')
                               : '',
@@ -705,7 +702,15 @@ export function Library() {
           ) : (
             <HeaderPlus
               label={t('Nouveau morceau')}
-              onClick={() => navigate('/import')}
+              onClick={() => {
+                // 50 morceaux, c'est tout (b386) : au plafond, le ＋
+                // annonce la limite au lieu de laisser importer pour rien.
+                if (!limites.peutAjouter) {
+                  signalerLimite('LIMIT_SONGS');
+                  return;
+                }
+                navigate('/import');
+              }}
             />
           )
         }
@@ -931,28 +936,25 @@ export function Library() {
           </>
         )}
         </div>
-        {/* COMPTEUR DU PLAN GRATUIT (b381, réaligné b385) : discret,
-            calculé au rendu (règle 11). La limite porte sur les morceaux
-            ACTIFS — la réserve est illimitée, rien n'est jamais refusé ;
-            à l'approche du plafond (≥ 80 %), il prévient. */}
-        {limites.maxActifs !== null && (
+        {/* COMPTEUR DU PLAN GRATUIT (b381, simplifié b386) : discret,
+            calculé au rendu (règle 11) ; à l'approche du plafond (≥ 80 %),
+            il prévient — jamais de surprise au moment d'ajouter. */}
+        {limites.maxMorceaux !== null && (
           <p
             className="help"
             style={{
               margin: '6px 0 0',
-              ...(presDeLaLimite(limites.actifs, limites.maxActifs)
+              ...(presDeLaLimite(limites.morceaux, limites.maxMorceaux)
                 ? { color: 'var(--warn)' }
                 : {}),
             }}
           >
-            {t('{n} / {max} morceaux actifs', {
-              n: limites.actifs,
-              max: limites.maxActifs,
+            {t('{n} / {max} morceaux', {
+              n: limites.morceaux,
+              max: limites.maxMorceaux,
             })}
-            {limites.reserve > 0 &&
-              ' · ' + t('{n} en réserve', { n: limites.reserve })}
-            {limites.actifs >= limites.maxActifs
-              ? ' — ' + t('les nouveaux morceaux entrent en réserve.')
+            {limites.morceaux >= limites.maxMorceaux
+              ? ' — ' + t('ta bibliothèque gratuite est pleine.')
               : ''}
           </p>
         )}
@@ -1184,37 +1186,6 @@ export function Library() {
                       if (s) saveSong(revenirAvantIA(s));
                     },
                   },
-                ]
-              : []),
-            // ACTIF / RÉSERVE (b385, offre v2) : la réserve est illimitée
-            // et rien n'y est bloqué — seule l'ACTIVATION est bornée par
-            // le plan. Activer au-delà du plafond ouvre la feuille au
-            // lieu d'échouer plus tard à la synchro.
-            ...(rowMenu.idea !== true
-              ? [
-                  rowMenu.reserve === true
-                    ? {
-                        label: t('Activer ce morceau'),
-                        icon: 'zap' as const,
-                        onClick: () => {
-                          if (!limites.peutActiver) {
-                            signalerLimite('LIMIT_SONGS');
-                            return;
-                          }
-                          saveSong({ ...rowMenu, reserve: false });
-                          toast.show(t('Morceau activé.'));
-                        },
-                      }
-                    : {
-                        label: t('Mettre en réserve'),
-                        icon: 'pin' as const,
-                        onClick: () => {
-                          saveSong({ ...rowMenu, reserve: true });
-                          toast.show(
-                            t('En réserve — il se réactive d’un geste, ici même.'),
-                          );
-                        },
-                      },
                 ]
               : []),
             {

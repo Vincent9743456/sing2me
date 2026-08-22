@@ -672,20 +672,12 @@ export const EN_MORCEAUX: Record<string, string> = {
   '⏳ Récupération…': '⏳ Fetching…',
   "L'import du lien a échoué.": 'Importing the link failed.',
 
-  // Limites du plan (b381, offre v2 b385) — Library.tsx & Import.tsx
-  '{n} / {max} morceaux actifs': '{n} / {max} active songs',
-  '{n} en réserve': '{n} in reserve',
-  'les nouveaux morceaux entrent en réserve.': 'new songs go into your reserve.',
-  '📦 En réserve': '📦 In reserve',
-  'Activer ce morceau': 'Activate this song',
-  'Mettre en réserve': 'Move to reserve',
-  'Morceau activé.': 'Song activated.',
-  'En réserve — il se réactive d’un geste, ici même.':
-    'In reserve — reactivate it any time, right here.',
-  '{n} en réserve (bibliothèque active pleine).':
-    '{n} in reserve (active library full).',
-  'Ajouté en réserve — ta bibliothèque active est pleine.':
-    'Added to your reserve — your active library is full.',
-  'mis en réserve — bibliothèque active pleine':
-    'moved to reserve — active library full',
+  // Limites du plan (b381, simplifié b386) — Library.tsx & Import.tsx
+  '{n} / {max} morceaux': '{n} / {max} songs',
+  'ta bibliothèque gratuite est pleine.': 'your free library is full.',
+  '{n} non importés — bibliothèque gratuite pleine.':
+    '{n} not imported — free library full.',
+  'non importé — bibliothèque gratuite pleine':
+    'not imported — free library full',
+  '{n} non importés (plan gratuit)': '{n} not imported (free plan)',
 };

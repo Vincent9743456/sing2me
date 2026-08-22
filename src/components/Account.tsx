@@ -219,7 +219,7 @@ function fromCloud(raw: unknown): Partial<SyncState> | null {
  *  pas constante : `t()` ne s'appelle jamais au niveau module. */
 function messageLimiteMorceaux(): string {
   return t(
-    'Ta bibliothèque dépasse les morceaux actifs du plan gratuit : mets des morceaux en réserve (menu ⋯ de la bibliothèque) ou passe en illimité. Rien n’est perdu — tout reste sur cet appareil.',
+    'Ta bibliothèque dépasse le plan gratuit : les nouveaux morceaux restent sur cet appareil tant que tu n’en supprimes pas (ou ne passes pas en illimité). Rien n’est perdu.',
   );
 }
 

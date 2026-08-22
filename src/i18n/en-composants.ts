@@ -114,14 +114,12 @@ export const EN_COMPOSANTS: Record<string, string> = {
   // UpgradeSheet.tsx — limites du plan (b381, habillage b384, offre v2 b385)
   'Passer en illimité': 'Go unlimited',
   'Ton répertoire mérite plus grand': 'Your repertoire deserves bigger',
-  'Ton compte gratuit va jusqu’à {n} morceaux actifs. Les suivants t’attendent en réserve — rien n’est perdu, rien n’est bloqué. Passe en illimité pour tout activer.':
-    'Your free account goes up to {n} active songs. The next ones wait in your reserve — nothing is lost, nothing is blocked. Go unlimited to activate everything.',
-  '{n} / {max} morceaux actifs': '{n} / {max} active songs',
-  'Morceaux actifs sans plafond, pour un répertoire qui grandit avec toi.':
-    'Active songs without a cap, for a repertoire that grows with you.',
-  'Morceaux actifs illimités': 'Unlimited active songs',
-  'Toute ta réserve, activée d’un coup si tu veux':
-    'Your whole reserve, activated at once if you like',
+  'Ton compte gratuit va jusqu’à {n} morceaux. Passe en illimité pour continuer à l’enrichir.':
+    'Your free account goes up to {n} songs. Go unlimited to keep it growing.',
+  '{n} / {max} morceaux': '{n} / {max} songs',
+  'Morceaux sans plafond, pour un répertoire qui grandit avec toi.':
+    'Songs without a cap, for a repertoire that grows with you.',
+  'Morceaux illimités': 'Unlimited songs',
   'Tout le reste, sans limite': 'Everything else, without limits',
   'L’offre illimitée arrive bientôt. Rien ne presse : tu seras prévenu ici même.':
     'The unlimited offer is coming soon. No rush: you will be told right here.',

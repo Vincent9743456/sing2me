@@ -268,21 +268,17 @@ export const EN_COMPTE: Record<string, string> = {
   '{n} modification en attente — elle partira au retour du réseau.':
     '{n} change waiting — it will go out when the network is back.',
 
-  // Limites du plan (b381, habillage b384, offre v2 b385) — Account & Settings
-  'Ta bibliothèque dépasse les morceaux actifs du plan gratuit : mets des morceaux en réserve (menu ⋯ de la bibliothèque) ou passe en illimité. Rien n’est perdu — tout reste sur cet appareil.':
-    'Your library exceeds the free plan’s active songs: move some songs to your reserve (⋯ menu in the library) or go unlimited. Nothing is lost — everything stays on this device.',
+  // Limites du plan (b381, habillage b384, simplifié b386) — Account & Settings
+  'Ta bibliothèque dépasse le plan gratuit : les nouveaux morceaux restent sur cet appareil tant que tu n’en supprimes pas (ou ne passes pas en illimité). Rien n’est perdu.':
+    'Your library exceeds the free plan: new songs stay on this device until you delete some (or go unlimited). Nothing is lost.',
   'Mon compte': 'My account',
   'Ton offre': 'Your plan',
   'Illimité': 'Unlimited',
   'Compte gratuit': 'Free account',
   'Tu profites de mojosong gratuitement.': 'You are enjoying mojosong for free.',
-  '✦ Morceaux actifs sans plafond. Merci de faire vivre mojosong !':
-    '✦ Active songs without a cap. Thanks for keeping mojosong alive!',
+  '✦ Morceaux sans plafond. Merci de faire vivre mojosong !':
+    '✦ Songs without a cap. Thanks for keeping mojosong alive!',
   'Ton usage': 'Your usage',
-  'Morceaux actifs': 'Active songs',
-  '📦 {n} en réserve — entiers, modifiables, prêts à s’activer.':
-    '📦 {n} in reserve — whole, editable, ready to activate.',
-  'Réserve, groupes, setlists et import en masse : sans limite':
-    'Reserve, bands, setlists and bulk import: without limits',
-  'Débloque les morceaux actifs illimités.': 'Unlock unlimited active songs.',
+  'Groupes et setlists : sans limite': 'Bands and setlists: without limits',
+  'Débloque les morceaux illimités.': 'Unlock unlimited songs.',
 };

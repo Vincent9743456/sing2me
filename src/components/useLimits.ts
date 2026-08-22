@@ -1,15 +1,14 @@
 /**
- * useLimits (b381, réaligné b385 sur l'offre v2) — l'état des limites du
- * compte, prêt à afficher. Le plan part du CACHE (réponse immédiate,
- * hors ligne compris) puis se recale sur le serveur au montage. Les
- * compteurs se calculent AU RENDU sur la vraie bibliothèque (règle 11 :
- * une pastille compte exactement ce que l'écran montrera).
+ * useLimits (b381, simplifié b386) — l'état des limites du compte, prêt à
+ * afficher. Le plan part du CACHE (réponse immédiate, hors ligne compris)
+ * puis se recale sur le serveur au montage. Les compteurs se calculent AU
+ * RENDU sur la vraie bibliothèque (règle 11 : une pastille compte
+ * exactement ce que l'écran montrera).
  */
 import { useEffect, useState } from 'react';
 
 import {
-  compteMorceauxActifs,
-  compteReserve,
+  compteMorceauxPerso,
   limitesDuPlan,
   Plan,
 } from '../lib/limites';
@@ -18,13 +17,10 @@ import { useStore } from '../store';
 
 export interface EtatLimites {
   plan: Plan;
-  /** Morceaux ACTIFS (hors propositions et hors réserve) / plafond. */
-  actifs: number;
-  maxActifs: number | null;
-  /** Morceaux en réserve (jamais limités — affichage seulement). */
-  reserve: number;
-  /** Peut-on ACTIVER un morceau de plus ? (au-delà : il entre en réserve) */
-  peutActiver: boolean;
+  /** Morceaux (hors propositions en attente) / plafond (null = illimité). */
+  morceaux: number;
+  maxMorceaux: number | null;
+  peutAjouter: boolean;
 }
 
 export function useLimits(): EtatLimites {
@@ -40,12 +36,11 @@ export function useLimits(): EtatLimites {
     };
   }, []);
   const lim = limitesDuPlan(plan);
-  const actifs = compteMorceauxActifs(songs);
+  const morceaux = compteMorceauxPerso(songs);
   return {
     plan,
-    actifs,
-    maxActifs: lim.maxSongs,
-    reserve: compteReserve(songs),
-    peutActiver: lim.maxSongs === null || actifs < lim.maxSongs,
+    morceaux,
+    maxMorceaux: lim.maxSongs,
+    peutAjouter: lim.maxSongs === null || morceaux < lim.maxSongs,
   };
 }

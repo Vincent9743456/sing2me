@@ -27,8 +27,6 @@ import { estBrouillon, makeId, Setlist, Song } from '../types';
 import { Icon } from './Icon';
 import { useScrollLock } from './StageList';
 import { Modal } from './ui';
-import { signalerLimite } from './UpgradeSheet';
-import { useLimits } from './useLimits';
 import { t } from '../i18n';
 
 /* Les pastilles de groupe passent par les tokens (b233) : recopiées en dur,
@@ -92,8 +90,6 @@ export function AssignSheet({
   const [wantBands, setWantBands] = useState<Set<string>>(
     () => new Set(initialBands),
   );
-  // Limites du plan (b385) : activer un morceau de réserve est borné.
-  const limites = useLimits();
 
   if (!song) return null;
 
@@ -172,37 +168,6 @@ export function AssignSheet({
     if (workingSong !== song) saveSong(workingSong);
     updates.forEach(saveSetlist);
     onClose();
-  }
-
-  // Un morceau en RÉSERVE ne se programme pas (b385) : on propose de
-  // l'activer ici même — jamais un écran qui ne fait rien.
-  if (song.reserve === true) {
-    return (
-      <Modal
-        title={t('Ajouter « {title} » à…', {
-          title: song.title || t('Sans titre'),
-        })}
-        onClose={onClose}
-      >
-        <p className="help" style={{ marginTop: 0 }}>
-          {t(
-            '📦 Ce morceau est en réserve. Active-le pour le programmer dans une setlist ou le partager à un groupe.',
-          )}
-        </p>
-        <button
-          className="btn block"
-          onClick={() => {
-            if (!limites.peutActiver) {
-              signalerLimite('LIMIT_SONGS');
-              return;
-            }
-            saveSong({ ...song, reserve: false });
-          }}
-        >
-          ⚡ {t('Activer ce morceau')}
-        </button>
-      </Modal>
-    );
   }
 
   return (
@@ -303,13 +268,11 @@ export function SongCollector({
   // les inscrit définitivement en bibliothèque. Sans ça, la règle serait
   // inapplicable — on ne pourrait pas les ajouter. Les BROUILLONS de
   // création (b319), eux, n'apparaissent jamais : rien d'inachevé ne se
-  // programme dans une setlist ni ne s'affecte à un groupe. Les morceaux
-  // en RÉSERVE (b385) non plus : programmer, c'est jouer — on les ACTIVE
-  // d'abord (menu « ⋯ » de la bibliothèque), et ils reviennent ici.
+  // programme dans une setlist ni ne s'affecte à un groupe.
   const library = useMemo(
     () =>
       songs
-        .filter((s) => !estBrouillon(s) && s.reserve !== true)
+        .filter((s) => !estBrouillon(s))
         .sort((a, b) =>
           (a.title || '').localeCompare(b.title || '', 'fr', {
             sensitivity: 'base',

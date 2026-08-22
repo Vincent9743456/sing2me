@@ -726,49 +726,51 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     Le vidage d'enregistrement sur `pagehide` (b323), lui, RESTE : il
     protège tout état contre une mise en arrière-plan, pas seulement les
     brouillons.
-- **Modèle économique — OFFRE v2 « actifs / réserve »** (b385, maquette
-  de Vincent « réadapte les limites en fonction de cela » — remplace les
-  seuils b381, qui remplaçaient la « Licence Scène » d'août 2026, qui
-  remplaçait le Premium individuel à 2,99 €) :
-  - **Gratuit : 50 morceaux ACTIFS ; la RÉSERVE est illimitée et RIEN
-    n'est jamais supprimé ni bloqué en écriture.** Un import qui dépasse
-    le plafond ENTRE quand même — en réserve (`Song.reserve`, champ
-    additif), avec bilan (jamais en silence). Activer/mettre en réserve :
-    menu « ⋯ » de la bibliothèque ; seule l'ACTIVATION est bornée (feuille
-    « Passer en illimité »). Un morceau en réserve reste lisible,
-    modifiable, exportable et jouable en mode scène ; il n'entre pas dans
-    une setlist ni au répertoire d'un groupe (filtre dans `SongPicker`,
-    LE sélecteur unique) tant qu'il n'est pas activé. Ne comptent pas :
-    propositions (`idea`) et réserve (`reserve`).
-  - **Groupes ILLIMITÉS à tous les étages** (le verrou 2-groupes de b381
-    est retiré — `plans.sql` fait le ménage). Rejoindre n'a jamais été
+- **Modèle économique — SIMPLIFIÉ b386** (arbitrage Vincent : « Simplifie
+  tout. Pas de distinction actif / réserve. Pas de gratuité au début.
+  50 chansons c'est tout. Pas possible d'importer plus » — remplace
+  l'« offre v2 actifs/réserve » de b385, les seuils b381, la « Licence
+  Scène » d'août 2026 et le Premium individuel à 2,99 €) :
+  - **Gratuit : 50 MORCEAUX, c'est tout.** L'import — à l'unité comme en
+    masse — S'ARRÊTE au plafond, avec bilan (jamais en silence) ; le ＋
+    de Morceaux annonce la limite (feuille « Passer en illimité »). Un
+    morceau venu d'un GROUPE compte dès qu'il est ACCEPTÉ par
+    l'utilisateur — une proposition en attente (`idea === true`) ne
+    compte pas. Les seuils s'appliquent DÈS MAINTENANT (pas de période
+    de lancement illimitée). Le nom reste **mojosong** (confirmé).
+  - **Groupes ILLIMITÉS à tous les étages** (verrou 2-groupes de b381
+    retiré — `plans.sql` fait le ménage). Rejoindre n'a jamais été
     bloqué (structurel : `cloud_band_members`).
+  - La « RÉSERVE » de b385 est RETIRÉE le jour même : `Song.reserve`
+    reste dans le type comme champ INERTE (écrit chez d'éventuels
+    installés pendant la fenêtre b385 — jamais lu ni réécrit, cicatrice
+    b290) ; s'il est posé, le morceau compte comme les autres.
   - Le plan vit CÔTÉ SERVEUR (`user_plans` : free/pro/admin, RLS lecture
-    seule) ; verrou-filet `LIMIT_SONGS` (trigger `user_library`, compte
-    les ACTIFS) avec la règle « un compte gratuit ne croît pas »
-    (`max(existant, 50)`). Refus intercepté dans Account (feuille +
-    message qui se lève seul au succès — règle 11) ; mesure
-    `limit_events` / RPC `note_limite`. Config centrale unique :
-    `src/lib/limites.ts` ; fondateurs en `admin` via `plans.sql`.
+    seule) ; verrou `LIMIT_SONGS` (trigger `user_library`) avec la règle
+    « un compte gratuit ne croît pas » (`max(existant, 50)` : un compte
+    bêta au-delà garde tout, modifie, supprime, synchronise). Refus
+    intercepté dans Account — connexion ET envoi — (feuille + message
+    qui se lève seul au succès, règle 11) ; mesure `limit_events` / RPC
+    `note_limite`. Config centrale unique : `src/lib/limites.ts` ;
+    fondateurs en `admin` via `plans.sql`.
   - **Cap de salle À VENIR (pas encore appliqué)** : 15 spectateurs
-    SIMULTANÉS en gratuit (maquette : sièges par deviceId, période de
-    grâce de reconnexion, le 16ᵉ voit « salle pleine » avec le titre en
-    cours, jamais d'éjection). `maxSpectateurs` existe dans la config
-    mais N'EST PAS annoncé à l'écran tant que le serveur ne l'applique
-    pas — une limite affichée et non tenue est un mensonge. À
-    implémenter dans `api/live.js` après arbitrage du modèle de sièges.
-  - Paliers payants de la maquette (Répertoire annuel, Scène annuel,
-    Soir de concert 24 h, exemption « un abonné couvre son groupe ») :
-    HORS PÉRIMÈTRE tant que le paiement n'existe pas. **Aucun montant
-    n'est arrêté : ne JAMAIS afficher de prix dans l'app.** Les
-    fonctionnalités « après le concert » des paliers payants n'existent
-    pas encore — ne rien gater d'existant sans arbitrage.
+    SIMULTANÉS en gratuit (sièges par deviceId, période de grâce de
+    reconnexion, le 16ᵉ voit « salle pleine », jamais d'éjection).
+    `maxSpectateurs` existe dans la config mais N'EST PAS annoncé à
+    l'écran tant que le serveur ne l'applique pas. À implémenter dans
+    `api/live.js` après arbitrage du modèle de sièges.
+  - **Le paiement à la session (« Soir de concert » 9,90 € / 24 h) est
+    RETIRÉ du modèle** (arbitrage b386 — n'a jamais existé en code).
+    Paliers payants et exemption « un abonné couvre son groupe » : HORS
+    PÉRIMÈTRE tant que le paiement n'existe pas. **Aucun montant n'est
+    arrêté : ne JAMAIS afficher de prix dans l'app.**
   - Garde-fous intangibles : **jamais de coupure en plein concert** ;
     **pourboires** = lien personnel de l'artiste, aucune commission ;
     **rien n'est pris en otage** (tout reste consultable et exportable).
-  - *(Historique : b381 = 30 morceaux + 2 groupes créés avec refus
-    d'écriture — remplacé ; « Licence Scène » = tout gratuit, seul ON
-    AIR monétisé — remplacée. Ne pas restaurer sans arbitrage.)*
+  - *(Historique : b385 = 50 actifs + réserve illimitée — retiré ;
+    b381 = 30 morceaux + 2 groupes créés — remplacé ; « Licence Scène »
+    = tout gratuit, seul ON AIR monétisé — remplacée. Ne pas restaurer
+    sans arbitrage.)*
 - **Dictée (b157)** : deux chemins, choisis automatiquement — la
   reconnaissance du navigateur (gratuite, texte en direct) quand elle
   marche, sinon l'ENREGISTREMENT + transcription serveur
