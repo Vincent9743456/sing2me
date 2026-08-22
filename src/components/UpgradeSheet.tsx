@@ -12,16 +12,23 @@
  * l'écoute et ouvre la feuille. Deux chemins qui ouvriraient chacun leur
  * modale finiraient par se contredire.
  *
+ * HABILLAGE b384, d'après les MAQUETTES de Vincent : étoile ambre, titre
+ * par motif (« Ton répertoire mérite plus grand » / « Ton collectif
+ * s'agrandit ? »), pastille du compteur, liste à coches, CTA ambre plein,
+ * sortie « Plus tard ». Tout en JETONS du thème (règle 12) — aucune
+ * couleur en dur.
+ *
  * Garde-fous du modèle (spec Vincent) : JAMAIS de prix ni de seuil
  * chiffré au-delà des limites elles-mêmes — les chiffres de l'offre ne
- * sont pas arrêtés. Le CTA ambre est un emplacement, pas une vente.
+ * sont pas arrêtés. Le CTA ambre est un emplacement, pas une vente : il
+ * répond la vérité (« bientôt ») au lieu de faire semblant.
  */
 import React, { useEffect, useState } from 'react';
 
 import { t } from '../i18n';
-import { limitesDuPlan, Plan } from '../lib/limites';
 import { noterLimiteAtteinte } from '../lib/plan';
 import { Sheet } from './Feedback';
+import { Icon } from './Icon';
 import { useLimits } from './useLimits';
 
 export type MotifLimite = 'LIMIT_SONGS' | 'LIMIT_GROUPS';
@@ -42,62 +49,100 @@ export function signalerLimite(kind: MotifLimite): void {
  *  motif : on découvre l'offre, on n'a heurté aucune limite). */
 export function UpgradeSheet({
   motif,
-  plan,
   onClose,
 }: {
   motif: MotifLimite | null;
-  plan: Plan;
   onClose: () => void;
 }) {
-  const lim = limitesDuPlan(plan);
+  const { morceaux, maxMorceaux, groupes, maxGroupes } = useLimits();
+  // Le CTA dit la vérité quand on le touche : l'offre n'est pas ouverte.
+  const [bientot, setBientot] = useState(false);
   const titre =
     motif === 'LIMIT_SONGS'
-      ? t('Ta bibliothèque gratuite est pleine')
+      ? t('Ton répertoire mérite plus grand')
       : motif === 'LIMIT_GROUPS'
-        ? t('Tes groupes gratuits sont au complet')
+        ? t('Ton collectif s’agrandit ?')
         : t('Passer en illimité');
   return (
-    <Sheet title={titre} onClose={onClose}>
-      {motif === 'LIMIT_SONGS' && lim.maxSongs !== null && (
-        <p className="help" style={{ marginTop: 0 }}>
-          {t(
-            'Le plan gratuit couvre {n} morceaux dans ta bibliothèque. Tout ce qui y est déjà reste à toi — tu peux jouer, modifier et supprimer sans limite.',
-            { n: lim.maxSongs },
-          )}
-        </p>
-      )}
-      {motif === 'LIMIT_GROUPS' && lim.maxOwnedGroups !== null && (
-        <p className="help" style={{ marginTop: 0 }}>
-          {t(
-            'Le plan gratuit couvre {n} groupes créés par toi. Rejoindre un groupe sur invitation reste toujours possible, sans limite.',
-            { n: lim.maxOwnedGroups },
-          )}
-        </p>
-      )}
-      <p className="help" style={motif === null ? { marginTop: 0 } : undefined}>
-        {t(
-          'L’offre illimitée — morceaux et groupes sans plafond — arrive bientôt. Rien ne presse : tu seras prévenu ici même.',
+    <Sheet onClose={onClose}>
+      <div className="upsheet">
+        <div className="upstar" aria-hidden="true">
+          <Icon name="star" size={26} />
+        </div>
+        <h3 className="uptitle">{titre}</h3>
+        {motif === 'LIMIT_SONGS' && maxMorceaux !== null && (
+          <>
+            <p className="help uptext">
+              {t(
+                'Ton compte gratuit va jusqu’à {n} morceaux. Passe en illimité pour continuer à l’enrichir.',
+                { n: maxMorceaux },
+              )}
+            </p>
+            <span className="upchip">
+              {t('{n} / {max} morceaux', { n: morceaux, max: maxMorceaux })}
+            </span>
+          </>
         )}
-      </p>
-      {/* CTA ambre : l'emplacement du paiement à venir (hors périmètre b381).
-          Un seul bouton ambre par écran — celui qui fera avancer. */}
-      <button className="btn block" onClick={onClose}>
-        {t('Passer en illimité (bientôt)')}
-      </button>
-      <button
-        className="btn ghost block"
-        style={{ marginTop: 8 }}
-        onClick={onClose}
-      >
-        {t('Continuer en gratuit')}
-      </button>
+        {motif === 'LIMIT_GROUPS' && maxGroupes !== null && (
+          <>
+            <p className="help uptext">
+              {t(
+                'Ton compte gratuit va jusqu’à {n} groupes. Passe en illimité pour en créer autant que tu veux.',
+                { n: maxGroupes },
+              )}
+            </p>
+            <span className="upchip">
+              {t('{n} / {max} groupes', { n: groupes, max: maxGroupes })}
+            </span>
+          </>
+        )}
+        {motif === null && (
+          <p className="help uptext">
+            {t('Morceaux et groupes sans plafond, pour un répertoire qui grandit avec toi.')}
+          </p>
+        )}
+        <ul className="uplist">
+          <li>
+            <span className="upcheck" aria-hidden="true">
+              ✓
+            </span>
+            {t('Morceaux illimités')}
+          </li>
+          <li>
+            <span className="upcheck" aria-hidden="true">
+              ✓
+            </span>
+            {t('Groupes illimités')}
+          </li>
+          <li>
+            <span className="upcheck" aria-hidden="true">
+              ✓
+            </span>
+            {t('Tout le reste, sans limite')}
+          </li>
+        </ul>
+        {/* CTA ambre : l'emplacement du paiement à venir (hors périmètre).
+            Un seul bouton ambre par écran — celui qui fera avancer. */}
+        <button className="btn block" onClick={() => setBientot(true)}>
+          {t('Passer en illimité')}
+        </button>
+        {bientot && (
+          <p className="help" aria-live="polite" style={{ marginBottom: 0 }}>
+            {t(
+              'L’offre illimitée — morceaux et groupes sans plafond — arrive bientôt. Rien ne presse : tu seras prévenu ici même.',
+            )}
+          </p>
+        )}
+        <button className="btn ghost block uplater" onClick={onClose}>
+          {t('Plus tard')}
+        </button>
+      </div>
     </Sheet>
   );
 }
 
 /** Montée UNE fois (App) : écoute les signaux et ouvre la feuille. */
 export function LimiteHost() {
-  const { plan } = useLimits();
   const [motif, setMotif] = useState<MotifLimite | null>(null);
   useEffect(() => {
     const surSignal = (e: Event) => {
@@ -108,7 +153,5 @@ export function LimiteHost() {
     return () => window.removeEventListener(EVENEMENT, surSignal);
   }, []);
   if (motif === null) return null;
-  return (
-    <UpgradeSheet motif={motif} plan={plan} onClose={() => setMotif(null)} />
-  );
+  return <UpgradeSheet motif={motif} onClose={() => setMotif(null)} />;
 }

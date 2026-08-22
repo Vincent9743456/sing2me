@@ -3755,6 +3755,98 @@ h2.pagetitle {
   background: var(--ok);
 }
 
+/* ---------- Plan & limites (b381, habillage b384 — maquettes Vincent) ----
+   La feuille « Passer en illimité » et la section « Mon compte » des
+   Réglages. Tout en jetons (règle 12) : rien ne casse en thème clair. */
+.upsheet {
+  text-align: center;
+  padding: var(--sp-2) 0 0;
+}
+.upstar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--sp-2) auto var(--sp-3);
+  box-shadow: 0 0 28px var(--accent-soft);
+}
+.uptitle {
+  font-size: 1.3rem;
+  margin: 0 0 var(--sp-2);
+}
+.uptext {
+  margin-top: 0;
+}
+.upchip {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-weight: 700;
+  margin: var(--sp-1) 0 var(--sp-3);
+}
+.uplist {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--sp-4);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.uplist li,
+.uprow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.upcheck {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.uplater {
+  margin-top: var(--sp-2);
+}
+.planbadge {
+  background: var(--surface-high);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  font-weight: 650;
+  font-size: 0.85rem;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin: var(--sp-3) 0 var(--sp-2);
+}
+.usagerow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+.usagemax {
+  color: var(--text-dim);
+}
+
 /* ---------- 👁 Vue du public sur la fiche d'un morceau (b223) ----------
    La partition bascule sur ce que liront les spectateurs. Le bandeau dit
    toujours où l'on est : sans lui, on croit lire une partition amputée de ses

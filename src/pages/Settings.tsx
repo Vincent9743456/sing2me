@@ -666,48 +666,122 @@ export function Settings() {
           {picked.size > 0 ? ` (${pickedLabels.join(', ')})` : '…'}
         </button>
 
-        {/* MON PLAN (b381) : ce que couvre le compte, les compteurs calculés
-            au rendu, et la porte vers l'illimité. Jamais de prix : les
-            chiffres de l'offre ne sont pas arrêtés. */}
+        {/* MON COMPTE (b381, habillé b384 d'après les maquettes de Vincent) :
+            l'offre, l'usage en jauges, et la porte vers l'illimité. Jamais
+            de prix : les chiffres de l'offre ne sont pas arrêtés. */}
         {compte?.email != null && (
           <>
             <div className="spacer" />
-            <h2 className="pagetitle">{t('Mon plan')}</h2>
+            <h2 className="pagetitle">{t('Mon compte')}</h2>
             {limites.maxMorceaux === null && limites.maxGroupes === null ? (
-              <p className="help">
-                {t(
-                  '✦ Illimité — morceaux et groupes sans plafond. Merci de faire vivre mojosong !',
-                )}
-              </p>
-            ) : (
-              <>
-                <p className="help" style={{ marginBottom: 4 }}>
-                  {t('Plan gratuit :')}{' '}
-                  {limites.maxMorceaux !== null &&
-                    t('{n} / {max} morceaux', {
-                      n: limites.morceaux,
-                      max: limites.maxMorceaux,
-                    })}
-                  {limites.maxMorceaux !== null &&
-                    limites.maxGroupes !== null &&
-                    ' · '}
-                  {limites.maxGroupes !== null &&
-                    t('{n} / {max} groupes créés', {
-                      n: limites.groupes,
-                      max: limites.maxGroupes,
-                    })}
-                </p>
-                <p className="help" style={{ marginTop: 0 }}>
+              <div className="card">
+                <div className="usagerow">
+                  <strong>{t('Ton offre')}</strong>
+                  <span className="planbadge">{t('Illimité')}</span>
+                </div>
+                <p className="help" style={{ marginBottom: 0 }}>
                   {t(
-                    'Setlists, live et mode scène sont sans limite. Rejoindre un groupe sur invitation aussi.',
+                    '✦ Morceaux et groupes sans plafond. Merci de faire vivre mojosong !',
                   )}
                 </p>
+              </div>
+            ) : (
+              <>
+                <div className="card">
+                  <div className="usagerow">
+                    <strong>{t('Ton offre')}</strong>
+                    <span className="planbadge">{t('Compte gratuit')}</span>
+                  </div>
+                  <p className="help" style={{ marginBottom: 0 }}>
+                    {t('Tu profites de mojosong gratuitement.')}
+                  </p>
+                </div>
+                <p className="eyebrow">{t('Ton usage')}</p>
+                <div className="card">
+                  {limites.maxMorceaux !== null && (
+                    <>
+                      <div className="usagerow">
+                        <strong>{t('Morceaux')}</strong>
+                        <span>
+                          <strong>{limites.morceaux}</strong>
+                          <span className="usagemax">
+                            {' '}
+                            / {limites.maxMorceaux}
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        className="progressbar"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={limites.maxMorceaux}
+                        aria-valuenow={limites.morceaux}
+                        aria-label={t('Morceaux')}
+                      >
+                        <div
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.round(
+                                (limites.morceaux / limites.maxMorceaux) * 100,
+                              ),
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                  {limites.maxGroupes !== null && (
+                    <>
+                      <div className="usagerow" style={{ marginTop: 10 }}>
+                        <strong>{t('Groupes')}</strong>
+                        <span>
+                          <strong>{limites.groupes}</strong>
+                          <span className="usagemax">
+                            {' '}
+                            / {limites.maxGroupes}
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        className="progressbar"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={limites.maxGroupes}
+                        aria-valuenow={limites.groupes}
+                        aria-label={t('Groupes')}
+                      >
+                        <div
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.round(
+                                (limites.groupes / limites.maxGroupes) * 100,
+                              ),
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="card">
+                  <div className="uprow">
+                    <span className="upcheck" aria-hidden="true">
+                      ✓
+                    </span>
+                    {t('Setlists, import en masse et live : sans limite')}
+                  </div>
+                </div>
                 <button
-                  className="btn ghost"
+                  className="btn block"
                   onClick={() => setUpgradeOuvert(true)}
                 >
                   {t('Passer en illimité')}
                 </button>
+                <p className="help" style={{ textAlign: 'center' }}>
+                  {t('Débloque les morceaux et groupes illimités.')}
+                </p>
               </>
             )}
           </>
@@ -773,11 +847,7 @@ export function Settings() {
       </div>
 
       {upgradeOuvert && (
-        <UpgradeSheet
-          motif={null}
-          plan={limites.plan}
-          onClose={() => setUpgradeOuvert(false)}
-        />
+        <UpgradeSheet motif={null} onClose={() => setUpgradeOuvert(false)} />
       )}
 
       {confirming && (
