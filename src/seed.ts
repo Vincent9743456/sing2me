@@ -6,9 +6,10 @@
  * aura pas de problème de droits d'auteur ») : « À l'autre bout du
  * monde » est une composition de Vincent Tessier, reprise à l'identique
  * de l'export PDF de sa bibliothèque (paroles, accords, tonalité, capo).
- * Le second exemple reste du domaine public (Jean-Baptiste Clément
- * † 1903 / Antoine Renard † 1872) — c'est aussi le morceau montré par la
- * landing. Marqueur : tag « Exemple ».
+ * Le second exemple est un STANDARD AMÉRICAIN du domaine public (b392,
+ * choix de Vincent) : « When the Saints Go Marching In », traditionnel
+ * de La Nouvelle-Orléans — arrangement d'accords libre. Marqueur :
+ * tag « Exemple ».
  */
 import { migrateSong } from './lib/model';
 import { normalizeTitle } from './lib/normalizeTitle';
@@ -74,33 +75,30 @@ export function exampleSongs(): Song[] {
     },
     {
       id: makeId(),
-      title: 'Le Temps des cerises',
-      artist: 'J.-B. Clément / A. Renard',
+      title: 'When the Saints Go Marching In',
+      artist: 'Traditionnel',
       key: 'C',
-      tempo: 100,
+      tempo: 120,
       capo: 0,
       durationSec: 0,
       tags: [EXAMPLE_TAG],
       structure: [],
       structureNotes:
-        'Valse à 3 temps. Essaie le défilement automatique en mode scène — ' +
-        'bouton ▲ en bas.',
+        'Le standard de La Nouvelle-Orléans — trois accords. Essaie le ' +
+        'défilement automatique en mode scène (bouton ▲ en bas), et ' +
+        'transpose-moi avec le bouton tonalité !',
       lyrics:
-        '[C]Quand nous chante[Am]rons le [Dm]temps des ce[G]rises\n' +
-        'Et [C]gai rossi[Am]gnol et [Dm]merle mo[G]queur\n' +
-        'Se[C]ront tous en [E7]fê[Am]te\n' +
-        'Les [Dm]belles auront la [G]folie en [C]tête\n' +
-        'Et les [Dm]amoureux du so[G]leil au [C]cœur\n' +
-        '[C]Quand nous chante[Am]rons le [Dm]temps des ce[G]rises\n' +
-        'Sif[C]flera bien [E7]mieux le [Am]merle mo[G]queur\n' +
+        'Couplet 1 :\n' +
+        'Oh, when the [C]saints go marching in\n' +
+        'Oh, when the saints go marching [G7]in\n' +
+        'Oh, Lord, I [C]want to [C7]be in that [F]number\n' +
+        'When the [C]saints go [G7]marching [C]in\n' +
         '\n' +
-        '[C]Mais il est bien [Am]court le [Dm]temps des ce[G]rises\n' +
-        'Où l’on [C]s’en va [Am]deux cueil[Dm]lir en rê[G]vant\n' +
-        'Des [C]pendants d’o[E7]reil[Am]les\n' +
-        'Ce[Dm]rises d’amour aux [G]robes pa[C]reilles\n' +
-        'Tom[Dm]bant sous la [G]feuille en [C]gouttes de sang\n' +
-        '[C]Mais il est bien [Am]court le [Dm]temps des ce[G]rises\n' +
-        'Pen[C]dants de co[E7]rail qu’on [Am]cueille en rê[G]vant',
+        'Couplet 2 :\n' +
+        'Oh, when the [C]sun begins to shine\n' +
+        'Oh, when the sun begins to [G7]shine\n' +
+        'Oh, Lord, I [C]want to [C7]be in that [F]number\n' +
+        'When the [C]sun be[G7]gins to [C]shine',
       createdAt: now,
       updatedAt: now,
     },
