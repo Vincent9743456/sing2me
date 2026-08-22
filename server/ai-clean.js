@@ -54,6 +54,8 @@ export default async function handler(req, res) {
       '- Si le document est une tablature (lignes e|--3--…), résume chaque partie par sa suite d\'accords quand elle est identifiable, et garde les paroles si présentes.\n' +
       'Règles STRICTES : ne modifie JAMAIS les paroles (orthographe, ordre, langue), n\'invente pas de paroles, conserve tous les couplets. ' +
       'Corrige uniquement le placement/format des accords et la mise en page.\n' +
+      '- Le NOM d\'un accord est INTOUCHABLE : recopie-le caractère pour caractère. "G9" reste "G9" (jamais "G"), "Dsus4" reste "Dsus4", "C/G" garde sa basse, "Cmaj7" son maj7. Ne simplifie, ne renomme, ne supprime et n\'ajoute AUCUN accord — la suite des accords du résultat doit être exactement celle du document.\n' +
+      '- Un accord placé APRÈS la fin d\'une phrase (en bout de ligne, joué après les mots) RESTE en bout de cette ligne : "[G9]Didn\'t I? [A]" garde son [A] à la fin — ne le déplace pas sur une autre ligne.\n' +
       'CAS PARTICULIER — texte brouillé : certains PDF ont une police cassée qui ' +
       'remplace chaque caractère par un autre, de façon COHÉRENTE dans tout le ' +
       'document (ex. « YZ[X\\]^_`[ » pour « Les matins »). Si le texte ci-dessous ' +
