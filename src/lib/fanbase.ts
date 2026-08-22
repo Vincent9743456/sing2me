@@ -30,11 +30,15 @@ export interface FollowerStats {
   sharedEmails: string[];
 }
 
-/** Compteur de suiveurs d'un artiste (réservé à l'artiste, clé On Air). */
+/** Compteur de suiveurs d'un artiste (réservé à l'artiste, clé On Air).
+ *  `null` = le serveur n'a PAS répondu (hors ligne, panne) : une panne ne
+ *  conclut jamais (règle b245) — l'appelant garde ce qu'il savait au lieu
+ *  d'afficher un zéro qui serait un mensonge. Un vrai « 0 suiveur », lui,
+ *  arrive dans une réponse. */
 export async function fetchFollowerStats(
   key: string,
   artist: string,
-): Promise<FollowerStats> {
+): Promise<FollowerStats | null> {
   if (key.trim() === '' || artist.trim() === '') {
     return { count: 0, sharedEmails: [] };
   }
@@ -44,14 +48,14 @@ export async function fetchFollowerStats(
       { headers: liveHeaders(key) },
     );
     const type = res.headers.get('content-type') ?? '';
-    if (!type.includes('application/json')) return { count: 0, sharedEmails: [] };
+    if (!res.ok || !type.includes('application/json')) return null;
     const body = await res.json();
     return {
       count: typeof body.count === 'number' ? body.count : 0,
       sharedEmails: Array.isArray(body.sharedEmails) ? body.sharedEmails : [],
     };
   } catch {
-    return { count: 0, sharedEmails: [] };
+    return null;
   }
 }
 

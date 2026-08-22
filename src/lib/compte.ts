@@ -79,6 +79,9 @@ const CLES_DU_COMPTE = [
   // b381 : le plan (free/pro/admin) appartient au compte — le garder
   // ferait croire au suivant qu'il est illimité (ou l'inverse).
   'sing2me/plan',
+  // b382 : dernier compteur de suiveurs affiché (fiche Artiste) — même
+  // logique que liveCache, il appartient au compte.
+  'sing2me/fanCache',
 ];
 
 export function oublierCachesDuCompte(): void {
