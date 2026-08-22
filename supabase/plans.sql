@@ -24,9 +24,9 @@
 --    refusée.
 --  • Les GROUPES ne sont PAS limités (illimités à tous les étages) —
 --    le verrou LIMIT_GROUPS de b381 est retiré ci-dessous.
---  • Le cap de SALLE (15 spectateurs simultanés en gratuit) viendra
---    dans api/live.js, pas ici : comportement à trancher (sièges,
---    grâce de reconnexion) avant toute application.
+--  • Le CAP DE SALLE (15 spectateurs simultanés en free/musicien) est
+--    APPLIQUÉ par api/live.js depuis b387 — la table live_seats plus
+--    bas est son support.
 -- ============================================================
 
 create table if not exists public.user_plans (
