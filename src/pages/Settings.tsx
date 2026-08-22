@@ -17,6 +17,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { useAccount } from '../components/Account';
 import { DeleteAccount } from '../components/DeleteAccount';
+import { UpgradeSheet } from '../components/UpgradeSheet';
+import { useLimits } from '../components/useLimits';
 import { PedaleMidi } from '../components/PedaleMidi';
 import { ConfirmSheet, useToast } from '../components/Feedback';
 import { fusionMiseEnForme } from '../lib/aiFormat';
@@ -81,6 +83,9 @@ export function Settings() {
   const compte = useAccount();
   const [pageBusy, setPageBusy] = useState(false);
   const [pageMsg, setPageMsg] = useState<string | null>(null);
+  // Mon plan (b381) : compteurs au rendu, feuille « illimité » à la demande.
+  const limites = useLimits();
+  const [upgradeOuvert, setUpgradeOuvert] = useState(false);
 
   /**
    * Le réglage n'a de sens que s'il AGIT tout de suite : cocher republie une
@@ -661,6 +666,53 @@ export function Settings() {
           {picked.size > 0 ? ` (${pickedLabels.join(', ')})` : '…'}
         </button>
 
+        {/* MON PLAN (b381) : ce que couvre le compte, les compteurs calculés
+            au rendu, et la porte vers l'illimité. Jamais de prix : les
+            chiffres de l'offre ne sont pas arrêtés. */}
+        {compte?.email != null && (
+          <>
+            <div className="spacer" />
+            <h2 className="pagetitle">{t('Mon plan')}</h2>
+            {limites.maxMorceaux === null && limites.maxGroupes === null ? (
+              <p className="help">
+                {t(
+                  '✦ Illimité — morceaux et groupes sans plafond. Merci de faire vivre mojosong !',
+                )}
+              </p>
+            ) : (
+              <>
+                <p className="help" style={{ marginBottom: 4 }}>
+                  {t('Plan gratuit :')}{' '}
+                  {limites.maxMorceaux !== null &&
+                    t('{n} / {max} morceaux', {
+                      n: limites.morceaux,
+                      max: limites.maxMorceaux,
+                    })}
+                  {limites.maxMorceaux !== null &&
+                    limites.maxGroupes !== null &&
+                    ' · '}
+                  {limites.maxGroupes !== null &&
+                    t('{n} / {max} groupes créés', {
+                      n: limites.groupes,
+                      max: limites.maxGroupes,
+                    })}
+                </p>
+                <p className="help" style={{ marginTop: 0 }}>
+                  {t(
+                    'Setlists, live et mode scène sont sans limite. Rejoindre un groupe sur invitation aussi.',
+                  )}
+                </p>
+                <button
+                  className="btn ghost"
+                  onClick={() => setUpgradeOuvert(true)}
+                >
+                  {t('Passer en illimité')}
+                </button>
+              </>
+            )}
+          </>
+        )}
+
         {/* MA PAGE PUBLIQUE EN LIGNE OU NON (b262, demande de Vincent :
             « prévoir dans les réglages que la page publique puisse ne pas
             être disponible en ligne à la demande de l'utilisateur. Par
@@ -719,6 +771,14 @@ export function Settings() {
           </>
         )}
       </div>
+
+      {upgradeOuvert && (
+        <UpgradeSheet
+          motif={null}
+          plan={limites.plan}
+          onClose={() => setUpgradeOuvert(false)}
+        />
+      )}
 
       {confirming && (
         <ConfirmSheet

@@ -267,4 +267,16 @@ export const EN_COMPTE: Record<string, string> = {
     '{n} changes waiting — they will go out when the network is back.',
   '{n} modification en attente — elle partira au retour du réseau.':
     '{n} change waiting — it will go out when the network is back.',
+
+  // Limites du plan (b381) — Account.tsx & Settings.tsx
+  'Ta bibliothèque dépasse le plan gratuit : les nouveaux morceaux restent sur cet appareil tant que tu n’en retires pas (ou ne passes pas en illimité).':
+    'Your library exceeds the free plan: new songs stay on this device until you remove some (or go unlimited).',
+  'Mon plan': 'My plan',
+  '✦ Illimité — morceaux et groupes sans plafond. Merci de faire vivre mojosong !':
+    '✦ Unlimited — songs and bands without a cap. Thanks for keeping mojosong alive!',
+  'Plan gratuit :': 'Free plan:',
+  '{n} / {max} morceaux': '{n} / {max} songs',
+  '{n} / {max} groupes créés': '{n} / {max} bands created',
+  'Setlists, live et mode scène sont sans limite. Rejoindre un groupe sur invitation aussi.':
+    'Setlists, live and stage mode have no limit. Neither does joining a band on invitation.',
 };

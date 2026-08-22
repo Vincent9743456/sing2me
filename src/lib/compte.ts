@@ -76,6 +76,9 @@ const CLES_DU_COMPTE = [
   // b343 : dernier historique des directs affiché avant rafraîchissement —
   // il appartient au compte, pas à l'appareil.
   'sing2me/liveCache',
+  // b381 : le plan (free/pro/admin) appartient au compte — le garder
+  // ferait croire au suivant qu'il est illimité (ou l'inverse).
+  'sing2me/plan',
 ];
 
 export function oublierCachesDuCompte(): void {

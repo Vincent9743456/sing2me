@@ -24,11 +24,12 @@ const STORAGE_KEY = 'sing2me/session';
 
 // IMPORTANT : accès « en dur » obligatoire — Vite remplace ces expressions
 // statiquement au build ; un accès dynamique (env['VITE_…']) resterait vide.
-function supabaseUrl(): string {
+// Exportées depuis b381 (lecture du plan dans src/lib/plan.ts).
+export function supabaseUrl(): string {
   return (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
 }
 
-function anonKey(): string {
+export function anonKey(): string {
   return import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
 }
 

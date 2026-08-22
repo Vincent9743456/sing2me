@@ -671,4 +671,13 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Reprendre': 'Resume',
   '⏳ Récupération…': '⏳ Fetching…',
   "L'import du lien a échoué.": 'Importing the link failed.',
+
+  // Limites du plan (b381) — Library.tsx & Import.tsx
+  '{n} / {max} morceaux du plan gratuit': '{n} / {max} songs on the free plan',
+  'ta bibliothèque gratuite est pleine.': 'your free library is full.',
+  'elle sera bientôt pleine.': 'it will soon be full.',
+  '{n} au-delà du plan gratuit — non importés.':
+    '{n} beyond the free plan — not imported.',
+  'au-delà du plan gratuit — non importé': 'beyond the free plan — not imported',
+  '{n} au-delà du plan gratuit': '{n} beyond the free plan',
 };
