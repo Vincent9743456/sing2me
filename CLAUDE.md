@@ -251,6 +251,12 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - **b294** : la **retouche du texte public** (voir bloc « RETRAIT b294 »)
     et la **génération IA de setlist** (`setlistAI.ts` supprimé, encart de
     l'onglet Setlists retiré).
+  - **b396** : la **recherche de « meilleure version »** (demande de
+    Vincent : « supprimer les boutons »). Les trois boutons (aperçu de
+    Morceaux, haut de la fiche morceau, menu ⋯ des versions) et la modale
+    `UgUpgrade.tsx` sont supprimés. La recherche UG côté serveur RESTE
+    utilisée par le flux « Recherche & création » (Compose) et par
+    « Retrouver les accords d'origine » (b395).
   Ajouts :
   - **b295** : l'**import en masse** mis en avant à l'accueil (carte de
     bienvenue + état vide de Morceaux → bouton « Importer ma collection » ;
