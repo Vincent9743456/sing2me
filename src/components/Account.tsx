@@ -301,6 +301,24 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   // Pas de push tant que la fusion initiale n'a pas eu lieu
   const readyRef = useRef(false);
   /**
+   * L'« ESSAI AUTOMATIQUE » PROMIS EXISTE DÉSORMAIS (b397, capture de
+   * Vincent : « Synchronisation impossible pour le moment — nouvel essai
+   * automatique » affiché en 5G, et rien ne repartait jamais). Quand la
+   * synchro de CONNEXION échoue — réseau pas encore rétabli au lancement,
+   * serveur muet, rafraîchissement de jeton raté —, `readyRef` restait à
+   * false et TOUT ce qui en dépend (l'envoi, le débounce, le cycle de 90 s)
+   * rendait la main sans rien faire ; l'effet, accroché à `session.userId`,
+   * ne repartait qu'à la relance complète de l'app. Le message promettait
+   * donc un essai qui n'existait pas, et « en attente du réseau » accusait
+   * un réseau parfaitement là. `initTick` relance l'effet : recul
+   * progressif (5, 15, 30 s puis toutes les 60 s), et tout de suite au
+   * retour du réseau ou au premier plan.
+   */
+  const [initTick, setInitTick] = useState(0);
+  const essaisInit = useRef(0);
+  /** La synchro de connexion est en échec — c'est elle qu'il faut relancer. */
+  const initEnEchec = useRef(false);
+  /**
    * Une invitation de groupe est en cours de traitement (b286). Posé AVANT
    * `joinBand` (donc avant tout effacement de `pendingInvite`), il est le seul
    * signal fiable pour que le seed ne s'exécute PAS chez un compte créé sur
@@ -505,13 +523,30 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!session) {
       readyRef.current = false;
+      essaisInit.current = 0;
+      initEnEchec.current = false;
       setStatus('anon');
       return;
     }
     let cancelled = false;
+    // Relance de la synchro de connexion (b397) : programmée sur échec,
+    // annulée si l'effet repart (retour au premier plan, changement de
+    // compte) — deux relances ne courent jamais en même temps.
+    let relance: number | null = null;
+    const reessayerBientot = () => {
+      if (cancelled) return;
+      initEnEchec.current = true;
+      const attente = [5, 15, 30][essaisInit.current] ?? 60;
+      essaisInit.current++;
+      relance = window.setTimeout(
+        () => setInitTick((n) => n + 1),
+        attente * 1000,
+      );
+    };
     (async () => {
       setStatus('sync');
       setError(null);
+      initEnEchec.current = false;
       try {
         const valid = await getValidSession();
         if (cancelled) return;
@@ -520,13 +555,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             // Jeton réellement révoqué : retour à l'état déconnecté
             setSession(null);
           } else {
-            // Problème réseau passager : session conservée, on réessaiera
+            // Problème réseau passager : session conservée — et l'essai
+            // annoncé est bien PROGRAMMÉ (b397).
             setStatus('error');
             setError(
               t(
                 'Synchronisation impossible pour le moment — nouvel essai automatique.',
               ),
             );
+            reessayerBientot();
           }
           return;
         }
@@ -644,6 +681,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         // reçu ferait perdre ces données au changement suivant.
         noterCompteLocal(valid.userId);
         readyRef.current = true;
+        essaisInit.current = 0;
         setLastSync(new Date().toISOString());
         setStatus('ok');
         // Le nom du fournisseur, MAINTENANT que la fusion est faite : il ne
@@ -716,6 +754,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           // (b259 : jamais avant un envoi réussi).
           if (String(e).includes('LIMIT_SONGS')) {
             readyRef.current = true;
+            essaisInit.current = 0;
             limiteSignalee.current = true;
             signalerLimite('LIMIT_SONGS');
             setStatus('error');
@@ -725,15 +764,17 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             setError(
               e instanceof Error ? e.message : t('Synchronisation impossible.'),
             );
+            reessayerBientot();
           }
         }
       }
     })();
     return () => {
       cancelled = true;
+      if (relance !== null) window.clearTimeout(relance);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.userId]);
+  }, [session?.userId, initTick]);
 
   /**
    * INVITATION EN ATTENTE — TERMINÉE TOUTE SEULE, COMPTE NEUF OU PAS (b252).
@@ -959,6 +1000,14 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       })();
     };
     const auRetour = () => {
+      // La synchro de CONNEXION est en échec : c'est ELLE qu'on relance,
+      // tout de suite (b397) — le rattrapage et l'envoi n'ont pas le droit
+      // de courir avant la fusion initiale (cicatrice b244).
+      if (initEnEchec.current) {
+        setInitTick((n) => n + 1);
+        return;
+      }
+      if (!readyRef.current) return;
       pousserEnAttente();
       rattraper();
     };
@@ -983,6 +1032,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         const valid = await getValidSession();
         if (!valid) return;
         await rattraperPerso(valid);
+        // Ce qui attend repart aussi sur le cycle (b397) : un envoi tombé
+        // sur un serveur muet ne doit pas attendre la prochaine
+        // modification pour retenter sa chance.
+        if (aEnvoyer.current) void envoyer();
         void syncBands(valid);
       })();
     }, 90000);
@@ -1124,13 +1177,17 @@ export function AccountSection() {
             aria-live="polite"
           >
             ↑{' '}
+            {/* « au retour du réseau » accusait le réseau même quand c'est
+                le serveur ou la connexion qui a échoué (b397, capture de
+                Vincent : le message affiché en 5G). On promet ce qui se
+                passe vraiment : un nouvel essai automatique. */}
             {account.enAttente > 1
               ? t(
-                  '{n} modifications en attente — elles partiront au retour du réseau.',
+                  '{n} modifications en attente — elles partiront toutes seules au prochain essai.',
                   { n: account.enAttente },
                 )
               : t(
-                  '{n} modification en attente — elle partira au retour du réseau.',
+                  '{n} modification en attente — elle partira toute seule au prochain essai.',
                   { n: account.enAttente },
                 )}
           </span>
