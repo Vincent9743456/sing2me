@@ -258,21 +258,24 @@ export function SongCollector({
   onConfirm: (songIds: string[]) => void;
   onClose: () => void;
 }) {
-  const { songs } = useStore();
+  const { songs, bands } = useStore();
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const present = useMemo(() => new Set(alreadyIn), [alreadyIn]);
 
-  // Bibliothèque personnelle. Les idées et les propositions de groupe sont
-  // proposées elles aussi (b174) : les programmer est justement le geste qui
-  // les inscrit définitivement en bibliothèque. Sans ça, la règle serait
-  // inapplicable — on ne pourrait pas les ajouter. Les BROUILLONS de
-  // création (b319), eux, n'apparaissent jamais : rien d'inachevé ne se
-  // programme dans une setlist ni ne s'affecte à un groupe.
+  // Bibliothèque personnelle. Les propositions de groupe sont proposées
+  // elles aussi (b174) : les programmer est justement le geste qui les
+  // inscrit définitivement en bibliothèque — mais elles le DISENT (b401,
+  // constat de Vincent : le même titre apparaissait deux fois ici, une fois
+  // pour sa copie et une fois pour une proposition en attente, sans rien
+  // pour les distinguer — alors que l'onglet Morceaux n'en montre qu'un).
+  // Les BROUILLONS de création (b319) n'apparaissent jamais : rien
+  // d'inachevé ne se programme. Les ÉCARTÉES non plus (b240) : écarter une
+  // proposition la sort « de partout ailleurs », cet écran compris.
   const library = useMemo(
     () =>
       songs
-        .filter((s) => !estBrouillon(s))
+        .filter((s) => !estBrouillon(s) && s.declined !== true)
         .sort((a, b) =>
           (a.title || '').localeCompare(b.title || '', 'fr', {
             sensitivity: 'base',
@@ -280,6 +283,16 @@ export function SongCollector({
         ),
     [songs],
   );
+
+  /** Sous-titre d'une proposition en attente : d'où elle vient, et qu'elle
+   *  reste à valider — sans quoi deux lignes au même titre sont illisibles. */
+  function sousTitreProposition(s: Song): string {
+    const bandName =
+      bands.find((b) => b.id === (s.pendingBandId ?? ''))?.name ?? '';
+    return bandName !== ''
+      ? t('📥 proposition de {band} — l’ajouter la valide', { band: bandName })
+      : t('📥 proposition à valider — l’ajouter la valide');
+  }
 
   const filtered = useMemo(() => {
     // Recherche repliée (b337) : accents, casse et ponctuation ne comptent
@@ -390,7 +403,9 @@ export function SongCollector({
                   <span className="sub">
                     {here
                       ? t('déjà au répertoire')
-                      : [s.artist, s.key].filter((x) => x !== '').join(' · ')}
+                      : s.idea === true
+                        ? sousTitreProposition(s)
+                        : [s.artist, s.key].filter((x) => x !== '').join(' · ')}
                   </span>
                 </span>
               </button>

@@ -423,6 +423,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   'déjà dans la setlist': 'already in the setlist',
   'Mes groupes': 'My bands',
   'déjà au répertoire': 'already in the repertoire',
+  '📥 proposition de {band} — l’ajouter la valide':
+    '📥 proposed by {band} — adding it accepts it',
+  '📥 proposition à valider — l’ajouter la valide':
+    '📥 proposal to approve — adding it accepts it',
   'Rechercher un titre, un artiste…': 'Search a title, an artist…',
   'Ces morceaux sont ceux de ta bibliothèque. Pour en importer de nouveaux, ferme cet écran et passe par le ＋ de l’onglet Morceaux — si cet onglet est filtré sur un groupe, touche d’abord « Tout afficher ».':
     'These songs are the ones in your library. To import new ones, close this screen and use the ＋ in the Songs tab — if that tab is filtered on a band, tap “Show all” first.',
