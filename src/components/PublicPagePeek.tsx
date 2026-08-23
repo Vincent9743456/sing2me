@@ -99,6 +99,57 @@ export function PublicPagePeek({
     }
   }
 
+  /**
+   * ENREGISTRER LE QR (b399, signalement de Vincent : « le bouton ne semble
+   * pas fonctionner »). C'était un <a download> pointant sur l'URL data: du
+   * QR — et iOS REFUSE de télécharger une URL data:, en silence, surtout
+   * dans l'app installée. Le chemin qui marche partout est celui de la
+   * sauvegarde (Settings.sauvegarder, éprouvé sur iPhone : le fichier
+   * atterrit dans « Fichiers ») : un Blob + URL d'objet + clic simulé.
+   * Si même ça échoue, la feuille du système reste (« Enregistrer
+   * l'image » → Photos) — une action doit toujours pouvoir se terminer
+   * (b216), jamais échouer sans un mot.
+   */
+  async function enregistrer() {
+    if (qr === '') return;
+    let blob: Blob;
+    try {
+      blob = await (await fetch(qr)).blob();
+    } catch {
+      toast.show(t('Le QR n’a pas pu être enregistré — réessaie.'));
+      return;
+    }
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'mojosong-qr.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      return;
+    } catch {
+      /* téléchargement impossible ici : la feuille du système prend le relais */
+    }
+    const nav = navigator as Navigator & {
+      canShare?: (d: unknown) => boolean;
+      share?: (d: unknown) => Promise<void>;
+    };
+    const fichier = new File([blob], 'mojosong-qr.png', { type: 'image/png' });
+    if (nav.share && nav.canShare?.({ files: [fichier] })) {
+      try {
+        await nav.share({ files: [fichier] });
+      } catch {
+        /* feuille refermée sans choisir : rien à dire */
+      }
+      return;
+    }
+    toast.show(
+      t('Appuie longuement sur le QR pour l’enregistrer dans tes photos.'),
+    );
+  }
+
   /** Partage par la feuille du système — l'IMAGE du QR quand l'appareil sait
    *  la prendre, le lien sinon. */
   async function partager() {
@@ -159,13 +210,12 @@ export function PublicPagePeek({
                 {/* Enregistrer l'image : c'est ce qui permet de l'imprimer,
                     de l'afficher dans la salle, de l'envoyer à qui on veut —
                     sans dépendre de la feuille du système. */}
-                <a
+                <button
                   className="btn ghost small"
-                  href={qr}
-                  download="mojosong-qr.png"
+                  onClick={() => void enregistrer()}
                 >
                   {t('⤓ Enregistrer le QR')}
-                </a>
+                </button>
                 {peutPartager && (
                   <button
                     className="btn ghost small"
