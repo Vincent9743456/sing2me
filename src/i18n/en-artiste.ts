@@ -555,6 +555,10 @@ export const EN_ARTISTE: Record<string, string> = {
   'Recherche de l’adresse…': 'Looking up the address…',
   'QR code de ta page publique': 'QR code for your public page',
   '⤓ Enregistrer le QR': '⤓ Save the QR',
+  'Le QR n’a pas pu être enregistré — réessaie.':
+    'The QR could not be saved — try again.',
+  'Appuie longuement sur le QR pour l’enregistrer dans tes photos.':
+    'Long-press the QR to save it to your photos.',
   '↗ Partager': '↗ Share',
   'À imprimer et à poser dans la salle — il ne change jamais.':
     'Print it and put it up in the room — it never changes.',
