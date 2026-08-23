@@ -446,58 +446,44 @@ export function SongView({
                 : undefined
             }
           >
-            <div className="vb-main">
-              <div className="vb-title">
-                <span>
-                  {isBandVersion
-                    ? t('Version du groupe {band}', { band: bandName(curBandId) || '—' })
-                    : isMainVersion
-                      ? t('Version de référence')
-                      : t('Version « {name} »', { name: current.name })}
-                </span>
-                {isBandVersion ? (
-                  <span className="vb-shared">{t('partagée')}</span>
-                ) : isMainVersion ? (
-                  <span className="vb-ref">{t('⭐ référence')}</span>
-                ) : (
-                  <span className="vb-solo">{t('perso')}</span>
-                )}
-              </div>
-              <div className="vb-sub">
-                {isBandVersion
-                  ? t(
-                      'Tes modifications de cette version arrivent chez tous les membres du groupe.',
-                    )
-                  : isMainVersion
-                    ? t(
-                        'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres (tonalité/capo se répercutent).',
-                      )
-                    : t('À toi seul — cette version n’est pas partagée.')}
-              </div>
-            </div>
-            {song.versions.length >= 2 && (
-              <span className="versionpick">
-                <select
-                  value={current.id}
-                  aria-label={t('Changer de version affichée')}
-                  onChange={(e) => onVersionChange(e.target.value)}
-                >
-                  {song.versions.map((v) => {
-                    const bn = v.bandId !== '' ? bandName(v.bandId) : '';
-                    // Évite « Vince et Marcus · Vince et Marcus » quand le nom
-                    // de version reprend déjà celui du groupe.
-                    const suffix =
-                      bn !== '' && bn.trim() !== v.name.trim() ? ` · ${bn}` : '';
-                    return (
-                      <option key={v.id} value={v.id}>
-                        {v.name}
-                        {suffix}
-                        {v.key !== '' ? ` (${v.key})` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-              </span>
+            {/* ÉPURÉ (b398, demande de Vincent) : plus de texte descriptif.
+                Le sélecteur NOMME la version affichée, la pastille dit son
+                statut, le liseré porte la couleur du groupe — tout le
+                reste vit dans ⋯. */}
+            <span className="versionpick">
+              <select
+                value={current.id}
+                aria-label={t('Changer de version affichée')}
+                onChange={(e) => onVersionChange(e.target.value)}
+              >
+                {song.versions.map((v) => {
+                  const bn = v.bandId !== '' ? bandName(v.bandId) : '';
+                  // Évite « Vince et Marcus · Vince et Marcus » quand le nom
+                  // de version reprend déjà celui du groupe.
+                  const suffix =
+                    bn !== '' && bn.trim() !== v.name.trim() ? ` · ${bn}` : '';
+                  return (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                      {suffix}
+                      {v.key !== '' ? ` (${v.key})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </span>
+            {/* La pastille ne RÉPÈTE jamais le sélecteur : quand le nom de
+                la version dit déjà « référence », elle s'efface et laisse
+                sa largeur au nom (sinon, à 360 px, le nom se tronque pour
+                afficher un doublon). */}
+            {isBandVersion ? (
+              <span className="vb-shared">{t('partagée')}</span>
+            ) : isMainVersion ? (
+              /r[ée]f[ée]rence/i.test(current.name) ? null : (
+                <span className="vb-ref">{t('⭐ référence')}</span>
+              )
+            ) : (
+              <span className="vb-solo">{t('perso')}</span>
             )}
             <button
               className="btn ghost small"

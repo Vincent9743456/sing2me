@@ -141,17 +141,10 @@ export const EN_MORCEAUX: Record<string, string> = {
     "Playable solo (by default) — click to disqualify it if you can't play it alone",
   'Pas en solo': 'Not solo',
   'Solo ✓': 'Solo ✓',
-  'Version du groupe {band}': 'The {band} version',
-  'Version de référence': 'Reference version',
   'Version « {name} »': 'Version “{name}”',
   partagée: 'shared',
   '⭐ référence': '⭐ reference',
   perso: 'personal',
-  'Tes modifications de cette version arrivent chez tous les membres du groupe.':
-    'Your changes to this version reach every member of the band.',
-  'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres (tonalité/capo se répercutent).':
-    'Master, personal version: it stays in your library and is the base for the others (key/capo carry over).',
-  'À toi seul — cette version n’est pas partagée.': "Just for you — this version isn't shared.",
   'Changer de version affichée': 'Switch displayed version',
   'Actions sur les versions': 'Version actions',
   'Versions : référence, renommer, supprimer':
@@ -227,21 +220,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   'la version de référence': 'the reference version',
   'version du groupe {band}': 'the {band} version',
   'version « {name} »': 'version “{name}”',
-  'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres versions (tonalité/capo se répercutent).':
-    'Master, personal version: it stays in your library and is the base for the other versions (key/capo carry over).',
-  'Version maîtresse, personnelle : la base de ce morceau.':
-    "Master, personal version: this song's base.",
-  'À l’enregistrement, tes changements partent vers tous les membres du groupe.':
-    'On save, your changes go out to every member of the band.',
-  'Modifications privées à cette version — les autres versions gardent leurs réglages.':
-    "Changes are private to this version — the other versions keep their own settings.",
   'Version modifiée': 'Edited version',
   principale: 'main',
   'Nom de cette version': 'This version’s name',
-  '🔒 L’originale est toujours ': '🔒 The original is always ',
   personnelle: 'personal',
-  ' : c’est ta façon de le jouer, et la modifier se répercute sur les versions de groupe qui la suivent. Pour une version dédiée à un groupe, utilise « Ajouter à… » depuis la partition.':
-    ': it is how you play it, and editing it carries over to the band versions that follow it. For a version dedicated to a band, use “Add to…” from the chart.',
   'Cette version est pour': 'This version is for',
   'Moi seul (version personnelle)': 'Just me (personal version)',
   Tonalité: 'Key',
