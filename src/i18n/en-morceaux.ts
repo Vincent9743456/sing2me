@@ -107,9 +107,6 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Supprimer « {title} » ?': 'Delete “{title}”?',
   "Fermer l'aperçu": 'Close preview',
   'Modifier la partition': 'Edit the chart',
-  'mojosong cherche la version la mieux notée de cette partition et te la propose':
-    'mojosong looks for the best-rated version of this chart and suggests it to you',
-  '★ Meilleure version ?': '★ Better version?',
   'Supprimer ce morceau': 'Delete this song',
   'Supprimer « {title} » ? Le morceau sera aussi retiré des setlists.':
     'Delete “{title}”? The song will also be removed from setlists.',
@@ -157,8 +154,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'À toi seul — cette version n’est pas partagée.': "Just for you — this version isn't shared.",
   'Changer de version affichée': 'Switch displayed version',
   'Actions sur les versions': 'Version actions',
-  'Versions : référence, renommer, meilleure version, supprimer':
-    'Versions: reference, rename, better version, delete',
+  'Versions : référence, renommer, supprimer':
+    'Versions: reference, rename, delete',
   'Tonalité et capo sont ici — tout se transpose.': 'Key and capo are here — everything transposes.',
   '🎵 Tonalité': '🎵 Key',
   '🎵 Tonalité de ce concert': '🎵 Key for this gig',
@@ -192,7 +189,6 @@ export const EN_MORCEAUX: Record<string, string> = {
   Précédent: 'Previous',
   'Revenir à la setlist': 'Back to the setlist',
   Suivant: 'Next',
-  '★ Chercher une meilleure version (IA)': '★ Look for a better version (AI)',
   'Renommer la version': 'Rename the version',
   'Retirer cette version (et le morceau du groupe)': 'Remove this version (and the song from the band)',
   'Supprimer la version « {name} »': 'Delete the “{name}” version',
@@ -559,8 +555,6 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Chaque morceau garde son titre et son artiste. Les partitions où la mise en forme laisse un doute sont marquées « à vérifier » : tu les retrouves d’un geste dans ta bibliothèque, avec la possibilité de revenir à la version d’origine.':
     'Every song keeps its title and artist. Charts where the formatting leaves a doubt are flagged “needs a check”: you find them in one gesture in your library, and you can go back to the original version.',
   '↩ Revenir à ma partition d’origine': '↩ Back to my original chart',
-  ' · ✨ mis en forme': ' · ✨ formatted',
-  'Revenir à la version d’origine': 'Back to the original version',
 
   // b225 — positions d'accords à la guitare
   'Position ouverte': 'Open position',

@@ -28,7 +28,6 @@ import { parolesPubliques } from '../lib/publiclyrics';
 import { PublicEye, PublicView } from '../components/PublicView';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { songKey } from '../lib/importer';
-import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { signalerLimite } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
 import { AssignSheet } from '../components/SongPicker';
@@ -130,7 +129,6 @@ export function SongView({
   const capo = song?.capo ?? 0;
   // null = fermé · 'new' = nouvelle note · sinon la note à modifier
   const [noteModal, setNoteModal] = useState<'new' | SongNote | null>(null);
-  const [ugUpgrade, setUgUpgrade] = useState(false);
   // Éditeur « Ajouter à un groupe / une setlist » (à la demande).
   const [assocOpen, setAssocOpen] = useState(false);
   // Actions « versions » (menu ⋯), création et suppression de version.
@@ -326,13 +324,6 @@ export function SongView({
     sl.items.some((it) => it.songId === song.id),
   );
 
-  /** Applique une partition UG mieux notée : remplace ou nouvelle version. */
-  function applyUgTab(text: string, mode: 'replace' | 'version') {
-    if (!song) return;
-    saveSong(applyUgTextToSong(song, text, mode));
-    setUgUpgrade(false);
-  }
-
   return (
     <>
       <TopBar
@@ -442,19 +433,6 @@ export function SongView({
           {/* 👁 Consultation de la vue du public (lecture seule, b302) —
               visible sur la partition, pas rangé dans un pli. */}
           <PublicEye actif={vuePublic} onToggle={() => setVuePublic((v) => !v)} />
-          {/* En haut de page (demande Vincent) : proposer une meilleure
-              partition dès l'arrivée sur le morceau. */}
-          {!isBandVersion && song.versions.length < 2 && (
-            <button
-              className="btn ai small"
-              title={t(
-                'mojosong cherche la version la mieux notée de cette partition et te la propose',
-              )}
-              onClick={() => setUgUpgrade(true)}
-            >
-              {t('★ Meilleure version ?')}
-            </button>
-          )}
         </div>
 
         {/* Bandeau de version : dit toujours CE QUE tu consultes et si c'est
@@ -524,22 +502,12 @@ export function SongView({
             <button
               className="btn ghost small"
               aria-label={t('Actions sur les versions')}
-              title={t(
-                'Versions : référence, renommer, meilleure version, supprimer',
-              )}
+              title={t('Versions : référence, renommer, supprimer')}
               onClick={() => setVersionMenu(true)}
             >
               ⋯
             </button>
           </div>
-        )}
-
-        {ugUpgrade && (
-          <UgUpgradeModal
-            song={song}
-            onApply={applyUgTab}
-            onClose={() => setUgUpgrade(false)}
-          />
         )}
 
         {assocOpen && (
@@ -914,11 +882,6 @@ export function SongView({
         <MenuSheet
           title={t('Version « {name} »', { name: current.name })}
           items={[
-            {
-              label: t('★ Chercher une meilleure version (IA)'),
-              icon: 'star',
-              onClick: () => setUgUpgrade(true),
-            },
             ...(!isMainVersion
               ? [
                   {

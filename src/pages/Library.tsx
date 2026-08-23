@@ -4,7 +4,6 @@ import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
 import { garderLaMiseEnForme, revenirAvantIA } from '../lib/aiFormat';
 import { SongBody } from '../components/SongBody';
-import { applyUgTextToSong, UgUpgradeModal } from '../components/UgUpgrade';
 import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { ConfirmSheet, MenuSheet, useToast } from '../components/Feedback';
@@ -1247,7 +1246,6 @@ function SongPreview({
   const [suppr, setSuppr] = useState(false);
   const song = id ? songs.find((s) => s.id === id) : undefined;
   const paneRef = useRef<HTMLElement | null>(null);
-  const [ugOpen, setUgOpen] = useState(false);
   // Éditeur « Ajouter à un groupe / une setlist » (à la demande).
   const [assocOpen, setAssocOpen] = useState(false);
 
@@ -1302,7 +1300,6 @@ function SongPreview({
   // Chaque morceau affiché commence à son début (pas de scroll hérité)
   useEffect(() => {
     if (paneRef.current) paneRef.current.scrollTop = 0;
-    setUgOpen(false);
     setAssocOpen(false);
   }, [id]);
 
@@ -1314,16 +1311,6 @@ function SongPreview({
   );
   return (
     <aside className="libpreview" ref={paneRef}>
-      {ugOpen && (
-        <UgUpgradeModal
-          song={song}
-          onApply={(text, mode) => {
-            saveSong(applyUgTextToSong(song, text, mode));
-            setUgOpen(false);
-          }}
-          onClose={() => setUgOpen(false)}
-        />
-      )}
       {/* Titre sur sa propre ligne (✕ à droite), actions en dessous :
           plus d'écrasement ni de débordement quand l'écran se resserre. */}
       <div className="hstack" style={{ marginBottom: 4 }}>
@@ -1357,15 +1344,6 @@ function SongPreview({
           title={t('Modifier la partition')}
         >
           <Icon name="edit" size={14} /> {t('Modifier')}
-        </button>
-        <button
-          className="btn ai small"
-          onClick={() => setUgOpen(true)}
-          title={t(
-            'mojosong cherche la version la mieux notée de cette partition et te la propose',
-          )}
-        >
-          {t('★ Meilleure version ?')}
         </button>
         <button
           className="btn ghost small"
