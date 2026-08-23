@@ -424,8 +424,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Mes groupes': 'My bands',
   'déjà au répertoire': 'already in the repertoire',
   'Rechercher un titre, un artiste…': 'Search a title, an artist…',
-  'Ces morceaux sont ceux de ta bibliothèque. Pour en importer de nouveaux, ferme cet écran et passe par l’onglet Morceaux.':
-    'These songs are the ones in your library. To import new ones, close this screen and go to the Songs tab.',
+  'Ces morceaux sont ceux de ta bibliothèque. Pour en importer de nouveaux, ferme cet écran et passe par le ＋ de l’onglet Morceaux — si cet onglet est filtré sur un groupe, touche d’abord « Tout afficher ».':
+    'These songs are the ones in your library. To import new ones, close this screen and use the ＋ in the Songs tab — if that tab is filtered on a band, tap “Show all” first.',
   'Ta bibliothèque est vide — importe un morceau depuis l’onglet Morceaux, il sera ensuite proposé ici.':
     'Your library is empty — import a song from the Songs tab and it will show up here.',
   // ---------- Retirer du répertoire d'un groupe (b278) ----------

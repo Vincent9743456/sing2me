@@ -348,9 +348,13 @@ export function SongCollector({
             passe : l'onglet Morceaux (règle 1 — chaque objet a une seule
             maison, et c'est celle-là). Une MENTION, pas un bouton : ouvrir
             un deuxième chemin vers l'import serait la règle 3 à l'envers. */}
+        {/* Précision b400 (retour de Vincent) : si l'onglet Morceaux est
+            resté filtré sur un groupe, on y retrouve… le même répertoire,
+            et l'instruction semble tourner en rond. On nomme la sortie :
+            « Tout afficher ». */}
         <p className="help" style={{ margin: '8px 0 0' }}>
           {t(
-            'Ces morceaux sont ceux de ta bibliothèque. Pour en importer de nouveaux, ferme cet écran et passe par l’onglet Morceaux.',
+            'Ces morceaux sont ceux de ta bibliothèque. Pour en importer de nouveaux, ferme cet écran et passe par le ＋ de l’onglet Morceaux — si cet onglet est filtré sur un groupe, touche d’abord « Tout afficher ».',
           )}
         </p>
       </div>
