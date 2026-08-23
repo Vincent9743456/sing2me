@@ -908,6 +908,11 @@ export function musiciensConnus(
     for (const m of b.members ?? []) {
       const id = (m.userId ?? '').trim();
       if (id === '' || id === moi) continue;
+      // Une invitation EN ATTENTE n'est pas « déjà avec toi » (b403,
+      // constat de Vincent et Marco) : sitôt invitée depuis l'annuaire, la
+      // personne portait son identifiant (b250) et le calcul la disait
+      // « déjà avec toi » dans un groupe qu'elle n'a pas encore rejoint.
+      if (m.pending === true) continue;
       const liste = out.get(id) ?? [];
       if (nomGroupe !== '' && !liste.includes(nomGroupe)) liste.push(nomGroupe);
       out.set(id, liste);

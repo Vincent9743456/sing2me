@@ -225,7 +225,11 @@ export function BandEdit({ id }: { id: string }) {
    * fonctions qui s'en servent — un calcul d'écran posé après une garde ne
    * s'exécute pas quand l'écran renonce (cicatrice b201).
    */
-  const connus = musiciensConnus(bands, myId);
+  // Le groupe EN COURS D'ÉDITION est exclu du calcul (b403, test de
+  // Vincent : « j'ai tapé ton nom, je t'ai ajouté et il m'a dit "déjà avec
+  // toi dans Pizza n roses" » — le groupe qu'il venait de créer). « Déjà
+  // avec toi » ne peut désigner que les AUTRES groupes.
+  const connus = musiciensConnus(bands.filter((b) => b.id !== id), myId);
   /** « déjà avec toi dans X » — la raison du classement, écrite. */
   const dejaAvecMoi = (userId: string): string => {
     const g = connus.get(userId) ?? [];
@@ -503,11 +507,22 @@ export function BandEdit({ id }: { id: string }) {
         return;
       }
       const rows = await searchProfiles(s, dirQuery.trim());
+      // Les membres (et invités) déjà dans CE groupe n'ont pas à être
+      // réinvités — même règle que la recherche pendant la frappe (b252) ;
+      // ce chemin-ci l'avait oubliée (b403).
+      const libres = rows.filter(
+        (p) =>
+          !(band?.members ?? []).some((m) =>
+            memeMusicien(m, { name: p.name, userId: p.user_id }),
+          ),
+      );
       // Ceux avec qui je joue déjà en premier (b253) : sur cent homonymes,
       // c'est presque toujours l'un d'eux qu'on cherche.
-      setDirResults(connusEnTete(rows, connus));
+      setDirResults(connusEnTete(libres, connus));
       if (rows.length === 0)
         setDirMsg(t('Aucun musicien trouvé pour ce nom.'));
+      else if (libres.length === 0)
+        setDirMsg(t('Cette personne est déjà dans le groupe (ou invitée).'));
     } catch {
       setDirMsg(t("L'annuaire n'est pas disponible pour le moment."));
       setDirResults([]);
