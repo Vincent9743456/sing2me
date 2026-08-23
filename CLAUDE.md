@@ -862,6 +862,19 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   poussée — d'où `pushCloud` qui renvoie désormais son horodatage). La fusion
   reste dernier-écrit-gagne PAR OBJET sur `updatedAt` : pas de résolution de
   conflit à réinventer.
+- **UN MESSAGE QUI PROMET UN ESSAI DOIT LE PROGRAMMER** (b397, capture de
+  Vincent : « Synchronisation impossible — nouvel essai automatique »
+  affiché en 5G, rien ne repartait jamais). Quand la synchro de CONNEXION
+  échouait (réseau pas prêt au lancement, serveur muet, refresh raté),
+  `readyRef` restait à false et tout ce qui en dépend — envoi, débounce,
+  cycle de 90 s — rendait la main ; l'effet, accroché à `session.userId`,
+  ne repartait qu'à la relance de l'app. L'essai annoncé n'existait pas.
+  Depuis b397 : `initTick` relance l'effet (recul 5/15/30 s puis 60 s,
+  immédiat au retour réseau/premier plan), le cycle de 90 s renvoie AUSSI
+  ce qui attend (`aEnvoyer`), et le compteur ne dit plus « au retour du
+  réseau » (le réseau n'était pas coupable) mais « au prochain essai ».
+  Corollaire b244 verrouillé au passage : ni rattrapage ni envoi ne
+  courent avant la fusion initiale.
 - **DEUX COMPTES NE FUSIONNENT PAS** (b259, question de Vincent : « j'ai créé
   2 comptes avec 2 mails différents… j'ai l'impression qu'ils fusionnent.
   Comment empêcher cela ? »). Il avait raison, et c'était STRUCTUREL :

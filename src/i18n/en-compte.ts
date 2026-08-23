@@ -277,11 +277,11 @@ export const EN_COMPTE: Record<string, string> = {
     'The app is downloaded again in its latest version. Your songs, setlists, bands and settings stay exactly where they are. You need a network connection while it reloads.',
   'Recharger': 'Reload',
 
-  // Account.tsx — modifications en attente (b222)
-  '{n} modifications en attente — elles partiront au retour du réseau.':
-    '{n} changes waiting — they will go out when the network is back.',
-  '{n} modification en attente — elle partira au retour du réseau.':
-    '{n} change waiting — it will go out when the network is back.',
+  // Account.tsx — modifications en attente (b222, reformulé b397)
+  '{n} modifications en attente — elles partiront toutes seules au prochain essai.':
+    '{n} changes waiting — they will go out on their own at the next try.',
+  '{n} modification en attente — elle partira toute seule au prochain essai.':
+    '{n} change waiting — it will go out on its own at the next try.',
 
   // Limites du plan (b381, habillage b384, simplifié b386) — Account & Settings
   'Ta bibliothèque dépasse le plan gratuit : les nouveaux morceaux restent sur cet appareil tant que tu n’en supprimes pas (ou ne passes pas en illimité). Rien n’est perdu.':
