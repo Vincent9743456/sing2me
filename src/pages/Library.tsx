@@ -186,6 +186,35 @@ function isSplitScreen(): boolean {
 
 type SortMode = 'title' | 'artist' | 'recent';
 
+/**
+ * MÉMOIRE DES FILTRES (b402, demande de Vincent : « quand je filtre puis
+ * ouvre une chanson, le bouton revenir doit me ramener avec le même
+ * filtre — là il disparaît »). Le ← d'une partition remonte vers l'onglet
+ * Morceaux (navigation vers un parent explicite), ce qui REMONTE le
+ * composant : tout état local part avec lui. Même principe que la mémoire
+ * de défilement juste en dessous — qui, sans les filtres, retombait de
+ * toute façon au mauvais endroit : la liste n'était plus la même.
+ * `sessionStorage` : propre à l'appareil et à la session, jamais
+ * synchronisé — un filtre est un réglage d'écran, pas une donnée.
+ */
+const FILTRES_KEY = 'sing2me/libFiltres';
+interface FiltresMemo {
+  query: string;
+  tag: string | null;
+  bandFilter: string | null;
+  showIdeas: boolean;
+  showCheck: boolean;
+}
+function litFiltres(): Partial<FiltresMemo> {
+  try {
+    const raw = sessionStorage.getItem(FILTRES_KEY);
+    const v = raw !== null ? (JSON.parse(raw) as Partial<FiltresMemo>) : {};
+    return v && typeof v === 'object' ? v : {};
+  } catch {
+    return {};
+  }
+}
+
 /** Couleurs des pastilles de groupe (tokens --band-*, stables par ordre). */
 const BAND_COLORS = [
   'var(--band-1)',
@@ -219,10 +248,16 @@ export function Library() {
     () => songs.find((s) => estBrouillon(s)) ?? null,
     [songs],
   );
-  const [query, setQuery] = useState('');
-  const [tag, setTag] = useState<string | null>(null);
+  // Filtres restaurés au montage (b402) — un répertoire de groupe qui
+  // n'existe plus n'est pas restauré : il filtrerait sur du vide.
+  const [depart] = useState(litFiltres);
+  const [query, setQuery] = useState(depart.query ?? '');
+  const [tag, setTag] = useState<string | null>(depart.tag ?? null);
   // null = tous les morceaux · sinon id du répertoire de groupe
-  const [bandFilter, setBandFilter] = useState<string | null>(null);
+  const [bandFilter, setBandFilter] = useState<string | null>(() => {
+    const b = depart.bandFilter ?? null;
+    return b !== null && bands.some((x) => x.id === b) ? b : null;
+  });
   // Panneau « Filtrer » : tri + vues + répertoires + tags — replié par
   // défaut (règle : recherche + liste, rien d'autre).
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -294,7 +329,7 @@ export function Library() {
     bandFilter !== null && bandFilter !== ''
       ? (bands.find((b) => b.id === bandFilter) ?? null)
       : null;
-  const [showCheck, setShowCheck] = useState(false);
+  const [showCheck, setShowCheck] = useState(depart.showCheck === true);
   // Les compteurs excluent les BROUILLONS (b319) : une pastille compte
   // exactement ce que l'écran montrera (règle 11), et un brouillon ne se
   // montre nulle part.
@@ -304,7 +339,7 @@ export function Library() {
         .length,
     [songs],
   );
-  const [showIdeas, setShowIdeas] = useState(false);
+  const [showIdeas, setShowIdeas] = useState(depart.showIdeas === true);
   const ideaCount = useMemo(
     // Les propositions ÉCARTÉES (b240) n'y sont pas : la pastille compte
     // EXACTEMENT ce que l'écran montrera (règle 11).
@@ -351,6 +386,17 @@ export function Library() {
     window.addEventListener('scroll', save, { passive: true });
     return () => window.removeEventListener('scroll', save);
   }, []);
+
+  // Mémoire des filtres (b402) : notée à chaque changement, relue au
+  // montage — le ← d'une partition retrouve la même liste.
+  useEffect(() => {
+    try {
+      const memo: FiltresMemo = { query, tag, bandFilter, showIdeas, showCheck };
+      sessionStorage.setItem(FILTRES_KEY, JSON.stringify(memo));
+    } catch {
+      /* stockage indisponible */
+    }
+  }, [query, tag, bandFilter, showIdeas, showCheck]);
   const [sort, setSort] = useState<SortMode>(() => {
     const saved = localStorage.getItem('sing2me/librarySort');
     return saved === 'artist' || saved === 'recent' ? saved : 'title';
