@@ -179,6 +179,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'Invitation impossible : {raison}': 'Invitation failed: {raison}',
   'Cette personne est déjà sur mojosong :': 'This person is already on mojosong:',
   'déjà avec toi dans {groupe}': 'already with you in {groupe}',
+  'Cette personne est déjà dans le groupe (ou invitée).':
+    'This person is already in the band (or invited).',
   'Supprimer {nom}': 'Delete {nom}',
   ', dont {n} en attente': ', {n} of them pending',
   'Ce groupe a été créé par un compte différent du tien, au même nom d’artiste. Tu es connecté avec {email} : c’est peut-être une autre adresse que celle d’origine.':
