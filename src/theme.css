@@ -1289,9 +1289,10 @@ textarea.mono {
   width: auto;
   padding: 6px 10px;
 }
-/* Bandeau de version : énonce toujours CE QUE tu consultes / modifies et
-   si c'est partagé avec un groupe. Discret, teinté à la couleur du groupe
-   (posée en inline sur border-left). Une seule ligne forte + un sous-titre. */
+/* Bandeau de version ÉPURÉ (b398, demande de Vincent) : une seule rangée —
+   le sélecteur nomme la version affichée, la pastille dit son statut, le
+   liseré porte la couleur du groupe (posée en inline sur border-left).
+   Plus aucun texte descriptif ; l'éditeur garde sa ligne « Tu modifies ». */
 .versionbanner {
   display: flex;
   align-items: center;
@@ -1347,16 +1348,15 @@ textarea.mono {
   background: var(--accent-soft);
   color: var(--accent);
 }
-.versionbanner .vb-sub {
-  color: var(--text-dim);
-  font-size: 0.8rem;
-  margin-top: 3px;
+/* Dans le bandeau, le sélecteur prend la place disponible (la pastille et
+   le ⋯ gardent la leur) : le nom de la version reste lisible en entier. */
+.versionbanner .versionpick {
+  flex: 1;
+  min-width: 0;
 }
-.versionbanner select {
-  width: auto;
-  max-width: 45%;
-  padding: 6px 10px;
-  flex-shrink: 0;
+.versionbanner .versionpick select {
+  width: 100%;
+  max-width: none;
 }
 
 /* SÉLECTEUR DE VERSION (b301) — les versions sont une fonction importante :

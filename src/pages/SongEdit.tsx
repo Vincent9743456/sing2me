@@ -328,29 +328,16 @@ export function SongEdit({ id }: { id: string | null }) {
                         name: versionName.trim() || activeVersion(draft).name,
                       })}
               </span>
-              {editingOriginal ? (
-                <span className="vb-ref">{t('⭐ référence')}</span>
-              ) : versionGroupe ? (
+              {/* Pas de pastille qui répète le titre (b398) : « Tu
+                  modifies : la version de référence » se suffit. */}
+              {editingOriginal ? null : versionGroupe ? (
                 <span className="vb-shared">{t('partagée')}</span>
               ) : (
                 <span className="vb-solo">{t('perso')}</span>
               )}
             </div>
-            <div className="vb-sub">
-              {editingOriginal
-                ? draft.versions.length > 1
-                  ? t(
-                      'Version maîtresse, personnelle : elle reste dans ta bibliothèque et sert de base aux autres versions (tonalité/capo se répercutent).',
-                    )
-                  : t('Version maîtresse, personnelle : la base de ce morceau.')
-                : versionGroupe
-                  ? t(
-                      'À l’enregistrement, tes changements partent vers tous les membres du groupe.',
-                    )
-                  : t(
-                      'Modifications privées à cette version — les autres versions gardent leurs réglages.',
-                    )}
-            </div>
+            {/* ÉPURÉ (b398) : plus de paragraphe descriptif — le nom et la
+                pastille suffisent à dire ce qu'on modifie. */}
           </div>
         </div>
         {draft.versions.length > 1 && (
@@ -379,15 +366,6 @@ export function SongEdit({ id }: { id: string | null }) {
               onChange={(e) => setVersionName(e.target.value)}
             />
           </Field>
-        )}
-        {editingOriginal && (
-          <p className="help">
-            {t('🔒 L’originale est toujours ')}
-            <strong>{t('personnelle')}</strong>
-            {t(
-              ' : c’est ta façon de le jouer, et la modifier se répercute sur les versions de groupe qui la suivent. Pour une version dédiée à un groupe, utilise « Ajouter à… » depuis la partition.',
-            )}
-          </p>
         )}
         {bands.length > 0 && !editingOriginal && (
           <Field label={t('Cette version est pour')}>
