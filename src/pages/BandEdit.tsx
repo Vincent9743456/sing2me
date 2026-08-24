@@ -210,6 +210,9 @@ export function BandEdit({ id }: { id: string }) {
    * identifiant dès l'invitation (b250), donc aucun doublon à l'adhésion.
    */
   const [dejaInscrits, setDejaInscrits] = useState<DirectoryPerson[]>([]);
+  /** L'annuaire a trouvé la personne… déjà membre ou invitée ICI (b409) :
+   *  on le DIT au lieu de n'afficher aucune proposition, sans un mot. */
+  const [dejaDansLeGroupe, setDejaDansLeGroupe] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [lastMsg, setLastMsg] = useState<{ text: string; at: string } | null>(
     null,
@@ -428,11 +431,13 @@ export function BandEdit({ id }: { id: string }) {
   useEffect(() => {
     if (!invitePrompt) {
       setDejaInscrits([]);
+      setDejaDansLeGroupe(false);
       return;
     }
     const q = pendingName.trim();
     if (q.length < 2) {
       setDejaInscrits([]);
+      setDejaDansLeGroupe(false);
       return;
     }
     let annule = false;
@@ -444,20 +449,20 @@ export function BandEdit({ id }: { id: string }) {
           const rows = await searchProfiles(s, q);
           // Les membres déjà dans le groupe n'ont pas à être réinvités.
           if (!annule) {
-            setDejaInscrits(
-              connusEnTete(
-                rows.filter(
-                  (p) =>
-                    !(band?.members ?? []).some((m) =>
-                      memeMusicien(m, { name: p.name, userId: p.user_id }),
-                    ),
+            const libres = rows.filter(
+              (p) =>
+                !(band?.members ?? []).some((m) =>
+                  memeMusicien(m, { name: p.name, userId: p.user_id }),
                 ),
-                connus,
-              ),
             );
+            setDejaInscrits(connusEnTete(libres, connus));
+            setDejaDansLeGroupe(rows.length > 0 && libres.length === 0);
           }
         } catch {
-          if (!annule) setDejaInscrits([]);
+          if (!annule) {
+            setDejaInscrits([]);
+            setDejaDansLeGroupe(false);
+          }
         }
       })();
     }, 400);
@@ -1321,6 +1326,19 @@ export function BandEdit({ id }: { id: string }) {
                         setCloudMembers((list) =>
                           list.filter((x) => x.user_id !== m.user_id),
                         );
+                        // La ligne LOCALE part avec (b409, constat de
+                        // Vincent) : la laisser jusqu'au prochain sondage
+                        // bloquait la réinvitation — la recherche croyait
+                        // le musicien encore membre (filtre b403), sans un
+                        // mot.
+                        saveBand(
+                          tamponneBand({
+                            ...band,
+                            members: band.members.filter(
+                              (x) => (x.userId ?? '') !== m.user_id,
+                            ),
+                          }),
+                        );
                       } catch {
                         alert(
                           t('Impossible de retirer ce membre pour le moment.'),
@@ -1637,6 +1655,13 @@ export function BandEdit({ id }: { id: string }) {
               compte, l'invitation part DIRECTEMENT chez elle — pas de lien à
               envoyer, et sa ligne porte son identifiant tout de suite (b250),
               donc aucun doublon possible à l'adhésion. */}
+          {dejaDansLeGroupe && (
+            <p className="help" style={{ margin: '8px 0 0' }}>
+              {t(
+                'Cette personne est déjà dans le groupe, ou déjà invitée : elle n’a pas besoin d’une nouvelle invitation. Pour la réinviter après un départ, retire d’abord sa ligne de la liste des musiciens.',
+              )}
+            </p>
+          )}
           {dejaInscrits.length > 0 && (
             <>
               <div className="spacer" />
