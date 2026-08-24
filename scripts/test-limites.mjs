@@ -16,7 +16,8 @@ writeFileSync(
   `export {
     LIMITES, limitesDuPlan, estUnPlan, compteMorceauxPerso,
     peutAjouterMorceau, placesRestantes, presDeLaLimite,
-  } from '${racine}limites';\n`,
+  } from '${racine}limites';\n` +
+    `export { echeance, estEchu, ordreDeConservation, planDeTri } from '${racine}depassement';\n`,
 );
 const out = join(dir, 'pont.mjs');
 buildSync({ entryPoints: [pont], bundle: true, format: 'esm', outfile: out });
@@ -28,6 +29,10 @@ const {
   peutAjouterMorceau,
   placesRestantes,
   presDeLaLimite,
+  echeance,
+  estEchu,
+  ordreDeConservation,
+  planDeTri,
 } = await import(out);
 
 let ko = 0;
@@ -93,6 +98,67 @@ egal('39/50 : pas de rappel', presDeLaLimite(39, 50), false);
 egal('40/50 : rappel', presDeLaLimite(40, 50), true);
 egal('50/50 : rappel', presDeLaLimite(50, 50), true);
 egal('illimité : jamais', presDeLaLimite(1000, null), false);
+
+// b422 — le dépassement du plan gratuit : l'horloge…
+egal(
+  'échéance = depuis + 30 jours',
+  echeance('2026-08-01T00:00:00Z').toISOString(),
+  '2026-08-31T00:00:00.000Z',
+);
+egal(
+  'pas échu la veille',
+  estEchu('2026-08-01T00:00:00Z', new Date('2026-08-30T23:59:00Z')),
+  false,
+);
+egal(
+  'échu au 31',
+  estEchu('2026-08-01T00:00:00Z', new Date('2026-08-31T00:00:01Z')),
+  true,
+);
+
+// …et le tri : setlists d'abord, puis cœurs, puis récence ; les portes de
+// deletesong respectées (groupe → proposition, setlist de groupe → protégé,
+// perso → supprimé).
+{
+  const v = (id, bandId = '') => ({
+    id: `${id}-v`, name: 'v', bandId, key: 'C', tempo: 0, capo: 0,
+    structure: [], lyrics: '', updatedAt: '2026-08-01T00:00:00Z',
+  });
+  const chanson = (id, extra = {}, bandId = '') => ({
+    id, title: id, artist: '', key: 'C', tempo: 0, capo: 0, durationSec: 0,
+    tags: [], structure: [], lyrics: 'la',
+    versions: bandId ? [v(id), v(`${id}b`, bandId)] : [v(id)],
+    activeVersionId: `${id}-v`, rehearsalNotes: [], hearts: 0,
+    fanMessages: [], createdAt: '2026-08-01T00:00:00Z',
+    updatedAt: '2026-08-01T00:00:00Z', ...extra,
+  });
+  const bands = [{ id: 'g1', name: 'Zakoustiks', photo: '', bio: '', tipUrl: '', links: [], members: [], owned: true, cloudId: '' }];
+  const enSetlist = chanson('programmé');
+  const aime = chanson('aimé', { hearts: 9 });
+  const recent = chanson('récent', { updatedAt: '2026-08-20T00:00:00Z' });
+  const duGroupe = chanson('groupe', {}, 'g1');
+  const perso = chanson('perso');
+  const proposition = chanson('proposé', { idea: true, pendingBandId: 'g1' });
+  const setlists = [{ id: 's1', name: 'Set', comment: '', items: [{ id: 'i1', songId: 'programmé', note: '', keyOverride: '' }], bandId: '', updatedAt: '2026-08-01T00:00:00Z' }];
+  const ordre = ordreDeConservation([perso, aime, recent, enSetlist], setlists);
+  egal('ordre : setlist > cœurs > récence',
+    ordre.map((s) => s.id), ['programmé', 'aimé', 'récent', 'perso']);
+  // Plafond à 2 : « programmé » et « aimé » restent ; « récent » (perso) et
+  // « groupe »/« perso » sortent selon leur porte. La proposition ne compte
+  // jamais.
+  const tri = planDeTri([enSetlist, aime, recent, duGroupe, perso, proposition], setlists, bands, 2);
+  egal('gardés au plafond', tri.gardes.map((s) => s.id), ['programmé', 'aimé']);
+  egal('groupe → proposition', tri.enProposition.map((e) => e.song.id), ['groupe']);
+  egal('perso → supprimés', tri.aSupprimer.map((s) => s.id).sort(), ['perso', 'récent']);
+  egal('idées jamais comptées', tri.aSupprimer.some((s) => s.id === 'proposé'), false);
+  // Setlist de GROUPE : protégé même quand il tombe SOUS le plafond
+  // (« programmé » gagne la seule place grâce à ses cœurs).
+  const slGroupe = [{ id: 's2', name: 'Concert', comment: '', items: [{ id: 'i2', songId: 'groupe', note: '', keyOverride: '' }], bandId: 'g1', updatedAt: '2026-08-01T00:00:00Z' }];
+  const programmeAime = { ...enSetlist, hearts: 5 };
+  const tri2 = planDeTri([programmeAime, aime, recent, duGroupe], [...setlists, ...slGroupe], bands, 1);
+  egal('gardé unique', tri2.gardes.map((s) => s.id), ['programmé']);
+  egal('setlist de groupe = intouchable', tri2.proteges.map((s) => s.id).includes('groupe'), true);
+}
 
 rmSync(dir, { recursive: true, force: true });
 console.log(ko === 0 ? '\nTous les tests passent.' : `\n${ko} test(s) en échec.`);

@@ -27,8 +27,11 @@
  * Le PLAN vit côté serveur (`user_plans`, jamais modifiable par le
  * client) ; ces chiffres ne sont que l'ANNONCE côté app — l'autorité est
  * dans `supabase/plans.sql` (LIMIT_SONGS) et `api/live.js` (cap de
- * salle). « Un compte gratuit ne croît pas » : au-delà du plafond
- * (bêta), on garde tout, on modifie, on supprime — on n'ajoute plus.
+ * salle). « Un compte gratuit ne croît pas » : au-delà du plafond, on
+ * garde tout, on modifie, on supprime — on n'ajoute plus. Et depuis
+ * b422, un compte repassé en gratuit AU-DESSUS du plafond a 30 jours
+ * (horloge serveur `depassement_avis`, e-mails de prévenance) avant que
+ * l'app ramène la bibliothèque à 50 (`src/lib/depassement.ts`).
  */
 
 export type Plan = 'free' | 'musicien' | 'scene' | 'pro' | 'admin';
