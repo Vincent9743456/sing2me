@@ -221,6 +221,114 @@ export async function verifyEmailCode(
   });
 }
 
+/**
+ * CHANGER L'ADRESSE E-MAIL DU COMPTE (b405, demande de Vincent). Le compte
+ * (user_id) ne change PAS : bibliothèque, groupes, lives, page publique et
+ * plan suivent tout seuls — changer d'adresse n'est pas changer de compte
+ * (b259 : se reconnecter avec une adresse inconnue créerait un compte neuf
+ * et vide). La demande part avec le jeton du compte (b192) ; Supabase envoie
+ * un code à la NOUVELLE adresse — et un second à l'ancienne quand la double
+ * confirmation (« Secure email change ») est active.
+ */
+export async function demanderChangementEmail(nouvelle: string): Promise<void> {
+  const s = await getValidSession();
+  if (!s) throw new Error('Connexion requise');
+  const res = await fetch(
+    `${supabaseUrl()}/auth/v1/user?redirect_to=${encodeURIComponent(appUrl())}`,
+    {
+      method: 'PUT',
+      headers: {
+        apikey: anonKey(),
+        authorization: `Bearer ${s.accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ email: nouvelle.trim() }),
+    },
+  );
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as {
+      msg?: string;
+      error_description?: string;
+    };
+    const raw = body.msg ?? body.error_description ?? '';
+    if (/already|registered|exists/i.test(raw)) {
+      throw new Error('Cette adresse est déjà utilisée par un autre compte.');
+    }
+    if (/rate limit/i.test(raw)) {
+      throw new Error(
+        "Limite d'envoi d'emails atteinte — réessaie dans quelques minutes.",
+      );
+    }
+    throw new Error(raw || `Supabase a répondu ${res.status}`);
+  }
+}
+
+/** La session vient de changer sous React (nouvelle adresse confirmée) :
+ *  `AccountProvider` écoute cet événement et relit le stockage. */
+export const SESSION_MAJ_EVENT = 'mojo:sessionMaj';
+
+export type VerifChangementEmail = 'termine' | 'moitie';
+
+/**
+ * Vérifie UN code de changement d'adresse. Deux codes peuvent circuler (un
+ * par adresse, double confirmation) et l'utilisateur saisit celui qu'il a
+ * sous les yeux : on essaie la nouvelle adresse puis l'ancienne. 'moitie' =
+ * code accepté, mais l'autre reste à saisir avant que le changement
+ * s'applique.
+ */
+export async function verifierChangementEmail(
+  ancienne: string,
+  nouvelle: string,
+  code: string,
+): Promise<VerifChangementEmail> {
+  let derniereErreur = '';
+  for (const email of [nouvelle.trim(), ancienne.trim()]) {
+    if (email === '') continue;
+    const res = await fetch(`${supabaseUrl()}/auth/v1/verify`, {
+      method: 'POST',
+      headers: { apikey: anonKey(), 'content-type': 'application/json' },
+      body: JSON.stringify({
+        type: 'email_change',
+        email,
+        token: code.trim(),
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+      access_token?: string;
+      refresh_token?: string;
+      expires_in?: number;
+      msg?: string;
+      error_description?: string;
+    };
+    if (res.ok && body.access_token) {
+      const claims = decodeJwt(body.access_token);
+      saveSession({
+        accessToken: body.access_token,
+        refreshToken: body.refresh_token ?? '',
+        expiresAt: Math.floor(Date.now() / 1000) + (body.expires_in ?? 3600),
+        userId: claims.sub ?? '',
+        email: claims.email ?? '',
+      });
+      window.dispatchEvent(new Event(SESSION_MAJ_EVENT));
+      // Le jeton reflète l'adresse EFFECTIVE : tant qu'elle n'est pas la
+      // nouvelle, la double confirmation attend encore l'autre code.
+      if ((claims.email ?? '') === nouvelle.trim()) {
+        rememberLoginEmail(nouvelle.trim());
+        return 'termine';
+      }
+      return 'moitie';
+    }
+    if (res.ok) return 'moitie';
+    derniereErreur = body.msg ?? body.error_description ?? '';
+  }
+  if (/expired|invalid|not ?found/i.test(derniereErreur)) {
+    throw new Error(
+      'Code incorrect ou expiré — vérifie les chiffres, ou recommence la demande.',
+    );
+  }
+  throw new Error(derniereErreur || 'La vérification a échoué.');
+}
+
 export type OAuthProvider = 'google' | 'facebook' | 'apple';
 
 /**

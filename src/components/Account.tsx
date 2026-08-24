@@ -34,6 +34,7 @@ import {
   verifyEmailCode,
   signInWithProvider,
   signOut,
+  SESSION_MAJ_EVENT,
   takeAuthError,
 } from '../lib/auth';
 import { ProviderMark } from './ProviderMark';
@@ -228,6 +229,14 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(
     () => handleRedirectHash() ?? loadSession(),
   );
+  // L'adresse e-mail du compte peut changer SOUS l'app (b405, confirmation
+  // d'un changement d'adresse) : on relit la session stockée quand la lib
+  // d'auth le signale. Même compte (userId inchangé) → aucune resynchro.
+  useEffect(() => {
+    const relire = () => setSession(loadSession());
+    window.addEventListener(SESSION_MAJ_EVENT, relire);
+    return () => window.removeEventListener(SESSION_MAJ_EVENT, relire);
+  }, []);
   const [status, setStatus] = useState<SyncStatus>(
     session ? 'sync' : 'anon',
   );

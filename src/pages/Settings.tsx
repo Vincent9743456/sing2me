@@ -16,6 +16,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { useAccount } from '../components/Account';
+import { ChangeEmailModal } from '../components/ChangeEmail';
 import { DeleteAccount } from '../components/DeleteAccount';
 import { UpgradeSheet } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
@@ -96,6 +97,8 @@ export function Settings() {
   // Mon plan (b381) : compteurs au rendu, feuille « illimité » à la demande.
   const limites = useLimits();
   const [upgradeOuvert, setUpgradeOuvert] = useState(false);
+  // Changement d'adresse e-mail (b405).
+  const [emailOuvert, setEmailOuvert] = useState(false);
 
   /**
    * Le réglage n'a de sens que s'il AGIT tout de suite : cocher republie une
@@ -950,6 +953,18 @@ export function Settings() {
                 </p>
               </>
             )}
+            {/* CHANGER SON ADRESSE E-MAIL (b405, demande de Vincent). Le
+                compte ne change pas — bibliothèque, groupes et page publique
+                suivent. C'est LE chemin sûr : se reconnecter avec une
+                adresse inconnue créerait un compte neuf et vide (b259). */}
+            <AccordionNav
+              title={t('✉️ Changer mon adresse e-mail')}
+              sub={t(
+                '{email} — le compte et tout ce qu’il contient restent les mêmes',
+                { email: compte.email ?? '' },
+              )}
+              onClick={() => setEmailOuvert(true)}
+            />
           </>
         )}
 
@@ -1014,6 +1029,13 @@ export function Settings() {
 
       {upgradeOuvert && (
         <UpgradeSheet motif={null} onClose={() => setUpgradeOuvert(false)} />
+      )}
+
+      {emailOuvert && compte?.email != null && (
+        <ChangeEmailModal
+          actuelle={compte.email}
+          onClose={() => setEmailOuvert(false)}
+        />
       )}
 
       {confirming && (

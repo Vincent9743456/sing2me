@@ -277,6 +277,31 @@ export const EN_COMPTE: Record<string, string> = {
     'The app is downloaded again in its latest version. Your songs, setlists, bands and settings stay exactly where they are. You need a network connection while it reloads.',
   'Recharger': 'Reload',
 
+  // ChangeEmail.tsx — changer l'adresse e-mail du compte (b405)
+  '✉️ Changer mon adresse e-mail': '✉️ Change my email address',
+  '{email} — le compte et tout ce qu’il contient restent les mêmes':
+    '{email} — the account and everything in it stay the same',
+  'Changer mon adresse e-mail': 'Change my email address',
+  'Ton compte reste le même : morceaux, groupes, setlists, page publique et abonnement suivent. Seule l’adresse de connexion change.':
+    'Your account stays the same: songs, bands, setlists, public page and plan follow. Only the sign-in address changes.',
+  'Adresse actuelle': 'Current address',
+  'Nouvelle adresse': 'New address',
+  'prenom@exemple.com': 'name@example.com',
+  'C’est déjà l’adresse de ton compte.': 'That is already your account’s address.',
+  'La demande a échoué.': 'The request failed.',
+  'Envoyer la confirmation': 'Send the confirmation',
+  'Un code vient d’être envoyé à {email}. Si un second code arrive aussi sur ton adresse actuelle, saisis les deux, l’un après l’autre — pense aux spams.':
+    'A code was just sent to {email}. If a second code also lands in your current mailbox, enter both, one after the other — check your spam folder.',
+  'Il reste un code à saisir : celui reçu sur l’autre adresse.':
+    'One code left to enter: the one received at the other address.',
+  'Code reçu par e-mail': 'Code received by email',
+  'Valider le code': 'Confirm the code',
+  'Terminer plus tard': 'Finish later',
+  'Premier code accepté ✓ — saisis maintenant celui reçu sur l’autre adresse.':
+    'First code accepted ✓ — now enter the one received at the other address.',
+  '✓ Ton adresse est maintenant {email}.': '✓ Your address is now {email}.',
+  'La vérification a échoué.': 'The verification failed.',
+
   // Account.tsx — modifications en attente (b222, reformulé b397)
   '{n} modifications en attente — elles partiront toutes seules au prochain essai.':
     '{n} changes waiting — they will go out on their own at the next try.',
