@@ -509,6 +509,20 @@ export function Setlists() {
               icon: 'edit',
               onClick: () => navigate(`/setlist/${rowMenu.id}`),
             },
+            // SUPPRIMER AUSSI À LA SOURIS (b412, demande de Vincent) : le
+            // balayage (b352) n'existe pas au pointeur — sur ordinateur, la
+            // suppression n'avait AUCUN chemin. Même garde (canDelete) et
+            // même confirmation que le balayage : un seul comportement.
+            ...(canDelete(rowMenu)
+              ? [
+                  {
+                    label: t('Supprimer'),
+                    icon: 'trash' as const,
+                    danger: true,
+                    onClick: () => setConfirmDel(rowMenu),
+                  },
+                ]
+              : []),
           ]}
           onClose={() => setRowMenu(null)}
         />
