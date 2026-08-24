@@ -47,7 +47,21 @@ function dateFr(d) {
   }
 }
 
-/** Le corps commun : ce qui va se passer, et les deux sorties. */
+function dateEn(d) {
+  try {
+    return new Date(d).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return String(d).slice(0, 10);
+  }
+}
+
+/** Le corps commun : ce qui va se passer, et les deux sorties.
+ *  Bilingue SYSTÉMATIQUE (b423, décision Vincent) : français d'abord,
+ *  anglais en dessous — on ne connaît pas la langue du destinataire. */
 function corps(morceaux, echeanceLe) {
   return (
     `Ta bibliothèque mojosong compte ${morceaux} morceaux, et le plan ` +
@@ -60,17 +74,31 @@ function corps(morceaux, echeanceLe) {
     `À tout moment, tu peux exporter TOUTE ta bibliothèque depuis les ` +
     `Réglages : rien n'est pris en otage.\n\n` +
     `Ouvre mojosong : https://mojosong.com\n\n` +
+    `— English —\n\n` +
+    `Your mojosong library holds ${morceaux} songs, and the free plan ` +
+    `keeps 50.\n\n` +
+    `Until ${dateEn(echeanceLe)}, nothing changes: you can go unlimited ` +
+    `again, or choose what to keep yourself. After that, the app will ` +
+    `automatically keep your 50 most-used songs (those in your setlists ` +
+    `and concerts first) — songs that came from a band will return to its ` +
+    `suggestions, the others will be deleted.\n\n` +
+    `You can export your WHOLE library from Settings at any time: nothing ` +
+    `is held hostage.\n\n` +
+    `Open mojosong: https://mojosong.com\n\n` +
     `—\nTu reçois cet e-mail parce que ta bibliothèque dépasse le plan ` +
-    `gratuit de mojosong.`
+    `gratuit de mojosong.\n` +
+    `You're receiving this because your library exceeds mojosong's free plan.`
   );
 }
 
 function sujet(joursRestants) {
-  if (joursRestants <= 0) return 'Ta bibliothèque va être ramenée à 50 morceaux';
-  if (joursRestants === 1) return 'Dernier jour : tri automatique demain';
+  if (joursRestants <= 0)
+    return 'Ta bibliothèque va être ramenée à 50 morceaux · your library will be trimmed to 50';
+  if (joursRestants === 1)
+    return 'Dernier jour : tri automatique demain · last day before the automatic trim';
   if (joursRestants <= 3)
-    return `Plus que ${joursRestants} jours avant le tri automatique`;
-  return `Ta bibliothèque dépasse le plan gratuit — ${joursRestants} jours pour choisir`;
+    return `Plus que ${joursRestants} jours avant le tri automatique · ${joursRestants} days left`;
+  return `Ta bibliothèque dépasse le plan gratuit — ${joursRestants} jours pour choisir · ${joursRestants} days to choose`;
 }
 
 /** Faut-il écrire aujourd'hui ? J0 (ouverture), chaque semaine, puis
