@@ -79,7 +79,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Partitions ajoutées cette semaine — {n} morceau.': 'Charts added this week — {n} song.',
   'Filtre actif :': 'Active filter:',
   'Tout afficher': 'Show all',
-  'Tag :': 'Tag:',
+  '📥 Propositions': '📥 Proposals',
+  '🔎 À vérifier': '🔎 To check',
   Retirer: 'Remove',
   'Importe tes partitions': 'Import your charts',
   "Colle un texte, un lien d'une page de partition, un PDF ou un fichier Word — mojosong met tout au propre.":
