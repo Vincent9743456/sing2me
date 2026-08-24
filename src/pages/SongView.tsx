@@ -811,16 +811,19 @@ export function SongView({
             Aucun envoi de copie par lien depuis la fiche morceau. */}
 
         <div className="spacer" />
-        <button
-          className="btn ghost block"
-          style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-          onClick={() => setDelSongOpen(true)}
-        >
-          <Icon name="trash" size={15} />{' '}
-          {song.idea === true && (song.pendingBandId ?? '') !== ''
-            ? t('Écarter cette proposition')
-            : t('Supprimer ce morceau')}
-        </button>
+        {/* Une PROPOSITION de groupe n'a pas de bouton de suppression (b418,
+            arbitrage Vincent — plus d'« Écarter ») : le seul geste est
+            « ✓ Valider », plus haut. Un bouton qui n'aboutirait qu'à un
+            refus expliqué serait un bouton qui ne fait rien (b252). */}
+        {!(song.idea === true && (song.pendingBandId ?? '') !== '') && (
+          <button
+            className="btn ghost block"
+            style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+            onClick={() => setDelSongOpen(true)}
+          >
+            <Icon name="trash" size={15} /> {t('Supprimer ce morceau')}
+          </button>
+        )}
         {delSongOpen && (
           <SongDeleteSheet
             song={song}

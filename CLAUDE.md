@@ -390,7 +390,22 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     chemins de suppression (fiche, ligne, aperçu, éditeur) passent par elle,
     sinon un écran finirait par promettre « supprimé » là où l'app garde une
     proposition ;
-  - **une PROPOSITION de groupe s'ÉCARTE, elle ne se supprime pas** (b240,
+  - **une PROPOSITION ne se refuse PAS** (b418, arbitrage Vincent — REMPLACE
+    l'« écartée » de b240 ci-dessous, dont l'asymétrie s'est avérée
+    illisible : Marco écartait un morceau, il sortait de ses propositions,
+    et Vincent n'en voyait rien — chacun se racontait une histoire
+    différente). Le modèle : UN SEUL geste, « ✓ Accepter ». Une proposition
+    ATTEND dans la boîte tant qu'elle n'est pas acceptée, et elle disparaît
+    D'ELLE-MÊME si le morceau est retiré du répertoire du groupe avant
+    l'acceptation (`applyBandData` : un retrait supprime la copie encore en
+    proposition — une copie ACCEPTÉE, elle, reste personnelle, b110). La
+    feuille de suppression EXPLIQUE ce modèle au lieu d'offrir un refus ;
+    la fiche d'une proposition n'a plus de bouton de suppression (un bouton
+    qui n'aboutit qu'à un refus expliqué est un bouton qui ne fait rien,
+    b252). Migration au chargement : les écartées existantes redeviennent
+    des propositions à valider ; `Song.declined` reste dans les types,
+    plus jamais écrit.
+  - *(HISTORIQUE, remplacé par b418)* **une PROPOSITION de groupe s'ÉCARTE, elle ne se supprime pas** (b240,
     demande de Vincent : « qu'un morceau proposé dans le répertoire du
     Groupe, s'il n'est pas accepté par un membre, puisse être récupéré
     facilement »). C'était le dernier cul-de-sac : décliner posait une

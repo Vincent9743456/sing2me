@@ -29,8 +29,9 @@ export type SortDuMorceau =
   | { mode: 'supprime' }
   /** Morceau du répertoire d'un groupe : il retourne dans les Idées. */
   | { mode: 'idee'; bandId: string }
-  /** Proposition d'un groupe : elle est ÉCARTÉE, pas effacée. */
-  | { mode: 'ecarte'; bandId: string }
+  /** Proposition d'un groupe : elle ne se refuse pas (b418) — elle attend
+   *  l'acceptation, ou disparaît si le groupe la retire avant. */
+  | { mode: 'proposition'; bandId: string }
   /** Programmé dans une setlist du groupe : on ne le supprime pas. */
   | { mode: 'refus'; bandId: string; setlist: string };
 
@@ -90,13 +91,12 @@ export function sortDuMorceau(
       setlist: programmee.name,
     };
   }
-  // DÉJÀ une proposition : la décliner ne l'EFFACE pas (b240). Une vraie
-  // suppression poserait une pierre tombale, et le groupe — dont les
-  // données n'ont pas bougé d'un pouce — n'aurait alors aucun moyen de la
-  // reproposer : la porte se refermerait des deux côtés à la fois. Elle est
-  // donc ÉCARTÉE : hors des Idées, hors de tout, sauf du répertoire du
-  // groupe, où elle attend un « ↩ Reprendre ».
-  if (song.idea === true) return { mode: 'ecarte', bandId: groupes[0] };
+  // UNE PROPOSITION NE SE REFUSE PAS (b418, arbitrage Vincent — remplace
+  // l'écartée de b240, qui laissait les deux côtés se raconter une
+  // histoire différente : « refusé » chez l'un, rien chez l'autre). Elle
+  // attend l'acceptation, et disparaît d'elle-même si le groupe la retire
+  // de son répertoire avant.
+  if (song.idea === true) return { mode: 'proposition', bandId: groupes[0] };
   return { mode: 'idee', bandId: groupes[0] };
 }
 
@@ -117,25 +117,6 @@ export function remisEnIdee(song: Song, bandId: string): Song {
   };
 }
 
-/**
- * La proposition écartée. Elle garde tout — c'est ce qui permet de la
- * reprendre telle quelle, hors ligne et sans rien demander au groupe.
- */
-export function ecartee(song: Song, bandId: string): Song {
-  return {
-    ...song,
-    idea: true,
-    declined: true,
-    pendingBandId: bandId,
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-/** L'inverse : elle redevient une proposition ordinaire, à valider. */
-export function reprise(song: Song): Song {
-  return {
-    ...song,
-    declined: undefined,
-    updatedAt: new Date().toISOString(),
-  };
-}
+/* Les fonctions « écartée » / « reprise » de b240 sont retirées (b418) :
+   une proposition ne se refuse plus. `Song.declined` reste dans les types
+   (données des installés), remis à zéro par la migration au chargement. */

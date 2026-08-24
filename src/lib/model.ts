@@ -1475,6 +1475,21 @@ export function migrateSong(raw: unknown): Song {
   }
 
   /**
+   * FIN DU REFUS DE PROPOSITION (b418, arbitrage Vincent — remplace
+   * l'« écartée » de b240). Marco avait écarté un morceau : chez lui il
+   * sortait des propositions, chez Vincent rien ne le disait — les deux
+   * côtés se racontaient une histoire différente. Une proposition ne se
+   * refuse plus : elle ATTEND son acceptation, et ne disparaît que si le
+   * groupe la retire de son répertoire avant. Les écartées existantes
+   * redeviennent donc des propositions à valider. Le champ `declined`
+   * reste dans les types (les clés de données ne se renomment jamais),
+   * plus jamais écrit.
+   */
+  if (base.declined === true) {
+    base = { ...base, declined: undefined };
+  }
+
+  /**
    * UN BROUILLON PROPOSÉ À UN GROUPE N'EST PLUS UN BROUILLON (b338, constat
    * de Vincent : la fiche du groupe annonçait « 2 morceaux », le répertoire
    * n'en montrait qu'un). Le sélecteur de la discussion laissait passer les
