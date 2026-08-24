@@ -886,11 +886,12 @@ export function BandEdit({ id }: { id: string }) {
           >
             {departures.map((d) => (
               <div key={d.userId} style={{ marginBottom: 8 }}>
+                {/* Le FAIT, jamais une cause devinée (b415) : départ
+                    volontaire ou réinitialisation, le serveur ne sait
+                    qu'une chose — il a quitté le groupe. */}
                 <div>
                   <strong>{d.name || t('Un musicien')}</strong>{' '}
-                  {t(
-                    "n'a plus accès au groupe — son application a été réinitialisée.",
-                  )}
+                  {t('a quitté le groupe.')}
                 </div>
                 <div className="rowactions">
                   <button
