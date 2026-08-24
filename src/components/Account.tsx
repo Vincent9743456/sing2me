@@ -1231,26 +1231,31 @@ export function AccountSection() {
 
   return (
     <div className="card">
+      {/* LE PRINCIPE S'EXPLIQUE ICI, EN TOUTES LETTRES (b407, retour de
+          Cédric via Vincent : il a cru avoir « oublié son code » et a
+          cherché à le récupérer). Deux choses que l'écran ne disait pas :
+          il n'y a PAS de mot de passe, et le code change à chaque fois —
+          il n'y a rien à retenir. Et depuis b285, l'email ne contient
+          QU'UN CODE (gabarit sans lien, à cause des scanners de
+          messagerie) : tout le vocabulaire « lien » de cet écran mentait. */}
       <p className="help" style={{ marginTop: 0 }}>
         <strong>{t('Connecte-toi ou crée ton compte (gratuit)')}</strong>
         {t(
-          " — c'est le même champ : entre ton email, le lien reçu te connecte (et crée le compte s'il n'existe pas encore). Ta bibliothèque te suit ensuite sur tous tes appareils.",
+          " — c'est le même champ : entre ton email, saisis le code reçu, c'est tout. Pas de mot de passe — un nouveau code t'est envoyé à chaque connexion, il n'y a rien à retenir. Ta bibliothèque te suit ensuite sur tous tes appareils.",
         )}
       </p>
       {sent ? (
         <div>
           <p style={{ marginTop: 0 }}>
             <strong style={{ color: 'var(--accent)' }}>
-              {t('Lien envoyé à {email}', { email })}
+              {t('Code envoyé à {email}', { email })}
             </strong>
           </p>
           <p className="help">
-            {t('Ouvre cet email ')}
-            <strong>{t('sur cet appareil')}</strong>
-            {t(' et touche le lien — ou saisis ici le ')}
+            {t('Ouvre l’email reçu et saisis ici le ')}
             <strong>{t('code de connexion')}</strong>
             {t(
-              " de l'email (recommandé si tu utilises l'app installée sur l'écran d'accueil). Pense aux spams.",
+              '. Un nouveau code t’est envoyé à chaque connexion — rien à retenir, jamais de mot de passe. Pense aux spams.',
             )}
           </p>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
@@ -1319,7 +1324,11 @@ export function AccountSection() {
                   .finally(() => setBusy(false));
               }}
             >
-              {busy ? '…' : renvoye ? t('✓ Lien renvoyé') : t('Renvoyer le lien')}
+              {busy
+                ? '…'
+                : renvoye
+                  ? t('✓ Nouveau code envoyé')
+                  : t('Renvoyer un code')}
             </button>
             <button
               className="btn ghost small"
@@ -1348,7 +1357,7 @@ export function AccountSection() {
               className="btn"
               style={{ flex: '1 0 auto' }}
               title={t(
-                'Connexion OU création de compte — le lien magique fait les deux',
+                'Connexion OU création de compte — le même code fait les deux',
               )}
               disabled={!email.includes('@') || busy}
               onClick={() => {
@@ -1368,7 +1377,7 @@ export function AccountSection() {
                   .finally(() => setBusy(false));
               }}
             >
-              {busy ? '…' : t('Recevoir mon lien')}
+              {busy ? '…' : t('Recevoir mon code')}
             </button>
           </div>
         </Field>
@@ -1419,7 +1428,7 @@ export function AccountSection() {
       )}
       <p className="help" style={{ marginBottom: 0 }}>
         {t(
-          'Entre ton email et touche « Recevoir mon lien » : le lien magique te connecte (et crée ton compte si besoin), sans mot de passe. En créant un compte, tu acceptes les',
+          'Entre ton email et touche « Recevoir mon code » : le code te connecte (et crée ton compte si besoin) — jamais de mot de passe. En créant un compte, tu acceptes les',
         )}{' '}
         <a href="#/cgu" style={{ color: 'var(--accent)' }}>
           {t("conditions d'utilisation")}
