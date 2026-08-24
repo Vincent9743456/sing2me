@@ -43,6 +43,10 @@ import { getValidSession } from '../lib/auth';
 import { ensurePublicPage, profilAPublier } from '../lib/publicPages';
 import { emptyArtist } from '../types';
 import { leaveBand } from '../lib/bands';
+import {
+  noterDepartsEnAttente,
+  retirerDepartEnAttente,
+} from '../lib/departs';
 import { LiveStatus, pushLive, pushSetlist } from '../lib/live';
 import { navigate } from '../router';
 import { AppState, ResetParts, useStore } from '../store';
@@ -1065,10 +1069,16 @@ export function Settings() {
                 .map((b) => b.cloudId)
                 .filter((id): id is string => !!id && id !== '');
               if (cloudIds.length > 0) {
+                // Un départ se NOTE avant de se tenter (b408) : si l'appel
+                // rate ici (réseau, app fermée), la synchro le rejouera —
+                // plus de membre fantôme chez les autres (cas Marco).
+                noterDepartsEnAttente(cloudIds);
                 void (async () => {
                   const s = await getValidSession();
                   if (!s) return;
-                  for (const id of cloudIds) await leaveBand(s, id);
+                  for (const id of cloudIds) {
+                    if (await leaveBand(s, id)) retirerDepartEnAttente(id);
+                  }
                 })();
               }
             }

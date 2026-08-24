@@ -70,6 +70,9 @@ const CLES_DU_COMPTE = [
   'sing2me/msgSeen',
   'sing2me/msgInit',
   'sing2me/wasMember',
+  // b408 : un départ de groupe dû par CE compte ne se rejoue jamais sous
+  // l'identité d'un autre.
+  'sing2me/departsEnAttente',
   'sing2me/justJoined',
   'sing2me/libBandFilter',
   'sing2me/setlistCtx',

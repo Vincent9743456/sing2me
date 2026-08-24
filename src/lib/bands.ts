@@ -456,20 +456,23 @@ export async function inviteToBand(
 /**
  * Quitte un groupe côté SERVEUR (b140). Sans cela, réinitialiser son
  * application laissait un membre fantôme chez le créateur — qui ne
- * pouvait alors plus le réinviter. Best-effort : un échec réseau ne
- * bloque jamais la réinitialisation locale.
+ * pouvait alors plus le réinviter. Ne lève jamais (un échec réseau ne
+ * bloque pas la réinitialisation locale) mais DIT si le serveur a bien
+ * enregistré (b408) : c'est ce qui permet de rejouer un départ raté au
+ * lieu de laisser le fantôme pour toujours.
  */
 export async function leaveBand(
   s: AuthSession,
   cloudId: string,
-): Promise<void> {
+): Promise<boolean> {
   try {
-    await sbAuthed(s, '/rest/v1/rpc/leave_band', {
+    const res = await sbAuthed(s, '/rest/v1/rpc/leave_band', {
       method: 'POST',
       body: JSON.stringify({ p_band: cloudId }),
     });
+    return res.ok;
   } catch {
-    /* silencieux */
+    return false;
   }
 }
 

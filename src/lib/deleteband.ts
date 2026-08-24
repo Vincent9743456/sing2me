@@ -15,7 +15,8 @@
  * feuille de suppression et le store devaient répondre pareil).
  */
 import { getValidSession } from './auth';
-import { deleteCloudBand, removeBandMember } from './bands';
+import { deleteCloudBand, leaveBand } from './bands';
+import { noterDepartsEnAttente, retirerDepartEnAttente } from './departs';
 import { t } from '../i18n';
 import { Band } from '../types';
 
@@ -57,20 +58,33 @@ export function texteSuppression(band: Band): {
 }
 
 /**
- * Effet côté SERVEUR, best-effort : hors ligne ou serveur muet, la
- * suppression locale a lieu quand même. Un groupe qu'on croit avoir
- * supprimé et qui reste à l'écran serait pire que la trace laissée en base
- * — le sondage des notifications rattrape le reste.
+ * Effet côté SERVEUR : hors ligne ou serveur muet, la suppression locale a
+ * lieu quand même. Une DISSOLUTION ratée est rattrapée par la synchro
+ * (`cleanupOrphanCloudBands` : un groupe cloud supprimé localement finit
+ * dissous). Un DÉPART raté, lui, se NOTE et se rejoue (b408) : avant, il
+ * était perdu en silence, et le membre restait fantôme pour toujours chez
+ * les autres — impossible à réinviter (constat de Vincent, cas Marco).
+ * Le départ passe par `leave_band` (et plus un DELETE brut) : le créateur
+ * reçoit ainsi sa carte « Départs à traiter » (b142) et peut réinviter.
  */
 export async function detacherDuCloud(band: Band): Promise<void> {
   const cid = band.cloudId ?? '';
   if (cid === '') return;
+  if (sortDuGroupe(band) === 'dissoudre') {
+    try {
+      const s = await getValidSession();
+      if (s) await deleteCloudBand(s, cid);
+    } catch {
+      // rattrapé par cleanupOrphanCloudBands à la prochaine synchro
+    }
+    return;
+  }
+  // Un départ se NOTE avant de se tenter — jamais l'inverse.
+  noterDepartsEnAttente([cid]);
   try {
     const s = await getValidSession();
-    if (!s) return;
-    if (sortDuGroupe(band) === 'dissoudre') await deleteCloudBand(s, cid);
-    else await removeBandMember(s, cid, s.userId);
+    if (s && (await leaveBand(s, cid))) retirerDepartEnAttente(cid);
   } catch {
-    // best-effort : la suppression locale a lieu de toute façon
+    // la synchro rejouera le départ noté
   }
 }
