@@ -405,6 +405,31 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     b252). Migration au chargement : les écartées existantes redeviennent
     des propositions à valider ; `Song.declined` reste dans les types,
     plus jamais écrit.
+    **AMENDÉ b419-b421** (règles de Vincent) :
+    - **b419** : une proposition jamais acceptée MEURT AVEC LE GROUPE —
+      quitter/dissoudre (`deleteBand`) ou réinitialiser « Groupes »
+      (`resetData`) supprime les copies encore en proposition, tombe par ID
+      seul (propagation entre appareils, jamais de blocage d'un ré-import).
+    - **b420** : « une proposition ne peut venir que d'un artiste, pas d'un
+      groupe » — la version de groupe porte QUI a fait l'acte de proposer
+      (`SongVersion.par {id, nom}` / `SharedVersion.par`, posé par
+      `quiPropose` aux quatre chemins d'ajout au répertoire). PROVENANCE,
+      pas contenu : `versionEqual` l'ignore, la fusion ne la perd jamais,
+      la réception la recopie et la rattrape. Affichage : « Proposé par
+      Marco » quand on la connaît, « Du répertoire de {groupe} » sinon
+      (données d'avant b420) ; sous un filtre de groupe, TOUJOURS
+      « À valider » — on ne nomme jamais un autre groupe dans la vue d'un
+      groupe (un morceau peut être aux répertoires de DEUX groupes, et
+      `pendingBandId` ne retient que le premier).
+    - **b421** : on ne se propose PAS un morceau à soi-même — ce que J'AI
+      apporté au répertoire (provenance = mon compte) n'entre jamais dans
+      MA boîte (`applyBandData(monCompte)` : créé en bibliothèque, et une
+      proposition en boîte qui s'avère mienne est adoptée d'office). Et la
+      feuille d'une proposition offre LA SORTIE que b418 décrivait :
+      « ↩ Le retirer du répertoire de {groupe} » (`store.retirerProposition`
+      — retrait de niveau groupe propagé à tous + ma copie disparaît, tombe
+      par ID seul). Le bouton de suppression de la fiche revient sur les
+      propositions : la feuille n'est plus un refus expliqué.
   - *(HISTORIQUE, remplacé par b418)* **une PROPOSITION de groupe s'ÉCARTE, elle ne se supprime pas** (b240,
     demande de Vincent : « qu'un morceau proposé dans le répertoire du
     Groupe, s'il n'est pas accepté par un membre, puisse être récupéré

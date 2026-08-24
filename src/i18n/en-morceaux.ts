@@ -447,6 +447,11 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Retirer du répertoire': 'Remove from repertoire',
   '« {title} » retiré du répertoire — il reste chez toi.':
     '“{title}” removed from the repertoire — it stays in your library.',
+  // ---------- Sortie d'une proposition : retrait du répertoire (b421) ----------
+  'Le morceau quittera le répertoire pour TOUT le groupe. Ceux qui l’ont accepté gardent leur copie personnelle ; chez les autres — toi compris — la proposition disparaît.':
+    'The song will leave the repertoire for the WHOLE band. Those who accepted it keep their personal copy; for everyone else — you included — the suggestion disappears.',
+  'Tu l’avais apporté toi-même, ou il n’a plus sa place ? Retire-le du répertoire du groupe :':
+    'You brought it yourself, or it no longer belongs? Remove it from the band’s repertoire:',
   // ---------- Corbeille : quelle intention ? (b279) ----------
   '« {title} » — que veux-tu faire ?': '“{title}” — what do you want to do?',
   'Tu regardes le répertoire de {groupe}. Retirer du répertoire et supprimer le morceau ne sont pas la même chose — dis-moi laquelle.':

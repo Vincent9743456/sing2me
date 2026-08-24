@@ -48,8 +48,15 @@ export function SongDeleteSheet({
   onDeleted?: () => void;
   onClose: () => void;
 }) {
-  const { songs, setlists, bands, deleteSong, saveSong, recordBandRemoval } =
-    useStore();
+  const {
+    songs,
+    setlists,
+    bands,
+    deleteSong,
+    saveSong,
+    recordBandRemoval,
+    retirerProposition,
+  } = useStore();
   /**
    * LE MORCEAU DU STORE, PAS CELUI DE L'ÉCRAN (b279). Les listes passent
    * parfois une copie CONTEXTUELLE — réduite à la version affichée — et un
@@ -60,6 +67,8 @@ export function SongDeleteSheet({
   /** On a demandé l'intention et l'utilisateur a choisi « supprimer ». */
   const [suppression, setSuppression] = useState(false);
   const [retrait, setRetrait] = useState(false);
+  /** La sortie d'une proposition (b421) : retrait du répertoire confirmé. */
+  const [retraitProposition, setRetraitProposition] = useState(false);
   // Avec MES groupes (b281) : un rattachement orphelin ne doit pas faire
   // passer un morceau personnel pour un morceau de répertoire.
   const sort = sortDuMorceau(song, setlists, bands);
@@ -162,6 +171,33 @@ export function SongDeleteSheet({
     // nomme quand la provenance est connue ; sinon on dit d'où vient le
     // morceau, jamais « proposé par un groupe ».
     const qui = versionForBand(song, sort.bandId)?.par?.nom ?? '';
+    const groupe = nomDuGroupe(sort.bandId);
+    // LA SORTIE (b421, constat de Vincent : « je ne peux pas les supprimer
+    // alors que c'est moi qui les ai envoyés ») : retirer le morceau du
+    // répertoire du groupe — l'acte de niveau groupe auquel tout membre a
+    // droit (b110), et celui que b418 décrivait déjà comme la fin d'une
+    // proposition. Second geste + confirmation : il touche tout le groupe.
+    if (retraitProposition) {
+      return (
+        <ConfirmSheet
+          title={t('Retirer « {title} » du répertoire de {band} ?', {
+            title: titre,
+            band: groupe,
+          })}
+          message={t(
+            'Le morceau quittera le répertoire pour TOUT le groupe. Ceux qui l’ont accepté gardent leur copie personnelle ; chez les autres — toi compris — la proposition disparaît.',
+          )}
+          confirmLabel={t('Retirer du répertoire')}
+          danger
+          onConfirm={() => {
+            retirerProposition(song.id);
+            onDeleted?.();
+            onClose();
+          }}
+          onClose={onClose}
+        />
+      );
+    }
     return (
       <Sheet
         title={t('« {title} » est une proposition', { title: titre })}
@@ -171,15 +207,27 @@ export function SongDeleteSheet({
           {qui !== ''
             ? t(
                 'Ce morceau t’est proposé par {qui} pour le répertoire de {groupe}. Une proposition ne se supprime pas : elle attend simplement ton acceptation — et elle disparaîtra d’elle-même si le groupe la retire de son répertoire.',
-                { qui, groupe: nomDuGroupe(sort.bandId) },
+                { qui, groupe },
               )
             : t(
                 'Ce morceau vient du répertoire de {groupe}. Une proposition ne se supprime pas : elle attend simplement ton acceptation — et elle disparaîtra d’elle-même si le groupe la retire de son répertoire.',
-                { groupe: nomDuGroupe(sort.bandId) },
+                { groupe },
               )}
         </p>
         <button className="btn block" onClick={onClose}>
           {t('J’ai compris')}
+        </button>
+        <p className="help">
+          {t(
+            'Tu l’avais apporté toi-même, ou il n’a plus sa place ? Retire-le du répertoire du groupe :',
+          )}
+        </p>
+        <button
+          className="btn ghost block"
+          style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+          onClick={() => setRetraitProposition(true)}
+        >
+          ↩ {t('Le retirer du répertoire de {band}', { band: groupe })}
         </button>
       </Sheet>
     );

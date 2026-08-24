@@ -94,6 +94,9 @@ interface StoreValue extends AppState {
   /** Accepte une proposition de groupe : elle entre en bibliothèque ET dans
    *  le répertoire du groupe qui l'a proposée (b205). */
   acceptSong: (songId: string) => void;
+  /** Sort une proposition en retirant le morceau du répertoire du groupe
+   *  (b421) — acte de niveau groupe, propagé à tous les membres. */
+  retirerProposition: (songId: string) => void;
   saveSetlist: (setlist: Setlist) => void;
   deleteSetlist: (setlistId: string) => void;
   saveConcert: (concert: Concert) => void;
@@ -458,6 +461,44 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  /**
+   * SORTIR UNE PROPOSITION EN LA RETIRANT DU RÉPERTOIRE (b421, constat de
+   * Vincent : « je ne peux pas les supprimer alors que c'est moi qui les ai
+   * envoyés »). Une proposition ne se refuse pas (b418) — mais retirer le
+   * morceau du répertoire du groupe est un acte de NIVEAU GROUPE auquel tout
+   * membre a droit (b110), et c'est la sortie que b418 décrivait déjà :
+   * « elle disparaît d'elle-même si le morceau est retiré du répertoire ».
+   * Ici, tout se fait d'un geste : le retrait part au groupe (bandRemovals,
+   * même canal que recordBandRemoval) et ma copie en boîte disparaît — tombe
+   * par ID seul, jamais de clé (un retrait n'interdit pas de réimporter le
+   * titre un jour). Chez les autres : une copie ACCEPTÉE reste personnelle,
+   * une proposition en attente disparaît (b418, applyBandData).
+   */
+  const retirerProposition = useCallback((songId: string) => {
+    setState((prev) => {
+      const s = prev.songs.find((x) => x.id === songId);
+      if (!s || s.idea !== true) return prev;
+      const bandId = (s.pendingBandId ?? '').trim();
+      if (bandId === '') return prev;
+      const key = songKey(s.title, s.artist);
+      return {
+        ...prev,
+        songs: prev.songs.filter((x) => x.id !== songId),
+        bandRemovals:
+          key === ''
+            ? prev.bandRemovals
+            : [
+                ...(prev.bandRemovals ?? []).filter(
+                  (r) => !(r.bandId === bandId && bandKeysMatch(r.key, key)),
+                ),
+              ]
+                .slice(-499)
+                .concat({ bandId, key, at: new Date().toISOString() }),
+        deleted: bury(prev.deleted, songId),
+      };
+    });
+  }, []);
+
   const saveSetlist = useCallback((setlist: Setlist) => {
     const stamped = { ...setlist, updatedAt: new Date().toISOString() };
     // RÈGLE (décision Vincent, b174) : mettre un morceau dans une setlist
@@ -805,6 +846,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     saveSong,
     deleteSong,
     acceptSong,
+    retirerProposition,
     saveSetlist,
     deleteSetlist,
     saveConcert,

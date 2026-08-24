@@ -28,6 +28,7 @@ import {
   setMarketingConsent,
   takeProviderName,
   loadSession,
+  monId,
   pullCloud,
   pushCloud,
   signInWithEmail,
@@ -507,6 +508,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             band.id,
             skipKeys,
             skipSetlistIds,
+            // Ce que J'AI apporté au groupe n'est jamais une proposition
+            // pour moi (b421).
+            monId(),
           );
           songs = applied.songs;
           setlists = applied.setlists;
