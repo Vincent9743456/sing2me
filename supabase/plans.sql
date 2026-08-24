@@ -198,3 +198,44 @@ on conflict (user_id) do update set plan = 'admin', updated_at = now();
 -- insert into public.user_plans (user_id, plan)
 -- select id, 'scene' from auth.users where email = 'adresse@exemple.com'
 -- on conflict (user_id) do update set plan = 'scene', updated_at = now();
+
+-- ------------------------------------------------------------
+-- b422 — DÉPASSEMENT DU PLAN GRATUIT (arbitrage Vincent + Marco).
+-- Un compte repassé en gratuit avec plus de 50 morceaux a 30 jours
+-- pour choisir (se réabonner, ou revenir à 50) ; ensuite l'app fait
+-- le tri à l'ouverture. Le serveur PORTE L'HORLOGE : une ligne par
+-- compte en dépassement, posée par le cron (/api/depassement,
+-- server/depassement.js) qui envoie aussi les e-mails de prévenance
+-- (à l'ouverture du délai, chaque semaine, puis chaque jour les 3
+-- derniers jours). Le propriétaire peut LIRE sa ligne (l'app affiche
+-- le compte à rebours) ; seul le service écrit.
+-- ------------------------------------------------------------
+create table if not exists public.depassement_avis (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  depuis timestamptz not null default now(),
+  dernier_avis timestamptz
+);
+
+alter table public.depassement_avis enable row level security;
+drop policy if exists depassement_lecture on public.depassement_avis;
+create policy depassement_lecture on public.depassement_avis
+  for select using (auth.uid() = user_id);
+-- Aucune politique d'écriture : la clé service (cron) passe outre la RLS.
+
+-- Les comptes gratuits au-dessus du plafond, avec leur décompte —
+-- réservé au service (le cron) : jamais exposée aux clients.
+create or replace function public.comptes_en_depassement(p_max integer default 50)
+returns table(user_id uuid, morceaux integer)
+language sql
+security definer set search_path = public
+as $$
+  select ul.id, public.compte_morceaux(ul.data)
+  from public.user_library ul
+  where public.plan_du_compte(ul.id) = 'free'
+    and public.compte_morceaux(ul.data) > p_max;
+$$;
+
+revoke all on function public.comptes_en_depassement(integer) from public;
+revoke all on function public.comptes_en_depassement(integer) from anon;
+revoke all on function public.comptes_en_depassement(integer) from authenticated;
+grant execute on function public.comptes_en_depassement(integer) to service_role;

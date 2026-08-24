@@ -11,6 +11,7 @@ import { Onboarding } from '../components/Onboarding';
 import { BackupNudge } from '../components/BackupNudge';
 import { signalerLimite } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
+import { useDepassement } from '../components/useDepassement';
 import { presDeLaLimite } from '../lib/limites';
 import { EXAMPLE_TAG } from '../seed';
 import { Empty, HeaderPlus, TopBar } from '../components/ui';
@@ -362,6 +363,20 @@ export function Library() {
   );
   const showNudge =
     account?.available === true && account.email === null && !nudgeHidden;
+  // Dépassement du plan gratuit (b422) : horloge du serveur, bandeau, et
+  // tri automatique à l'échéance — tout vit dans le hook.
+  const {
+    etat: depassement,
+    bilan: bilanTri,
+    fermerBilan,
+  } = useDepassement();
+  const [depassementVu, setDepassementVu] = useState(() => {
+    try {
+      return sessionStorage.getItem('sing2me/depassementVu') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   // Mémoire de défilement : en revenant d'une partition, on retrouve la
   // bibliothèque à l'endroit où on l'avait laissée (pas de re-scroll).
@@ -790,6 +805,89 @@ export function Library() {
               onClick={() => {
                 localStorage.setItem('sing2me/accountNudge', '1');
                 setNudgeHidden(true);
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+        {/* DÉPASSEMENT du plan gratuit (b422) : bilan d'un tri appliqué… */}
+        {bilanTri && (
+          <div
+            className="card"
+            style={{
+              display: 'flex',
+              gap: 10,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ flex: 1 }}>
+              🧹 <strong>{t('Bibliothèque ramenée au plan gratuit')}</strong>
+              <br />
+              <span className="help">
+                {t(
+                  'Gardés : {g} · rendus aux propositions de leur groupe : {p} · supprimés : {s}.',
+                  {
+                    g: bilanTri.gardes,
+                    p: bilanTri.propositions,
+                    s: bilanTri.supprimes,
+                  },
+                )}
+              </span>
+            </span>
+            <button
+              className="btn ghost small"
+              title={t('Fermer')}
+              onClick={fermerBilan}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+        {/* …et compte à rebours tant que le délai court. La sortie (règle
+            11) : ✕ pour la session, et le bandeau se lève SEUL quand le
+            motif disparaît (retour sous le plafond, ou plan illimité). */}
+        {depassement && !depassementVu && (
+          <div
+            className="card"
+            style={{
+              borderColor: 'var(--warn)',
+              display: 'flex',
+              gap: 10,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ flex: 1 }}>
+              ⏳{' '}
+              <strong>
+                {t('Ta bibliothèque dépasse le plan gratuit ({n}/{max})', {
+                  n: depassement.morceaux,
+                  max: depassement.max,
+                })}
+              </strong>
+              <br />
+              <span className="help">
+                {t(
+                  'Jusqu’au {date} : repasse en illimité, ou choisis toi-même ce que tu gardes. Ensuite l’app gardera les {max} morceaux les plus utilisés (setlists et concerts d’abord) — les morceaux venus d’un groupe retourneront en proposition, les autres seront supprimés. Tu peux exporter toute ta bibliothèque depuis les Réglages.',
+                  {
+                    date: depassement.echeanceLe.toLocaleDateString(),
+                    max: depassement.max,
+                  },
+                )}
+              </span>
+            </span>
+            <button
+              className="btn ghost small"
+              title={t('Masquer jusqu’au prochain lancement')}
+              onClick={() => {
+                try {
+                  sessionStorage.setItem('sing2me/depassementVu', '1');
+                } catch {
+                  // au pire, le bandeau restera visible
+                }
+                setDepassementVu(true);
               }}
             >
               ✕

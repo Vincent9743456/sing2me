@@ -44,6 +44,15 @@ export const EN_MORCEAUX: Record<string, string> = {
   '📥 Proposé par': '📥 Proposed by',
   // b420 — la provenance d'une proposition : la personne, sinon le répertoire
   '📥 Du répertoire de {groupe}': '📥 From the {groupe} repertoire',
+  // b422 — dépassement du plan gratuit : bandeau + bilan du tri
+  'Bibliothèque ramenée au plan gratuit': 'Library brought back to the free plan',
+  'Gardés : {g} · rendus aux propositions de leur groupe : {p} · supprimés : {s}.':
+    'Kept: {g} · returned to their band’s suggestions: {p} · deleted: {s}.',
+  'Ta bibliothèque dépasse le plan gratuit ({n}/{max})':
+    'Your library exceeds the free plan ({n}/{max})',
+  'Jusqu’au {date} : repasse en illimité, ou choisis toi-même ce que tu gardes. Ensuite l’app gardera les {max} morceaux les plus utilisés (setlists et concerts d’abord) — les morceaux venus d’un groupe retourneront en proposition, les autres seront supprimés. Tu peux exporter toute ta bibliothèque depuis les Réglages.':
+    'Until {date}: go unlimited again, or choose what you keep yourself. After that the app will keep your {max} most-used songs (setlists and concerts first) — songs that came from a band will return to its suggestions, the others will be deleted. You can export your whole library from Settings at any time.',
+  'Masquer jusqu’au prochain lancement': 'Hide until the next launch',
   'ton groupe': 'your band',
   Exemple: 'Example',
   'Groupe : {name} — cliquer pour filtrer': 'Band: {name} — click to filter',

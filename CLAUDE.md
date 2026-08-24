@@ -785,7 +785,27 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     proposition en attente (`idea === true`) ne compte pas. Pas de
     période de lancement illimitée. `Song.reserve` (b385) reste un champ
     INERTE. Groupes et setlists ILLIMITÉS partout.
-  - **CAP DE SALLE APPLIQUÉ (b387)** : 15 spectateurs SIMULTANÉS en
+  - **DÉPASSEMENT : 30 JOURS, PUIS TRI (b422, arbitrage Vincent + Marco —
+    le cas « il s'abonne un mois, charge 200 morceaux, puis se
+    désabonne »)** : un compte repassé en gratuit au-dessus de 50 garde
+    TOUT pendant 30 jours — bandeau dans Morceaux + e-mails de prévenance
+    (à l'ouverture du délai, chaque semaine, puis chaque jour les 3
+    derniers jours — cron quotidien `/api/depassement`,
+    `server/depassement.js`). **L'HORLOGE EST AU SERVEUR** (table
+    `depassement_avis`, posée par le cron, lisible par son propriétaire) :
+    pas d'horloge locale qu'un localStorage vidé remettrait à zéro. À
+    l'échéance, l'app fait le TRI à l'ouverture (`useDepassement` →
+    `store.appliquerPlafond` → `lib/depassement.planDeTri`) : elle garde
+    les 50 les plus utilisés (setlists d'abord, puis cœurs de concert,
+    puis récence) ; les morceaux de répertoire de GROUPE retournent en
+    PROPOSITION (rien n'est perdu pour le groupe), les programmés d'une
+    setlist de groupe sont INTOUCHABLES (b239), seuls les personnels
+    excédentaires sont supprimés — tombe par ID seul, réimport possible.
+    **PAS de « réserve » au réabonnement** (décision Marco : « il faut
+    qu'il réimporte tout »). Garde-fous : le plan est CONFIRMÉ par le
+    serveur à l'instant du tri (jamais le cache ni une panne, b245),
+    JAMAIS de tri pendant un live, et pendant les 30 jours tout reste
+    consultable et exportable (« rien n'est pris en otage »).
     gratuit et en musicien — logique dans `api/live.js` (CAP_SALLE,
     même valeur que `limites.ts`), table `live_seats` (service_role
     seulement). Modèle de SIÈGES : un siège = un deviceId vu depuis

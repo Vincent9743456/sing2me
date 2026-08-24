@@ -22,6 +22,7 @@ import {
 import { monId } from './lib/auth';
 import { ResetMarks } from './lib/sync';
 import { remisEnIdee, sortDuMorceau } from './lib/deletesong';
+import { planDeTri } from './lib/depassement';
 import {
   duplicateVersion,
   dedupeBandMembers,
@@ -97,6 +98,9 @@ interface StoreValue extends AppState {
   /** Sort une proposition en retirant le morceau du répertoire du groupe
    *  (b421) — acte de niveau groupe, propagé à tous les membres. */
   retirerProposition: (songId: string) => void;
+  /** Tri du dépassement (b422) : ramène la bibliothèque au plafond du plan
+   *  gratuit — décision dans lib/depassement.ts (planDeTri). */
+  appliquerPlafond: (max: number) => void;
   saveSetlist: (setlist: Setlist) => void;
   deleteSetlist: (setlistId: string) => void;
   saveConcert: (concert: Concert) => void;
@@ -499,6 +503,44 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  /**
+   * LE TRI DU DÉPASSEMENT (b422) : ramène la bibliothèque au plafond du
+   * plan gratuit, à l'échéance des 30 jours. La DÉCISION vit dans
+   * `lib/depassement.ts` (planDeTri, pur et annonçable) ; ici on ne fait
+   * que l'appliquer : les morceaux de répertoire de groupe RETOURNENT en
+   * proposition (remisEnIdee — rien n'est perdu pour le groupe), les
+   * personnels sont supprimés avec une tombe par ID seul (un réimport
+   * futur reste possible — pas de clé), les programmés d'une setlist de
+   * groupe sont intouchables (b239) et restent, même au-delà du plafond.
+   */
+  const appliquerPlafond = useCallback((max: number) => {
+    setState((prev) => {
+      const tri = planDeTri(prev.songs, prev.setlists, prev.bands, max);
+      if (tri.enProposition.length === 0 && tri.aSupprimer.length === 0)
+        return prev;
+      const enProp = new Map(tri.enProposition.map((e) => [e.song.id, e]));
+      const mortes = new Set(tri.aSupprimer.map((s) => s.id));
+      let deleted = prev.deleted;
+      for (const s of tri.aSupprimer) deleted = bury(deleted, s.id);
+      return {
+        ...prev,
+        songs: prev.songs
+          .filter((s) => !mortes.has(s.id))
+          .map((s) => {
+            const e = enProp.get(s.id);
+            return e ? remisEnIdee(s, e.bandId) : s;
+          }),
+        // Un morceau supprimé quitte aussi mes setlists (solo — celles de
+        // groupe sont protégées par la porte 'refus' en amont).
+        setlists: prev.setlists.map((sl) => ({
+          ...sl,
+          items: sl.items.filter((it) => !mortes.has(it.songId)),
+        })),
+        deleted,
+      };
+    });
+  }, []);
+
   const saveSetlist = useCallback((setlist: Setlist) => {
     const stamped = { ...setlist, updatedAt: new Date().toISOString() };
     // RÈGLE (décision Vincent, b174) : mettre un morceau dans une setlist
@@ -847,6 +889,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteSong,
     acceptSong,
     retirerProposition,
+    appliquerPlafond,
     saveSetlist,
     deleteSetlist,
     saveConcert,

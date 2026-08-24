@@ -36,13 +36,15 @@ function noterPlan(p: Plan): void {
 // CLES_DU_COMPTE (src/lib/compte.ts) et se vide au changement de compte.
 
 /**
- * Rafraîchit le plan depuis le serveur ; en cas de panne, rend le cache.
- * Toujours résolue — jamais de rejet à attraper chez l'appelant.
+ * Le plan tel que le SERVEUR vient de le dire — `null` en cas de panne ou
+ * sans session. À utiliser pour toute décision IRRÉVERSIBLE (le tri du
+ * dépassement, b422) : une panne ne conclut jamais (b245), et le cache ne
+ * suffit pas pour supprimer quoi que ce soit.
  */
-export async function chargerPlan(): Promise<Plan> {
+export async function planConfirme(): Promise<Plan | null> {
   try {
     const s = await getValidSession();
-    if (!s) return planEnCache();
+    if (!s) return null;
     const res = await fetch(
       `${supabaseUrl()}/rest/v1/user_plans?select=plan&user_id=eq.${s.userId}`,
       {
@@ -52,14 +54,56 @@ export async function chargerPlan(): Promise<Plan> {
         },
       },
     );
-    if (!res.ok) return planEnCache(); // panne ≠ absence (b245)
+    if (!res.ok) return null; // panne ≠ absence (b245)
     const rows = (await res.json()) as { plan?: string }[];
+    // Ligne absente = 'free' : c'est une RÉPONSE, pas une panne.
     const brut = Array.isArray(rows) ? (rows[0]?.plan ?? 'free') : 'free';
     const p: Plan = estUnPlan(brut) ? brut : 'free';
     noterPlan(p);
     return p;
   } catch {
-    return planEnCache();
+    return null;
+  }
+}
+
+/**
+ * Rafraîchit le plan depuis le serveur ; en cas de panne, rend le cache.
+ * Toujours résolue — jamais de rejet à attraper chez l'appelant.
+ */
+export async function chargerPlan(): Promise<Plan> {
+  return (await planConfirme()) ?? planEnCache();
+}
+
+/**
+ * L'HORLOGE DU DÉPASSEMENT (b422) : ma ligne `depassement_avis`, posée par
+ * le cron serveur quand un compte gratuit dépasse le plafond. Une seule
+ * vérité, au serveur — deux appareils ne comptent pas deux délais, et
+ * vider le localStorage ne remet pas le compteur à zéro.
+ * Renvoie la date d'ouverture du délai, 'aucune' si le serveur a répondu
+ * qu'il n'y en a pas, `null` en cas de panne (on ne conclut rien).
+ */
+export async function chargerDepassement(): Promise<
+  { depuis: string } | 'aucune' | null
+> {
+  try {
+    const s = await getValidSession();
+    if (!s) return null;
+    const res = await fetch(
+      `${supabaseUrl()}/rest/v1/depassement_avis?select=depuis`,
+      {
+        headers: {
+          apikey: anonKey(),
+          authorization: `Bearer ${s.accessToken}`,
+        },
+      },
+    );
+    // Table absente (SQL pas encore joué) ou panne : on ne conclut rien.
+    if (!res.ok) return null;
+    const rows = (await res.json()) as { depuis?: string }[];
+    const depuis = Array.isArray(rows) ? String(rows[0]?.depuis ?? '') : '';
+    return depuis === '' ? 'aucune' : { depuis };
+  } catch {
+    return null;
   }
 }
 
