@@ -32,6 +32,9 @@ import { parolesPubliques } from '../lib/publiclyrics';
 import { useWakeLock } from '../lib/wakelock';
 import { demarrerMidi, sabonnerActionMidi } from '../lib/midi';
 import { t } from '../i18n';
+import { propositionBloquee } from '../lib/limites';
+import { useLimits } from '../components/useLimits';
+import { navigate } from '../router';
 import { notesForBand, resolveVersion } from '../lib/model';
 import { useStore } from '../store';
 import { EXAMPLE_TAG } from '../seed';
@@ -78,6 +81,18 @@ export function Stage({
   }, []);
   const [index, setIndex] = useState(startIndex);
   const view = 'complete' as ViewMode; // partition entière pour tous
+  /* AU PLAFOND, UNE PROPOSITION NE S'OUVRE PAS — MÊME EN SCÈNE (b426).
+     Les chemins normaux sont déjà gardés (Morceaux, fiche, aperçu) ; ici
+     c'est le filet des accès directs. On renvoie vers la fiche, qui porte
+     le message et la sortie — jamais un écran de refus en plein noir. */
+  const limitesScene = useLimits();
+  useEffect(() => {
+    if (!songId) return;
+    const s = songs.find((x) => x.id === songId);
+    if (s && propositionBloquee(s, limitesScene.peutAjouter)) {
+      navigate(`/song/${songId}`);
+    }
+  }, [songId, songs, limitesScene.peutAjouter]);
   const [fontSize, setFontSize] = useState(() => {
     const saved = parseFloat(localStorage.getItem('sing2me/stageFont') ?? '');
     return Number.isFinite(saved) && saved > 0 ? saved : 1.25;

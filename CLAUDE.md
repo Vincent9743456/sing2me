@@ -788,6 +788,16 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     qu'il est ACCEPTÉ — une proposition en attente (`idea === true`) ne
     compte pas. Pas de période de lancement illimitée. `Song.reserve`
     (b385) reste un champ INERTE. Groupes et setlists ILLIMITÉS partout.
+    **Au plafond, une proposition de groupe se VOIT mais ne s'OUVRE pas**
+    (b426, demande de Vincent) : elle ne compte pas, mais elle était
+    « jouable partout » — un compte plein pouvait donc lire tout un
+    répertoire sans jamais rien accepter. La ligne reste visible dans les
+    Propositions ; ouvrir son CONTENU (fiche, aperçu, éditeur, scène)
+    déclenche le MÊME message que l'acceptation de la 31ᵉ chanson (feuille
+    « Passer en illimité »). Décision à UN endroit
+    (`limites.propositionBloquee`) ; `SongView` est le filet des accès
+    directs, l'éditeur et la scène y renvoient. Un morceau gardé à un
+    bœuf (sans groupe) n'est pas concerné.
   - **DÉPASSEMENT : 30 JOURS, PUIS TRI (b422, arbitrage Vincent + Marco —
     le cas « il s'abonne un mois, charge 200 morceaux, puis se
     désabonne »)** : un compte repassé en gratuit au-dessus du plafond

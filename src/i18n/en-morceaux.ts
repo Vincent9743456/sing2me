@@ -44,6 +44,9 @@ export const EN_MORCEAUX: Record<string, string> = {
   '📥 Proposé par': '📥 Proposed by',
   // b420 — la provenance d'une proposition : la personne, sinon le répertoire
   '📥 Du répertoire de {groupe}': '📥 From the {groupe} repertoire',
+  // b426 — au plafond, une proposition se voit mais ne s'ouvre pas
+  'Cette proposition attend dans ta boîte, mais ta bibliothèque gratuite est pleine : son contenu s’ouvrira quand tu pourras l’accepter.':
+    'This suggestion is waiting in your inbox, but your free library is full: its content will open once you can accept it.',
   // b422 — dépassement du plan gratuit : bandeau + bilan du tri
   'Bibliothèque ramenée au plan gratuit': 'Library brought back to the free plan',
   'Gardés : {g} · rendus aux propositions de leur groupe : {p} · supprimés : {s}.':
