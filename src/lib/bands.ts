@@ -135,12 +135,28 @@ export async function createBandInvite(
   s: AuthSession,
   cloudId: string,
   name: string,
+  /** VERROU FACULTATIF (b416) : posée, l'invitation n'admet qu'un compte
+   *  vérifié à cette adresse — un lien intercepté devient inutilisable. */
+  email = '',
 ): Promise<string> {
+  const corps: Record<string, string> = { p_band: cloudId, p_name: name };
+  // `p_email` n'est envoyé QUE s'il est rempli : sur une base pas encore
+  // migrée (bands.sql d'avant b416), l'appel sans ce paramètre continue de
+  // fonctionner — et l'appel AVEC échoue franchement plutôt que de
+  // promettre un verrou qui n'existe pas.
+  if (email.trim() !== '') corps.p_email = email.trim();
   const res = await sbAuthed(s, '/rest/v1/rpc/create_band_invite', {
     method: 'POST',
-    body: JSON.stringify({ p_band: cloudId, p_name: name }),
+    body: JSON.stringify(corps),
   });
-  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 404 && corps.p_email !== undefined) {
+      throw new Error(
+        'Le verrouillage par e-mail demande une mise à jour de la base (supabase/bands.sql) — en attendant, invite sans adresse.',
+      );
+    }
+    throw new Error(`Supabase a répondu ${res.status}`);
+  }
   const body = (await res.json()) as { token?: string; error?: string };
   if (body.error) throw new Error(body.error);
   if (!body.token) throw new Error('Invitation non créée');

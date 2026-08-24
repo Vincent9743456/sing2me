@@ -34,6 +34,10 @@ export const EN_ARTISTE: Record<string, string> = {
   'Voir dans ma bibliothèque': 'See it in my library',
   'Annonce tes prochains concerts': 'Announce your upcoming gigs',
   'Annuler l\'invitation': 'Cancel the invitation',
+  'E-mail (facultatif — verrouille le lien)': 'Email (optional — locks the link)',
+  'Seul un compte connecté avec cette adresse pourra utiliser le lien. Attention à « Masquer mon e-mail » d’Apple : l’invité doit se connecter avec l’adresse exacte que tu saisis.':
+    'Only an account signed in with this address can use the link. Mind Apple’s “Hide My Email”: the invitee must sign in with the exact address you enter.',
+  'Cette adresse e-mail ne semble pas valide.': 'That email address doesn’t look valid.',
   'Aperçu — ce que verra le public (QR)': 'Preview — what the audience will see (QR)',
   'Aperçu — ce que verra le public (la vidéo YouTube se regarde et le lien Spotify s\'écoute directement) :': 'Preview — what the audience will see (the YouTube video can be watched and the Spotify link listened to directly):',
   'Aucun concert planifié.': 'No gigs planned.',
