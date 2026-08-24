@@ -1,8 +1,8 @@
 /**
  * L'HORLOGE DU DÉPASSEMENT (b422, arbitrage Vincent + Marco).
  *
- * Un compte repassé en gratuit avec plus de 50 morceaux a 30 jours pour
- * choisir — se réabonner, ou revenir à 50 — avant que l'app fasse le tri
+ * Un compte repassé en gratuit au-dessus du plafond (PLAFOND) a 30 jours
+ * pour choisir — se réabonner, ou revenir au plafond — avant le tri
  * (côté client, à l'ouverture : le serveur ne touche JAMAIS aux
  * bibliothèques). Ce cron quotidien :
  *  1. repère les comptes gratuits au-dessus du plafond
@@ -10,7 +10,7 @@
  *     (`depassement_avis.depuis`) — c'est elle que l'app lit pour le
  *     compte à rebours et le tri ;
  *  2. EFFACE la ligne d'un compte revenu dans les clous (réabonné, ou
- *     redescendu sous 50) : le motif disparu, tout se lève seul (règle 11) ;
+ *     redescendu sous le plafond) : motif disparu, tout se lève seul (règle 11) ;
  *  3. envoie les E-MAILS DE PRÉVENANCE (demande de Vincent) : à
  *     l'ouverture du délai, chaque semaine, puis chaque jour les 3
  *     derniers jours. Jamais deux avis à moins de 20 h d'écart
@@ -22,7 +22,7 @@
  */
 
 const JOURS_DE_GRACE = 30;
-const PLAFOND = 50; // = limites.ts (free.maxSongs) et plans.sql (v_max)
+const PLAFOND = 30; // = limites.ts (free.maxSongs) et plans.sql (v_max) — 50→30 en b424
 const MAX_ENVOIS = 40;
 const JOUR_MS = 86400000;
 
@@ -65,10 +65,10 @@ function dateEn(d) {
 function corps(morceaux, echeanceLe) {
   return (
     `Ta bibliothèque mojosong compte ${morceaux} morceaux, et le plan ` +
-    `gratuit en garde 50.\n\n` +
+    `gratuit en garde ${PLAFOND}.\n\n` +
     `Jusqu'au ${dateFr(echeanceLe)}, rien ne bouge : tu peux repasser en ` +
     `illimité, ou choisir toi-même ce que tu gardes. Ensuite, l'application ` +
-    `gardera automatiquement les 50 morceaux les plus utilisés (ceux de tes ` +
+    `gardera automatiquement les ${PLAFOND} morceaux les plus utilisés (ceux de tes ` +
     `setlists et de tes concerts d'abord) — les morceaux venus d'un groupe ` +
     `retourneront dans ses propositions, les autres seront supprimés.\n\n` +
     `À tout moment, tu peux exporter TOUTE ta bibliothèque depuis les ` +
@@ -76,10 +76,10 @@ function corps(morceaux, echeanceLe) {
     `Ouvre mojosong : https://mojosong.com\n\n` +
     `— English —\n\n` +
     `Your mojosong library holds ${morceaux} songs, and the free plan ` +
-    `keeps 50.\n\n` +
+    `keeps ${PLAFOND}.\n\n` +
     `Until ${dateEn(echeanceLe)}, nothing changes: you can go unlimited ` +
     `again, or choose what to keep yourself. After that, the app will ` +
-    `automatically keep your 50 most-used songs (those in your setlists ` +
+    `automatically keep your ${PLAFOND} most-used songs (those in your setlists ` +
     `and concerts first) — songs that came from a band will return to its ` +
     `suggestions, the others will be deleted.\n\n` +
     `You can export your WHOLE library from Settings at any time: nothing ` +
@@ -93,7 +93,7 @@ function corps(morceaux, echeanceLe) {
 
 function sujet(joursRestants) {
   if (joursRestants <= 0)
-    return 'Ta bibliothèque va être ramenée à 50 morceaux · your library will be trimmed to 50';
+    return `Ta bibliothèque va être ramenée à ${PLAFOND} morceaux · your library will be trimmed to ${PLAFOND}`;
   if (joursRestants === 1)
     return 'Dernier jour : tri automatique demain · last day before the automatic trim';
   if (joursRestants <= 3)

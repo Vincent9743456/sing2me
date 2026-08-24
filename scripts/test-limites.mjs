@@ -44,10 +44,10 @@ function egal(nom, obtenu, attendu) {
   console.log(`${ok ? 'OK ' : 'KO '} ${nom} — ${a}${ok ? '' : ` ≠ ${b}`}`);
 }
 
-// b387 — les trois offres : gratuit (50 morceaux · 15 spectateurs),
+// b387 — les trois offres, plafond 50→30 en b424 : gratuit (30 morceaux · 15 spectateurs),
 // musicien (morceaux illimités · 15 spectateurs), scène (tout illimité).
 // Groupes, setlists et import ouverts partout ; 'pro' = héritage b381.
-egal('free maxSongs', LIMITES.free.maxSongs, 50);
+egal('free maxSongs', LIMITES.free.maxSongs, 30);
 egal('free groupes illimités', LIMITES.free.maxOwnedGroups, null);
 egal('free cap de salle', LIMITES.free.maxSpectateurs, 15);
 egal('free bulkImport ouvert', LIMITES.free.bulkImport, true);
@@ -60,7 +60,7 @@ egal('pro = scène (héritage)', LIMITES.pro.maxSpectateurs, null);
 egal('admin sans plafond', LIMITES.admin.maxSongs, null);
 
 // Un plan inconnu (valeur future, cache abîmé) retombe sur free.
-egal('plan inconnu → free', limitesDuPlan('platine').maxSongs, 50);
+egal('plan inconnu → free', limitesDuPlan('platine').maxSongs, 30);
 egal('estUnPlan free', estUnPlan('free'), true);
 egal('estUnPlan musicien', estUnPlan('musicien'), true);
 egal('estUnPlan scene', estUnPlan('scene'), true);
@@ -81,8 +81,8 @@ egal('estUnPlan vide', estUnPlan(''), false);
 }
 
 // La garde : sous la limite oui, à la limite non, illimité toujours.
-egal('49/50 : on peut ajouter', peutAjouterMorceau('free', 49), true);
-egal('50/50 : on ne peut plus', peutAjouterMorceau('free', 50), false);
+egal('29/30 : on peut ajouter', peutAjouterMorceau('free', 29), true);
+egal('30/30 : on ne peut plus', peutAjouterMorceau('free', 30), false);
 egal('au-delà (bêta 60) : non plus', peutAjouterMorceau('free', 60), false);
 egal('musicien : toujours', peutAjouterMorceau('musicien', 500), true);
 egal('scene : toujours', peutAjouterMorceau('scene', 500), true);

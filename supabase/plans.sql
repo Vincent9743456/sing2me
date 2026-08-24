@@ -3,7 +3,7 @@
 -- À exécuter dans SQL Editor du projet Supabase (ré-exécutable).
 --
 -- Les OFFRES (arbitrage Vincent, b387) :
---   'free'     : 50 morceaux · 15 spectateurs simultanés en live ;
+--   'free'     : 30 morceaux (50→30 en b424) · 15 spectateurs simultanés en live ;
 --   'musicien' : morceaux illimités · 15 spectateurs simultanés ;
 --   'scene'    : tout illimité.
 -- ('pro' reste accepté — héritage b381, équivaut à scene ; 'admin' =
@@ -12,7 +12,7 @@
 -- Un compte sans ligne est 'free' — rien à créer à l'inscription.
 --
 -- Verrou serveur (la seule autorité — le client ne fait qu'annoncer) :
---  • LIMIT_SONGS : un compte gratuit ne dépasse pas 50 MORCEAUX.
+--  • LIMIT_SONGS : un compte gratuit ne dépasse pas 30 MORCEAUX (b424).
 --    SIMPLIFIÉ b386 (arbitrage Vincent : « 50 chansons c'est tout. Pas
 --    possible d'importer plus ») — plus de distinction actif/réserve :
 --    tout morceau de la bibliothèque compte, SAUF les PROPOSITIONS en
@@ -84,7 +84,7 @@ as $$
 declare
   v_avant integer := 0;
   v_apres integer;
-  v_max constant integer := 50; -- limites du plan free : voir src/lib/limites.ts
+  v_max constant integer := 30; -- limites du plan free : voir src/lib/limites.ts (50→30, b424)
 begin
   if public.plan_du_compte(new.id) <> 'free' then
     return new;
@@ -94,7 +94,7 @@ begin
     v_avant := public.compte_morceaux(old.data);
   end if;
   -- « Un compte gratuit ne croît pas » : refus seulement si la poussée
-  -- AUGMENTE le nombre de morceaux au-delà du max(déjà en base, 50).
+  -- AUGMENTE le nombre de morceaux au-delà du max(déjà en base, 30).
   if v_apres > greatest(v_avant, v_max) then
     raise exception 'LIMIT_SONGS';
   end if;
@@ -201,8 +201,8 @@ on conflict (user_id) do update set plan = 'admin', updated_at = now();
 
 -- ------------------------------------------------------------
 -- b422 — DÉPASSEMENT DU PLAN GRATUIT (arbitrage Vincent + Marco).
--- Un compte repassé en gratuit avec plus de 50 morceaux a 30 jours
--- pour choisir (se réabonner, ou revenir à 50) ; ensuite l'app fait
+-- Un compte repassé en gratuit au-dessus du plafond a 30 jours
+-- pour choisir (se réabonner, ou revenir au plafond) ; ensuite l'app fait
 -- le tri à l'ouverture. Le serveur PORTE L'HORLOGE : une ligne par
 -- compte en dépassement, posée par le cron (/api/depassement,
 -- server/depassement.js) qui envoie aussi les e-mails de prévenance
@@ -224,7 +224,7 @@ create policy depassement_lecture on public.depassement_avis
 
 -- Les comptes gratuits au-dessus du plafond, avec leur décompte —
 -- réservé au service (le cron) : jamais exposée aux clients.
-create or replace function public.comptes_en_depassement(p_max integer default 50)
+create or replace function public.comptes_en_depassement(p_max integer default 30)
 returns table(user_id uuid, morceaux integer)
 language sql
 security definer set search_path = public

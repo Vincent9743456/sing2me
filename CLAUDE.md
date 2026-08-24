@@ -773,22 +773,25 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     protège tout état contre une mise en arrière-plan, pas seulement les
     brouillons.
 - **Modèle économique — LES TROIS OFFRES (b387, arbitrage Vincent)** :
-  **gratuit** (50 morceaux · 15 spectateurs simultanés en live),
-  **musicien** (morceaux illimités · 15 spectateurs — 39 €/an ou
-  3,99 €/mois), **scène** (tout illimité — 89 €/an ou 8,99 €/mois).
-  Remplace b386 (50 tout court), b385 (actifs/réserve), b381 (30/2),
-  la « Licence Scène » et le Premium 2,99 €. Le nom reste **mojosong**.
-  - **Morceaux : 50 en gratuit, c'est tout** (b386, inchangé). L'import
-    — à l'unité comme en masse — S'ARRÊTE au plafond, avec bilan ; le ＋
-    de Morceaux annonce la limite (feuille « Passer en illimité »). Un
-    morceau venu d'un GROUPE compte dès qu'il est ACCEPTÉ — une
-    proposition en attente (`idea === true`) ne compte pas. Pas de
-    période de lancement illimitée. `Song.reserve` (b385) reste un champ
-    INERTE. Groupes et setlists ILLIMITÉS partout.
+  **gratuit** (30 morceaux — 50→30 en b424, demande de Vincent · 15
+  spectateurs simultanés en live), **musicien** (morceaux illimités ·
+  15 spectateurs — 39 €/an ou 3,99 €/mois), **scène** (tout illimité —
+  89 €/an ou 8,99 €/mois). Remplace b386 (50 tout court), b385
+  (actifs/réserve), b381 (30/2), la « Licence Scène » et le Premium
+  2,99 €. Le nom reste **mojosong**.
+  - **Morceaux : 30 en gratuit, c'est tout** (b386 : 50 ; abaissé à 30
+    en b424 — la valeur vit dans `limites.ts`, `plans.sql` (v_max),
+    `server/depassement.js` (PLAFOND) et la landing : QUATRE endroits à
+    changer ensemble). L'import — à l'unité comme en masse — S'ARRÊTE au
+    plafond, avec bilan ; le ＋ de Morceaux annonce la limite (feuille
+    « Passer en illimité »). Un morceau venu d'un GROUPE compte dès
+    qu'il est ACCEPTÉ — une proposition en attente (`idea === true`) ne
+    compte pas. Pas de période de lancement illimitée. `Song.reserve`
+    (b385) reste un champ INERTE. Groupes et setlists ILLIMITÉS partout.
   - **DÉPASSEMENT : 30 JOURS, PUIS TRI (b422, arbitrage Vincent + Marco —
     le cas « il s'abonne un mois, charge 200 morceaux, puis se
-    désabonne »)** : un compte repassé en gratuit au-dessus de 50 garde
-    TOUT pendant 30 jours — bandeau dans Morceaux + e-mails de prévenance
+    désabonne »)** : un compte repassé en gratuit au-dessus du plafond
+    garde TOUT pendant 30 jours — bandeau dans Morceaux + e-mails de prévenance
     (à l'ouverture du délai, chaque semaine, puis chaque jour les 3
     derniers jours — cron quotidien `/api/depassement`,
     `server/depassement.js`). **L'HORLOGE EST AU SERVEUR** (table
@@ -796,7 +799,7 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     pas d'horloge locale qu'un localStorage vidé remettrait à zéro. À
     l'échéance, l'app fait le TRI à l'ouverture (`useDepassement` →
     `store.appliquerPlafond` → `lib/depassement.planDeTri`) : elle garde
-    les 50 les plus utilisés (setlists d'abord, puis cœurs de concert,
+    les plus utilisés jusqu'au plafond (setlists d'abord, puis cœurs de concert,
     puis récence) ; les morceaux de répertoire de GROUPE retournent en
     PROPOSITION (rien n'est perdu pour le groupe), les programmés d'une
     setlist de groupe sont INTOUCHABLES (b239), seuls les personnels

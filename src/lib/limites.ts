@@ -4,7 +4,8 @@
  * nulle part ailleurs.
  *
  * TROIS OFFRES (b387, arbitrage Vincent) :
- *  • GRATUIT  : 50 morceaux · 15 spectateurs simultanés en live ;
+ *  • GRATUIT  : 30 morceaux (50→30 en b424, demande de Vincent) ·
+ *    15 spectateurs simultanés en live ;
  *  • MUSICIEN : morceaux illimités · 15 spectateurs simultanés ;
  *  • SCÈNE    : tout illimité.
  * ('pro' reste accepté — héritage b381, traité comme Scène ; 'admin' =
@@ -31,7 +32,7 @@
  * garde tout, on modifie, on supprime — on n'ajoute plus. Et depuis
  * b422, un compte repassé en gratuit AU-DESSUS du plafond a 30 jours
  * (horloge serveur `depassement_avis`, e-mails de prévenance) avant que
- * l'app ramène la bibliothèque à 50 (`src/lib/depassement.ts`).
+ * l'app ramène la bibliothèque au plafond (`src/lib/depassement.ts`).
  */
 
 export type Plan = 'free' | 'musicien' | 'scene' | 'pro' | 'admin';
@@ -62,7 +63,7 @@ const ILLIMITE: Limites = {
 
 export const LIMITES: Record<Plan, Limites> = {
   free: {
-    maxSongs: 50,
+    maxSongs: 30,
     maxOwnedGroups: null,
     maxSpectateurs: 15,
     bulkImport: true,
