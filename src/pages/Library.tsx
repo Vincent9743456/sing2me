@@ -901,7 +901,7 @@ export function Library() {
                 setShowCheck(false);
               }}
             >
-              ✕ {t('Tout afficher')}
+              {t('Tout afficher')}
             </button>
           </div>
         )}
