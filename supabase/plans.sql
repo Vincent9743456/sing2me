@@ -176,18 +176,29 @@ grant execute on function public.note_limite(text) to authenticated;
 -- Comptes fondateurs (demande explicite de Vincent) : admin.
 -- Idempotent — rejouable sans effet de bord.
 -- (vincent.tessier@exa.re : deuxième compte de Vincent, ajouté b389 ;
---  marco.bosio@hotmail.fr : compte personnel de Marco, ajouté b404.)
+--  marco.bosio@hotmail.fr : compte personnel de Marco, ajouté b404 ;
+--  vtessier6@gmail.com : RETIRÉ en b425, demande de Vincent — son compte
+--  principal suit le plan gratuit, pour l'éprouver en conditions réelles.)
 -- ------------------------------------------------------------
 insert into public.user_plans (user_id, plan)
 select id, 'admin'
 from auth.users
 where email in (
-  'vtessier6@gmail.com',
   'marco@mojosong.com',
   'marco.bosio@hotmail.fr',
   'vincent.tessier@exa.re'
 )
 on conflict (user_id) do update set plan = 'admin', updated_at = now();
+
+-- b425 : la ligne 'admin' déjà posée pour vtessier6@gmail.com est
+-- supprimée (absence de ligne = 'free') — le retirer de la liste
+-- ci-dessus ne suffirait pas, l'upsert ne rétrograde jamais. La garde
+-- `plan = 'admin'` protège un futur passage manuel en musicien/scene.
+delete from public.user_plans
+where user_id in (
+  select id from auth.users where email = 'vtessier6@gmail.com'
+)
+and plan = 'admin';
 
 -- Recettes pour passer un compte en 'musicien' ou 'scene' (à la main,
 -- en attendant le paiement) :
