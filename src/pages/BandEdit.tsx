@@ -210,9 +210,17 @@ export function BandEdit({ id }: { id: string }) {
    * identifiant dès l'invitation (b250), donc aucun doublon à l'adhésion.
    */
   const [dejaInscrits, setDejaInscrits] = useState<DirectoryPerson[]>([]);
-  /** L'annuaire a trouvé la personne… déjà membre ou invitée ICI (b409) :
-   *  on le DIT au lieu de n'afficher aucune proposition, sans un mot. */
-  const [dejaDansLeGroupe, setDejaDansLeGroupe] = useState(false);
+  /**
+   * CE QUE LA RECHERCHE A CONCLU (b409, complété b410 — trois allers-retours
+   * avec Vincent parce que l'écran ne disait RIEN) : 'membre' = trouvé mais
+   * déjà dans CE groupe ; 'introuvable' = aucun compte à ce nom ; 'panne' =
+   * annuaire injoignable ; '' = rien à dire (proposition affichée, ou
+   * saisie trop courte). Un écran qui cherche et ne trouve pas doit le
+   * dire — sinon on ne distingue pas « pas de compte » d'un bug.
+   */
+  const [verdictAnnuaire, setVerdictAnnuaire] = useState<
+    '' | 'membre' | 'introuvable' | 'panne'
+  >('');
   const [confirmDel, setConfirmDel] = useState(false);
   const [lastMsg, setLastMsg] = useState<{ text: string; at: string } | null>(
     null,
@@ -431,13 +439,13 @@ export function BandEdit({ id }: { id: string }) {
   useEffect(() => {
     if (!invitePrompt) {
       setDejaInscrits([]);
-      setDejaDansLeGroupe(false);
+      setVerdictAnnuaire('');
       return;
     }
     const q = pendingName.trim();
     if (q.length < 2) {
       setDejaInscrits([]);
-      setDejaDansLeGroupe(false);
+      setVerdictAnnuaire('');
       return;
     }
     let annule = false;
@@ -456,12 +464,18 @@ export function BandEdit({ id }: { id: string }) {
                 ),
             );
             setDejaInscrits(connusEnTete(libres, connus));
-            setDejaDansLeGroupe(rows.length > 0 && libres.length === 0);
+            setVerdictAnnuaire(
+              rows.length === 0
+                ? 'introuvable'
+                : libres.length === 0
+                  ? 'membre'
+                  : '',
+            );
           }
         } catch {
           if (!annule) {
             setDejaInscrits([]);
-            setDejaDansLeGroupe(false);
+            setVerdictAnnuaire('panne');
           }
         }
       })();
@@ -1655,11 +1669,19 @@ export function BandEdit({ id }: { id: string }) {
               compte, l'invitation part DIRECTEMENT chez elle — pas de lien à
               envoyer, et sa ligne porte son identifiant tout de suite (b250),
               donc aucun doublon possible à l'adhésion. */}
-          {dejaDansLeGroupe && (
+          {verdictAnnuaire !== '' && (
             <p className="help" style={{ margin: '8px 0 0' }}>
-              {t(
-                'Cette personne est déjà dans le groupe, ou déjà invitée : elle n’a pas besoin d’une nouvelle invitation. Pour la réinviter après un départ, retire d’abord sa ligne de la liste des musiciens.',
-              )}
+              {verdictAnnuaire === 'membre'
+                ? t(
+                    'Cette personne est déjà dans le groupe, ou déjà invitée : elle n’a pas besoin d’une nouvelle invitation. Pour la réinviter après un départ, retire d’abord sa ligne de la liste des musiciens.',
+                  )
+                : verdictAnnuaire === 'introuvable'
+                  ? t(
+                      'Aucun compte mojosong à ce nom dans l’annuaire — c’est normal s’il n’a pas encore l’app : le lien d’invitation est fait pour ça.',
+                    )
+                  : t(
+                      'L’annuaire ne répond pas pour le moment — le lien d’invitation fonctionne quand même.',
+                    )}
             </p>
           )}
           {dejaInscrits.length > 0 && (
