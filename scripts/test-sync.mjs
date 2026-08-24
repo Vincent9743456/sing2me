@@ -177,6 +177,43 @@ const groupe = (extra = {}) => ({
     'Marco');
 }
 
+// 12. b421 — ON NE SE PROPOSE PAS UN MORCEAU À SOI-MÊME.
+//     Le blob porte la provenance de Marco : chez Marco, le morceau entre
+//     (ou reste) en bibliothèque, jamais en proposition ; chez Vincent, il
+//     reste une proposition.
+{
+  const blob = {
+    songs: [{
+      key: 'acoustic medley @ bob marley', title: 'Acoustic medley', artist: 'Bob Marley',
+      durationSec: 0, tags: [], notes: [], updatedAt: '2026-08-20T10:00:00Z',
+      version: { name: 'Zakoustiks', key: 'C', tempo: 0, capo: 0, structure: [], lyrics: 'la la', updatedAt: '2026-08-20T10:00:00Z', par: { id: 'compte-marco', nom: 'Marco' } },
+    }],
+    setlists: [], removed: [], removedNotes: [],
+  };
+  // Chez MARCO (bibliothèque vide — ex. réinstallation) : pas de proposition.
+  const chezMarco = applyBandData(blob, [], [], 'zk', undefined, undefined, 'compte-marco');
+  egal('ma propre proposition ne me revient pas', chezMarco.songs[0].idea, undefined);
+  egal('…et entre en bibliothèque', chezMarco.songs[0].pendingBandId, undefined);
+  // Chez VINCENT : proposition normale.
+  const chezVincent = applyBandData(blob, [], [], 'zk', undefined, undefined, 'compte-vincent');
+  egal('chez l’autre membre, proposition', chezVincent.songs[0].idea, true);
+  // Une proposition DÉJÀ en boîte qui s'avère la mienne est adoptée.
+  const enBoite = {
+    id: 'p1', title: 'Acoustic medley', artist: 'Bob Marley', key: 'C', tempo: 0,
+    capo: 0, durationSec: 0, tags: [], structure: [], lyrics: 'la la',
+    idea: true, pendingBandId: 'zk',
+    versions: [
+      { id: 'v0', name: 'Originale', bandId: '', key: 'C', tempo: 0, capo: 0, structure: [], lyrics: 'la la', updatedAt: '2026-08-19T10:00:00Z' },
+      { id: 'vz', name: 'Zakoustiks', bandId: 'zk', key: 'C', tempo: 0, capo: 0, structure: [], lyrics: 'la la', updatedAt: '2026-08-19T10:00:00Z' },
+    ],
+    activeVersionId: 'v0', rehearsalNotes: [], hearts: 0, fanMessages: [],
+    createdAt: '2026-08-19T10:00:00Z', updatedAt: '2026-08-19T10:00:00Z',
+  };
+  const adoptee = applyBandData(blob, [enBoite], [], 'zk', undefined, undefined, 'compte-marco');
+  egal('proposition en boîte adoptée (c’était la mienne)', adoptee.songs[0].idea, false);
+  egal('…sans groupe en attente', adoptee.songs[0].pendingBandId, undefined);
+}
+
 rmSync(dir, { recursive: true, force: true });
 console.log(ko === 0 ? '\nTous les tests passent.' : `\n${ko} test(s) en échec.`);
 process.exit(ko === 0 ? 0 : 1);

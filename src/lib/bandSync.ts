@@ -435,6 +435,15 @@ export function applyBandData(
   skipKeys?: Set<string>,
   /** Setlists supprimées localement (ids) : ne pas les ré-créer du groupe */
   skipSetlistIds?: Set<string>,
+  /**
+   * MON compte (b421, règle de Vincent : « un groupe ne peut jamais proposer
+   * un morceau, c'est un utilisateur qui le peut ») : un morceau dont la
+   * provenance dit que JE l'ai apporté au répertoire n'est jamais une
+   * proposition pour moi — il entre (ou reste) directement en bibliothèque.
+   * Sans ce garde, l'auteur retrouvait sa propre proposition dans sa boîte,
+   * sans aucun geste pour l'en sortir (capture de Vincent).
+   */
+  monCompte = '',
 ): { songs: Song[]; setlists: Setlist[]; changed: boolean } {
   let changed = false;
   // Index par clé canonique (titre @ artiste). La résolution d'une clé
@@ -533,6 +542,10 @@ export function applyBandData(
       // qu'à dire d'où il vient. Le programmer dans une setlist l'inscrit
       // définitivement en bibliothèque (voir store.saveSetlist).
       const vid = makeId();
+      // Ma propre proposition ne me revient JAMAIS en boîte (b421) : si la
+      // provenance dit que c'est moi qui ai apporté ce morceau, il entre
+      // directement en bibliothèque — on ne se propose pas à soi-même.
+      const deMoi = monCompte !== '' && e.version.par?.id === monCompte;
       const song: Song = {
         id: makeId(),
         title: e.title,
@@ -545,8 +558,7 @@ export function applyBandData(
         structure: e.version.structure,
         lyrics: e.version.lyrics,
         publicLyrics: e.version.publicLyrics,
-        pendingBandId: localBandId,
-        idea: true,
+        ...(deMoi ? {} : { pendingBandId: localBandId, idea: true }),
         versions: [
           {
             id: vid,
@@ -662,6 +674,25 @@ export function applyBandData(
         versions: song.versions.map((v) =>
           v.id === versionDuGroupe.id ? { ...v, par } : v,
         ),
+      };
+      changed = true;
+    }
+    // Et si une proposition déjà en boîte s'avère être LA MIENNE (b421) —
+    // créée par un appareil qui ne connaissait pas encore la provenance —
+    // elle est adoptée d'office : on ne se propose pas un morceau à
+    // soi-même. Horodatée, comme acceptSong, pour gagner la fusion et se
+    // propager à mes autres appareils.
+    if (
+      monCompte !== '' &&
+      song.idea === true &&
+      (song.pendingBandId ?? '') === localBandId &&
+      versionForBand(song, localBandId)?.par?.id === monCompte
+    ) {
+      song = {
+        ...song,
+        idea: false,
+        pendingBandId: undefined,
+        updatedAt: new Date().toISOString(),
       };
       changed = true;
     }
