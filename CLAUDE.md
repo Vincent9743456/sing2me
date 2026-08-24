@@ -1283,6 +1283,15 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   même clé que le SMTP Supabase ; `MAIL_FROM` facultatif, défaut
   marco@mojosong.com). Le jour des notifications push, ce facteur se coupe
   en retirant le cron.
+  **TOUT E-MAIL EST BILINGUE (b423, décision Vincent)** : français d'abord,
+  anglais en dessous (« — English — ») — on ne connaît pas la langue du
+  destinataire, et une langue par utilisateur ne couvrirait ni les gabarits
+  Supabase ni `lang=''` (automatique). Vaut pour les résumés de groupe
+  (notify.js), les avis de dépassement (depassement.js), la salle pleine
+  (api/live.js) et les gabarits Supabase (code de connexion, changement
+  d'adresse — maintenus à la main dans le tableau de bord). Le CONTENU des
+  musiciens (messages, titres) n'est JAMAIS traduit (règle b156). Tout
+  nouvel e-mail doit suivre ce modèle.
 - Supabase côté client : clé anon + RLS uniquement ; service_role
   seulement dans `api/*.js` (Vercel).
 - SQL : les fichiers `supabase/*.sql` restent idempotents

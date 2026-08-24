@@ -269,6 +269,8 @@ async function envoyerMailSallePleine(base, row) {
     const email = user?.email ?? '';
     if (email === '') return;
     const nom = row?.artist?.name || '';
+    // Bilingue SYSTÉMATIQUE (b423, décision Vincent) : le français d'abord,
+    // l'anglais en dessous — on ne connaît pas la langue du destinataire.
     const texte =
       `Bonjour${nom ? ' ' + nom : ''} 👋\n\n` +
       `Bravo pour ton live de ce soir : ta salle était PLEINE. Plus de quinze ` +
@@ -279,7 +281,15 @@ async function envoyerMailSallePleine(base, row) {
       `l'application (Réglages → Mon compte) — tu y seras prévenu dès ` +
       `l'ouverture.\n\n` +
       `Encore bravo, et à ton prochain concert 🎸\n` +
-      `L'équipe mojosong — https://mojosong.com`;
+      `L'équipe mojosong — https://mojosong.com\n\n` +
+      `— English —\n\n` +
+      `Congratulations on tonight's live: your room was FULL. More than ` +
+      `fifteen people tried to follow your show at the same time — that's ` +
+      `the free plan's limit, and some stayed at the door. With the Scène ` +
+      `plan your room is unlimited; it's coming very soon in the app ` +
+      `(Settings → My account).\n\n` +
+      `Well done again — see you at your next show 🎸\n` +
+      `The mojosong team — https://mojosong.com`;
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -289,7 +299,7 @@ async function envoyerMailSallePleine(base, row) {
       body: JSON.stringify({
         from: process.env.MAIL_FROM || 'mojosong <marco@mojosong.com>',
         to: [email],
-        subject: 'Ta salle était pleine 🎉',
+        subject: 'Ta salle était pleine 🎉 · Your room was full',
         text: texte,
       }),
     });

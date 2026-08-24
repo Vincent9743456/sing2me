@@ -190,10 +190,15 @@ export default async function handler(req, res) {
         if (pourLui.length > MAX_LIGNES) {
           lignes.push(`… et ${pourLui.length - MAX_LIGNES} de plus`);
         }
+        // Bilingue SYSTÉMATIQUE (b423) : l'habillage est doublé en anglais —
+        // les LIGNES, elles, sont le contenu des musiciens : jamais traduites.
         const corps =
           `Du nouveau dans ${nom} :\n\n${lignes.join('\n')}\n\n` +
-          `Ouvre mojosong pour répondre ou écouter : https://mojosong.com\n\n` +
-          `—\nTu reçois cet e-mail parce que tu es membre de « ${nom} » sur mojosong.`;
+          `Ouvre mojosong pour répondre ou écouter : https://mojosong.com\n` +
+          `(English) New activity in ${nom} — open mojosong to reply or ` +
+          `listen: https://mojosong.com\n\n` +
+          `—\nTu reçois cet e-mail parce que tu es membre de « ${nom} » sur mojosong.\n` +
+          `You're receiving this because you're a member of "${nom}" on mojosong.`;
         try {
           const rr = await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -204,7 +209,7 @@ export default async function handler(req, res) {
             body: JSON.stringify({
               from: process.env.MAIL_FROM || 'mojosong <marco@mojosong.com>',
               to: [email],
-              subject: `Du nouveau dans ${nom}`,
+              subject: `Du nouveau dans ${nom} · news from your band`,
               text: corps,
             }),
           });
