@@ -550,6 +550,11 @@ export function duplicateVersion(
   song: Song,
   name: string,
   bandId?: string,
+  /**
+   * Qui fait l'acte (b420) — fourni par les chemins qui PROPOSENT un morceau
+   * à un groupe, jamais par l'acceptation ni la duplication personnelle.
+   */
+  par?: { id: string; nom: string },
 ): Song {
   const synced = syncActiveVersion(song);
   const targetBand = bandId ?? '';
@@ -564,6 +569,9 @@ export function duplicateVersion(
     name: name.trim() || `Version ${synced.versions.length + 1}`,
     bandId: targetBand,
     structure: current.structure.map((r) => ({ ...r, id: makeId() })),
+    // Jamais héritée de la version copiée : la provenance dit qui a fait
+    // CET acte-là, pas d'où venait le contenu.
+    par: targetBand !== '' ? par : undefined,
   };
   return {
     ...synced,

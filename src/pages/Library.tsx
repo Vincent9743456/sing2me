@@ -143,7 +143,7 @@ function SetlistPicker({
     </Modal>
   );
 }
-import { announceBandSong } from '../lib/bands';
+import { announceBandSong, quiPropose } from '../lib/bands';
 import { LiveBanner } from '../components/LiveBanner';
 import { SwipeRow } from '../components/SwipeRow';
 import { spellingForKey, transposeKeyName } from '../lib/chords';
@@ -486,14 +486,16 @@ export function Library() {
          */
         if (bandFilter !== null && bandFilter !== '' && s.idea === true) {
           /*
-           * Y COMPRIS CE QUE J'AI ÉCARTÉ (b240, demande de Vincent) : « qu'un
-           * morceau proposé dans le répertoire du Groupe, s'il n'est pas
-           * accepté, puisse être récupéré facilement ». Le répertoire du
-           * groupe est le SEUL endroit où une proposition écartée reste
-           * visible — et c'est justement là qu'on la cherche, puisque c'est
-           * là qu'elle est chez celui qui l'a proposée.
+           * Une proposition appartient à la vue de CHAQUE groupe dont le
+           * répertoire la porte (b420) : le même morceau peut être proposé
+           * par deux groupes, et `pendingBandId` ne retient que le premier.
+           * Sans la version de contexte, le répertoire du deuxième groupe
+           * cachait un morceau que sa propre vue « Propositions » montrait.
            */
-          return (s.pendingBandId ?? '') === bandFilter;
+          return (
+            (s.pendingBandId ?? '') === bandFilter ||
+            versionForBand(s, bandFilter) !== null
+          );
         }
         // Vue par défaut « Tous les morceaux » : ce qu'on joue vraiment. Les
         // idées (et donc les propositions) attendent dans leur vue ; les
@@ -587,16 +589,32 @@ export function Library() {
                           className="sub"
                           style={{ color: 'var(--accent)', fontWeight: 600 }}
                         >
-                          {/* Dans le répertoire du groupe qui propose, répéter
-                              son nom n'apprend rien : ce qu'il faut lire,
-                              c'est qu'il reste un geste à faire (b203). */}
-                          {bandFilter !== null &&
-                          bandFilter === (song.pendingBandId ?? '')
+                          {/* Dans une vue de groupe, répéter un nom de groupe
+                              n'apprend rien — et nommer un AUTRE groupe est
+                              pire (b420, constat de Vincent : sous le filtre
+                              « Marcus et Vince », une proposition disait
+                              « Proposé par Zakoustiks » parce que le morceau
+                              vit dans les deux répertoires). Ce qu'il faut
+                              lire ici, c'est qu'il reste un geste à faire
+                              (b203). Ailleurs : la PERSONNE qui a proposé
+                              quand on la connaît (b420), sinon le répertoire
+                              d'où le morceau vient. */}
+                          {bandFilter !== null && bandFilter !== ''
                             ? t('📥 À valider')
-                            : `${t('📥 Proposé par')} ${
-                                bands.find((b) => b.id === song.pendingBandId)
-                                  ?.name || t('ton groupe')
-                              }`}
+                            : ((nom) =>
+                                nom
+                                  ? `${t('📥 Proposé par')} ${nom}`
+                                  : t('📥 Du répertoire de {groupe}', {
+                                      groupe:
+                                        bands.find(
+                                          (b) => b.id === song.pendingBandId,
+                                        )?.name || t('ton groupe'),
+                                    }))(
+                                versionForBand(
+                                  song,
+                                  song.pendingBandId ?? '',
+                                )?.par?.nom ?? '',
+                              )}
                           {song.artist !== '' ? ` · ${song.artist}` : ''}
                         </div>
                       ) : song.needsCheck ? (
@@ -1063,7 +1081,8 @@ export function Library() {
         {showIdeas && (
           <p className="help" style={{ margin: '6px 0 0' }}>
             {t(
-              'Ce qu’on te propose : le répertoire d’un groupe, ou un morceau gardé à un bœuf. Jouables partout — ouvre-en un pour l’accepter ✓ ou l’écarter.',
+              // Plus d'« écarter » depuis b418 : le seul geste est Accepter.
+              'Ce qu’on te propose : le répertoire d’un groupe, ou un morceau gardé à un bœuf. Jouables partout — accepte ✓ ceux que tu veux garder.',
             )}
           </p>
         )}
@@ -1173,7 +1192,13 @@ export function Library() {
               if (!s || versionForBand(s, b.id) !== null) continue;
               saveSong(
                 switchVersion(
-                  duplicateVersion(s, b.name || 'Groupe', b.id),
+                  duplicateVersion(
+                    s,
+                    b.name || 'Groupe',
+                    b.id,
+                    // La provenance suit l'acte (b420) : c'est moi qui propose.
+                    quiPropose(prefs.userName || artist.name),
+                  ),
                   s.activeVersionId,
                 ),
               );

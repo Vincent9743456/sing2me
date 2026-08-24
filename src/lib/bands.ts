@@ -3,7 +3,23 @@
  * cloud, invitation par jeton, adhésion en un clic, liste des membres
  * vérifiés. Nécessite d'être connecté (voir auth.ts) et supabase/bands.sql.
  */
-import { AuthSession, getValidSession, sbAuthed } from './auth';
+import { AuthSession, getValidSession, monId, sbAuthed } from './auth';
+
+/**
+ * QUI fait l'acte de proposer un morceau à un groupe (b420, règle de
+ * Vincent : « une proposition ne peut venir que d'un artiste, pas d'un
+ * groupe »). Un seul endroit pour la construire : le nom vient de ce que
+ * l'appelant affiche déjà dans l'annonce du fil (announceBandSong), jamais
+ * d'un repli traduit type « Moi » — une provenance approximative est pire
+ * qu'aucune (l'affichage retombe alors sur le nom du groupe).
+ */
+export function quiPropose(
+  nom: string,
+): { id: string; nom: string } | undefined {
+  const n = nom.trim();
+  if (n === '') return undefined;
+  return { id: monId(), nom: n };
+}
 
 export interface CloudBandRef {
   cloudId: string;

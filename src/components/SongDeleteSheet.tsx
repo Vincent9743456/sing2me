@@ -14,6 +14,7 @@ import React, { useState } from 'react';
 
 import { ConfirmSheet, Sheet } from './Feedback';
 import { sortDuMorceau } from '../lib/deletesong';
+import { versionForBand } from '../lib/model';
 import { songKey } from '../lib/importer';
 import {
   auRepertoire,
@@ -157,16 +158,25 @@ export function SongDeleteSheet({
   // histoire différente). Rien à confirmer : on explique le modèle, et le
   // seul geste qui existe est ailleurs — « ✓ Accepter ».
   if (sort.mode === 'proposition') {
+    // Une proposition vient d'une PERSONNE (b420, règle de Vincent) — on la
+    // nomme quand la provenance est connue ; sinon on dit d'où vient le
+    // morceau, jamais « proposé par un groupe ».
+    const qui = versionForBand(song, sort.bandId)?.par?.nom ?? '';
     return (
       <Sheet
         title={t('« {title} » est une proposition', { title: titre })}
         onClose={onClose}
       >
         <p className="help" style={{ marginTop: 0 }}>
-          {t(
-            'Ce morceau t’est proposé par {groupe}. Une proposition ne se supprime pas : elle attend simplement ton acceptation — et elle disparaîtra d’elle-même si le groupe la retire de son répertoire.',
-            { groupe: nomDuGroupe(sort.bandId) },
-          )}
+          {qui !== ''
+            ? t(
+                'Ce morceau t’est proposé par {qui} pour le répertoire de {groupe}. Une proposition ne se supprime pas : elle attend simplement ton acceptation — et elle disparaîtra d’elle-même si le groupe la retire de son répertoire.',
+                { qui, groupe: nomDuGroupe(sort.bandId) },
+              )
+            : t(
+                'Ce morceau vient du répertoire de {groupe}. Une proposition ne se supprime pas : elle attend simplement ton acceptation — et elle disparaîtra d’elle-même si le groupe la retire de son répertoire.',
+                { groupe: nomDuGroupe(sort.bandId) },
+              )}
         </p>
         <button className="btn block" onClick={onClose}>
           {t('J’ai compris')}

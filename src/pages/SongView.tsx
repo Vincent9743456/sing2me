@@ -387,8 +387,20 @@ export function SongView({
               📥 <strong>{t('Proposition à valider')}</strong>
               <br />
               <span className="help">
-                {t(
-                  'Jouable partout, mais pas encore entrée dans ta bibliothèque.',
+                {/* La proposition vient d'une PERSONNE (b420, règle de
+                    Vincent) : on la nomme quand on la connaît — les
+                    propositions d'avant b420 n'ont pas cette provenance. */}
+                {((nom) =>
+                  nom
+                    ? t(
+                        'Proposée par {qui} — jouable partout, mais pas encore entrée dans ta bibliothèque.',
+                        { qui: nom },
+                      )
+                    : t(
+                        'Jouable partout, mais pas encore entrée dans ta bibliothèque.',
+                      ))(
+                  versionForBand(song, song.pendingBandId ?? '')?.par?.nom ??
+                    '',
                 )}
               </span>
             </span>
