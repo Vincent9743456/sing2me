@@ -135,18 +135,37 @@ export function Setlists() {
     ),
   ].sort((a, b) => a.localeCompare(b, 'fr'));
 
+  /** La setlist appartient-elle au contexte de cette puce ? UNE seule
+   *  définition (b413) : le filtre, sa remise à zéro et les puces
+   *  l'utilisent tous — trois copies auraient fini par diverger. */
+  const dansContexte = (sl: Setlist, ctx: string): boolean =>
+    ctx === ''
+      ? (sl.bandId ?? '') === '' && (sl.context ?? '') === ''
+      : ctx.startsWith('ctx:')
+        ? (sl.bandId ?? '') === '' && sl.context === ctx.slice(4)
+        : (sl.bandId ?? '') === ctx;
+
+  /**
+   * UN FILTRE QUI NE MONTRE PLUS RIEN SE LÈVE TOUT SEUL (b413, constat de
+   * Vincent : après avoir supprimé la seule setlist d'un groupe depuis le
+   * filtre de ce groupe, l'écran restait sur « Rien encore ici »). Même
+   * esprit que la règle 11 : une vue vide dont le motif a disparu n'a pas
+   * à être fermée à la main. Vaut aussi pour un filtre mémorisé
+   * (localStorage) qui pointe vers un contexte vidé entre-temps.
+   */
+  useEffect(() => {
+    if (ctxFilter === null) return;
+    if (!setlists.some((sl) => dansContexte(sl, ctxFilter))) {
+      setCtxFilter(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setlists, ctxFilter]);
+
   /** Les setlists du contexte choisi — épinglée du prochain concert en
    *  tête (b380), puis la plus récemment modifiée (Q4 : aucune « dernière
    *  utilisation » n'existe dans les données — tri actuel conservé). */
   const visibles = [...setlists]
-    .filter((sl) => {
-      if (ctxFilter === null) return true;
-      if (ctxFilter === '')
-        return (sl.bandId ?? '') === '' && (sl.context ?? '') === '';
-      if (ctxFilter.startsWith('ctx:'))
-        return (sl.bandId ?? '') === '' && sl.context === ctxFilter.slice(4);
-      return (sl.bandId ?? '') === ctxFilter;
-    })
+    .filter((sl) => ctxFilter === null || dansContexte(sl, ctxFilter))
     .filter(
       (sl) => rech.trim() === '' || replier(sl.name).includes(replier(rech)),
     )
@@ -155,6 +174,13 @@ export function Setlists() {
       if (b.id === nextConcertSetlistId) return 1;
       return b.updatedAt.localeCompare(a.updatedAt);
     });
+
+  /** Contextes réellement utilisés (b413) : les puces ne proposent que ce
+   *  qui contient au moins une setlist. */
+  const aDesSolos = setlists.some((sl) => dansContexte(sl, ''));
+  const bandsAvecSetlists = bands.filter((b) =>
+    setlists.some((sl) => dansContexte(sl, b.id)),
+  );
 
   /** À qui appartient cette setlist, en toutes lettres (b211). */
   const contexteDe = (sl: Setlist): string =>
@@ -395,8 +421,13 @@ export function Setlists() {
           </div>
         )}
         {/* Sélecteur de contexte, en haut (arbitrage Vincent, b211) : une
-            rangée qui défile, comme les répertoires de l'onglet Morceaux. */}
-        {setlists.length > 0 && (bands.length > 0 || contextes.length > 0) && (
+            rangée qui défile, comme les répertoires de l'onglet Morceaux.
+            SEULS LES CONTEXTES UTILISÉS s'affichent (b413, demande de
+            Vincent) : une puce qui ne peut montrer que du vide n'est pas
+            un filtre. La première setlist d'un groupe se crée par
+            « ＋ Nouvelle setlist », qui propose tous les groupes. */}
+        {setlists.length > 0 &&
+          (bandsAvecSetlists.length > 0 || contextes.length > 0) && (
           <div
             className="chips filterchips scrollrow"
             style={{ alignItems: 'center' }}
@@ -407,22 +438,27 @@ export function Setlists() {
             >
               {t('Toutes')}
             </button>
-            <button
-              className={`chip ${ctxFilter === '' ? '' : 'off'}`}
-              title={t('Mes setlists solo')}
-              onClick={() => setCtxFilter(ctxFilter === '' ? null : '')}
-            >
-              <Icon name="mic" size={12} />{' '}
-              {artist.name !== '' ? artist.name : t('Solo')}
-            </button>
-            {bands.map((b, i) => (
+            {aDesSolos && (
+              <button
+                className={`chip ${ctxFilter === '' ? '' : 'off'}`}
+                title={t('Mes setlists solo')}
+                onClick={() => setCtxFilter(ctxFilter === '' ? null : '')}
+              >
+                <Icon name="mic" size={12} />{' '}
+                {artist.name !== '' ? artist.name : t('Solo')}
+              </button>
+            )}
+            {bandsAvecSetlists.map((b) => (
               <button
                 key={b.id}
                 className={`chip ${ctxFilter === b.id ? '' : 'off'}`}
                 onClick={() => setCtxFilter(ctxFilter === b.id ? null : b.id)}
               >
                 {/* La couleur du groupe = un point discret ; l'encadrement
-                    signale la sélection (même règle qu'en bibliothèque). */}
+                    signale la sélection (même règle qu'en bibliothèque).
+                    Couleur par POSITION dans la liste complète des groupes,
+                    jamais dans la liste filtrée : les autres écrans donnent
+                    la même teinte au même groupe. */}
                 <span
                   aria-hidden="true"
                   style={{
@@ -430,7 +466,11 @@ export function Setlists() {
                     width: 8,
                     height: 8,
                     borderRadius: '50%',
-                    background: BAND_COLORS[i % BAND_COLORS.length],
+                    background:
+                      BAND_COLORS[
+                        Math.max(0, bands.findIndex((x) => x.id === b.id)) %
+                          BAND_COLORS.length
+                      ],
                     marginRight: 2,
                   }}
                 />
