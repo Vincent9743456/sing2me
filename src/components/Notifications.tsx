@@ -65,6 +65,8 @@ function membersSignature(
 function mergeCloudMembers(
   local: BandMember[],
   cloud: CloudMember[],
+  /** Mon identifiant de compte : ma propre ligne ne se retire jamais. */
+  moi: string,
 ): BandMember[] {
   const pris = new Set<BandMember>();
   const correspond = (l: BandMember, c: CloudMember): boolean =>
@@ -98,9 +100,23 @@ function mergeCloudMembers(
           verified: true,
         };
   });
-  // Ne restent que les musiciens qu'AUCUN compte ne représente : invités qui
-  // ne se sont jamais inscrits, musiciens notés à la main.
-  const keptManual = local.filter((m) => !pris.has(m));
+  // UN DÉPART SE VOIT CHEZ LES AUTRES (b406, constat de Vincent : Marco a
+  // réinitialisé son compte — donc quitté le groupe — mais restait affiché
+  // membre chez Vincent, qui ne pouvait plus le réinviter). Une ligne
+  // locale qui PORTE un identifiant de compte est le reflet d'une ligne
+  // serveur : si le serveur ne la connaît plus, le musicien est PARTI
+  // (départ volontaire, retrait, réinitialisation) — elle se retire, chez
+  // tout le monde. Restent :
+  //  · les lignes SANS identifiant (musiciens notés à la main, invités par
+  //    lien jamais inscrits) — locales par nature ;
+  //  · les invitations EN ATTENTE (`pending`, b250 : l'identifiant est posé
+  //    avant l'adhésion, donc le serveur ne le connaît pas encore) ;
+  //  · MA ligne (le créateur n'est jamais dans cloud_band_members, b255).
+  const keptManual = local.filter(
+    (m) =>
+      !pris.has(m) &&
+      ((m.userId ?? '') === '' || m.pending === true || m.userId === moi),
+  );
   return [...fromCloud, ...keptManual];
 }
 
@@ -326,7 +342,7 @@ export function NotificationsProvider({
           // jamais dans `cloud_band_members`. Réparation silencieuse —
           // `updatedAt` n'est pas retouché, chaque appareil la refait depuis
           // la source qui fait autorité.
-          const merged = mergeCloudMembers(band.members, members);
+          const merged = mergeCloudMembers(band.members, members, s.userId);
           const comptes = members.map((m) => ({
             user_id: m.user_id,
             name: m.name,
