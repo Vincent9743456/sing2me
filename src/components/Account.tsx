@@ -43,11 +43,16 @@ import {
   clearPendingInvite,
   INVITE_EVENT,
   joinBand,
+  leaveBand,
   peekPendingInvite,
   pullBandLibrary,
   pushBandLibrary,
   upsertProfile,
 } from '../lib/bands';
+import {
+  departsEnAttente,
+  retirerDepartEnAttente,
+} from '../lib/departs';
 import {
   applyBandData,
   appliquerIdentite,
@@ -377,6 +382,18 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
    * qui avons changé. Ne rafraîchit l'écran QUE si le cloud a du neuf (sinon
    * on relancerait le débounce en boucle).
    */
+  /**
+   * DÉPARTS DE GROUPE RESTÉS EN ATTENTE (b408, cas Marco) : la
+   * réinitialisation et « Quitter le groupe » notent leurs départs avant
+   * de les tenter — ici, la synchro rejoue ce qui n'est pas parti, jusqu'à
+   * ce que le serveur l'enregistre. Jamais bloquant, jamais d'erreur.
+   */
+  const rejouerDeparts = useCallback(async (valid: AuthSession) => {
+    for (const cid of departsEnAttente()) {
+      if (await leaveBand(valid, cid)) retirerDepartEnAttente(cid);
+    }
+  }, []);
+
   const rattraperPerso = useCallback(
     async (valid: AuthSession) => {
       if (persoSyncBusy.current) return;
@@ -728,6 +745,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             // sans adresse, la carte « Ton lien public » reste disponible
           }
         })();
+        // Départs de groupe restés en attente (b408) : rejoués avant la
+        // synchro des groupes, sinon celle-ci ressusciterait le répertoire
+        // d'un groupe qu'on est en train de quitter.
+        void rejouerDeparts(valid);
         // Répertoires de groupes (étape 2b), après la bibliothèque perso
         void syncBands(valid);
         // Groupes cloud orphelins (supprimés localement, y compris avant que
@@ -1005,7 +1026,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       if (horsLigne()) return;
       void (async () => {
         const valid = await getValidSession();
-        if (valid) await rattraperPerso(valid);
+        if (!valid) return;
+        // Départs de groupe en attente (b408) : le retour du réseau est
+        // exactement le moment où un départ raté peut enfin partir.
+        void rejouerDeparts(valid);
+        await rattraperPerso(valid);
       })();
     };
     const auRetour = () => {
@@ -1029,7 +1054,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('online', auRetour);
       document.removeEventListener('visibilitychange', auPremierPlan);
     };
-  }, [session?.userId, envoyer, rattraperPerso]);
+  }, [session?.userId, envoyer, rattraperPerso, rejouerDeparts]);
 
   // Cycle régulier : récupère ce que les autres appareils (biblio perso) ET
   // les autres membres (répertoires de groupe) ont modifié.
@@ -1043,8 +1068,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         await rattraperPerso(valid);
         // Ce qui attend repart aussi sur le cycle (b397) : un envoi tombé
         // sur un serveur muet ne doit pas attendre la prochaine
-        // modification pour retenter sa chance.
+        // modification pour retenter sa chance. Même règle pour les
+        // départs de groupe restés en attente (b408).
         if (aEnvoyer.current) void envoyer();
+        void rejouerDeparts(valid);
         void syncBands(valid);
       })();
     }, 90000);
