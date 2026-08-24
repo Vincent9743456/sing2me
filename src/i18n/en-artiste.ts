@@ -181,6 +181,10 @@ export const EN_ARTISTE: Record<string, string> = {
   'déjà avec toi dans {groupe}': 'already with you in {groupe}',
   'Cette personne est déjà dans le groupe (ou invitée).':
     'This person is already in the band (or invited).',
+  'Aucun compte mojosong à ce nom dans l’annuaire — c’est normal s’il n’a pas encore l’app : le lien d’invitation est fait pour ça.':
+    'No mojosong account with that name in the directory — that’s normal if they don’t have the app yet: the invitation link is made for that.',
+  'L’annuaire ne répond pas pour le moment — le lien d’invitation fonctionne quand même.':
+    'The directory isn’t responding right now — the invitation link still works.',
   'Cette personne est déjà dans le groupe, ou déjà invitée : elle n’a pas besoin d’une nouvelle invitation. Pour la réinviter après un départ, retire d’abord sa ligne de la liste des musiciens.':
     'This person is already in the band, or already invited: they don’t need a new invitation. To re-invite them after a departure, first remove their line from the musicians list.',
   'Supprimer {nom}': 'Delete {nom}',
