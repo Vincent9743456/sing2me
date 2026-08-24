@@ -80,6 +80,57 @@ async function accounts() {
   return out;
 }
 
+/**
+ * Répartition des ABONNEMENTS (b411) : lignes de user_plans agrégées par
+ * plan ('pro', héritage b381, compte avec 'scene'). Les comptes sans ligne
+ * sont gratuits — le total vient de `accounts()`, pas d'ici.
+ */
+async function plansBreakdown() {
+  const out = { musicien: 0, scene: 0, admin: 0 };
+  try {
+    const r = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/user_plans?select=plan`,
+      { headers: sbHeaders() },
+    );
+    if (!r.ok) return out;
+    const rows = await r.json();
+    for (const row of rows) {
+      const p = row.plan === 'pro' ? 'scene' : row.plan;
+      if (p in out) out[p]++;
+    }
+    return out;
+  } catch {
+    return out;
+  }
+}
+
+/**
+ * Partitions des bibliothèques personnelles (b411) : total, et UNIQUES
+ * (hors copies créées par le partage en groupe — même titre + artiste
+ * comptés une fois). Calculé EN BASE (`admin_song_stats`, supabase/
+ * admin.sql) : rapatrier les blobs entiers pour compter coûterait des
+ * mégaoctets à chaque affichage. `null` si la fonction n'est pas encore
+ * installée — l'écran le dit au lieu d'afficher un zéro trompeur.
+ */
+async function songStats() {
+  try {
+    const r = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/rpc/admin_song_stats`,
+      { method: 'POST', headers: sbHeaders(), body: '{}' },
+    );
+    if (!r.ok) return null;
+    const rows = await r.json();
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (!row) return null;
+    return {
+      total: Number(row.total) || 0,
+      uniques: Number(row.uniques) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Compte les lignes d'une table, sans les rapatrier. */
 async function countRows(table, filter = '') {
   try {
@@ -239,15 +290,20 @@ export default async function handler(req, res) {
       return;
     }
 
-    const [acc, spend, tops, meas, bands, lives, songsShared] = await Promise.all([
-      accounts(),
-      aiSpend(),
-      topups(),
-      measurement(),
-      countRows('cloud_bands'),
-      countRows('lives'),
-      countRows('band_library'),
-    ]);
+    // « Morceaux partagés en groupe » (band_library) est retiré (b411,
+    // demande de Vincent : pas à jour, pas utile) au profit du compteur de
+    // partitions des bibliothèques personnelles.
+    const [acc, spend, tops, meas, bands, lives, plans, songs] =
+      await Promise.all([
+        accounts(),
+        aiSpend(),
+        topups(),
+        measurement(),
+        countRows('cloud_bands'),
+        countRows('lives'),
+        plansBreakdown(),
+        songStats(),
+      ]);
 
     const remaining = {};
     for (const p of ['anthropic', 'openai']) {
@@ -259,9 +315,10 @@ export default async function handler(req, res) {
     res.status(200).json({
       at: new Date().toISOString(),
       accounts: acc,
+      plans,
       bands,
       lives,
-      songsShared,
+      songs,
       ai: { last30: spend.d30, allTime: spend.all },
       // Diagnostic (b161) : l'app affiche un avertissement explicite si la
       // mesure n'est pas opérationnelle, au lieu d'un zéro trompeur.

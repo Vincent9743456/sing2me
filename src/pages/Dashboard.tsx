@@ -26,9 +26,12 @@ interface Stats {
     active7: number;
     active30: number;
   };
+  /** Répartition des abonnements (b411) — les gratuits = total − le reste. */
+  plans?: { musicien: number; scene: number; admin: number };
   bands: number;
   lives: number;
-  songsShared: number;
+  /** Partitions des bibliothèques perso — null si admin.sql pas rejoué. */
+  songs?: { total: number; uniques: number } | null;
   ai: {
     last30: {
       total: number;
@@ -200,25 +203,62 @@ export function Dashboard() {
               </p>
             )}
 
+            {/* KPI resserrés (b411, liste de Vincent) : comptes avec la
+                répartition des abonnements, actifs, connectés 7 j ;
+                groupes, partitions uniques (hors copies de groupe), lives.
+                « Morceaux partagés en groupe » est retiré — pas à jour,
+                pas utile. */}
             <h2 className="pagetitle" style={{ marginTop: 0 }}>
               {t('Musiciens')}
             </h2>
             <div className="statgrid">
               <Stat label={t('Comptes créés')} value={stats.accounts.total} />
               <Stat label={t('Actifs (30 j)')} value={stats.accounts.active30} />
-              <Stat label={t('Nouveaux (7 j)')} value={stats.accounts.new7} />
               <Stat label={t('Connectés (7 j)')} value={stats.accounts.active7} />
             </div>
+            {stats.plans && (
+              <p className="help" style={{ marginTop: -4 }}>
+                {t(
+                  'Abonnements : {free} gratuits · {musicien} musicien · {scene} scène · {admin} fondateurs',
+                  {
+                    free: Math.max(
+                      0,
+                      stats.accounts.total -
+                        stats.plans.musicien -
+                        stats.plans.scene -
+                        stats.plans.admin,
+                    ),
+                    musicien: stats.plans.musicien,
+                    scene: stats.plans.scene,
+                    admin: stats.plans.admin,
+                  },
+                )}
+              </p>
+            )}
 
             <h2 className="pagetitle">{t('Usage')}</h2>
             <div className="statgrid">
               <Stat label={t('Groupes')} value={stats.bands} />
-              <Stat label={t('Directs lancés')} value={stats.lives} />
               <Stat
-                label={t('Morceaux partagés en groupe')}
-                value={stats.songsShared}
+                label={t('Partitions (uniques)')}
+                value={stats.songs ? stats.songs.uniques : '—'}
               />
+              <Stat label={t('Directs lancés')} value={stats.lives} />
             </div>
+            {stats.songs ? (
+              <p className="help" style={{ marginTop: -4 }}>
+                {t(
+                  '{total} partitions en comptant les copies des répertoires de groupe.',
+                  { total: stats.songs.total },
+                )}
+              </p>
+            ) : (
+              <p className="help" style={{ marginTop: -4 }}>
+                {t(
+                  'Compteur de partitions indisponible — exécute supabase/admin.sql dans le SQL Editor (fonction admin_song_stats).',
+                )}
+              </p>
+            )}
 
             <h2 className="pagetitle">{t('Coût des IA (30 derniers jours)')}</h2>
             <div className="statgrid">

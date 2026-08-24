@@ -103,3 +103,30 @@ end;
 $$;
 
 revoke all on function bump_rate(text, timestamptz) from public, anon, authenticated;
+
+-- ------------------------------------------------------------
+-- COMPTEUR DE PARTITIONS DU TABLEAU DE BORD (b411, demande de Vincent).
+-- Compte les morceaux des bibliothèques personnelles (user_library),
+-- hors propositions en attente (idea) et hors écartées — puis le nombre
+-- de partitions UNIQUES (titre + artiste repliés) : un morceau partagé
+-- dans un groupe existe en copie chez chaque membre, et ces copies ne
+-- doivent compter qu'une fois. Agrégat pur, rien de nominatif ; réservé
+-- au service_role (le tableau de bord passe par le serveur, b160).
+-- ------------------------------------------------------------
+create or replace function public.admin_song_stats()
+returns table (total bigint, uniques bigint)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    count(*) as total,
+    count(distinct lower(trim(coalesce(s->>'title', ''))) || '|' ||
+          lower(trim(coalesce(s->>'artist', '')))) as uniques
+  from public.user_library ul,
+       jsonb_array_elements(coalesce(ul.data->'songs', '[]'::jsonb)) as s
+  where coalesce(s->>'idea', 'false') <> 'true'
+    and coalesce(s->>'declined', 'false') <> 'true';
+$$;
+
+revoke all on function public.admin_song_stats() from public, anon, authenticated;

@@ -111,16 +111,20 @@ export const EN_COMMUN: Record<string, string> = {
     "Accounts created",
   "Actifs (30 j)":
     "Active (30 d)",
-  "Nouveaux (7 j)":
-    "New (7 d)",
   "Connectés (7 j)":
     "Signed in (7 d)",
+  "Abonnements : {free} gratuits · {musicien} musicien · {scene} scène · {admin} fondateurs":
+    "Plans: {free} free · {musicien} musician · {scene} stage · {admin} founders",
   "Usage":
     "Usage",
   "Directs lancés":
     "Live sessions started",
-  "Morceaux partagés en groupe":
-    "Songs shared with bands",
+  "Partitions (uniques)":
+    "Charts (unique)",
+  "{total} partitions en comptant les copies des répertoires de groupe.":
+    "{total} charts counting band-repertoire copies.",
+  "Compteur de partitions indisponible — exécute supabase/admin.sql dans le SQL Editor (fonction admin_song_stats).":
+    "Chart counter unavailable — run supabase/admin.sql in the SQL Editor (admin_song_stats function).",
   "Coût des IA (30 derniers jours)":
     "AI cost (last 30 days)",
   "Total":
