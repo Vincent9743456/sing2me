@@ -11,7 +11,7 @@ import {
   SaveBar,
   TopBar,
 } from '../components/ui';
-import { announceBandSong } from '../lib/bands';
+import { announceBandSong, quiPropose } from '../lib/bands';
 import { t } from '../i18n';
 import { songKey } from '../lib/importer';
 import {
@@ -332,7 +332,13 @@ export function SetlistEdit({ id }: { id: string | null }) {
       const b = bands.find((x) => x.id === bandId);
       const prev = song.activeVersionId;
       const updated = switchVersion(
-        duplicateVersion(song, b?.name || 'Groupe', bandId),
+        duplicateVersion(
+          song,
+          b?.name || 'Groupe',
+          bandId,
+          // La provenance suit l'acte (b420) : c'est moi qui propose.
+          quiPropose(prefs.userName || artist.name),
+        ),
         prev,
       );
       saveSong(updated);

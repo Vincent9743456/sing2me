@@ -78,6 +78,16 @@ export interface SongVersion {
    * `updatedAt` du morceau.
    */
   updatedAt?: string;
+  /**
+   * QUI a apporté cette version au répertoire du groupe (b420, règle de
+   * Vincent : « une proposition ne peut venir que d'un artiste, pas d'un
+   * groupe »). Posé une fois, à l'acte de proposer, et jamais réécrit :
+   * c'est de la PROVENANCE, pas du contenu — il ne compte donc ni dans
+   * `versionContentDiffers` ni dans `versionEqual` (bandSync), sinon un
+   * vieux client qui l'ignore ferait du ping-pong avec un neuf. Absent sur
+   * les versions d'avant b420 : l'affichage retombe sur le nom du groupe.
+   */
+  par?: { id: string; nom: string };
 }
 
 export interface Song {

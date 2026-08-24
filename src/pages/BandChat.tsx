@@ -20,6 +20,7 @@ import {
   ensureCloudBand,
   fetchBandMessages,
   postBandMessage,
+  quiPropose,
 } from '../lib/bands';
 import { findSameSong, songKey } from '../lib/importer';
 import { duplicateVersion, switchVersion, versionForBand } from '../lib/model';
@@ -182,7 +183,13 @@ export function BandChat({ id }: { id: string }) {
         const prev = song.activeVersionId;
         saveSong(
           switchVersion(
-            duplicateVersion(song, band.name || t('Groupe'), band.id),
+            duplicateVersion(
+              song,
+              band.name || t('Groupe'),
+              band.id,
+              // La provenance suit l'acte (b420) : c'est moi qui propose.
+              quiPropose(prefs.userName || artist.name),
+            ),
             prev,
           ),
         );

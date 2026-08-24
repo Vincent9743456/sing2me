@@ -14,11 +14,13 @@ const racine = new URL('../src/', import.meta.url).pathname;
 writeFileSync(
   pont,
   `export { mergeStates } from '${racine}lib/sync';\n` +
-    `export { tamponneBand } from '${racine}types';\n`,
+    `export { tamponneBand } from '${racine}types';\n` +
+    `export { applyBandData, exportBandData, mergeBandData } from '${racine}lib/bandSync';\n`,
 );
 const out = join(dir, 'pont.mjs');
 buildSync({ entryPoints: [pont], bundle: true, format: 'esm', outfile: out });
-const { mergeStates, tamponneBand } = await import(out);
+const { mergeStates, tamponneBand, applyBandData, exportBandData, mergeBandData } =
+  await import(out);
 
 let ko = 0;
 function egal(nom, obtenu, attendu) {
@@ -128,6 +130,51 @@ const groupe = (extra = {}) => ({
   const cloudA = { ...base(), setlists: [sl], resetAt: { setlists: '2026-08-01T00:00:00Z' } };
   const surB = mergeStates(base(), cloudA);
   egal('setlist créée après le reset arrive', surB.setlists.length, 1);
+}
+
+// 11. b420 — LA PROVENANCE D'UNE PROPOSITION VOYAGE ET SURVIT.
+//     Marco propose un morceau (version de groupe estampillée `par`) : le
+//     blob exporté la porte, le membre qui l'applique la reçoit, et une
+//     fusion avec un export SANS provenance (client d'avant b420, membre
+//     qui a accepté sans elle) ne la perd jamais.
+{
+  const chanson = (extra = {}) => ({
+    id: 'm1', title: 'Acoustic medley', artist: 'Bob Marley',
+    key: 'C', tempo: 0, capo: 0, durationSec: 0, tags: [], structure: [],
+    lyrics: 'la la', versions: [
+      { id: 'v0', name: 'Originale', bandId: '', key: 'C', tempo: 0, capo: 0, structure: [], lyrics: 'la la', updatedAt: '2026-08-20T10:00:00Z' },
+      { id: 'v1', name: 'Zakoustiks', bandId: 'g1', key: 'C', tempo: 0, capo: 0, structure: [], lyrics: 'la la', updatedAt: '2026-08-20T10:00:00Z', par: { id: 'compte-marco', nom: 'Marco' } },
+    ],
+    activeVersionId: 'v0', rehearsalNotes: [], hearts: 0, fanMessages: [],
+    createdAt: '2026-08-20T10:00:00Z', updatedAt: '2026-08-20T10:00:00Z', ...extra,
+  });
+  // Export chez Marco : la provenance part dans le blob.
+  const blob = exportBandData([chanson()], [], 'g1');
+  egal('export porte la provenance', blob.songs[0].version.par?.nom, 'Marco');
+  // Application chez Vincent (bibliothèque vide) : proposition reçue avec elle.
+  const chezVincent = applyBandData(blob, [], [], 'zk-local');
+  egal('proposition reçue avec provenance',
+    chezVincent.songs[0].versions.find((v) => v.bandId === 'zk-local')?.par?.nom,
+    'Marco');
+  egal('proposition en attente', chezVincent.songs[0].idea, true);
+  // Fusion avec un export SANS provenance mais plus récent : elle survit.
+  const sansPar = structuredClone(blob);
+  delete sansPar.songs[0].version.par;
+  sansPar.songs[0].version.lyrics = 'la la la';
+  sansPar.songs[0].version.updatedAt = '2026-08-21T10:00:00Z';
+  sansPar.songs[0].updatedAt = '2026-08-21T10:00:00Z';
+  const fusion = mergeBandData(blob, sansPar);
+  egal('édition la plus récente gagne', fusion.songs[0].version.lyrics, 'la la la');
+  egal('la provenance ne se perd pas', fusion.songs[0].version.par?.nom, 'Marco');
+  // Rattrapage : une proposition déjà reçue SANS provenance la gagne quand
+  // un blob l'apporte — sans réécrire le contenu.
+  const ancienne = chanson({ id: 'm2', idea: true, pendingBandId: 'zk-local' });
+  ancienne.versions[1] = { ...ancienne.versions[1], bandId: 'zk-local' };
+  delete ancienne.versions[1].par;
+  const rattrape = applyBandData(blob, [ancienne], [], 'zk-local');
+  egal('provenance rattrapée sur l’existant',
+    rattrape.songs[0].versions.find((v) => v.bandId === 'zk-local')?.par?.nom,
+    'Marco');
 }
 
 rmSync(dir, { recursive: true, force: true });

@@ -46,6 +46,14 @@ export interface SharedVersion {
    * aux autres membres.
    */
   updatedAt: string;
+  /**
+   * QUI a proposé ce morceau au répertoire (b420) — posé par l'application
+   * de celui qui a fait l'acte, recopié par les membres qui l'acceptent.
+   * PROVENANCE, pas contenu : `versionEqual` l'ignore (un vieux blob sans
+   * ce champ n'est pas une « édition »), et la fusion ne l'efface jamais —
+   * l'export d'un client qui l'ignore ne doit pas faire oublier l'auteur.
+   */
+  par?: { id: string; nom: string };
 }
 
 export interface SharedSong {
@@ -181,6 +189,7 @@ export function exportBandData(
         // Repli sur le timestamp du morceau pour les versions héritées
         // d'avant le suivi par version.
         updatedAt: v.updatedAt ?? s.updatedAt,
+        par: v.par,
       },
       notes: sharedNotes(s.rehearsalNotes, localBandId),
       updatedAt: s.updatedAt,
@@ -333,8 +342,15 @@ export function mergeBandData(cloud: BandData, local: BandData): BandData {
     const newer = sAt > oAt ? s : other;
     const older = sAt > oAt ? other : s;
     const winner = same ? older : newer;
+    // La provenance ne se perd jamais (b420) : si le camp qui gagne la
+    // fusion ne la porte pas (client d'avant b420, copie d'un membre qui
+    // a accepté sans elle), on garde celle de l'autre camp.
+    const par = winner.version.par ?? other.version.par ?? s.version.par;
     songs.set(s.key, {
       ...winner,
+      ...(par && !winner.version.par
+        ? { version: { ...winner.version, par } }
+        : {}),
       // Le morceau garde le timestamp le plus récent des deux côtés — la
       // détection « ré-apporté après un retrait » (plus bas) doit rester
       // basée sur l'activité globale du morceau.
@@ -536,6 +552,7 @@ export function applyBandData(
             id: vid,
             name: e.version.name || 'Version groupe',
             bandId: localBandId,
+            par: e.version.par,
             key: e.version.key,
             tempo: e.version.tempo,
             capo: e.version.capo,
@@ -570,6 +587,7 @@ export function applyBandData(
             id: makeId(),
             name: e.version.name || 'Version groupe',
             bandId: localBandId,
+            par: e.version.par,
             key: e.version.key,
             tempo: e.version.tempo,
             capo: e.version.capo,
@@ -630,6 +648,20 @@ export function applyBandData(
             }
           : {}),
         updatedAt: e.updatedAt > song.updatedAt ? e.updatedAt : song.updatedAt,
+      };
+      changed = true;
+    }
+    // Rattrapage de PROVENANCE (b420) : une version reçue avant b420 ne
+    // porte pas son auteur — on le recopie dès qu'un blob l'apporte, sans
+    // toucher aux timestamps (réparation silencieuse, cicatrice b248).
+    const versionDuGroupe = versionForBand(song, localBandId);
+    if (versionDuGroupe && !versionDuGroupe.par && e.version.par) {
+      const par = e.version.par;
+      song = {
+        ...song,
+        versions: song.versions.map((v) =>
+          v.id === versionDuGroupe.id ? { ...v, par } : v,
+        ),
       };
       changed = true;
     }

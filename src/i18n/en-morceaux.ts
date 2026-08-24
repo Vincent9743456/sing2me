@@ -42,6 +42,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   '✓ Dedans': '✓ In there',
   'Nouvelle setlist (nom)…': 'New setlist (name)…',
   '📥 Proposé par': '📥 Proposed by',
+  // b420 — la provenance d'une proposition : la personne, sinon le répertoire
+  '📥 Du répertoire de {groupe}': '📥 From the {groupe} repertoire',
   'ton groupe': 'your band',
   Exemple: 'Example',
   'Groupe : {name} — cliquer pour filtrer': 'Band: {name} — click to filter',
@@ -73,8 +75,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Groupes :': 'Bands:',
   'Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)':
     'Repertoire playable solo (every song by default, unless disqualified from its page)',
-  'Ce qu’on te propose : le répertoire d’un groupe, ou un morceau gardé à un bœuf. Jouables partout — ouvre-en un pour l’accepter ✓ ou l’écarter.':
-    'What others suggest: a band’s repertoire, or a song you kept at a jam. Playable anywhere — open one to accept ✓ or set it aside.',
+  'Ce qu’on te propose : le répertoire d’un groupe, ou un morceau gardé à un bœuf. Jouables partout — accepte ✓ ceux que tu veux garder.':
+    'What others suggest: a band’s repertoire, or a song you kept at a jam. Playable anywhere — accept ✓ the ones you want to keep.',
   'Partitions ajoutées cette semaine — {n} morceaux.': 'Charts added this week — {n} songs.',
   'Partitions ajoutées cette semaine — {n} morceau.': 'Charts added this week — {n} song.',
   'Filtre actif :': 'Active filter:',
@@ -135,6 +137,9 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Proposition à valider': 'Idea to work on',
   'Jouable partout, mais pas encore entrée dans ta bibliothèque.':
     'Playable anywhere, but not yet confirmed in your library.',
+  // b420 — la provenance d'une proposition, quand on la connaît
+  'Proposée par {qui} — jouable partout, mais pas encore entrée dans ta bibliothèque.':
+    'Suggested by {qui} — playable anywhere, but not yet confirmed in your library.',
   '✓ Valider dans la bibliothèque': '✓ Confirm in the library',
   'Déqualifié du répertoire solo — cliquer pour le requalifier':
     'Disqualified from the solo repertoire — click to requalify it',
@@ -563,8 +568,11 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Vue du public': 'Audience view',
   // b418 — une proposition ne se refuse pas
   '« {title} » est une proposition': '“{title}” is a suggestion',
-  'Ce morceau t’est proposé par {groupe}. Une proposition ne se supprime pas : elle attend simplement ton acceptation — et elle disparaîtra d’elle-même si le groupe la retire de son répertoire.':
-    'This song is suggested by {groupe}. A suggestion can’t be deleted: it simply waits for your acceptance — and it will disappear on its own if the band removes it from its repertoire.',
+  // b420 — la proposition vient d'une personne, jamais « d'un groupe »
+  'Ce morceau t’est proposé par {qui} pour le répertoire de {groupe}. Une proposition ne se supprime pas : elle attend simplement ton acceptation — et elle disparaîtra d’elle-même si le groupe la retire de son répertoire.':
+    'This song is suggested by {qui} for the {groupe} repertoire. A suggestion can’t be deleted: it simply waits for your acceptance — and it will disappear on its own if the band removes it from its repertoire.',
+  'Ce morceau vient du répertoire de {groupe}. Une proposition ne se supprime pas : elle attend simplement ton acceptation — et elle disparaîtra d’elle-même si le groupe la retire de son répertoire.':
+    'This song comes from the {groupe} repertoire. A suggestion can’t be deleted: it simply waits for your acceptance — and it will disappear on its own if the band removes it from its repertoire.',
   '« {title} » est au programme': '“{title}” is on the setlist',
   'Ce morceau est dans la setlist « {setlist} » de {groupe}. Tant qu’il y est, tu ne peux pas le supprimer : le programme engage les autres musiciens, pas seulement toi.':
     'This song is on {groupe}’s “{setlist}” setlist. While it’s there you can’t delete it: the setlist commits the other musicians, not just you.',

@@ -13,7 +13,7 @@
  */
 import React, { useMemo, useState } from 'react';
 
-import { announceBandSong } from '../lib/bands';
+import { announceBandSong, quiPropose } from '../lib/bands';
 import { songKey } from '../lib/importer';
 import {
   duplicateVersion,
@@ -107,7 +107,13 @@ export function AssignSheet({
   function addBandVersion(s: Song, bandId: string, bandName: string): Song {
     return switchVersion(
       // Nom de la nouvelle version (donnée persistée) : jamais traduit.
-      duplicateVersion(s, bandName || 'Groupe', bandId),
+      // La PROVENANCE voyage avec elle (b420) : c'est moi qui propose.
+      duplicateVersion(
+        s,
+        bandName || 'Groupe',
+        bandId,
+        quiPropose(prefs.userName || artist.name),
+      ),
       s.activeVersionId,
     );
   }
