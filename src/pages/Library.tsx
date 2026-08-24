@@ -852,6 +852,59 @@ export function Library() {
           {/* SOMBRE / CLAIR : déménagé dans les Réglages (b354, demande de
               Vincent — remplace le placement b234 dans cette barre). */}
         </div>
+        {/* FILTRE ACTIF, DANS LA BARRE COLLANTE (b414, demande de Vincent :
+            « il faut que "tous les morceaux" soit facilement accessible,
+            et que ce soit clair qu'un filtre est en cours »). L'ancien
+            résumé défilait avec la liste : au milieu de la bibliothèque, la
+            barre restait visible mais rien ne disait qu'un filtre réduisait
+            la liste, et la sortie demandait de remonter ou d'ouvrir le
+            panneau. Ici, l'état ET la sortie suivent le défilement — la
+            barre est déjà mesurée par le ResizeObserver, la hauteur suit. */}
+        {(activeFilters > 0 || showIdeas) && (
+          <div
+            className="hstack"
+            style={{
+              gap: 8,
+              marginTop: 6,
+              flexWrap: 'wrap',
+              alignItems: 'center',
+            }}
+          >
+            <span className="help" style={{ margin: 0, minWidth: 0 }}>
+              {t('Filtre actif :')}{' '}
+              <strong style={{ color: 'var(--accent)' }}>
+                {[
+                  bandFilter !== null
+                    ? (bands.find((b) => b.id === bandFilter)?.name ??
+                      t('Groupe'))
+                    : '',
+                  tag !== null ? `#${tag}` : '',
+                  showIdeas ? t('📥 Propositions') : '',
+                  showCheck ? t('🔎 À vérifier') : '',
+                ]
+                  .filter((x) => x !== '')
+                  .join(' · ')}
+              </strong>{' '}
+              —{' '}
+              {filtered.length > 1
+                ? t('{n} morceaux', { n: filtered.length })
+                : t('{n} morceau', { n: filtered.length })}
+            </span>
+            {/* Fantôme, pas ambre : le bouton Filtrer actif porte déjà
+                l'accent, et un seul bouton ambre par écran (charte). */}
+            <button
+              className="btn ghost small"
+              onClick={() => {
+                setBandFilter(null);
+                setTag(null);
+                setShowIdeas(false);
+                setShowCheck(false);
+              }}
+            >
+              ✕ {t('Tout afficher')}
+            </button>
+          </div>
+        )}
         {filtersOpen && (
           <>
             <div className="spacer" />
@@ -942,35 +995,8 @@ export function Library() {
             )}
           </>
         )}
-        {/* Résumé du filtre actif : TOUJOURS visible (même panneau fermé),
-            pour que la liste réduite s'explique d'elle-même. */}
-        {bandFilter !== null && !showIdeas && (
-          <p className="help" style={{ margin: '6px 0 0' }}>
-            {t('Filtre actif :')}{' '}
-            <strong style={{ color: 'var(--accent)' }}>
-              {bands.find((b) => b.id === bandFilter)?.name ?? t('Groupe')}
-            </strong>{' '}
-            —{' '}
-            {filtered.length > 1
-              ? t('{n} morceaux', { n: filtered.length })
-              : t('{n} morceau', { n: filtered.length })}{' '}
-            ·{' '}
-            <button
-              className="btn ghost small"
-              onClick={() => setBandFilter(null)}
-            >
-              {t('Tout afficher')}
-            </button>
-          </p>
-        )}
-        {tag !== null && (
-          <p className="help" style={{ margin: '6px 0 0' }}>
-            {t('Tag :')} <strong style={{ color: 'var(--accent)' }}>{tag}</strong> ·{' '}
-            <button className="btn ghost small" onClick={() => setTag(null)}>
-              {t('Retirer')}
-            </button>
-          </p>
-        )}
+        {/* Le résumé du filtre vit désormais DANS la barre collante (b414) :
+            visible même au milieu de la liste, avec sa sortie. */}
         {filtersOpen && allTags.length > 0 && (
           <>
             <div className="spacer" />
