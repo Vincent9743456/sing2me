@@ -192,6 +192,9 @@ export function BandEdit({ id }: { id: string }) {
   // Étape « prénom de l'invité » avant de partager le lien.
   const [invitePrompt, setInvitePrompt] = useState(false);
   const [pendingName, setPendingName] = useState('');
+  // E-mail facultatif de l'invitation (b416) : verrouille le lien sur
+  // cette adresse de compte.
+  const [pendingEmail, setPendingEmail] = useState('');
   /**
    * L'INVITATION EN COURS (b251) : un jeton NOMINATIF et à usage unique,
    * créé pour cette personne-là. Le lien ne porte plus le jeton du groupe,
@@ -377,6 +380,7 @@ export function BandEdit({ id }: { id: string }) {
       // On demande d'abord le prénom de l'invité (pour l'afficher « en
       // attente »), puis on partage le lien.
       setPendingName('');
+      setPendingEmail('');
       setInviteLink(null);
       setInviteError(null);
       setInvitePrompt(true);
@@ -401,13 +405,22 @@ export function BandEdit({ id }: { id: string }) {
     if (!band) return;
     const nm = pendingName.trim();
     if (nm === '') return;
+    // E-mail FACULTATIF (b416, demande de Vincent sur une idée de Marco) :
+    // rempli, il verrouille l'invitation sur cette adresse de compte —
+    // mais un e-mail mal formé ne part jamais (une invitation qui ne peut
+    // pas aboutir, en silence, serait pire que pas de verrou).
+    const mail = pendingEmail.trim();
+    if (mail !== '' && !/^\S+@\S+\.\S+$/.test(mail)) {
+      setInviteError(t('Cette adresse e-mail ne semble pas valide.'));
+      return;
+    }
     setInviteBusy(true);
     setInviteError(null);
     try {
       const cid = cloudRef?.cloudId ?? band.cloudId ?? '';
       const s = await getValidSession();
       if (!s || cid === '') throw new Error(t('Connexion requise'));
-      const token = await createBandInvite(s, cid, nm);
+      const token = await createBandInvite(s, cid, nm, mail);
       setInviteLink({ token, name: nm });
       // La ligne « en attente » n'a pas d'identifiant : par lien, on ne sait
       // pas encore qui viendra. Elle en recevra un à l'adhésion (b249/b250).
@@ -1664,6 +1677,28 @@ export function BandEdit({ id }: { id: string }) {
             autoFocus
             onChange={(e) => setPendingName(e.target.value)}
           />
+          {/* VERROU PAR E-MAIL, FACULTATIF (b416, demande de Vincent sur
+              une idée de Marco). Rempli : seul un compte connecté avec
+              CETTE adresse peut utiliser le lien — un message transféré ne
+              fait plus entrer personne d'autre. Vide : comportement
+              habituel (le lien se referme sur le premier compte). */}
+          <input
+            type="email"
+            inputMode="email"
+            autoCapitalize="off"
+            autoCorrect="off"
+            value={pendingEmail}
+            placeholder={t('E-mail (facultatif — verrouille le lien)')}
+            style={{ marginTop: 8 }}
+            onChange={(e) => setPendingEmail(e.target.value)}
+          />
+          {pendingEmail.trim() !== '' && (
+            <p className="help" style={{ margin: '6px 0 0' }}>
+              {t(
+                'Seul un compte connecté avec cette adresse pourra utiliser le lien. Attention à « Masquer mon e-mail » d’Apple : l’invité doit se connecter avec l’adresse exacte que tu saisis.',
+              )}
+            </p>
+          )}
           {/* DÉJÀ SUR MOJOSONG ? (b252, demande de Vincent : « il faut que
               l'invitation puisse vérifier si la personne n'est pas déjà
               inscrite »). On cherche pendant qu'il tape : si la personne a un

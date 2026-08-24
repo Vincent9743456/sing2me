@@ -327,19 +327,31 @@ create policy band_invite_links_owner on public.band_invite_links
     )
   );
 
+-- VERROU PAR E-MAIL, FACULTATIF (b416, demande de Vincent sur une idée de
+-- Marco) : quand l'invitation porte une adresse, seul un compte VÉRIFIÉ à
+-- cette adresse peut l'utiliser — un lien intercepté devient inutilisable.
+-- Colonne additive : les invitations existantes (adresse vide) gardent
+-- leur comportement.
+alter table public.band_invite_links
+  add column if not exists invited_email text not null default '';
+
 -- Crée une invitation nominative et rend son jeton.
 -- Réinviter la MÊME personne révoque l'invitation précédente : sans quoi
 -- deux liens vivraient en parallèle pour un seul musicien, et révoquer
--- l'un laisserait l'autre ouvert.
+-- l'un laisserait l'autre ouvert. `p_email` (b416) est facultatif : posé,
+-- il verrouille l'invitation sur cette adresse de compte.
 drop function if exists public.create_band_invite(uuid, text);
+drop function if exists public.create_band_invite(uuid, text, text);
 create or replace function public.create_band_invite(
   p_band uuid,
-  p_name text
+  p_name text,
+  p_email text default ''
 ) returns json
 language plpgsql security definer set search_path = public as $$
 declare
   v_token text;
   v_name text := btrim(coalesce(p_name, ''));
+  v_email text := lower(btrim(coalesce(p_email, '')));
 begin
   if auth.uid() is null then
     return json_build_object('error', 'Connexion requise');
@@ -358,11 +370,15 @@ begin
     where band_id = p_band
       and used_by is null
       and revoked_at is null
-      and lower(invited_name) = lower(v_name);
+      and (
+        lower(invited_name) = lower(v_name)
+        or (v_email <> '' and lower(invited_email) = v_email)
+      );
   v_token := replace(gen_random_uuid()::text, '-', '')
           || replace(gen_random_uuid()::text, '-', '');
-  insert into public.band_invite_links (token, band_id, invited_name, invited_by)
-  values (v_token, p_band, v_name, auth.uid());
+  insert into public.band_invite_links
+    (token, band_id, invited_name, invited_by, invited_email)
+  values (v_token, p_band, v_name, auth.uid(), v_email);
   return json_build_object('ok', true, 'token', v_token, 'name', v_name);
 end $$;
 grant execute on function public.create_band_invite to authenticated;
@@ -468,6 +484,18 @@ begin
   -- deuxième appareil) ; personne d'autre ne le peut.
   if v_link.used_by is not null and v_link.used_by <> auth.uid() then
     return json_build_object('error', 'Invitation déjà utilisée');
+  end if;
+  -- VERROU PAR E-MAIL (b416) : l'invitation qui porte une adresse n'admet
+  -- qu'un compte vérifié à CETTE adresse. Le refus EXPLIQUE (piège « Masquer
+  -- mon e-mail » d'Apple : un vrai invité peut arriver sous une adresse
+  -- relais — il doit comprendre quoi faire, pas lire un refus muet).
+  if coalesce(v_link.invited_email, '') <> '' then
+    if lower(coalesce((select u.email from auth.users u where u.id = auth.uid()), ''))
+       <> lower(v_link.invited_email) then
+      return json_build_object('error',
+        'Cette invitation est réservée à ' || v_link.invited_email ||
+        ' — connecte-toi avec cette adresse, ou demande une nouvelle invitation.');
+    end if;
   end if;
   select * into v_band from public.cloud_bands where id = p_band;
   if not found then
