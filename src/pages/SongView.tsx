@@ -29,6 +29,7 @@ import { PublicEye, PublicView } from '../components/PublicView';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { songKey } from '../lib/importer';
 import { signalerLimite } from '../components/UpgradeSheet';
+import { propositionBloquee } from '../lib/limites';
 import { useLimits } from '../components/useLimits';
 import { AssignSheet } from '../components/SongPicker';
 import {
@@ -229,6 +230,39 @@ export function SongView({
       <>
         <TopBar live={false} title={t('Morceau')} onBack={() => navigate('/')} />
         <Empty>{t("Ce morceau n'existe plus.")}</Empty>
+      </>
+    );
+  }
+
+  /* AU PLAFOND, UNE PROPOSITION NE S'OUVRE PAS (b426, demande de Vincent).
+     Cette page est LE filet : tous les chemins vers le contenu finissent
+     ici (ligne de Morceaux, aperçu, liens directs, discussion de groupe).
+     On montre le titre et la sortie — jamais la partition — avec le MÊME
+     message que l'acceptation de la 31ᵉ chanson. */
+  if (propositionBloquee(song, limites.peutAjouter)) {
+    return (
+      <>
+        <TopBar
+          live={false}
+          title={song.title || t('(sans titre)')}
+          onBack={() => navigate('/')}
+        />
+        <div className="page">
+          <div className="card" style={{ borderColor: 'var(--accent-dark)' }}>
+            📥 <strong>{t('Proposition à valider')}</strong>
+            <p className="help" style={{ marginBottom: 0 }}>
+              {t(
+                'Cette proposition attend dans ta boîte, mais ta bibliothèque gratuite est pleine : son contenu s’ouvrira quand tu pourras l’accepter.',
+              )}
+            </p>
+          </div>
+          <button
+            className="btn block"
+            onClick={() => signalerLimite('LIMIT_SONGS')}
+          >
+            {t('Passer en illimité')}
+          </button>
+        </div>
       </>
     );
   }

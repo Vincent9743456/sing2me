@@ -123,3 +123,23 @@ export function placesRestantes(
 export function presDeLaLimite(nActuel: number, max: number | null): boolean {
   return max !== null && max > 0 && nActuel >= Math.ceil(max * 0.8);
 }
+
+/**
+ * AU PLAFOND, UNE PROPOSITION DE GROUPE SE VOIT MAIS NE S'OUVRE PAS (b426,
+ * demande de Vincent). Une proposition ne compte pas dans le plan — c'était
+ * voulu (b386) — mais elle était « jouable partout » : un compte gratuit
+ * plein pouvait donc lire et jouer tout un répertoire de groupe sans jamais
+ * rien accepter. La ligne reste VISIBLE dans les Propositions ; ouvrir son
+ * CONTENU (fiche, aperçu, scène) déclenche le même message que l'acceptation
+ * de la 31ᵉ chanson (feuille « Passer en illimité »). Un morceau gardé à un
+ * bœuf (sans groupe) n'est pas concerné : lui, on l'avait déjà en main.
+ * La décision vit ICI — les écrans l'appliquent, ils ne la réécrivent pas.
+ */
+export function propositionBloquee(
+  song: { idea?: boolean; pendingBandId?: string },
+  peutAjouter: boolean,
+): boolean {
+  return (
+    song.idea === true && (song.pendingBandId ?? '') !== '' && !peutAjouter
+  );
+}

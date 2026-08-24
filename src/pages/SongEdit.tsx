@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Icon } from '../components/Icon';
 import { MenuSheet } from '../components/Feedback';
@@ -6,6 +6,8 @@ import { Field, TopBar } from '../components/ui';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { t } from '../i18n';
 import { KEY_CHOICES } from '../lib/chords';
+import { propositionBloquee } from '../lib/limites';
+import { useLimits } from '../components/useLimits';
 import { importText } from '../lib/importer';
 import {
   activeVersion,
@@ -51,6 +53,15 @@ export function SongEdit({ id }: { id: string | null }) {
     () => activeVersion(draft).bandId,
   );
   const isNew = existing === undefined;
+  /* AU PLAFOND, UNE PROPOSITION NE S'OUVRE PAS — l'éditeur non plus (b426) :
+     il montre les paroles, exactement ce que le blocage protège. On renvoie
+     vers la fiche, qui porte le message et la sortie. */
+  const limites = useLimits();
+  useEffect(() => {
+    if (existing && propositionBloquee(existing, limites.peutAjouter)) {
+      navigate(`/song/${existing.id}`);
+    }
+  }, [existing, limites.peutAjouter]);
   // Groupe de la version en cours d'édition (pour le bandeau de contexte).
   const editBand = bands.find((b) => b.id === versionBandId);
   /**

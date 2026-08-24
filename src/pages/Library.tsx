@@ -12,7 +12,7 @@ import { BackupNudge } from '../components/BackupNudge';
 import { signalerLimite } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
 import { useDepassement } from '../components/useDepassement';
-import { presDeLaLimite } from '../lib/limites';
+import { presDeLaLimite, propositionBloquee } from '../lib/limites';
 import { EXAMPLE_TAG } from '../seed';
 import { Empty, HeaderPlus, TopBar } from '../components/ui';
 import { t } from '../i18n';
@@ -592,6 +592,12 @@ export function Library() {
         (song.pendingBandId ?? '') !== '' ? 'proposal' : ''
       }`}
       onClick={() => {
+        // Au plafond, une proposition se VOIT mais ne s'OUVRE pas (b426) :
+        // même message que l'acceptation de la 31ᵉ chanson.
+        if (propositionBloquee(song, limites.peutAjouter)) {
+          signalerLimite('LIMIT_SONGS');
+          return;
+        }
         openWithContext(song);
         if (isSplitScreen()) setSelectedId(song.id);
         else navigate(`/song/${song.id}`);
@@ -723,6 +729,10 @@ export function Library() {
                       })}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (propositionBloquee(song, limites.peutAjouter)) {
+                          signalerLimite('LIMIT_SONGS');
+                          return;
+                        }
                         navigate(`/stage/song/${song.id}`);
                       }}
                     >
@@ -1325,12 +1335,25 @@ export function Library() {
             {
               label: t('Jouer (mode scène)'),
               icon: 'play',
-              onClick: () => navigate(`/stage/song/${rowMenu.id}`),
+              onClick: () => {
+                // Au plafond, une proposition ne s'ouvre pas (b426).
+                if (propositionBloquee(rowMenu, limites.peutAjouter)) {
+                  signalerLimite('LIMIT_SONGS');
+                  return;
+                }
+                navigate(`/stage/song/${rowMenu.id}`);
+              },
             },
             {
               label: t('Modifier'),
               icon: 'edit',
-              onClick: () => navigate(`/song/${rowMenu.id}/edit`),
+              onClick: () => {
+                if (propositionBloquee(rowMenu, limites.peutAjouter)) {
+                  signalerLimite('LIMIT_SONGS');
+                  return;
+                }
+                navigate(`/song/${rowMenu.id}/edit`);
+              },
             },
             {
               label: t('Ajouter à…'),
@@ -1418,6 +1441,7 @@ function SongPreview({
     clearBandRemoval,
   } = useStore();
   const author = prefs.userName || artist.name || t('Moi');
+  const limitesPane = useLimits();
   const [suppr, setSuppr] = useState(false);
   const song = id ? songs.find((s) => s.id === id) : undefined;
   const paneRef = useRef<HTMLElement | null>(null);
@@ -1479,6 +1503,42 @@ function SongPreview({
   }, [id]);
 
   if (!song) return null;
+  // Au plafond, une proposition se VOIT mais ne s'OUVRE pas (b426) : le
+  // volet d'aperçu est une des portes vers le contenu — il montre le titre
+  // et la sortie, jamais la partition.
+  if (propositionBloquee(song, limitesPane.peutAjouter)) {
+    return (
+      <aside className="libpreview" ref={paneRef}>
+        <div className="hstack" style={{ marginBottom: 4 }}>
+          <strong style={{ flex: 1, fontSize: '1.1rem', minWidth: 0 }}>
+            {song.title || t('(sans titre)')}
+            {song.artist !== '' && (
+              <span className="stauthor"> — {song.artist}</span>
+            )}
+          </strong>
+          <button
+            className="btn icon"
+            aria-label={t("Fermer l'aperçu")}
+            onClick={onClose}
+          >
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+        <p className="help">
+          📥{' '}
+          {t(
+            'Cette proposition attend dans ta boîte, mais ta bibliothèque gratuite est pleine : son contenu s’ouvrira quand tu pourras l’accepter.',
+          )}
+        </p>
+        <button
+          className="btn block"
+          onClick={() => signalerLimite('LIMIT_SONGS')}
+        >
+          {t('Passer en illimité')}
+        </button>
+      </aside>
+    );
+  }
   // Appartenances actuelles (pour l'état compact).
   const memberBands = bands.filter((b) => versionForBand(song, b.id) !== null);
   const memberSetlists = setlists.filter((sl) =>
