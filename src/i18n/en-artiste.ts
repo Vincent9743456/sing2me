@@ -181,6 +181,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'déjà avec toi dans {groupe}': 'already with you in {groupe}',
   'Cette personne est déjà dans le groupe (ou invitée).':
     'This person is already in the band (or invited).',
+  'Cette personne est déjà dans le groupe, ou déjà invitée : elle n’a pas besoin d’une nouvelle invitation. Pour la réinviter après un départ, retire d’abord sa ligne de la liste des musiciens.':
+    'This person is already in the band, or already invited: they don’t need a new invitation. To re-invite them after a departure, first remove their line from the musicians list.',
   'Supprimer {nom}': 'Delete {nom}',
   ', dont {n} en attente': ', {n} of them pending',
   'Ce groupe a été créé par un compte différent du tien, au même nom d’artiste. Tu es connecté avec {email} : c’est peut-être une autre adresse que celle d’origine.':
