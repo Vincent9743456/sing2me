@@ -573,29 +573,51 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
    * la synchro les rattache — voir applyBandData).
    */
   const deleteBand = useCallback((bandId: string) => {
-    setState((prev) => ({
-      ...prev,
-      bands: prev.bands.filter((b) => b.id !== bandId),
-      songs: prev.songs.map((s) => {
-        const parties = s.versions.filter((v) => (v.bandId ?? '') === bandId);
-        if (parties.length === 0) return s;
-        const next = parties.reduce((acc, v) => removeVersion(acc, v.id), s);
-        // Le morceau ne venait QUE de ce groupe : `removeVersion` refuse de
-        // laisser un morceau sans version, et c'est heureux. On garde donc la
-        // partition, en la rendant personnelle — un morceau ne doit jamais
-        // rester rattaché à un groupe qui n'existe plus.
-        return {
-          ...next,
-          versions: next.versions.map((v) =>
-            (v.bandId ?? '') === bandId ? { ...v, bandId: '' } : v,
-          ),
-        };
-      }),
-      setlists: prev.setlists.map((sl) =>
-        sl.bandId === bandId ? { ...sl, bandId: '' } : sl,
-      ),
-      deleted: bury(prev.deleted, bandId),
-    }));
+    setState((prev) => {
+      /**
+       * UNE PROPOSITION JAMAIS ACCEPTÉE MEURT AVEC LE GROUPE (b419, règle
+       * de Vincent — complète b418) : en sortant du groupe, un morceau
+       * qu'on n'a jamais accepté n'a aucune raison de rester — le garder
+       * l'aurait « libéré » en bibliothèque (migration b274), comme si on
+       * l'avait voulu. Une copie ACCEPTÉE, elle, reste : ses versions de
+       * groupe redeviennent personnelles juste en dessous (b185).
+       * Pierre tombale par ID seul — la suppression se propage entre mes
+       * appareils, sans jamais bloquer un futur import du même titre.
+       */
+      const propositionsMortes = prev.songs.filter(
+        (s) => s.idea === true && (s.pendingBandId ?? '') === bandId,
+      );
+      let deleted = bury(prev.deleted, bandId);
+      for (const s of propositionsMortes) deleted = bury(deleted, s.id);
+      const mortes = new Set(propositionsMortes.map((s) => s.id));
+      return {
+        ...prev,
+        bands: prev.bands.filter((b) => b.id !== bandId),
+        songs: prev.songs
+          .filter((s) => !mortes.has(s.id))
+          .map((s) => {
+            const parties = s.versions.filter(
+              (v) => (v.bandId ?? '') === bandId,
+            );
+            if (parties.length === 0) return s;
+            const next = parties.reduce((acc, v) => removeVersion(acc, v.id), s);
+            // Le morceau ne venait QUE de ce groupe : `removeVersion` refuse de
+            // laisser un morceau sans version, et c'est heureux. On garde donc la
+            // partition, en la rendant personnelle — un morceau ne doit jamais
+            // rester rattaché à un groupe qui n'existe plus.
+            return {
+              ...next,
+              versions: next.versions.map((v) =>
+                (v.bandId ?? '') === bandId ? { ...v, bandId: '' } : v,
+              ),
+            };
+          }),
+        setlists: prev.setlists.map((sl) =>
+          sl.bandId === bandId ? { ...sl, bandId: '' } : sl,
+        ),
+        deleted,
+      };
+    });
   }, []);
 
   const hydrate = useCallback((next: AppState) => {
@@ -687,6 +709,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (parts.setlists) buryAll(prev.setlists);
       if (parts.concerts) buryAll(prev.concerts);
       if (parts.bands) buryAll(prev.bands);
+      /**
+       * UNE PROPOSITION JAMAIS ACCEPTÉE MEURT AVEC LE GROUPE (b419, règle de
+       * Vincent) : réinitialiser « Groupes », c'est quitter tous ses groupes
+       * — les morceaux qu'ils proposaient et qu'on n'a jamais acceptés n'ont
+       * aucune raison de rester. Même règle que `deleteBand`, tombe par ID
+       * seul (jamais de clé : elle bloquerait un futur import du titre).
+       */
+      const propositionsMortes = parts.bands && !parts.songs
+        ? prev.songs.filter(
+            (s) => s.idea === true && (s.pendingBandId ?? '') !== '',
+          )
+        : [];
+      buryAll(propositionsMortes);
+      const mortes = new Set(propositionsMortes.map((s) => s.id));
       // Point zéro par catégorie : garde-fou qui ne dépend PAS du volume
       // (au-delà de 500 tombes, le cloud ressuscitait les morceaux).
       const resetAt: ResetMarks = { ...(prev.resetAt ?? {}) };
@@ -701,7 +737,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (parts.bands) resetAt.bands = at;
       return {
         ...prev,
-        songs: parts.songs ? [] : prev.songs,
+        songs: parts.songs ? [] : prev.songs.filter((s) => !mortes.has(s.id)),
         // Sans leurs morceaux, les setlists gardent leurs réglages mais
         // perdent les items orphelins au prochain rendu — cohérent.
         setlists: parts.setlists ? [] : prev.setlists,
