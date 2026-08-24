@@ -152,23 +152,26 @@ export function SongDeleteSheet({
     );
   }
 
-  // Proposition écartée : elle sort de tout, sauf du répertoire du groupe.
-  // On dit OÙ elle reste, sinon « écarter » ressemble à « supprimer ».
-  if (sort.mode === 'ecarte') {
+  // UNE PROPOSITION NE SE REFUSE PAS (b418, arbitrage Vincent — remplace
+  // l'écartée de b240, qui laissait les deux côtés se raconter une
+  // histoire différente). Rien à confirmer : on explique le modèle, et le
+  // seul geste qui existe est ailleurs — « ✓ Accepter ».
+  if (sort.mode === 'proposition') {
     return (
-      <ConfirmSheet
-        title={t('Écarter « {title} » ?', { title: titre })}
-        message={t(
-          'Cette proposition quittera ta liste. {groupe} l’a toujours à son répertoire : tu la retrouveras là, avec « ↩ Reprendre », le jour où tu changes d’avis.',
-          { groupe: nomDuGroupe(sort.bandId) },
-        )}
-        confirmLabel={t('Écarter')}
-        onConfirm={() => {
-          deleteSong(song.id);
-          onDeleted?.();
-        }}
+      <Sheet
+        title={t('« {title} » est une proposition', { title: titre })}
         onClose={onClose}
-      />
+      >
+        <p className="help" style={{ marginTop: 0 }}>
+          {t(
+            'Ce morceau t’est proposé par {groupe}. Une proposition ne se supprime pas : elle attend simplement ton acceptation — et elle disparaîtra d’elle-même si le groupe la retire de son répertoire.',
+            { groupe: nomDuGroupe(sort.bandId) },
+          )}
+        </p>
+        <button className="btn block" onClick={onClose}>
+          {t('J’ai compris')}
+        </button>
+      </Sheet>
     );
   }
 

@@ -230,7 +230,6 @@ export function Library() {
   const {
     songs,
     acceptSong,
-    restoreSong,
     bands,
     setlists,
     saveSong,
@@ -591,18 +590,13 @@ export function Library() {
                           {/* Dans le répertoire du groupe qui propose, répéter
                               son nom n'apprend rien : ce qu'il faut lire,
                               c'est qu'il reste un geste à faire (b203). */}
-                          {song.declined === true
-                            ? /* Court : le bouton « ↩ Reprendre » juste à
-                                 côté dit déjà quoi en faire, et une
-                                 sous-ligne longue étrangle le titre. */
-                              t('↩ Écarté')
-                            : bandFilter !== null &&
-                                bandFilter === (song.pendingBandId ?? '')
-                              ? t('📥 À valider')
-                              : `${t('📥 Proposé par')} ${
-                                  bands.find((b) => b.id === song.pendingBandId)
-                                    ?.name || t('ton groupe')
-                                }`}
+                          {bandFilter !== null &&
+                          bandFilter === (song.pendingBandId ?? '')
+                            ? t('📥 À valider')
+                            : `${t('📥 Proposé par')} ${
+                                bands.find((b) => b.id === song.pendingBandId)
+                                  ?.name || t('ton groupe')
+                              }`}
                           {song.artist !== '' ? ` · ${song.artist}` : ''}
                         </div>
                       ) : song.needsCheck ? (
@@ -656,24 +650,10 @@ export function Library() {
                         <Icon name="message" size={12} /> {song.fanMessages.length}
                       </span>
                     )}
-                    {(song.pendingBandId ?? '') !== '' &&
-                      (song.declined === true ? (
-                        /* Écartée : un seul geste pour la ravoir (b240). Elle
-                           redevient « à valider », elle n'entre pas d'office
-                           en bibliothèque — reprendre n'est pas accepter. */
-                        <button
-                          className="btn ghost small"
-                          title={t('Remettre « {title} » dans tes propositions', {
-                            title: song.title || t('ce morceau'),
-                          })}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            restoreSong(song.id);
-                          }}
-                        >
-                          {t('↩ Reprendre')}
-                        </button>
-                      ) : (
+                    {/* Un seul geste sur une proposition : ACCEPTER (b418,
+                        arbitrage Vincent — plus d'écartée). Elle attend, ou
+                        disparaît si le groupe la retire avant. */}
+                    {(song.pendingBandId ?? '') !== '' && (
                         <button
                           className="btn small"
                           title={t('Accepter « {title} » dans ta bibliothèque', {
@@ -696,7 +676,7 @@ export function Library() {
                         >
                           {t('✓ Accepter')}
                         </button>
-                      ))}
+                      )}
                     {/* ▶ Scène directement sur la ligne (demande de Marco,
                         sa priorité) : jouer un morceau était à deux gestes —
                         ouvrir le « ⋯ », puis choisir. C'est l'action la plus

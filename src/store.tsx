@@ -21,7 +21,7 @@ import {
 } from './lib/normalizeTitle';
 import { monId } from './lib/auth';
 import { ResetMarks } from './lib/sync';
-import { ecartee, remisEnIdee, reprise, sortDuMorceau } from './lib/deletesong';
+import { remisEnIdee, sortDuMorceau } from './lib/deletesong';
 import {
   duplicateVersion,
   dedupeBandMembers,
@@ -94,8 +94,6 @@ interface StoreValue extends AppState {
   /** Accepte une proposition de groupe : elle entre en bibliothèque ET dans
    *  le répertoire du groupe qui l'a proposée (b205). */
   acceptSong: (songId: string) => void;
-  /** Reprend une proposition écartée : elle revient « à valider » (b240). */
-  restoreSong: (songId: string) => void;
   saveSetlist: (setlist: Setlist) => void;
   deleteSetlist: (setlistId: string) => void;
   saveConcert: (concert: Concert) => void;
@@ -421,21 +419,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // Programmé dans une setlist du GROUPE : on ne touche à rien. Le
       // retirer du programme engage les autres musiciens, pas seulement moi.
       if (sort.mode === 'refus') return prev;
-      // Proposition ÉCARTÉE (b240) : elle sort des Idées mais reste dans le
-      // répertoire du groupe, où un « ↩ Reprendre » l'attend. Pas de pierre
-      // tombale — c'est elle qui rendrait la reprise impossible.
-      if (sort.mode === 'ecarte' && song) {
-        return {
-          ...prev,
-          songs: prev.songs.map((s) =>
-            s.id === songId ? ecartee(s, sort.bandId) : s,
-          ),
-          setlists: prev.setlists.map((sl) => ({
-            ...sl,
-            items: sl.items.filter((it) => it.songId !== songId),
-          })),
-        };
-      }
+      // UNE PROPOSITION NE SE REFUSE PAS (b418, arbitrage Vincent —
+      // remplace l'écartée de b240) : elle attend l'acceptation, et
+      // disparaît d'elle-même si le groupe la retire de son répertoire.
+      // La feuille de suppression l'explique ; ici, rien ne se passe.
+      if (sort.mode === 'proposition') return prev;
       // Morceau du répertoire d'un groupe : il ne s'efface pas, il REDEVIENT
       // une proposition dans les Idées — récupérable, et sans pierre
       // tombale (une tombe l'empêcherait de revenir).
@@ -468,14 +456,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         ),
       };
     });
-  }, []);
-
-  /** Reprendre une proposition écartée : elle redevient à valider (b240). */
-  const restoreSong = useCallback((songId: string) => {
-    setState((prev) => ({
-      ...prev,
-      songs: prev.songs.map((s) => (s.id === songId ? reprise(s) : s)),
-    }));
   }, []);
 
   const saveSetlist = useCallback((setlist: Setlist) => {
@@ -789,7 +769,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     saveSong,
     deleteSong,
     acceptSong,
-    restoreSong,
     saveSetlist,
     deleteSetlist,
     saveConcert,

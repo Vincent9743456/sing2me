@@ -458,6 +458,18 @@ export function applyBandData(
     const local = resolve(r.key);
     if (!local) continue;
     if (local.updatedAt > r.at) continue; // ré-apporté après le retrait
+    // UNE PROPOSITION NON ACCEPTÉE SUIT LE RETRAIT (b418, arbitrage
+    // Vincent) : si le groupe retire le morceau avant que ce membre l'ait
+    // accepté, sa copie « proposition » disparaît — elle n'a jamais été à
+    // lui, et une proposition ne se refuse plus (elle attend, ou meurt
+    // ici). Une copie ACCEPTÉE, elle, reste : chacun garde sa copie
+    // personnelle (b110), qui redevient personnelle juste en dessous.
+    if (local.idea === true && (local.pendingBandId ?? '') === localBandId) {
+      nextSongs = nextSongs.filter((s) => s.id !== local.id);
+      byKey.delete(songKey(local.title, local.artist));
+      changed = true;
+      continue;
+    }
     const v = versionForBand(local, localBandId);
     if (!v) continue;
     let next: Song;
