@@ -241,11 +241,15 @@ export function Bands() {
                   borderColor: 'var(--accent)',
                 }}
               >
+                {/* On dit le FAIT, jamais une cause devinée (b415, retour de
+                    Vincent : Marco était simplement sorti du groupe, le
+                    bandeau affirmait « son application a été
+                    réinitialisée »). Le serveur ne sait qu'une chose : il a
+                    quitté le groupe. */}
                 <div>
                   <strong>{d.name || t('Un musicien')}</strong>{' '}
-                  {t("n'a plus accès à")}{' '}
-                  <strong>« {d.bandName || t('ton groupe')} »</strong>{' '}
-                  {t('— son application a été réinitialisée.')}
+                  {t('a quitté')}{' '}
+                  <strong>« {d.bandName || t('ton groupe')} »</strong>.
                 </div>
                 <div className="rowactions">
                   <button
