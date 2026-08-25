@@ -100,15 +100,15 @@ export const EN_SETLISTS: Record<string, string> = {
   "Glisse les morceaux pour changer l'ordre.": 'Drag songs to change the order.',
   '{n} message reçu en concert': '{n} message received live',
   '{n} messages reçus en concert': '{n} messages received live',
-  "Durée estimée à 5 min pour les morceaux dont la durée n'est pas renseignée — renseigne-la sur la fiche du morceau pour affiner.":
-    "Duration estimated at 5 min for songs with no duration set — fill it in on the song's page to refine it.",
+  'Sans durée renseignée, on estime 5 min par morceau.':
+    'Without a set duration, we estimate 5 min per song.',
   'Glisser pour réordonner': 'Drag to reorder',
   'Voir la partition': 'View the chart',
   '(morceau supprimé)': '(deleted song)',
-  '☆ En réserve — jouée si besoin': '☆ In reserve — played if needed',
+  Réserve: 'Reserve',
   'Retirer de la setlist': 'Remove from setlist',
-  'En réserve — cliquer pour la remettre dans le set joué':
-    'In reserve — click to put it back in the played set',
+  'En réserve — cliquer pour la remettre en fin de set joué':
+    'In reserve — click to put it back at the end of the played set',
   'Mettre en réserve (jouée seulement si besoin — hors durée prévue)':
     'Put in reserve (played only if needed — outside the planned duration)',
   'Retirer de la réserve': 'Remove from reserve',
@@ -126,7 +126,7 @@ export const EN_SETLISTS: Record<string, string> = {
   'Un spectateur': 'An audience member',
   '🔊 Sono & scène': '🔊 Sound & stage',
   'Renseignée — matériel, branchements, plan': 'Filled in — gear, wiring, plan',
-  'Vide — matériel, branchements, plan': 'Empty — gear, wiring, plan',
+  'Ajouter matériel, branchements, plan': 'Add gear, wiring, stage plan',
   "Vue d'ensemble propre et imprimable": 'Clean, printable overview',
   Imprimer: 'Print',
   'Mode scène': 'Stage mode',
@@ -148,7 +148,7 @@ export const EN_SETLISTS: Record<string, string> = {
   'Plan de scène': 'Stage plan',
   'Déplace chacun au doigt ou à la souris.': 'Drag each one with your finger or mouse.',
   'Placer les musiciens du groupe': 'Place the band members',
-  'Piocher le matériel des musiciens': "Pick from musicians' gear",
+  'Importer le matériel des musiciens': "Import the musicians' gear",
   Matériel: 'Gear',
   'Sono 2×12", console 8 pistes, 3 micros SM58, DI basse…':
     'PA 2×12", 8-channel mixer, 3 SM58 mics, bass DI…',
