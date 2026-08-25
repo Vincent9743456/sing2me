@@ -280,7 +280,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
           jamais history.back()). */}
       <TopBar
         live={false}
-        title={t('Créer une partition')}
+        title={t('Ajouter un morceau')}
         onBack={() => navigate('/import')}
       />
       <div className="page">

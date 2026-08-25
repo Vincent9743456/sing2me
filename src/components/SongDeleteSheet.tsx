@@ -268,10 +268,12 @@ export function SongDeleteSheet({
       message={
         total > 1
           ? t(
-              'Ses {n} versions seront supprimées, et le morceau quittera aussi les setlists.',
+              'Ses {n} versions seront supprimées, et le morceau quittera aussi les setlists. Cette action est irréversible.',
               { n: total },
             )
-          : t('Le morceau sera aussi retiré des setlists.')
+          : t(
+              'Le morceau sera aussi retiré des setlists. Cette action est irréversible.',
+            )
       }
       confirmLabel={t('Supprimer')}
       danger
