@@ -39,7 +39,12 @@
   /* Textes */
   --text: #f4f0e9;          /* crème   */
   --text-dim: #a7afc2;      /* crème 2 */
-  --text-faint: #69728a;    /* crème 3 */
+  /* Crème 3 de la charte (#69728a) REMONTÉ d'un cran (b430/F-3, passe UX
+     de Vincent) : à 3,9:1 sur le fond nuit il passait sous le seuil
+     WCAG AA (4,5:1) — cette valeur tient à 5,2:1 sur --bg et 4,7:1 sur
+     --nuit-2. Le mode scène n'utilise pas ce jeton : son gris volontaire
+     (--text-dim) ne bouge pas. */
+  --text-faint: #7d87a2;
   --on-accent: #0a0f1d;     /* du nuit SUR l'ambre — jamais du blanc */
   /* Accent — l'ambre de la charte */
   --accent: #fca711;
