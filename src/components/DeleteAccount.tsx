@@ -123,7 +123,7 @@ export function DeleteAccount({ email }: { email: string }) {
       </p>
       <p className="help">
         {t(
-          'Tout ce que ce compte contient sera effacé de nos serveurs, définitivement : ta bibliothèque en ligne, ton profil, tes directs et ce qu’ils ont produit.',
+          'Tout ce que ce compte contient sera effacé de nos serveurs, définitivement : ta bibliothèque en ligne, ton profil, tes lives et ce qu’ils ont produit.',
         )}
       </p>
 

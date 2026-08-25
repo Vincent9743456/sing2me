@@ -86,7 +86,10 @@ export function Remote({ setlistId }: { setlistId: string }) {
   if (!setlist) {
     return (
       <>
-        <TopBar title={t('Régie')} onBack={() => navigate('/setlists')} />
+        <TopBar
+          title={t('Mode chanteur')}
+          onBack={() => navigate('/setlists')}
+        />
         <div className="page">
           <p className="help">{t('Cette setlist n\'existe plus.')}</p>
         </div>
@@ -96,14 +99,21 @@ export function Remote({ setlistId }: { setlistId: string }) {
 
   return (
     <>
+      {/* Plus d'icône 🎛 devant le titre (b439, revue UX) : elle
+          n'apprenait rien — le header dit le nom, c'est tout. */}
       <TopBar
-        title={`🎛 ${setlist.name || t('Régie')}`}
+        title={setlist.name || t('Mode chanteur')}
         onBack={() => navigate('/setlists')}
       />
       <div className="page remote">
         <DndHint />
+        {/* UN seul bloc d'aide, en tête (b439) : l'ancien pavé du bas
+            renvoyait à un bouton « GO LIVE en haut à droite » qui n'existe
+            plus — le live se lance depuis la section Live. */}
         <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
-          {t('Tape le morceau qui démarre — le public et les musiciens suivent.')}
+          {t(
+            'Tape le morceau qui démarre — le public et les musiciens suivent. Re-taper le morceau en cours le désélectionne.',
+          )}
         </p>
         {items.map((item, i) => {
           const isCurrent = index === i;
@@ -147,11 +157,6 @@ export function Remote({ setlistId }: { setlistId: string }) {
             })}
           </button>
         )}
-        <p className="help" style={{ textAlign: 'center', marginTop: 14 }}>
-          {t(
-            'Re-taper le morceau en cours le désélectionne. Le direct public se pilote avec le bouton GO LIVE en haut à droite.',
-          )}
-        </p>
       </div>
     </>
   );

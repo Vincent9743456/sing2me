@@ -280,7 +280,7 @@ function Diagnostic({
       {data === null ? (
         <p className="help">{t('Vérification…')}</p>
       ) : data.configured === false ? (
-        <p className="help">{data.note ?? t('Le direct n’est pas configuré.')}</p>
+        <p className="help">{data.note ?? t('Le live n’est pas configuré.')}</p>
       ) : (
         <div className="card">
           {/* La table peut être pleine et l'écran vide : ces deux chiffres

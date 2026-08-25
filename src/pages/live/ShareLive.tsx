@@ -42,8 +42,8 @@ export default function ShareLive({
 
   const title =
     artistName !== ''
-      ? t('{name} est en direct 🎶', { name: artistName })
-      : t('Concert en direct 🎶');
+      ? t('{name} est en live 🎶', { name: artistName })
+      : t('Concert en live 🎶');
 
   async function share() {
     try {
@@ -79,7 +79,7 @@ export default function ShareLive({
         </p>
         {qr && (
           <div className="qrbox">
-            <img src={qr} alt={t("QR d'accès au direct")} />
+            <img src={qr} alt={t("QR d'accès au live")} />
             <div className="linkbox">{url}</div>
           </div>
         )}

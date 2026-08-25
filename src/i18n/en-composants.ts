@@ -4,7 +4,7 @@ export const EN_COMPOSANTS: Record<string, string> = {
   'Joue-le en mode Scène': 'Play it in Stage mode',
   'Lance ton premier live': 'Start your first live',
   'Prise en main terminée': 'Getting started complete',
-  'Avec mojosong, tes paroles s’affichent en direct sur le téléphone de ton public pendant que tu joues. Rien à installer pour eux, rien conservé après le concert.':
+  'Avec mojosong, tes paroles s’affichent en live sur le téléphone de ton public pendant que tu joues. Rien à installer pour eux, rien conservé après le concert.':
     'With mojosong, your lyrics show up live on your audience’s phones while you play. Nothing for them to install, nothing kept after the show.',
 
   // Onboarding.tsx — checklist de prise en main

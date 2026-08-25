@@ -75,7 +75,7 @@ export const EN_COMMUN: Record<string, string> = {
     'All setlists (solo and bands), with their sound & stage setup.',
   'Dates passées et à venir.': 'Past and upcoming dates.',
   'Concerts et lives': 'Gigs and lives',
-  'Dates passées et à venir, et l’historique de tes directs.':
+  'Dates passées et à venir, et l’historique de tes lives.':
     'Past and upcoming dates, and the history of your live sessions.',
   'Tu quittes tous tes groupes sur CE compte — les groupes continuent d’exister pour les autres membres.':
     'You leave all your bands on THIS account — the bands keep existing for the other members.',

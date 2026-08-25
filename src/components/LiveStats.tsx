@@ -167,7 +167,7 @@ export function LiveStats() {
           {t('Chiffres indisponibles pour l’instant — ils reviendront.')}
         </p>
       ) : rien ? (
-        <p className="help">{t('Pas encore de données — lance un direct !')}</p>
+        <p className="help">{t('Pas encore de données — lance un live !')}</p>
       ) : (
         <>
           <div className="statgrid">

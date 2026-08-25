@@ -753,7 +753,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
                   navigate(`/remote/${draft.id}`);
                 }}
               >
-                <Icon name="sliders" size={15} /> {t('Régie')}
+                <Icon name="sliders" size={15} /> {t('Mode chanteur')}
               </button>
               <button
                 className="btn ghost"
