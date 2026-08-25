@@ -3948,13 +3948,15 @@ h2.pagetitle {
    Un accord se tape pour voir son doigté. La cible doit être atteignable au
    doigt sans agrandir le texte de la partition : on élargit la zone de clic
    par du remplissage négatif en marge, pas par une taille de police. */
-.chordline .chord {
+.chordline .chord,
+.chordrow .chord {
   cursor: pointer;
   padding: 2px 3px;
   margin: -2px -3px;
   border-radius: 4px;
 }
-.chordline .chord:active {
+.chordline .chord:active,
+.chordrow .chord:active {
   background: var(--surface);
 }
 .chorddiag {
