@@ -26,7 +26,9 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Ajouter ce morceau à un groupe ou une setlist': 'Add this song to a band or a setlist',
   'Ajouter à une setlist': 'Add to a setlist',
   Setlist: 'Setlist',
-  'Le morceau sera aussi retiré des setlists.': 'The song will also be removed from setlists.',
+  'Le morceau sera aussi retiré des setlists. Cette action est irréversible.':
+    'The song will also be removed from setlists. This action is irreversible.',
+  'Tu crées :': 'You are creating:',
   Scène: 'Stage',
   'Mode scène': 'Stage mode',
   'aucun groupe ni setlist': 'no band or setlist',
@@ -487,8 +489,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Supprimer le morceau…': 'Delete the song…',
   'Là, il quitte ta bibliothèque. L’écran suivant dit exactement ce qui se passe.':
     'That one takes it out of your library. The next screen says exactly what happens.',
-  'Ses {n} versions seront supprimées, et le morceau quittera aussi les setlists.':
-    'All {n} of its versions will be deleted, and the song will also leave the setlists.',
+  'Ses {n} versions seront supprimées, et le morceau quittera aussi les setlists. Cette action est irréversible.':
+    'All {n} of its versions will be deleted, and the song will also leave the setlists. This action is irreversible.',
   'Aucun morceau ne correspond.': 'No song matches.',
 
   // ---------- NoteModal.tsx ----------

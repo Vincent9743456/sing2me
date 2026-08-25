@@ -269,7 +269,7 @@ export function SongEdit({ id }: { id: string | null }) {
     <>
       <TopBar
         live={false}
-        title={isNew ? t('Nouveau morceau') : t('Modifier')}
+        title={isNew ? t('Ajouter un morceau') : t('Modifier')}
         onBack={() => history.back()}
       />
       <div className="page">
@@ -328,7 +328,9 @@ export function SongEdit({ id }: { id: string | null }) {
           <div className="vb-main">
             <div className="vb-title">
               <span>
-                {t('Tu modifies :')}{' '}
+                {/* En CRÉATION on ne « modifie » rien (b429/E-3, passe UX
+                    de Vincent) : la micro-copy suit l'état. */}
+                {isNew ? t('Tu crées :') : t('Tu modifies :')}{' '}
                 {editingOriginal
                   ? t('la version de référence')
                   : versionGroupe
@@ -483,17 +485,28 @@ export function SongEdit({ id }: { id: string | null }) {
             "💬 Les notes de répétition (partagées ou personnelles, dictée vocale…) s'ajoutent depuis la page du morceau.",
           )}
         </p>
+        {/* HIÉRARCHIE (b429/C-1, passe UX de Vincent) : Enregistrer reste
+            la seule action pleine ; « Voir la partition » est de la
+            NAVIGATION (elle enregistre déjà avant de partir — on ne change
+            ni le label ni le comportement) ; « Supprimer » est démoté en
+            contour rouge, isolé par un trait — plus de fond plein criard. */}
         <button className="btn block" onClick={onSave}>
           {t('Enregistrer')}
         </button>
         {!isNew && (
           <>
             <div className="spacer" />
-            <button className="btn ghost block" onClick={voirPartition}>
-              <Icon name="eye" size={15} /> {t('Voir la partition')}
-            </button>
-            <div className="spacer" />
-            <button className="btn danger block" onClick={() => setSuppr(true)}>
+            <div style={{ textAlign: 'center' }}>
+              <button className="btn ghost small" onClick={voirPartition}>
+                <Icon name="eye" size={14} /> {t('Voir la partition')}
+              </button>
+            </div>
+            <div className="sheetsep" aria-hidden="true" style={{ margin: 'var(--sp-4) 0' }} />
+            <button
+              className="btn ghost block"
+              style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+              onClick={() => setSuppr(true)}
+            >
               {t('Supprimer le morceau')}
             </button>
           </>
