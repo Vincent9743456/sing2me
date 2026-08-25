@@ -312,7 +312,7 @@ export function Onboarding() {
       {/* 3.1a (b380) : la PROMESSE d'abord — le différenciateur produit. */}
       <p className="help" style={{ marginTop: 0 }}>
         {t(
-          'Avec mojosong, tes paroles s’affichent en direct sur le téléphone de ton public pendant que tu joues. Rien à installer pour eux, rien conservé après le concert.',
+          'Avec mojosong, tes paroles s’affichent en live sur le téléphone de ton public pendant que tu joues. Rien à installer pour eux, rien conservé après le concert.',
         )}
       </p>
       <div className="hstack" style={{ justifyContent: 'space-between' }}>

@@ -13,7 +13,7 @@ export const EN_ARTISTE: Record<string, string> = {
   '(visible seulement si ton lien de pourboire est renseigné)': '(shown only if your tip link is set)',
   '(à renseigner)': '(to fill in)',
   ', un par page. « Imprimer » ouvre la boîte du navigateur : choisis « Enregistrer en PDF » comme destination.': ', one per page. "Print" opens your browser’s dialog: choose “Save as PDF” as the destination.',
-  ': tes concerts en direct, avec paroles pour le public.': ': your live gigs, with lyrics for the audience.',
+  ': tes concerts en live, avec paroles pour le public.': ': your live gigs, with lyrics for the audience.',
   'AUDIENCE DE TES CONCERTS': 'AUDIENCE FOR YOUR GIGS',
   'Accepter': 'Accept',
   'Ajoute tes liens (Spotify, Instagram, YouTube…)': 'Add your links (Spotify, Instagram, YouTube…)',
@@ -53,7 +53,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Bravo pour ce concert !…': 'Great gig tonight!…',
   'Le livre d’or ne répond pas ce soir — ton mot n’a pas pu partir. Réessaie dans un instant.':
     'The guestbook isn’t responding tonight — your message couldn’t be sent. Try again in a moment.',
-  'C\'est aussi l\'identité proposée au lancement d\'un direct (bouton GO LIVE). Choisis ensuite ce que voient les personnes qui scannent ton QR — pendant les morceaux et entre eux. Tout est actif par défaut.': 'This is also the identity suggested when you start a live session (GO LIVE button). Then choose what people scanning your QR see — during songs and between them. Everything is on by default.',
+  'C\'est aussi l\'identité proposée au lancement d\'un live (bouton GO LIVE). Choisis ensuite ce que voient les personnes qui scannent ton QR — pendant les morceaux et entre eux. Tout est actif par défaut.': 'This is also the identity suggested when you start a live session (GO LIVE button). Then choose what people scanning your QR see — during songs and between them. Everything is on by default.',
   'Capo {capo}': 'Capo {capo}',
   'Ce groupe n\'existe plus.': 'This band no longer exists.',
   'Ce que voit le public (QR)': 'What the audience sees (QR)',
@@ -97,7 +97,6 @@ export const EN_ARTISTE: Record<string, string> = {
   'EN DIRECT': 'LIVE',
   'Emails partagés avec toi ({n}) :': 'Emails shared with you ({n}):',
   'En attente d\'acceptation': 'Waiting for acceptance',
-  'En direct': 'Live',
   'Enregistrer': 'Save',
   'Enregistrer et revenir au profil': 'Save and return to profile',
   'Enregistré': 'Saved',
@@ -133,7 +132,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'mots reçus par l’app': 'messages received by the app',
   '{n} reçus · {m} rattachés à un live':
     '{n} received · {m} matched to a live',
-  'Le direct n’est pas configuré.': 'Live mode isn’t configured.',
+  'Le live n’est pas configuré.': 'Live mode isn’t configured.',
   'inaccessible : {d}': 'unreachable: {d}',
   vide: 'empty',
   '{n} ligne(s)': '{n} row(s)',
@@ -177,7 +176,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Instrument': 'Instrument',
   'Instruments, micros, amplis, effets, câbles… Ton inventaire personnel (privé) — les setlists peuvent ensuite y piocher pour préparer la scène et vérifier que rien ne manque.': 'Instruments, mics, amps, effects, cables… Your personal inventory (private) — setlists can then draw from it to prep the stage and check nothing\'s missing.',
   'Interactions du public': 'Audience interactions',
-  'Rien pour ce concert : il n’a pas encore été joué, ou le direct n’a pas été rattaché à ce concert au lancement.':
+  'Rien pour ce concert : il n’a pas encore été joué, ou le live n’a pas été rattaché à ce concert au lancement.':
     'Nothing for this gig yet: it has not been played, or the live was not linked to it at launch.',
   'Invitation impossible.': 'Couldn\'t send the invitation.',
   'Invitation impossible : {raison}': 'Invitation failed: {raison}',
@@ -226,7 +225,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Le concert reprend dans un instant…': 'The gig resumes in a moment…',
   'Le groupe sera dissous pour tous les membres (chacun garde ses copies personnelles des morceaux).': 'The band will be dissolved for all members (everyone keeps their personal copies of the songs).',
   'Les groupes ont désormais leur onglet dédié 👥 dans la barre de navigation — fiche, membres, répertoire partagé et discussion.': 'Bands now have their own tab 👥 in the navigation bar — profile, members, shared repertoire and chat.',
-  'Les paroles du morceau joué\ns’affichent ici, en direct,\nvers après vers…': 'The lyrics of the song being played\nshow up here, live,\nline after line…',
+  'Les paroles du morceau joué\ns’affichent ici, en live,\nvers après vers…': 'The lyrics of the song being played\nshow up here, live,\nline after line…',
   'Les ❤ envoyés par le public, morceau par morceau, et l\'audience de tes concerts (spectateurs uniques).': 'The ❤ sent by your audience, song by song, and the audience of your gigs (unique viewers).',
   'Les ❤ et messages reçus pendant ce concert (le direct doit avoir été lancé le jour du concert pour qu\'ils lui soient rattachés).': 'The ❤ and messages received during this gig (the live session must have been started on the day of the gig for them to be linked to it).',
   'Libre': 'Any amount',
@@ -285,7 +284,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Page publique du concert': 'Public gig page',
   'Page publique — {nom}': 'Public page — {nom}',
   'Partager sans noter de prénom': 'Share without noting a name',
-  'Pas encore de données — lance un direct !': 'No data yet — start a live session!',
+  'Pas encore de données — lance un live !': 'No data yet — start a live session!',
   'Passés': 'Past',
   'Pause': 'Pause',
   'Planifier un concert': 'Plan a gig',
@@ -350,7 +349,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Terminer': 'Done',
   'Titre': 'Title',
   'Titre du morceau': 'Song title',
-  'Ton lien de paiement (PayPal.me, Lydia, Revolut, Stripe…). Le public pourra te soutenir en 2 clics depuis la page du direct (2 € / 5 € / 10 € / libre).': 'Your payment link (PayPal.me, Lydia, Revolut, Stripe…). Your audience can support you in 2 clicks from the live page (2 € / 5 € / 10 € / any amount).',
+  'Ton lien de paiement (PayPal.me, Lydia, Revolut, Stripe…). Le public pourra te soutenir en 2 clics depuis la page du live (2 € / 5 € / 10 € / libre).': 'Your payment link (PayPal.me, Lydia, Revolut, Stripe…). Your audience can support you in 2 clicks from the live page (2 € / 5 € / 10 € / any amount).',
   'Ton message au groupe…': 'Your message to the band…',
   'Ton profil artiste n\'est pas encore créé.': 'Your artist profile isn\'t created yet.',
   'Ton répertoire est vide — ajoute d\'abord un morceau.': 'Your repertoire is empty — add a song first.',
@@ -429,7 +428,7 @@ export const EN_ARTISTE: Record<string, string> = {
   // Refonte navigation, lot 1 (b378)
   'Live en cours': 'Live in progress',
   'Live en pause': 'Live paused',
-  'ouvrir la régie': 'open the remote',
+  'ouvrir le mode chanteur': 'open singer mode',
   'gérer le live': 'manage the live',
   'Lancer un live': 'Start a live',
   'Reprendre le live en cours': 'Resume the current live',
@@ -466,8 +465,8 @@ export const EN_ARTISTE: Record<string, string> = {
 
   // Libellés/hints des blocs configurables (PUBLIC_SCREEN_LABELS, Artist.tsx)
   'Titre du morceau en cours': 'Current song title',
-  'pendant le direct': 'during the live session',
-  'Paroles en direct': 'Live lyrics',
+  'pendant le live': 'during the live session',
+  'Paroles en live': 'Live lyrics',
   'le cœur du karaoké public': 'the heart of the public karaoke',
   'Cœurs ❤': 'Hearts ❤',
   'bouton d’envoi + compteur': 'send button + counter',
@@ -523,9 +522,9 @@ export const EN_ARTISTE: Record<string, string> = {
   'Ce que voit quelqu’un qui tape son adresse':
     'What someone typing its address sees',
   '{nom} — masqué au public': '{nom} — hidden from the audience',
-  'Les groupes en transparence sont masqués au public : ils n’apparaissent pas sur ta page publique et ne peuvent pas porter un direct. Un appui sur l’œil, dans l’onglet Groupes, les rend visibles.':
+  'Les groupes en transparence sont masqués au public : ils n’apparaissent pas sur ta page publique et ne peuvent pas porter un live. Un appui sur l’œil, dans l’onglet Groupes, les rend visibles.':
     'Faded bands are hidden from the audience: they do not appear on your public page and cannot carry a live. One tap on the eye, in the Bands tab, makes them visible.',
-  'Ce groupe est masqué au public : il n’a pas d’adresse, et aucun direct ne peut être lancé à son nom. Retire le masquage depuis l’onglet Groupes pour lui en donner une.':
+  'Ce groupe est masqué au public : il n’a pas d’adresse, et aucun live ne peut être lancé à son nom. Retire le masquage depuis l’onglet Groupes pour lui en donner une.':
     'This band is hidden from the audience: it has no address, and no live can run under its name. Remove the hiding from the Bands tab to give it one.',
   'L’adresse n’a pas pu être créée — vérifie ta connexion et rouvre cet aperçu.':
     'The address could not be created — check your connection and reopen this preview.',
@@ -550,7 +549,7 @@ export const EN_ARTISTE: Record<string, string> = {
 
   // b228 — masquer / démasquer depuis la liste des groupes
   'masqué au public': 'hidden from the audience',
-  'Masqué au public — aucun direct possible à son nom. Toucher pour le rendre visible.':
+  'Masqué au public — aucun live possible à son nom. Toucher pour le rendre visible.':
     'Hidden from the audience — no live can run under its name. Tap to make it visible.',
   'Visible du public. Toucher pour le masquer.':
     'Visible to the audience. Tap to hide it.',
@@ -558,7 +557,7 @@ export const EN_ARTISTE: Record<string, string> = {
   // b227 — le groupe face au public (masquage + adresse miroir)
   'Connecte-toi d’abord (onglet Artiste).': 'Sign in first (Artist tab).',
   'Ce groupe et le public': 'This band and the audience',
-  'Une adresse à dicter (« tape {hote}legroupe »). Elle ouvre la page du groupe — sa photo, sa présentation, ses musiciens — et pendant un direct du groupe, elle mène au concert, comme ton QR.':
+  'Une adresse à dicter (« tape {hote}legroupe »). Elle ouvre la page du groupe — sa photo, sa présentation, ses musiciens — et pendant un live du groupe, elle mène au concert, comme ton QR.':
     'An address you can say out loud (“type {hote}theband”). It opens the band’s page — photo, bio, musicians — and during a band show it leads to the gig, just like your QR.',
   'Cette adresse ouvre la page du groupe. Pendant un direct du groupe, elle mène au concert — comme ton QR.':
     'This address opens the band’s page. During a band show it leads to the gig — just like your QR.',
@@ -588,7 +587,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Ce compte n’a réservé aucune adresse. Une page publique existe pourtant à ton nom, à l’adresse {adresse} : elle a été créée avec un autre compte — tu t’es peut-être reconnecté avec une autre adresse e-mail que celle d’origine.':
     'This account has no address reserved. A public page does exist under your name, at {adresse}: it was created with another account — you may have signed back in with a different email address.',
   'Masquer ce groupe au public': 'Hide this band from the audience',
-  'il n’apparaît pas sur ta fiche publique, et tu ne peux pas lancer de direct à son nom': 'it does not appear on your public page, and you cannot start a live under its name',
+  'il n’apparaît pas sur ta fiche publique, et tu ne peux pas lancer de live à son nom': 'it does not appear on your public page, and you cannot start a live under its name',
   'Masquer « {nom} » au public ?': 'Hide “{nom}” from the audience?',
   'Il disparaît de tes identités publiques et son adresse est retirée. Tes morceaux, tes setlists et les autres membres ne changent pas — et ce choix ne concerne que toi.': 'It disappears from your public identities and its address is released. Your songs, your setlists and the other members do not change — and this choice is yours alone.',
   'Groupe masqué : rien de ce qui le concerne n’est proposé au public.': 'Hidden band: nothing about it is offered to the audience.',
@@ -596,7 +595,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Publie le groupe (invite un musicien) pour lui donner une adresse publique.': 'Publish the band (invite a musician) to give it a public address.',
   'adresse choisie par le créateur du groupe': 'address chosen by the band creator',
   'Seul le créateur du groupe peut lui donner une adresse.': 'Only the band creator can give it an address.',
-  'Une adresse à dicter (« tape {hote}legroupe »). Elle montre TA page : pendant un direct du groupe, elle mène au même concert que ton QR.': 'An address to say out loud (“type {hote}theband”). It shows YOUR page: during a band live, it leads to the same concert as your QR.',
+  'Une adresse à dicter (« tape {hote}legroupe »). Elle montre TA page : pendant un live du groupe, elle mène au même concert que ton QR.': 'An address to say out loud (“type {hote}theband”). It shows YOUR page: during a band live, it leads to the same concert as your QR.',
   'Adresse publique du groupe': 'Public address of the band',
   '…': '…',
   'Réserver': 'Reserve',

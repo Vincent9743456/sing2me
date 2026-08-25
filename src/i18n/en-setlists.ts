@@ -33,7 +33,7 @@ export const EN_SETLISTS: Record<string, string> = {
   'Prochain concert': 'Next show',
   'de {nom}': 'by {nom}',
   '{n} en réserve': '{n} in reserve',
-  'Régie (chanteur sans partition)': 'Booth (singer without sheet music)',
+  'Mode chanteur (sans partition)': 'Singer mode (no sheet music)',
   Scène: 'Stage',
   'Supprimer cette setlist': 'Delete this setlist',
   '{n} setlist': '{n} setlist',
@@ -131,7 +131,7 @@ export const EN_SETLISTS: Record<string, string> = {
   Imprimer: 'Print',
   'Mode scène': 'Stage mode',
   'Vue chanteur sans partition': 'Singer view without sheet music',
-  Régie: 'Booth',
+  'Mode chanteur': 'Singer mode',
   '✓ Enregistré': '✓ Saved',
   'Ajouter des morceaux': 'Add songs',
   'Ajouter {n} morceau': 'Add {n} song',
@@ -210,12 +210,10 @@ export const EN_SETLISTS: Record<string, string> = {
     "Tap a song to display it — the setlist order doesn't change.",
   'EN COURS': 'PLAYING',
 
-  // Régie (Remote)
-  'Tape le morceau qui démarre — le public et les musiciens suivent.':
-    'Tap the song that\'s starting — the audience and musicians follow along.',
+  // Mode chanteur (Remote)
+  'Tape le morceau qui démarre — le public et les musiciens suivent. Re-taper le morceau en cours le désélectionne.':
+    'Tap the song that\'s starting — the audience and musicians follow along. Tapping the current song again deselects it.',
   '▶ EN COURS': '▶ PLAYING',
   suivant: 'next',
   'Morceau suivant : {titre}': 'Next song: {titre}',
-  'Re-taper le morceau en cours le désélectionne. Le direct public se pilote avec le bouton GO LIVE en haut à droite.':
-    'Tapping the current song again deselects it. The public broadcast is controlled with the GO LIVE button top right.',
 };

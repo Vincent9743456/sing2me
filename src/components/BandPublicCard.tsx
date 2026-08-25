@@ -7,7 +7,7 @@
  *  1. **MASQUER AU PUBLIC.** « Un groupe que je fais à l'occasion avec un
  *     pote, avec qui on ne fait pas de concert, n'a pas vocation à être
  *     exposé. » Masqué, il disparaît des identités publiques ET on ne peut
- *     plus lancer de direct à son nom — sinon le masquer ne servirait à
+ *     plus lancer de live à son nom — sinon le masquer ne servirait à
  *     rien, un seul concert suffirait à l'exposer. C'est un choix PERSONNEL,
  *     jamais partagé avec les autres membres : c'est ma page publique.
  *
@@ -149,7 +149,7 @@ export function BandPublicCard({
           <span className="help" style={{ display: 'inline' }}>
             —{' '}
             {t(
-              'il n’apparaît pas sur ta fiche publique, et tu ne peux pas lancer de direct à son nom',
+              'il n’apparaît pas sur ta fiche publique, et tu ne peux pas lancer de live à son nom',
             )}
           </span>
         </span>
@@ -194,7 +194,7 @@ export function BandPublicCard({
         <>
           <p className="help" style={{ marginTop: 0 }}>
             {t(
-              'Une adresse à dicter (« tape {hote}legroupe »). Elle ouvre la page du groupe — sa photo, sa présentation, ses musiciens — et pendant un direct du groupe, elle mène au concert, comme ton QR.',
+              'Une adresse à dicter (« tape {hote}legroupe »). Elle ouvre la page du groupe — sa photo, sa présentation, ses musiciens — et pendant un live du groupe, elle mène au concert, comme ton QR.',
               { hote },
             )}
           </p>

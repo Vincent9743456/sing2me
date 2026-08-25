@@ -3,7 +3,7 @@ export const EN_COMPTE: Record<string, string> = {
   // Page publique visible / invisible (b262)
   'Ma page publique': 'My public page',
   'Rendre ma page publique invisible': 'Make my public page invisible',
-  'Ta fiche est retirée du serveur : photo, présentation, liens et pourboire ne sont plus en ligne. Ton adresse reste réservée, et un concert en direct reste visible par le public.':
+  'Ta fiche est retirée du serveur : photo, présentation, liens et pourboire ne sont plus en ligne. Ton adresse reste réservée, et un concert en live reste visible par le public.':
     'Your profile is removed from the server: photo, bio, links and tip link are no longer online. Your address stays reserved, and a live gig remains visible to the audience.',
   '✓ Ta page n’est plus en ligne.': '✓ Your page is no longer online.',
   '✓ Ta page publique est de nouveau visible.': '✓ Your public page is visible again.',
@@ -15,7 +15,7 @@ export const EN_COMPTE: Record<string, string> = {
   'Efface définitivement ce compte et tout ce qu’il contient sur nos serveurs. Réinitialiser (ci-dessus) vide les données mais garde le compte ; ceci supprime les deux.':
     'Permanently erases this account and everything it holds on our servers. Reset (above) empties the data but keeps the account; this removes both.',
   'Supprimer le compte {email}': 'Delete the account {email}',
-  'Tout ce que ce compte contient sera effacé de nos serveurs, définitivement : ta bibliothèque en ligne, ton profil, tes directs et ce qu’ils ont produit.':
+  'Tout ce que ce compte contient sera effacé de nos serveurs, définitivement : ta bibliothèque en ligne, ton profil, tes lives et ce qu’ils ont produit.':
     'Everything this account holds will be erased from our servers, for good: your online library, your profile, your live sessions and what they produced.',
   '⚠ Le groupe « {noms} » sera DISSOUS pour tous ses musiciens — répertoire et discussions compris. Pour l’éviter, transmets-le d’abord à un membre depuis sa fiche.':
     '⚠ The band “{noms}” will be DISSOLVED for all its musicians — repertoire and chat included. To avoid that, hand it over to a member first, from its page.',
@@ -77,7 +77,6 @@ export const EN_COMPTE: Record<string, string> = {
   'Mon QR unique': 'My unique QR',
   'Morceau': 'Song',
   'Ouvre l’email reçu et saisis ici le ': 'Open the email you received and enter here the ',
-  'Passer en direct (public)': 'Go live (public)',
   'Passer à {addr} ?': 'Switch to {addr}?',
   'Préparation du lien…': 'Preparing the link…',
   'QR code de partage': 'Sharing QR code',

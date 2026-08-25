@@ -604,7 +604,7 @@ export function ConcertEdit({ id }: { id: string | null }) {
             {bilan === null ? (
               <p className="help">
                 {t(
-                  'Rien pour ce concert : il n’a pas encore été joué, ou le direct n’a pas été rattaché à ce concert au lancement.',
+                  'Rien pour ce concert : il n’a pas encore été joué, ou le live n’a pas été rattaché à ce concert au lancement.',
                 )}
               </p>
             ) : (

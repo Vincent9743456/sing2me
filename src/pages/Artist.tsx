@@ -42,8 +42,8 @@ import {
 
 /** Libellés des blocs de l'écran public, dans l'ordre d'affichage. */
 const PUBLIC_SCREEN_LABELS: { key: keyof PublicScreen; label: string; hint: string }[] = [
-  { key: 'songTitle', label: 'Titre du morceau en cours', hint: 'pendant le direct' },
-  { key: 'lyrics', label: 'Paroles en direct', hint: 'le cœur du karaoké public' },
+  { key: 'songTitle', label: 'Titre du morceau en cours', hint: 'pendant le live' },
+  { key: 'lyrics', label: 'Paroles en live', hint: 'le cœur du karaoké public' },
   { key: 'hearts', label: 'Cœurs ❤', hint: 'bouton d’envoi + compteur' },
   { key: 'messages', label: 'Messages du public', hint: 'petits mots envoyés pendant le concert' },
   { key: 'tips', label: 'Pourboires', hint: 'si ton lien de paiement est renseigné' },
@@ -439,7 +439,7 @@ export function Artist() {
             <p className="help" style={{ marginTop: 10 }}>
               {t('Créer ta fiche débloque aussi le mode')}{' '}
               <strong>{t('Live')}</strong>{' '}
-              {t(': tes concerts en direct, avec paroles pour le public.')}
+              {t(': tes concerts en live, avec paroles pour le public.')}
             </p>
           </div>
         )}
@@ -575,7 +575,7 @@ export function Artist() {
             {bands.some((b) => b.hiddenFromPublic === true) && (
               <p className="help" style={{ marginTop: 'var(--sp-2)' }}>
                 {t(
-                  'Les groupes en transparence sont masqués au public : ils n’apparaissent pas sur ta page publique et ne peuvent pas porter un direct. Un appui sur l’œil, dans l’onglet Groupes, les rend visibles.',
+                  'Les groupes en transparence sont masqués au public : ils n’apparaissent pas sur ta page publique et ne peuvent pas porter un live. Un appui sur l’œil, dans l’onglet Groupes, les rend visibles.',
                 )}
               </p>
             )}
@@ -710,7 +710,7 @@ export function Artist() {
         </button>
         <p className="help">
           {t(
-            "C'est aussi l'identité proposée au lancement d'un direct (bouton GO LIVE). Choisis ensuite ce que voient les personnes qui scannent ton QR — pendant les morceaux et entre eux. Tout est actif par défaut.",
+            "C'est aussi l'identité proposée au lancement d'un live (bouton GO LIVE). Choisis ensuite ce que voient les personnes qui scannent ton QR — pendant les morceaux et entre eux. Tout est actif par défaut.",
           )}
         </p>
         {PUBLIC_SCREEN_LABELS.map((item) => (
@@ -759,7 +759,7 @@ export function Artist() {
                 className={`chip ${previewMode === 'live' ? '' : 'off'}`}
                 onClick={() => setPreviewMode('live')}
               >
-                🔴 {t('En direct')}
+                🔴 {t('En live')}
               </button>
               <button
                 className={`chip ${previewMode === 'pause' ? '' : 'off'}`}
@@ -800,7 +800,7 @@ export function Artist() {
                     text={
                       sampleLyrics ||
                       t(
-                        'Les paroles du morceau joué\ns’affichent ici, en direct,\nvers après vers…',
+                        'Les paroles du morceau joué\ns’affichent ici, en live,\nvers après vers…',
                       )
                     }
                     style={{
@@ -1065,7 +1065,7 @@ export function Artist() {
         <h2 className="pagetitle">{t('Pourboires')}</h2>
         <p className="help">
           {t(
-            'Ton lien de paiement (PayPal.me, Lydia, Revolut, Stripe…). Le public pourra te soutenir en 2 clics depuis la page du direct (2 € / 5 € / 10 € / libre).',
+            'Ton lien de paiement (PayPal.me, Lydia, Revolut, Stripe…). Le public pourra te soutenir en 2 clics depuis la page du live (2 € / 5 € / 10 € / libre).',
           )}
         </p>
         <input

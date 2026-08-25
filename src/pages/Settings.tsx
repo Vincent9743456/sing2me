@@ -77,7 +77,7 @@ const RESET_CHOICES: {
   {
     key: 'concerts',
     label: 'Concerts et lives',
-    detail: 'Dates passées et à venir, et l’historique de tes directs.',
+    detail: 'Dates passées et à venir, et l’historique de tes lives.',
   },
   {
     key: 'bands',
@@ -1030,7 +1030,7 @@ export function Settings() {
                 </div>
                 <div className="sub" style={{ whiteSpace: 'normal' }}>
                   {t(
-                    'Ta fiche est retirée du serveur : photo, présentation, liens et pourboire ne sont plus en ligne. Ton adresse reste réservée, et un concert en direct reste visible par le public.',
+                    'Ta fiche est retirée du serveur : photo, présentation, liens et pourboire ne sont plus en ligne. Ton adresse reste réservée, et un concert en live reste visible par le public.',
                   )}
                 </div>
               </div>

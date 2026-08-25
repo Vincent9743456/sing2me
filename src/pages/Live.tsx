@@ -298,8 +298,8 @@ export function Live({
       <div className="public">
         <p className="help" style={{ textAlign: 'center' }}>
           {offline
-            ? t('Hors ligne — reconnexion au direct…')
-            : t('Connexion au direct…')}
+            ? t('Hors ligne — reconnexion au live…')
+            : t('Connexion au live…')}
         </p>
         {offline && cached && cached.length > 0 && (
           <div style={{ textAlign: 'center' }}>

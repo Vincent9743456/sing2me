@@ -375,12 +375,12 @@ export function Bands() {
                   aria-pressed={band.hiddenFromPublic === true}
                   aria-label={
                     band.hiddenFromPublic === true
-                      ? t('Masqué au public — aucun direct possible à son nom. Toucher pour le rendre visible.')
+                      ? t('Masqué au public — aucun live possible à son nom. Toucher pour le rendre visible.')
                       : t('Visible du public. Toucher pour le masquer.')
                   }
                   title={
                     band.hiddenFromPublic === true
-                      ? t('Masqué au public — aucun direct possible à son nom. Toucher pour le rendre visible.')
+                      ? t('Masqué au public — aucun live possible à son nom. Toucher pour le rendre visible.')
                       : t('Visible du public. Toucher pour le masquer.')
                   }
                   // Cible confortable au doigt : ce bouton décide de ce que

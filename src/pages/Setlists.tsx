@@ -591,7 +591,7 @@ export function Setlists() {
           title={rowMenu.name || t('Cette setlist')}
           items={[
             {
-              label: t('Régie (chanteur sans partition)'),
+              label: t('Mode chanteur (sans partition)'),
               icon: 'sliders',
               onClick: () => navigate(`/remote/${rowMenu.id}`),
             },

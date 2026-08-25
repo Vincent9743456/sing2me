@@ -101,7 +101,7 @@ export function BandPublicPeek({
       sansAdresse={
         band.hiddenFromPublic === true
           ? t(
-              'Ce groupe est masqué au public : il n’a pas d’adresse, et aucun direct ne peut être lancé à son nom. Retire le masquage depuis l’onglet Groupes pour lui en donner une.',
+              'Ce groupe est masqué au public : il n’a pas d’adresse, et aucun live ne peut être lancé à son nom. Retire le masquage depuis l’onglet Groupes pour lui en donner une.',
             )
           : band.owned === true
             ? nomEnCause
