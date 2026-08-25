@@ -38,6 +38,16 @@ const PLAIN_CHORD_TOKEN =
 const PLAIN_NOISE_TOKEN = /^(%|-|–|—|:|x\d+|\(x\d+\)|\(?bis\)?|N\.?C\.?|\.|,)$/i;
 
 /**
+ * Le jeton est-il un accord écrit SANS crochets ? (b435 : dans une grille
+ * nue, chaque accord doit être tapable comme un accord entre crochets —
+ * même grammaire que la détection de ligne, pour que les deux restent
+ * d'accord.)
+ */
+export function estJetonAccordNu(token: string): boolean {
+  return PLAIN_CHORD_TOKEN.test(token);
+}
+
+/**
  * La ligne est-elle une ligne d'accords brute (sans crochets) ? On détache
  * d'abord les barres de mesure collées aux accords (« |Em », « G| ») puis on
  * exige que chaque jeton soit un accord ou un décor — au moins un accord.

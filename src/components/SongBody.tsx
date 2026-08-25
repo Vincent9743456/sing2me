@@ -6,7 +6,12 @@
 import React, { useState } from 'react';
 
 import { t } from '../i18n';
-import { parseContent, ParsedLine, stripChords } from '../lib/chordpro';
+import {
+  estJetonAccordNu,
+  parseContent,
+  ParsedLine,
+  stripChords,
+} from '../lib/chordpro';
 import { Spelling, transposeContent } from '../lib/chords';
 import { ChordSheet } from './ChordDiagram';
 import { positionsPour } from '../lib/chordshapes';
@@ -28,9 +33,25 @@ export function ChordLine({ line }: { line: ParsedLine }) {
     return <div style={{ height: '0.8em' }} />;
   }
   // Grille d'accords brute (« |Em D G| ») : affichée telle quelle, en
-  // couleur d'accord, sans reflow (espacement et barres préservés).
+  // couleur d'accord, sans reflow (espacement et barres préservés). Chaque
+  // accord est enveloppé pour être TAPABLE comme un accord entre crochets
+  // (b435) — les séparateurs (espaces, barres) sont rendus tels quels, donc
+  // la mise en page ne bouge pas d'un caractère.
   if (line.plainChords) {
-    return <div className="chordrow">{line.segments[0].text}</div>;
+    const jetons = line.segments[0].text.split(/([\s|]+)/);
+    return (
+      <div className="chordrow">
+        {jetons.map((tok, i) =>
+          estJetonAccordNu(tok) ? (
+            <span key={i} className="chord">
+              {tok}
+            </span>
+          ) : (
+            <React.Fragment key={i}>{tok}</React.Fragment>
+          ),
+        )}
+      </div>
+    );
   }
   return (
     // Ligne d'accords SEULS (intro, ponts…) : les paroles ne sont pas
@@ -124,7 +145,13 @@ export function SongBody({
     if (!showChords) return;
     const cible = (e.target as HTMLElement).closest('.chord');
     if (!cible) return;
-    const symbole = (cible.textContent ?? '').trim();
+    let symbole = (cible.textContent ?? '').trim();
+    // Décorations de grille (b435) : « (Bm) » et l'étoile UG « G* »
+    // désignent l'accord nu — on les retire avant de chercher le doigté.
+    if (symbole.startsWith('(') && symbole.endsWith(')')) {
+      symbole = symbole.slice(1, -1);
+    }
+    symbole = symbole.replace(/\*+$/, '');
     if (symbole === '' || positionsPour(symbole).length === 0) return;
     // La pastille se pose SOUS l'accord touché : elle doit savoir où il est.
     const r = cible.getBoundingClientRect();
