@@ -1009,12 +1009,23 @@ export function LiveBadge() {
   );
 }
 
-export function OnAirButton({ inBar = false }: { inBar?: boolean } = {}) {
+export function OnAirButton({
+  inBar = false,
+  masquerHorsLive = false,
+}: { inBar?: boolean; masquerHorsLive?: boolean } = {}) {
   const ctx = useContext(StatusContext);
   const { artist } = useStore();
   if (!ctx) return null;
   const { status, hearts, openPanel } = ctx;
   if (artist.name.trim() === '' && status === 'off') return null;
+  /* SUR SCÈNE, PAS D'INVITATION PERMANENTE (b430/D-1, passe UX de
+     Vincent) : hors live, la pastille « ● Live » n'a rien à faire sur
+     l'écran de jeu — on lance un live depuis la bibliothèque ou l'onglet
+     Live. PENDANT un live, le bouton reste : il est à la fois le témoin
+     fiable (● LIVE + cœurs, seulement quand le direct est réellement
+     actif) et la seule commande de gestion (pause / terminer) accessible
+     sans quitter la scène. */
+  if (masquerHorsLive && status === 'off') return null;
   return (
     <button
       className={`onair ${status}${inBar ? ' inbar' : ''}`}

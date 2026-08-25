@@ -136,7 +136,9 @@ function Screen() {
           songId={route.songId}
           startIndex={route.index}
         />
-        <OnAirButton />
+        {/* b430/D-1 : hors live, pas de pastille « ● Live » sur l'écran de
+            jeu ; pendant un live, le bouton reste (témoin + gestion). */}
+        <OnAirButton masquerHorsLive />
       </>
     );
   }
