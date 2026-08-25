@@ -41,6 +41,21 @@ import {
 
 } from '../types';
 
+/**
+ * Invariant d'affichage de la RÉSERVE (b437, revue UX Setlists) : les
+ * morceaux JOUÉS d'abord, la réserve en SECTION à la fin — l'ordre relatif
+ * de chaque groupe est conservé. Appliqué au chargement (les setlists
+ * d'avant b437 avaient la réserve mélangée au set) et à la fin de chaque
+ * glisser (un morceau lâché de l'autre côté de la frontière revient au
+ * bord de son groupe).
+ */
+function ordonnerReserve(items: Setlist['items']): Setlist['items'] {
+  return [
+    ...items.filter((it) => it.reserve !== true),
+    ...items.filter((it) => it.reserve === true),
+  ];
+}
+
 export function SetlistEdit({ id }: { id: string | null }) {
   const {
     songs,
@@ -58,7 +73,10 @@ export function SetlistEdit({ id }: { id: string | null }) {
   const existing = id ? setlists.find((s) => s.id === id) : undefined;
   const [draft, setDraft] = useState<Setlist>(() => {
     if (existing) {
-      return { ...existing, items: existing.items.map((x) => ({ ...x })) };
+      return {
+        ...existing,
+        items: ordonnerReserve(existing.items.map((x) => ({ ...x }))),
+      };
     }
     // Nouvelle setlist : reprendre le contexte (groupe/solo) de l'encart
     // d'où l'on vient, s'il a été transmis. Nom par défaut daté (b379,
@@ -152,6 +170,14 @@ export function SetlistEdit({ id }: { id: string | null }) {
   function onHandleUp() {
     dragRef.current = null;
     setDragIdx(null);
+    // Un glisser qui a franchi la frontière set/réserve revient au bord de
+    // son groupe (b437) : le statut ne change qu'au bookmark, jamais par
+    // accident de dépose. (Sans franchissement, rien ne bouge — et on rend
+    // le MÊME état pour ne pas déclencher un enregistrement pour rien.)
+    setDraft((d) => {
+      const arr = ordonnerReserve(d.items);
+      return arr.every((it, i) => it === d.items[i]) ? d : { ...d, items: arr };
+    });
   }
   // Menu « … » de l'en-tête + confirmation de suppression (jamais de
   // confirm() natif — règle 10).
@@ -442,21 +468,18 @@ export function SetlistEdit({ id }: { id: string | null }) {
             text={t("Glisse les morceaux pour changer l'ordre.")}
           />
         )}
+        {/* Le compteur de réserve ne colle plus au résumé (b437) : il vit
+            dans le séparateur de la section Réserve, en bas de liste. */}
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
           {t('Morceaux')} ({playedItems.length}
           {playedSec > 0
             ? ` · ${hasEstimate ? '≈ ' : ''}${formatDuration(playedSec)}`
             : ''}
-          {reserveItems.length > 0
-            ? ` · ${t('{n} en réserve', { n: reserveItems.length })}`
-            : ''}
           )
         </h2>
         {hasEstimate && (
           <p className="help" style={{ marginTop: -6 }}>
-            {t(
-              "Durée estimée à 5 min pour les morceaux dont la durée n'est pas renseignée — renseigne-la sur la fiche du morceau pour affiner.",
-            )}
+            {t('Sans durée renseignée, on estime 5 min par morceau.')}
           </p>
         )}
 
@@ -464,12 +487,24 @@ export function SetlistEdit({ id }: { id: string | null }) {
         <div ref={listRef}>
         {draft.items.map((item, idx) => {
           const song = songById.get(item.songId);
+          // Séparateur de la section Réserve (b437) : posé devant le
+          // PREMIER morceau en réserve — les joués sont toujours devant
+          // (invariant ordonnerReserve), donc il n'apparaît qu'une fois.
+          const debutReserve =
+            item.reserve === true &&
+            (idx === 0 || draft.items[idx - 1].reserve !== true);
           return (
+            <React.Fragment key={item.id}>
+              {debutReserve && (
+                <div className="slsep">
+                  <Icon name="bookmark" size={14} /> {t('Réserve')} ·{' '}
+                  {reserveItems.length}
+                </div>
+              )}
             <div
               className={`slitem ${dragIdx === idx ? 'dragover' : ''} ${
                 item.reserve ? 'reserve' : ''
               }`}
-              key={item.id}
             >
               {/* La poignée porte le glisser tactile (b148) : capture du
                   pointeur + réordonnancement en direct. `touch-action:
@@ -486,7 +521,12 @@ export function SetlistEdit({ id }: { id: string | null }) {
               >
                 <Icon name="grip" size={18} />
               </span>
-              <span className="num">{idx + 1}.</span>
+              {/* Numérotation du SET JOUÉ seulement (b437) : la réserve
+                  est une liste de titres, sans numéro — les joués étant
+                  toujours en tête, idx + 1 tombe juste. */}
+              {item.reserve !== true && (
+                <span className="num">{idx + 1}.</span>
+              )}
               {/* Écran volontairement MINIMAL (b150, demande Vincent) :
                   voir la setlist, changer l'ordre, ajouter/retirer, mettre
                   en réserve — rien d'autre. Modifier la partition se fait
@@ -503,11 +543,6 @@ export function SetlistEdit({ id }: { id: string | null }) {
                     <span className="stauthor"> — {song.artist}</span>
                   )}
                 </div>
-                {item.reserve && (
-                  <div className="slreserve">
-                    {t('☆ En réserve — jouée si besoin')}
-                  </div>
-                )}
               </div>
               <button
                 className="btn icon"
@@ -523,7 +558,12 @@ export function SetlistEdit({ id }: { id: string | null }) {
               >
                 <Icon name="x" size={16} />
               </button>
-              {/* Réserve : étoile discrète, tout à droite. */}
+              {/* Réserve (b437) : bookmark, tout à droite — l'étoile
+                  évoquait un favori. Le geste DÉPLACE vraiment : mise en
+                  réserve → le morceau descend dans la section Réserve ;
+                  retour → il remonte en FIN du set joué (la position
+                  d'origine n'est volontairement pas mémorisée — règle
+                  simple, pas de surprise). */}
               <button
                 className="btn icon"
                 style={{
@@ -531,7 +571,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 }}
                 title={
                   item.reserve
-                    ? t('En réserve — cliquer pour la remettre dans le set joué')
+                    ? t('En réserve — cliquer pour la remettre en fin de set joué')
                     : t(
                         'Mettre en réserve (jouée seulement si besoin — hors durée prévue)',
                       )
@@ -542,17 +582,35 @@ export function SetlistEdit({ id }: { id: string | null }) {
                     : t('Mettre en réserve')
                 }
                 onClick={() =>
-                  setDraft((d) => ({
-                    ...d,
-                    items: d.items.map((it) =>
-                      it.id === item.id ? { ...it, reserve: !it.reserve } : it,
-                    ),
-                  }))
+                  setDraft((d) => {
+                    const cible = d.items.find((it) => it.id === item.id);
+                    if (!cible) return d;
+                    const restants = d.items.filter((it) => it.id !== item.id);
+                    if (cible.reserve === true) {
+                      // Retour : en FIN du set joué.
+                      const nbJoues = restants.filter(
+                        (it) => it.reserve !== true,
+                      ).length;
+                      const arr = [...restants];
+                      arr.splice(nbJoues, 0, { ...cible, reserve: false });
+                      return { ...d, items: arr };
+                    }
+                    // Mise en réserve : descend en fin de section Réserve.
+                    return {
+                      ...d,
+                      items: [...restants, { ...cible, reserve: true }],
+                    };
+                  })
                 }
               >
-                <Icon name="star" size={17} />
+                <Icon
+                  name="bookmark"
+                  size={17}
+                  style={item.reserve ? { fill: 'currentColor' } : undefined}
+                />
               </button>
             </div>
+            </React.Fragment>
           );
         })}
         </div>
@@ -663,7 +721,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
           sub={
             sonoFilled
               ? t('Renseignée — matériel, branchements, plan')
-              : t('Vide — matériel, branchements, plan')
+              : t('Ajouter matériel, branchements, plan')
           }
           onClick={() => {
             saveSetlist(stamp(withValidatedMeta(draft)));
@@ -671,18 +729,15 @@ export function SetlistEdit({ id }: { id: string | null }) {
           }}
         />
 
+        {/* Hiérarchie (b437, revue UX) : Mode scène est L'action de cet
+            écran — bouton plein (le seul ambre, règle de la charte). Les
+            deux vues « performance » (Mode scène, Régie) sont groupées ;
+            Imprimer, détaché à droite, reste secondaire. */}
         <div className="rowactions">
           {draft.items.length > 0 && (
             <>
               <button
-                className="btn ghost"
-                title={t("Vue d'ensemble propre et imprimable")}
-                onClick={() => navigate(`/setlist/${draft.id}/apercu`)}
-              >
-                <Icon name="clipboard" size={15} /> {t('Imprimer')}
-              </button>
-              <button
-                className="btn ghost"
+                className="btn"
                 onClick={() => {
                   saveSetlist(stamp(withValidatedMeta(draft)));
                   navigate(`/stage/${draft.id}`);
@@ -699,6 +754,14 @@ export function SetlistEdit({ id }: { id: string | null }) {
                 }}
               >
                 <Icon name="sliders" size={15} /> {t('Régie')}
+              </button>
+              <button
+                className="btn ghost"
+                style={{ marginLeft: 'auto' }}
+                title={t("Vue d'ensemble propre et imprimable")}
+                onClick={() => navigate(`/setlist/${draft.id}/apercu`)}
+              >
+                <Icon name="clipboard" size={15} /> {t('Imprimer')}
               </button>
             </>
           )}

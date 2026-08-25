@@ -1696,11 +1696,27 @@ textarea.mono {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* Mention de réserve : discrète, sous le titre. */
+/* Mention de réserve : discrète, sous le titre. (Encore utilisée par la
+   vue synthétique SetlistView ; l'éditeur passe par la section .slsep.) */
 .slreserve {
   color: var(--accent);
   font-size: 0.72rem;
   margin-top: 1px;
+}
+/* Séparateur de la section Réserve (b437) : un titre discret entre le set
+   joué et les morceaux gardés sous le coude. */
+.slsep {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 14px 0 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
 }
 /* Cibles tactiles pleines (44px) sans gonfler la ligne. */
 .slitem .btn.icon {

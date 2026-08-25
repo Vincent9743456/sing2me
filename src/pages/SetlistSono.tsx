@@ -159,7 +159,7 @@ export function SetlistSono({ id }: { id: string }) {
               onClick={() => setGearPicker(true)}
             >
               <Icon name="speaker" size={14} />{' '}
-              {t('Piocher le matériel des musiciens')}
+              {t('Importer le matériel des musiciens')}
             </button>
           </div>
         </div>
