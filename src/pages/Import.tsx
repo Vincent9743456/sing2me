@@ -20,9 +20,9 @@ import {
   douteApresIA,
   fusionMiseEnForme,
   meritteUneMiseEnForme,
+  nettoyerAvecEscalade,
 } from '../lib/aiFormat';
 import {
-  aiCleanText,
   fetchUgTab,
   searchUgTabs,
   UgSearchResult,
@@ -464,12 +464,20 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
       const hint = [title.trim(), artist.trim()]
         .filter((x) => x !== '')
         .join(' — ');
-      aiCleanText(source, hint || undefined)
-        .then((out) => {
+      // Deux étages (b432) : la passe rapide traite, l'analyse locale juge,
+      // le modèle fort ne repasse que si elle a douté.
+      const local = importText(source, title.trim() || 'Morceau importé');
+      nettoyerAvecEscalade(
+        source,
+        title.trim() || 'Morceau importé',
+        hint || undefined,
+        local,
+      )
+        .then(({ cleaned }) => {
           if (seq !== aiSeq.current) return;
           if (aiCache.current.size > 4) aiCache.current.clear();
-          aiCache.current.set(source, out);
-          setAiText(out);
+          aiCache.current.set(source, cleaned);
+          setAiText(cleaned);
           setAiState('done');
         })
         .catch((e: unknown) => {
@@ -565,9 +573,13 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           .filter((x) => x && x.trim() !== '')
           .join(' — ');
         const local = importText(item.raw, item.song.title);
-        const cleaned = await aiCleanText(item.raw, hint || undefined);
-        const apres = importText(cleaned, item.song.title);
-        const mef = fusionMiseEnForme(item.raw, local, cleaned, apres);
+        // Deux étages (b432) : rapide pour tous, fort si la passe a douté.
+        const { mef } = await nettoyerAvecEscalade(
+          item.raw,
+          item.song.title,
+          hint || undefined,
+          local,
+        );
         saveSong({
           ...mef.song,
           id: item.song.id,
@@ -1111,9 +1123,13 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           .filter((x) => x && x.trim() !== '')
           .join(' — ');
         const local = importText(it.raw, it.title || 'Morceau importé');
-        const cleaned = await aiCleanText(it.raw, hint || undefined);
-        const apres = importText(cleaned, it.title || 'Morceau importé');
-        const mef = fusionMiseEnForme(it.raw, local, cleaned, apres);
+        // Deux étages (b432) : rapide pour tous, fort si la passe a douté.
+        const { mef } = await nettoyerAvecEscalade(
+          it.raw,
+          it.title || 'Morceau importé',
+          hint || undefined,
+          local,
+        );
         saveSong({
           ...mef.song,
           id: old.id,

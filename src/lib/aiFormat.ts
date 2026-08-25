@@ -18,8 +18,9 @@
  * tranche. Sur un import en masse, il tranchera plus tard : le morceau entre
  * en bibliothèque avec son « 🔎 À vérifier ».
  */
-import { analyzeImport, ImportOutcome, raisonDeVerifier } from './importer';
+import { analyzeImport, ImportOutcome, importText, raisonDeVerifier } from './importer';
 import { sectionDeLaLigne } from './sections';
+import { aiCleanText } from './ug';
 import { Song } from '../types';
 
 /** Lignes qui portent vraiment quelque chose à lire (ni vide, ni en-tête). */
@@ -166,6 +167,45 @@ export function fusionMiseEnForme(
     song.beforeAi = photoAvantIA(localOutcome.song);
   }
   return { song, doute, parIA: true };
+}
+
+/**
+ * PASSE IA À DEUX ÉTAGES (b432, demande de Vincent : « haiku par défaut
+ * pour traiter, puis une analyse et si estimé nécessaire, recours à
+ * Opus »). L'étage RAPIDE traite tout le monde ; l'ANALYSE est locale et
+ * gratuite — les mêmes juges que le gros doute : suite d'accords
+ * préservée, volumes de texte, diagnostic d'import appliqué au résultat.
+ * L'étage FORT n'est appelé QUE si la première passe a douté ; s'il doute
+ * aussi, on garde la meilleure des deux avec le filet habituel
+ * (needsCheck + beforeAi). Jamais bloquant : un échec de l'escalade ne
+ * coûte jamais la première passe, un échec de la première passe suit le
+ * chemin d'erreur existant de l'appelant (analyse locale conservée).
+ */
+export async function nettoyerAvecEscalade(
+  texteLocal: string,
+  fallbackTitle: string,
+  hint: string | undefined,
+  local: ImportOutcome,
+): Promise<{ cleaned: string; apres: ImportOutcome; mef: MiseEnForme }> {
+  const passe = async (niveau: 'standard' | 'fort') => {
+    const cleaned = await aiCleanText(texteLocal, hint, niveau);
+    const apres = importText(cleaned, fallbackTitle);
+    const mef = fusionMiseEnForme(texteLocal, local, cleaned, apres);
+    return { cleaned, apres, mef };
+  };
+  const rapide = await passe('standard');
+  if (rapide.mef.parIA && rapide.mef.doute === '') return rapide;
+  try {
+    const fort = await passe('fort');
+    // La passe forte gagne si elle est PROPRE — ou si la rapide n'avait
+    // même pas pu être retenue (accords perdus) alors qu'elle l'est.
+    if (fort.mef.parIA && (fort.mef.doute === '' || !rapide.mef.parIA)) {
+      return fort;
+    }
+  } catch {
+    // L'escalade est un bonus : son échec ne défait rien.
+  }
+  return rapide;
 }
 
 /** Revenir à la partition d'avant l'IA : le doute est levé par ce choix. */

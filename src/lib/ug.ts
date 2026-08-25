@@ -87,8 +87,14 @@ export async function searchUgTabs(query: string): Promise<UgSearchResult[]> {
 }
 
 /** Nettoyage de partition par IA (si configurée côté serveur).
- *  `hint` : indice titre/artiste (utile pour décoder les PDF brouillés). */
-export async function aiCleanText(text: string, hint?: string): Promise<string> {
+ *  `hint` : indice titre/artiste (utile pour décoder les PDF brouillés).
+ *  `niveau` : 'standard' (modèle rapide) ou 'fort' (escalade b432) —
+ *  l'orchestration des deux étages vit dans aiFormat.nettoyerAvecEscalade. */
+export async function aiCleanText(
+  text: string,
+  hint?: string,
+  niveau: 'standard' | 'fort' = 'standard',
+): Promise<string> {
   let res: Response;
   // Une action doit toujours pouvoir se terminer (règle b216). L'IA prend
   // son temps sur une longue partition — 90 s de marge, mais jamais infini :
@@ -100,7 +106,11 @@ export async function aiCleanText(text: string, hint?: string): Promise<string> 
     res = await fetch('/api/ai?fn=clean', {
       method: 'POST',
       headers: liveHeaders('', { 'content-type': 'application/json' }),
-      body: JSON.stringify(hint ? { text, hint } : { text }),
+      body: JSON.stringify({
+        text,
+        ...(hint ? { hint } : {}),
+        ...(niveau === 'fort' ? { niveau } : {}),
+      }),
       signal: ctrl.signal,
     });
   } catch (e) {
