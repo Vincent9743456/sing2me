@@ -911,6 +911,14 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - **Lot « QR / domaine » sans objet** : le domaine de production est
     verrouillé (mojosong.com, b307) — « il ne change jamais » est vrai,
     l'incitation à imprimer le QR reste.
+  - **Un groupe se crée MASQUÉ par défaut** (b443, arbitrage du prompt —
+    remplace le défaut visible) : un groupe neuf, vide, n'apparaît sur la
+    fiche publique de son créateur que quand il l'a décidé (défaut = le
+    moins exposant). Conséquence b227 assumée : pas de live à son nom
+    tant qu'il n'est pas « Visible » (un appui sur la carte de la home).
+    Et la CRÉATION valide : nom vide refusé (le placeholder n'est pas une
+    valeur), doublon de nom refusé (comparaison repliée accents/casse) —
+    message inline sous le champ, jamais d'alert().
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
   par les composants Feedback (règle 10 — dette existante, dont le
   `confirm()` de suppression d'un message de discussion) ; OAuth
