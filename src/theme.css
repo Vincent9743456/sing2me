@@ -2697,6 +2697,27 @@ h2.pagetitle {
     background: var(--surface-high);
     border-color: var(--border);
   }
+  /* Liste des SETLISTS : une seule colonne sous 900 px (b436, audit UX).
+     Ses cartes portent titre + méta + deux boutons : à deux colonnes de
+     320 px (iPad portrait), titres et méta étaient tous tronqués. La
+     grille habituelle reprend à 900 px (paysage / ordinateur). */
+  .list.setliste {
+    grid-template-columns: 1fr;
+  }
+}
+@media (min-width: 900px) {
+  .list.setliste {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  }
+}
+
+/* Nom absent affiché comme un TROU, pas comme un nom (b436, audit UX) :
+   « (sans nom) » et « Groupe sans nom » en atténué italique — un vrai nom
+   ne se confond plus avec l'absence d'un nom. */
+.placeholder {
+  color: var(--text-faint);
+  font-style: italic;
+  font-weight: 500;
 }
 
 /* Ordinateur : navigation en barre latérale */
