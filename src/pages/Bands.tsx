@@ -30,6 +30,7 @@ import {
   groupeMasque,
 } from '../lib/masquagegroupe';
 import { creatorMember } from '../lib/model';
+import { replier } from '../lib/recherche';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { Band, emptyBand } from '../types';
@@ -69,6 +70,19 @@ export function Bands() {
   /** Groupe dont la suppression est demandée, en attente de confirmation. */
   const [aSupprimer, setASupprimer] = useState<Band | null>(null);
   const [newName, setNewName] = useState('');
+  // Erreur de création, affichée SOUS le champ (b443) — jamais un alert().
+  const [createError, setCreateError] = useState('');
+  // Le formulaire s'ouvre en bas de page : on l'amène à l'écran (b443) —
+  // sinon, sur une longue liste, « ＋ Nouveau groupe » semble ne rien faire.
+  const createFormRef = React.useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (creating) {
+      createFormRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [creating]);
   const [invites, setInvites] = useState<PendingInvite[]>([]);
   // Musiciens partis de MES groupes, à réinviter (b142).
   const [departures, setDepartures] = useState<BandDeparture[]>([]);
@@ -178,13 +192,39 @@ export function Bands() {
   function cancelCreate() {
     setCreating(false);
     setNewName('');
+    setCreateError('');
   }
 
   function confirmCreate() {
+    // VALIDATION à la création (b443, revue UX Groupes). Un nom vide ne
+    // passe pas — le placeholder « Mon groupe » est une suggestion, jamais
+    // une valeur. Et deux groupes du même nom (accents/casse ignorés) sont
+    // indistinguables partout : liste, filtres, page publique — on refuse
+    // avec un mot, plutôt que de laisser naître le doublon. (Les liaisons
+    // internes passent par ID, pas par nom — c'est de l'UX, pas de
+    // l'intégrité, voir CLAUDE.md revue Groupes.)
+    const nom = newName.trim();
+    if (nom === '') {
+      setCreateError(t('Donne un nom au groupe.'));
+      return;
+    }
+    if (bands.some((x) => replier(x.name) === replier(nom))) {
+      setCreateError(t('Tu as déjà un groupe à ce nom.'));
+      return;
+    }
     const b = {
       ...emptyBand(),
-      name: newName.trim() || t('Mon groupe'),
+      name: nom,
       owned: true, // je CRÉE ce groupe : j'en suis le propriétaire
+      /**
+       * MASQUÉ PAR DÉFAUT (b443, arbitrage du prompt Groupes — remplace le
+       * défaut visible) : un groupe fraîchement créé, vide et sans membres,
+       * n'a rien à faire sur la fiche publique de l'artiste tant que son
+       * créateur n'a pas décidé. Défaut = l'état le moins exposant ;
+       * conséquence assumée (b227) : pas de live à son nom tant qu'il
+       * n'est pas passé « Visible » (un appui sur la carte).
+       */
+      hiddenFromPublic: true,
       members: [creatorMember(artist, prefs.userName, monId())],
     };
     saveBand(b);
@@ -425,20 +465,31 @@ export function Bands() {
         )}
         <div className="spacer" />
         {creating ? (
-          <div>
+          <div ref={createFormRef}>
             <Field label={t('Nom du groupe')}>
               <input
                 type="text"
                 value={newName}
                 placeholder={t('Mon groupe')}
                 autoFocus
-                onChange={(e) => setNewName(e.target.value)}
+                onChange={(e) => {
+                  setNewName(e.target.value);
+                  if (createError !== '') setCreateError('');
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') confirmCreate();
                   else if (e.key === 'Escape') cancelCreate();
                 }}
               />
             </Field>
+            {createError !== '' && (
+              <p
+                className="help"
+                style={{ color: 'var(--danger)', marginTop: -4 }}
+              >
+                {createError}
+              </p>
+            )}
             <div className="rowactions">
               <button className="btn" onClick={confirmCreate}>
                 {t('Créer le groupe')}
