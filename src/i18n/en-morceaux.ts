@@ -83,6 +83,17 @@ export const EN_MORCEAUX: Record<string, string> = {
   '✨ Nouveautés ({n})': '✨ New ({n})',
   'Ce qu’un groupe te propose, et ce que tu as gardé à un bœuf':
     'Imported songs not yet confirmed — work-in-progress stash',
+  // b428 — fiche morceau : retours du public fusionnés, gestion en modales
+  'Vue affichée': 'Displayed view',
+  'Retours du public — voir les messages': 'Audience feedback — see the messages',
+  'Retours du public': 'Audience feedback',
+  '{n} cœurs reçus en concert': '{n} hearts received live',
+  '{n} cœur reçu en concert': '{n} heart received live',
+  'Aucun message du public pour ce morceau.': 'No audience message for this song.',
+  'contexte {band}': '{band} context',
+  'Réglages perso': 'My setup',
+  'renseignés': 'filled in',
+  'à compléter': 'to fill in',
   // b427 — polish de la liste : label de tags, badge « À vérifier »
   'Tags :': 'Tags:',
   'Voir pourquoi ce morceau est à relire': 'See why this song needs a check',

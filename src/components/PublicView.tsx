@@ -15,37 +15,50 @@ import React from 'react';
 
 import { PublicLyrics } from './PublicLyrics';
 import { parolesPubliques } from '../lib/publiclyrics';
-import { Icon } from './Icon';
 import { t } from '../i18n';
 import { Song } from '../types';
 
-/** L'œil, dans la rangée d'actions du morceau. Bascule la partition. */
-export function PublicEye({
+/**
+ * VRAI BASCULE À DEUX SEGMENTS (b428, passe UX de Vincent) : les deux états
+ * se lisent en permanence — « Ma partition | Vue du public » — et l'actif se
+ * voit. Remplace le couple pastille « Vue du public » / bouton « ✕ Ma
+ * partition », qui disait la même chose avec deux vocabulaires.
+ */
+export function VueToggle({
   actif,
-  onToggle,
+  onChange,
 }: {
   actif: boolean;
-  onToggle: () => void;
+  onChange: (v: boolean) => void;
 }) {
   return (
-    <button
-      className={`chip ${actif ? '' : 'off'}`}
-      aria-pressed={actif}
-      title={t('Lire le morceau comme le liront tes spectateurs')}
-      onClick={onToggle}
-    >
-      👁 {t('Vue du public')}
-    </button>
+    <span className="segtoggle" role="group" aria-label={t('Vue affichée')}>
+      <button
+        className={actif ? 'off' : ''}
+        aria-pressed={!actif}
+        onClick={() => onChange(false)}
+      >
+        {t('Ma partition')}
+      </button>
+      <button
+        className={actif ? '' : 'off'}
+        aria-pressed={actif}
+        title={t('Lire le morceau comme le liront tes spectateurs')}
+        onClick={() => onChange(true)}
+      >
+        👁 {t('Vue du public')}
+      </button>
+    </span>
   );
 }
 
 /** Le panneau qui remplace la partition : ce que lisent les spectateurs. */
 export function PublicView({
   song,
-  onClose,
 }: {
   song: Song;
-  onClose: () => void;
+  /** Conservé pour compatibilité d'appel — la sortie passe par le bascule. */
+  onClose?: () => void;
 }) {
   const texte = parolesPubliques(song);
   const vide = texte.trim() === '';
@@ -53,9 +66,6 @@ export function PublicView({
     <div className="pubview">
       <div className="pubview-head">
         <span>👁 {t('Ce que verra le public')}</span>
-        <button className="btn ghost small" onClick={onClose}>
-          <Icon name="x" size={12} /> {t('Ma partition')}
-        </button>
       </div>
       <div className="pubframe">
         {vide ? (
