@@ -311,10 +311,17 @@ export function Bands() {
           </>
         )}
         {bands.length === 0 && !creating ? (
+          /* Vrai état vide (b442) : le message ET le geste — le « ＋ » du
+             header reste, mais on ne demande pas de le chercher. */
           <Empty>
             {t(
               'Joue à plusieurs : crée ton groupe, invite les autres, et partagez répertoire, setlists et discussions.',
             )}
+            <div style={{ marginTop: 12 }}>
+              <button className="btn" onClick={() => setCreating(true)}>
+                <Icon name="plus" size={15} /> {t('Créer mon premier groupe')}
+              </button>
+            </div>
           </Empty>
         ) : (
           <div className="list">
@@ -352,24 +359,16 @@ export function Bands() {
                     <div className="title">
                       {band.name || t('(sans nom)')}
                     </div>
-                    {/* JUSTE « public » ou « privé » (b309, demande de
-                        Vincent : « ne pas mettre l'info sur le nombre de
-                        musiciens »). Le décompte pénalisait l'affichage et se
-                        lit déjà dans la fiche du groupe ; ici, la seule chose
-                        qui compte d'un coup d'œil est de savoir si le public
-                        peut voir ce groupe. */}
-                    <div className="sub">
-                      {band.hiddenFromPublic === true
-                        ? t('privé')
-                        : t('public')}
-                    </div>
                   </div>
                 </div>
-                {/* MASQUER / DÉMASQUER SUR LA LIGNE (b228, demande de
-                    Vincent : « facile à identifier et à modifier, sans avoir
-                    à entrer en modification »). Un appui, ici même, dans les
-                    deux sens. L'état se LIT sans rien ouvrir : l'œil est
-                    barré quand le groupe est masqué. */}
+                {/* UN SEUL élément porte l'ÉTAT et le CONTRÔLE de visibilité
+                    (b442, revue UX — remplace le couple œil/singe emoji +
+                    la ligne « public / privé » qui disaient deux fois la
+                    même chose) : icône vectorielle œil / œil barré + le mot
+                    « Visible » / « Masqué ». Un appui bascule, ici même
+                    (b228), l'état se relit immédiatement. Sens inchangé
+                    (b227) : masqué = absent de MA fiche publique et aucun
+                    live possible à son nom — choix personnel. */}
                 <button
                   className="btn ghost small"
                   aria-pressed={band.hiddenFromPublic === true}
@@ -393,7 +392,11 @@ export function Bands() {
                   }}
                   onClick={() => basculerMasquage(band)}
                 >
-                  {band.hiddenFromPublic === true ? '🙈' : '👁'}
+                  <Icon
+                    name={band.hiddenFromPublic === true ? 'eye-off' : 'eye'}
+                    size={14}
+                  />{' '}
+                  {band.hiddenFromPublic === true ? t('Masqué') : t('Visible')}
                 </button>
                 <button
                   className="btn ghost small"
@@ -444,11 +447,13 @@ export function Bands() {
                 {t('Annuler')}
               </button>
             </div>
+            {/* L'aide vit DANS le flux de création (b442) : en pied de
+                liste permanent, elle flottait sans objet. */}
+            <p className="help" style={{ textAlign: 'center' }}>
+              {t('Tu invites les autres ensuite, depuis la fiche du groupe.')}
+            </p>
           </div>
         ) : null}
-        <p className="help" style={{ textAlign: 'center' }}>
-          {t('Tu invites les autres ensuite, depuis la fiche du groupe.')}
-        </p>
       </div>
       {/* Jamais de suppression sur un seul geste (b254) : la corbeille ouvre
           une confirmation, avec le mot juste — « dissoudre » quand le groupe

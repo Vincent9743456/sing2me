@@ -44,6 +44,7 @@ export type IconName =
   | 'plug'
   | 'more'
   | 'more-v'
+  | 'eye-off'
   | 'bookmark'
   | 'note'
   | 'autoscroll';
@@ -127,6 +128,16 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  // Œil barré (b442) : l'état « Masqué » d'un groupe. Toujours accompagné
+  // d'un libellé texte — l'œil seul est ambigu, il sert aussi à
+  // « prévisualiser » ailleurs dans l'app (voir CLAUDE.md, revue Groupes).
+  'eye-off': (
+    <>
+      <path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c7 0 11 7 11 7a18.5 18.5 0 0 1-2.9 3.8M6.6 6.6A18 18 0 0 0 1 12s4 8 11 8a10.9 10.9 0 0 0 5.4-1.4" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+      <path d="M3 3l18 18" />
     </>
   ),
   // Revenir en arrière (b220) : flèche qui rebrousse chemin.
