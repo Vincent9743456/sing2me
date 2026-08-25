@@ -554,6 +554,7 @@ export const EN_ARTISTE: Record<string, string> = {
   Répertoire: 'Repertoire',
   'Page publique': 'Public page',
   '{n} à valider': '{n} to review',
+  'Ouverture du groupe…': 'Opening the band…',
 
   // b228 — masquer / démasquer depuis la liste des groupes
   'masqué au public': 'hidden from the audience',

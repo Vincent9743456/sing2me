@@ -112,8 +112,29 @@ export default async function handler(req, res) {
       res.status(200).json({ skipped: `lecture messages ${rm.status}` });
       return;
     }
-    const messages = await rm.json();
-    if (!Array.isArray(messages) || messages.length === 0) {
+    const messagesBruts = await rm.json();
+    const messages = Array.isArray(messagesBruts) ? messagesBruts : [];
+
+    // 2bis. Les INVITATIONS lancées dans la même fenêtre (b446, demande de
+    // Vincent : tout e-mail de groupe porte un lien vers l'événement — et
+    // une invitation n'avait pas d'e-mail du tout : l'invité ne l'apprenait
+    // qu'en ouvrant l'app par hasard). Une réinvitation rafraîchit
+    // `created_at` (on conflict update), elle repasse donc dans la fenêtre.
+    let invites = [];
+    try {
+      const ri = await fetch(
+        `${base}/rest/v1/band_invites?status=eq.pending&created_at=gt.${encodeURIComponent(depuis)}&created_at=lte.${encodeURIComponent(jusqua)}&select=invited_user,band_name,from_name&order=created_at.asc&limit=100`,
+        { headers: sbHeaders() },
+      );
+      if (ri.ok) {
+        const rows = await ri.json();
+        if (Array.isArray(rows)) invites = rows;
+      }
+    } catch {
+      /* best-effort : les résumés partent quand même */
+    }
+
+    if (messages.length === 0 && invites.length === 0) {
       await fetch(`${base}/rest/v1/notif_state?id=eq.${REPERE}`, {
         method: 'PATCH',
         headers: sbHeaders(),
@@ -127,17 +148,23 @@ export default async function handler(req, res) {
     const bandIds = [...new Set(messages.map((m) => String(m.band_id)))];
     const enc = encodeURIComponent;
     const inList = `in.(${bandIds.map(enc).join(',')})`;
-    const [rb, rmb] = await Promise.all([
-      fetch(`${base}/rest/v1/cloud_bands?id=${inList}&select=id,name,owner`, {
-        headers: sbHeaders(),
-      }),
-      fetch(
-        `${base}/rest/v1/cloud_band_members?band_id=${inList}&select=band_id,user_id`,
-        { headers: sbHeaders() },
-      ),
-    ]);
-    const bandsRows = rb.ok ? await rb.json() : [];
-    const memberRows = rmb.ok ? await rmb.json() : [];
+    // Une fenêtre sans message (seulement des invitations) n'interroge
+    // rien : `in.()` vide serait une requête malformée.
+    const [rb, rmb] =
+      bandIds.length > 0
+        ? await Promise.all([
+            fetch(
+              `${base}/rest/v1/cloud_bands?id=${inList}&select=id,name,owner`,
+              { headers: sbHeaders() },
+            ),
+            fetch(
+              `${base}/rest/v1/cloud_band_members?band_id=${inList}&select=band_id,user_id`,
+              { headers: sbHeaders() },
+            ),
+          ])
+        : [null, null];
+    const bandsRows = rb && rb.ok ? await rb.json() : [];
+    const memberRows = rmb && rmb.ok ? await rmb.json() : [];
     const bands = new Map(
       (Array.isArray(bandsRows) ? bandsRows : []).map((b) => [
         String(b.id),
@@ -158,6 +185,7 @@ export default async function handler(req, res) {
     // 4. Les adresses des destinataires (API admin, clé service).
     const userIds = new Set();
     for (const set of membres.values()) for (const u of set) userIds.add(u);
+    for (const inv of invites) userIds.add(String(inv.invited_user));
     const emails = new Map(); // user_id → email
     for (const uid of [...userIds].slice(0, 60)) {
       try {
@@ -192,11 +220,15 @@ export default async function handler(req, res) {
         }
         // Bilingue SYSTÉMATIQUE (b423) : l'habillage est doublé en anglais —
         // les LIGNES, elles, sont le contenu des musiciens : jamais traduites.
+        // LIEN VERS L'ÉVÉNEMENT (b446, demande de Vincent) : `#/g/<id cloud>`
+        // — l'app résout l'id vers le groupe local et ouvre sa discussion
+        // (BandCloudLink) ; messages ET morceaux proposés y vivent (b174).
+        const lien = `https://mojosong.com/#/g/${enc(bandId)}`;
         const corps =
           `Du nouveau dans ${nom} :\n\n${lignes.join('\n')}\n\n` +
-          `Ouvre mojosong pour répondre ou écouter : https://mojosong.com\n` +
-          `(English) New activity in ${nom} — open mojosong to reply or ` +
-          `listen: https://mojosong.com\n\n` +
+          `Ouvre la discussion du groupe pour répondre ou écouter :\n${lien}\n` +
+          `(English) New activity in ${nom} — open the band chat to reply ` +
+          `or listen:\n${lien}\n\n` +
           `—\nTu reçois cet e-mail parce que tu es membre de « ${nom} » sur mojosong.\n` +
           `You're receiving this because you're a member of "${nom}" on mojosong.`;
         try {
@@ -218,6 +250,49 @@ export default async function handler(req, res) {
         } catch {
           echecs++;
         }
+      }
+    }
+
+    // 5bis. Les invitations (b446) : un mot à l'invité, avec le lien vers
+    // l'onglet Groupes — c'est là que la carte d'invitation l'attend (le
+    // lien profond `#/g/…` ne mènerait nulle part : il n'est pas encore
+    // membre). Même plafond d'envois, même repère que les résumés.
+    for (const inv of invites) {
+      if (envoyes >= MAX_ENVOIS) break;
+      const email = emails.get(String(inv.invited_user));
+      if (!email) continue;
+      const groupe = String(inv.band_name ?? '').trim() || 'un groupe';
+      const de = String(inv.from_name ?? '').trim();
+      const lienInv = 'https://mojosong.com/#/bands';
+      const corpsInv =
+        `${de !== '' ? de : 'Un musicien'} t'invite à rejoindre ` +
+        `« ${groupe} » sur mojosong 🎸\n\n` +
+        `L'invitation t'attend dans l'onglet Groupes — un tap pour ` +
+        `accepter, et tu retrouves le répertoire, les setlists et la ` +
+        `discussion du groupe :\n${lienInv}\n\n` +
+        `— English —\n\n` +
+        `${de !== '' ? de : 'A musician'} invited you to join ` +
+        `"${groupe}" on mojosong 🎸\n` +
+        `The invitation is waiting in your Bands tab — one tap to accept, ` +
+        `and the band's repertoire, setlists and chat are yours:\n${lienInv}\n`;
+      try {
+        const rr = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: process.env.MAIL_FROM || 'mojosong <marco@mojosong.com>',
+            to: [email],
+            subject: `Invitation à rejoindre ${groupe} · you're invited`,
+            text: corpsInv,
+          }),
+        });
+        if (rr.ok) envoyes++;
+        else echecs++;
+      } catch {
+        echecs++;
       }
     }
 

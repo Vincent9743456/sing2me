@@ -35,6 +35,7 @@ export type Route =
   | { name: 'bands' }
   | { name: 'band'; id: string }
   | { name: 'bandChat'; id: string }
+  | { name: 'bandCloud'; cloudId: string }
   | { name: 'live'; code: string }
   | { name: 'follow'; code: string }
   | { name: 'remote'; setlistId: string }
@@ -118,6 +119,12 @@ export function parseHash(hash: string): Route {
         return { name: 'bandChat', id: parts[1] };
       if (parts[1]) return { name: 'band', id: parts[1] };
       return { name: 'artist' };
+    /* LIEN PROFOND DES E-MAILS DE GROUPE (b446) : le serveur ne connaît un
+       groupe que par son id CLOUD — l'app le résout vers l'id local et
+       ouvre la discussion. `#/g/<cloudId>` est l'adresse que portent les
+       résumés du facteur (server/notify.js). */
+    case 'g':
+      return { name: 'bandCloud', cloudId: parts[1] ?? '' };
     case 'live':
       return { name: 'live', code: parts[1] ?? '' };
     case 'follow':

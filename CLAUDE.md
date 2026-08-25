@@ -1345,6 +1345,18 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   même clé que le SMTP Supabase ; `MAIL_FROM` facultatif, défaut
   marco@mojosong.com). Le jour des notifications push, ce facteur se coupe
   en retirant le cron.
+  **Tout e-mail de groupe porte un LIEN vers l'événement** (b446, demande
+  de Vincent) : le résumé pointe `https://mojosong.com/#/g/<id cloud>` —
+  la route `bandCloud` (`BandCloudLink`) résout l'id cloud vers le groupe
+  local et ouvre sa DISCUSSION (messages et morceaux proposés y vivent,
+  b174) ; groupe absent de l'appareil → quelques secondes de grâce pour la
+  synchro, puis repli sur l'onglet Groupes — jamais une page morte. Et le
+  facteur envoie aussi l'E-MAIL D'INVITATION (aucun n'existait : l'invité
+  ne l'apprenait qu'en ouvrant l'app) : balayage des `band_invites`
+  `pending` de la même fenêtre (une réinvitation rafraîchit `created_at`,
+  elle repart), lien vers `#/bands` où la carte d'invitation attend (le
+  lien profond ne mènerait nulle part : pas encore membre). Même plafond,
+  même repère, bilingue (b423).
   **TOUT E-MAIL EST BILINGUE (b423, décision Vincent)** : français d'abord,
   anglais en dessous (« — English — ») — on ne connaît pas la langue du
   destinataire, et une langue par utilisateur ne couvrirait ni les gabarits
