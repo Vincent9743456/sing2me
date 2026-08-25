@@ -22,7 +22,7 @@ import { UpgradeSheet } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
 import { PedaleMidi } from '../components/PedaleMidi';
 import { ConfirmSheet, useToast } from '../components/Feedback';
-import { fusionMiseEnForme } from '../lib/aiFormat';
+import { nettoyerAvecEscalade } from '../lib/aiFormat';
 import { importText } from '../lib/importer';
 import { aRemettreEnForme, bilanRecalage, recalerMorceau } from '../lib/reprise';
 import {
@@ -31,7 +31,6 @@ import {
   verdictRecuperation,
 } from '../lib/recupaccords';
 import {
-  aiCleanText,
   fetchUgTab,
   searchUgTabs,
   ugTabToImportText,
@@ -249,9 +248,13 @@ export function Settings() {
           .filter((x) => x.trim() !== '')
           .join(' — ');
         const local = importText(vieux.lyrics, vieux.title || t('Morceau'));
-        const propre = await aiCleanText(vieux.lyrics, hint || undefined);
-        const apres = importText(propre, vieux.title || t('Morceau'));
-        const mef = fusionMiseEnForme(vieux.lyrics, local, propre, apres);
+        // Deux étages (b432) : rapide pour tous, fort si la passe a douté.
+        const { mef } = await nettoyerAvecEscalade(
+          vieux.lyrics,
+          vieux.title || t('Morceau'),
+          hint || undefined,
+          local,
+        );
         if (mef.doute !== '') doutes++;
         // On ne remplace QUE la partition : titre, artiste, notes, cœurs,
         // setlists et statut restent ceux du morceau qu'on avait.

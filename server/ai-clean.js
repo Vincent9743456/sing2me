@@ -71,7 +71,15 @@ export default async function handler(req, res) {
       input;
 
     // Modèle nommé une seule fois : sert à l'appel ET à la mesure (b160).
-    const model = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
+    // DEUX ÉTAGES (b432, demande de Vincent : « haiku par défaut, puis si
+    // estimé nécessaire, recours à Opus ») : le client évalue la première
+    // passe en local (accords préservés, volumes, diagnostic) et ne
+    // demande le modèle FORT que si elle a douté. Les deux étages passent
+    // par le même garde-fou d'usage et la même mesure de coût.
+    const model =
+      req.body?.niveau === 'fort'
+        ? process.env.ANTHROPIC_MODEL_FORT || 'claude-opus-4-5'
+        : process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
     const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
