@@ -339,6 +339,22 @@ export function Stage({
   }
 
   const { song, keyOverride, note } = item;
+  /* b433 — pastilles de gestion : MÊMES sources que les blocs du bas.
+     `song.rehearsalNotes` est déjà la liste FILTRÉE au contexte de la
+     version jouée (withContextNotes) : le compteur affiché correspond
+     exactement à ce que le bloc montrera. */
+  const nbNotesScene = song.rehearsalNotes.length;
+  const aDesReglages =
+    (song.mySetup?.instrument ?? '') !== '' ||
+    (song.mySetup?.notes ?? '') !== '';
+  /** Saut fluide vers un bloc du bas — et le défilement automatique passe
+   *  EN PAUSE : sinon le rAF reprend la main et annule le geste. */
+  function allerAuBloc(id: string) {
+    setScroll(false);
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   // Pour ENREGISTRER une note : le morceau original du store (la copie
   // affichée a des notes filtrées), et le contexte de la version jouée.
   const originalSong = songs.find((s) => s.id === song.id) ?? null;
@@ -402,14 +418,44 @@ export function Stage({
             et c'est une info qu'on pose AVANT de jouer. Pastille à fort
             contraste, sous le titre. En vue « tonalité réelle » (basse), le
             capo ne s'applique pas au jeu : on ne l'affiche pas. */}
-        {!displayReal && song.capo > 0 && (
-          <div className="stage-capo">
-            🎸 {t('Capo {n}', { n: song.capo })}
-            {realKey !== '' ? (
-              <span className="sc-real">
-                {t('sonne en {ton}', { ton: realKey })}
-              </span>
-            ) : null}
+        {/* RANGÉE DES PASTILLES (b433, MAJ scène de Vincent) : Capo reste
+            un indicateur passif, inchangé ; à côté, jusqu'à deux pastilles
+            de NAVIGATION (même style) vers les blocs de gestion, descendus
+            SOUS les paroles pour rendre la surface de jeu. Chacune n'existe
+            que s'il y a quelque chose à voir — sans notes ni réglages, la
+            ligne ne porte que le Capo. */}
+        {((!displayReal && song.capo > 0) ||
+          nbNotesScene > 0 ||
+          aDesReglages) && (
+          <div className="stage-capline">
+            {!displayReal && song.capo > 0 && (
+              <div className="stage-capo">
+                🎸 {t('Capo {n}', { n: song.capo })}
+                {realKey !== '' ? (
+                  <span className="sc-real">
+                    {t('sonne en {ton}', { ton: realKey })}
+                  </span>
+                ) : null}
+              </div>
+            )}
+            {nbNotesScene > 0 && (
+              <button
+                className="stage-capo stage-pill"
+                title={t('Voir les notes de répétition (en bas)')}
+                onClick={() => allerAuBloc('stage-notes')}
+              >
+                🗨 {t('Notes')} · {nbNotesScene}
+              </button>
+            )}
+            {aDesReglages && (
+              <button
+                className="stage-capo stage-pill"
+                title={t('Voir mes réglages (en bas)')}
+                onClick={() => allerAuBloc('stage-reglages')}
+              >
+                🎚 {t('Réglages')}
+              </button>
+            )}
           </div>
         )}
         <div className="help" style={{ marginBottom: 10 }}>
@@ -426,30 +472,6 @@ export function Stage({
             <Icon name="flag" size={14} /> {note}
           </div>
         )}
-        {view !== 'paroles' &&
-          (song.mySetup?.instrument || song.mySetup?.notes) && (
-            <div className="notesbox">
-              <div className="label">
-                {t('Mes réglages')}
-                {song.mySetup.instrument !== ''
-                  ? ` — ${song.mySetup.instrument}`
-                  : ''}
-              </div>
-              {song.mySetup.notes}
-            </div>
-          )}
-        {view === 'complete' && song.rehearsalNotes.length > 0 && (
-            <div className="notesbox">
-              <div className="label">{t('Répétition')}</div>
-              {song.rehearsalNotes
-                .map((n) => (
-                  <div key={n.id}>
-                    <Icon name={n.visibility === 'privee' ? 'lock' : 'message'} size={13} />{' '}
-                    {n.text}
-                  </div>
-                ))}
-            </div>
-          )}
         <SongBody
           song={song}
           view={view}
@@ -458,6 +480,37 @@ export function Stage({
           preferFlat={preferFlat}
           fontSize={fontSize}
         />
+        {/* BLOCS DE GESTION EN BAS (b433, MAJ scène de Vincent) : ils
+            repoussaient les paroles depuis le haut de l'écran — en jeu, la
+            surface appartient aux paroles/accords. Ordre imposé, le même
+            que la fiche morceau : 1) notes de répétition, 2) réglages.
+            Contenu inchangé ; les pastilles du haut ne font que NAVIGUER
+            jusqu'ici (ancres), jamais ouvrir une copie. */}
+        {view === 'complete' && nbNotesScene > 0 && (
+          <div className="notesbox" id="stage-notes">
+            <div className="label">{t('Répétition')}</div>
+            {song.rehearsalNotes.map((n) => (
+              <div key={n.id}>
+                <Icon
+                  name={n.visibility === 'privee' ? 'lock' : 'message'}
+                  size={13}
+                />{' '}
+                {n.text}
+              </div>
+            ))}
+          </div>
+        )}
+        {aDesReglages && (
+          <div className="notesbox" id="stage-reglages">
+            <div className="label">
+              {t('Mes réglages')}
+              {song.mySetup?.instrument
+                ? ` — ${song.mySetup.instrument}`
+                : ''}
+            </div>
+            {song.mySetup?.notes}
+          </div>
+        )}
       </div>
       {/* UNE seule modale de note (b156) : ce bloc était dupliqué — en mode
           scène, deux modales se superposaient, avec deux dictées possibles

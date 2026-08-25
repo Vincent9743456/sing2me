@@ -2120,6 +2120,23 @@ textarea.mono {
 /* Capo en évidence (b290) : pastille à fort contraste, lisible à distance.
    Jetons du mode scène uniquement — ni ambre (réservé à l'action qui fait
    avancer) ni cyan (réservé aux accords). */
+/* Rangée Capo + pastilles de gestion (b433) : le Capo reste passif, les
+   pastilles NAVIGUENT vers les blocs descendus sous les paroles. */
+.stage .stage-capline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.stage .stage-capline .stage-capo {
+  margin: 0;
+}
+.stage-pill {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
 .stage-capo {
   display: inline-flex;
   align-items: baseline;
