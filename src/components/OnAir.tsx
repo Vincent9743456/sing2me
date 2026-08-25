@@ -543,13 +543,33 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
       let vitrine = performer;
       if (next !== 'off' && performer) {
         try {
-          vitrine = liveBand
-            ? {
-                ...performer,
-                publicMembers: (await ficheGroupe(liveBand, artist))
-                  .publicMembers,
-              }
-            : { ...performer, publicBands: await groupesPublics(bands, artist) };
+          /**
+           * DÉLAI MAXIMUM SUR LA PRÉPARATION (b440, signalement de Vincent :
+           * « ⏳ Lancement… » sans fin sur une 5G faible — le live ne
+           * partait jamais). Cette préparation enchaîne des appels réseau
+           * SANS délai propre (adresses publiques, fiches de groupes,
+           * vignettes) : le try/catch attrape un échec, jamais un fetch qui
+           * RESTE EN ATTENTE — et tout le lancement pendait derrière elle.
+           * Même règle que b216 : une action déclenchée par un bouton doit
+           * toujours pouvoir se terminer. 4 s, puis le live part avec la
+           * fiche nue — c'était déjà la promesse du commentaire ci-dessus
+           * (« si la préparation échoue, le direct part quand même »).
+           */
+          const enrichie = await Promise.race([
+            (async () =>
+              liveBand
+                ? {
+                    ...performer,
+                    publicMembers: (await ficheGroupe(liveBand, artist))
+                      .publicMembers,
+                  }
+                : {
+                    ...performer,
+                    publicBands: await groupesPublics(bands, artist),
+                  })(),
+            new Promise<null>((r) => window.setTimeout(() => r(null), 4000)),
+          ]);
+          if (enrichie !== null) vitrine = enrichie;
         } catch {
           /* la fiche part sans ses liens plutôt que pas de concert */
         }
