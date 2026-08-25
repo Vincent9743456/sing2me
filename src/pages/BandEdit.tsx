@@ -10,6 +10,7 @@ import { BandPublicCard } from '../components/BandPublicCard';
 
 import { useAccount } from '../components/Account';
 import { ConfirmSheet, useToast } from '../components/Feedback';
+import { useNotifications } from '../components/Notifications';
 import { GearEditor } from '../components/GearEditor';
 import { Icon } from '../components/Icon';
 import { LinkPreviews } from '../components/LinkPreviews';
@@ -140,6 +141,9 @@ export function BandEdit({ id }: { id: string }) {
   const band = bands.find((b) => b.id === id);
   const account = useAccount();
   const toast = useToast();
+  // Badge de non-lus de la tuile Discussion (b444) — même source que la
+  // home Groupes : compté au rendu (règle 11), par groupe (cloudId).
+  const notifications = useNotifications();
   const [invite, setInvite] = useState(false);
   const [share, setShare] = useState(false);
   const [cloudRef, setCloudRef] = useState<{
@@ -885,9 +889,23 @@ export function BandEdit({ id }: { id: string }) {
 
   return (
     <>
+      {/* « Modifier » vit dans le HEADER (b444, revue UX — remplace la
+          ligne du corps de b272) : un bouton visible et étiqueté, pas un
+          menu ⋯ — l'objection de b272 (« peu visible ») ne revient pas. */}
       <TopBar
         title={band.name || 'Groupe'}
         onBack={() => (editing ? stopEditing() : navigate('/bands'))}
+        right={
+          !editing ? (
+            <button
+              className="btn ghost small"
+              onClick={() => startEditing()}
+              title={t('Photo, nom, présentation, liens, adresse publique')}
+            >
+              <Icon name="edit" size={14} /> {t('Modifier')}
+            </button>
+          ) : undefined
+        }
       />
       <div className="page">
         {/* Un musicien a quitté CE groupe (b142) : signalé haut et clair,
@@ -1031,127 +1049,88 @@ export function BandEdit({ id }: { id: string }) {
               </p>
             )}
 
-            {/* Trois grandes portes. */}
-            <button
-              className="bigrow"
-              onClick={() => navigate(`/band/${band.id}/chat`)}
-            >
-              <span className="i" aria-hidden="true">
-                💬
-              </span>
-              <div className="grow" style={{ minWidth: 0 }}>
-                <div className="ti">{t('Discussion')}</div>
-                <div className="su">
+            {/* HUB EN QUATRE TUILES (b444, revue UX Groupes — remplace la
+                liste verticale de b272) : les quatre espaces du groupe, à
+                un tap, chacun avec son état. « Modifier » est monté dans le
+                header (visible et étiqueté — l'objection de b272 sur les ⋯
+                ne revient pas), et l'action destructive ne vit plus QUE
+                dans l'écran Modifier, où elle existait déjà : on ne croise
+                pas « Quitter le groupe » en cherchant la discussion. */}
+            <div className="bandtiles">
+              <button
+                className="btile"
+                onClick={() => navigate(`/band/${band.id}/chat`)}
+              >
+                <span className="i" aria-hidden="true">
+                  💬
+                </span>
+                <span className="ti">
+                  {t('Discussion')}
+                  {band.cloudId != null &&
+                    (notifications.unreadByBand[band.cloudId] ?? 0) > 0 && (
+                      <span className="pillcount">
+                        {notifications.unreadByBand[band.cloudId]}
+                      </span>
+                    )}
+                </span>
+                <span className="su">
                   {lastMsg
                     ? `« ${lastMsg.text.slice(0, 40)}${lastMsg.text.length > 40 ? '…' : ''} » · ${ago(lastMsg.at)}`
                     : t('Prépare répéts et concerts, propose des morceaux')}
-                </div>
-              </div>
-              <span className="chev" aria-hidden="true">
-                ›
-              </span>
-            </button>
+                </span>
+              </button>
 
-            <button className="bigrow" onClick={openRepertoire}>
-              <span className="i" aria-hidden="true">
-                🎵
-              </span>
-              <div className="grow" style={{ minWidth: 0 }}>
-                <div className="ti">{t('Répertoire du groupe')}</div>
-                <div className="su">
+              <button className="btile" onClick={openRepertoire}>
+                <span className="i" aria-hidden="true">
+                  🎵
+                </span>
+                <span className="ti">{t('Répertoire')}</span>
+                <span className="su">
                   {repCount > 1
                     ? t('{n} morceaux', { n: repCount })
                     : t('{n} morceau', { n: repCount })}
-                  {propCount > 0
-                    ? propCount > 1
-                      ? t(' · {n} propositions à valider', { n: propCount })
-                      : t(' · {n} proposition à valider', { n: propCount })
-                    : ''}
-                </div>
-              </div>
-              <span className="chev" aria-hidden="true">
-                ›
-              </span>
-            </button>
+                </span>
+                {/* Compteur PER-USER (Q6) : les propositions vivent dans MA
+                    bibliothèque (idea + pendingBandId) — calculé au rendu,
+                    règle 11. */}
+                {propCount > 0 && (
+                  <span className="tilebadge">
+                    {propCount > 1
+                      ? t('{n} à valider', { n: propCount })
+                      : t('{n} à valider', { n: propCount })}
+                  </span>
+                )}
+              </button>
 
-            <button className="bigrow" onClick={openSetlists}>
-              <span className="i" aria-hidden="true">
-                📋
-              </span>
-              <div className="grow" style={{ minWidth: 0 }}>
-                <div className="ti">{t('Setlists du groupe')}</div>
-                <div className="su">
+              <button className="btile" onClick={openSetlists}>
+                <span className="i" aria-hidden="true">
+                  📋
+                </span>
+                <span className="ti">{t('Setlists')}</span>
+                <span className="su">
                   {bandSetlists.length === 0
                     ? t('Aucune setlist pour ce groupe')
                     : t('{nom} · {n} au total', {
                         nom: bandSetlists[0].name || t('(sans nom)'),
                         n: bandSetlists.length,
                       })}
-                </div>
-              </div>
-              <span className="chev" aria-hidden="true">
-                ›
-              </span>
-            </button>
+                </span>
+              </button>
 
-            {/* PAGE PUBLIQUE DU GROUPE (b230, demande de Vincent). On ne
-                quitte pas l'app pour la consulter (règle b187) : elle se
-                recopie ici, et son adresse se copie pour être dictée. */}
-            <button className="bigrow" onClick={() => setPeek(true)}>
-              <span className="i" aria-hidden="true">
-                👁
-              </span>
-              <div className="grow" style={{ minWidth: 0 }}>
-                <div className="ti">{t('Page publique du groupe')}</div>
-                <div className="su">
+              {/* PAGE PUBLIQUE DU GROUPE (b230) : consultée DANS l'app
+                  (règle b187), jamais visitée. */}
+              <button className="btile" onClick={() => setPeek(true)}>
+                <span className="i" aria-hidden="true">
+                  👁
+                </span>
+                <span className="ti">{t('Page publique')}</span>
+                <span className="su">
                   {band.hiddenFromPublic === true
                     ? t('Masqué au public — pas d’adresse')
                     : t('Ce que voit quelqu’un qui tape son adresse')}
-                </div>
-              </div>
-              <span className="chev" aria-hidden="true">
-                ›
-              </span>
-            </button>
-
-            {/* MODIFIER ET SUPPRIMER, SUR LA PAGE (b272, constat de Vincent :
-                « le bouton permettant la modification / suppression est peu
-                visible (les ⋯) »). Ces deux actions sont les seules qu'on
-                vienne chercher sur la fiche d'un groupe une fois qu'il
-                tourne ; les cacher derrière trois points, c'est les rendre
-                introuvables. Le menu « ⋯ » disparaît avec : ses trois
-                entrées existent maintenant sur la page — dont la page
-                publique, déjà juste au-dessus. Deux chemins vers la même
-                action, c'est exactement ce que la règle 3 interdit. */}
-            <button className="bigrow" onClick={() => startEditing()}>
-              <span className="i" aria-hidden="true">
-                ✏️
-              </span>
-              <div className="grow" style={{ minWidth: 0 }}>
-                <div className="ti">{t('Modifier le groupe')}</div>
-                <div className="su">
-                  {t('Photo, nom, présentation, liens, adresse publique')}
-                </div>
-              </div>
-              <span className="chev" aria-hidden="true">
-                ›
-              </span>
-            </button>
-
-            <button className="bigrow" onClick={() => setConfirmDel(true)}>
-              <span className="i" aria-hidden="true">
-                {isOwner ? '🗑' : '🚪'}
-              </span>
-              <div className="grow" style={{ minWidth: 0 }}>
-                <div className="ti" style={{ color: 'var(--danger)' }}>
-                  {texteSuppression(band).libelle}
-                </div>
-                <div className="su">{texteSuppression(band).message}</div>
-              </div>
-              <span className="chev" aria-hidden="true">
-                ›
-              </span>
-            </button>
+                </span>
+              </button>
+            </div>
           </>
         )}
 
@@ -1554,7 +1533,12 @@ export function BandEdit({ id }: { id: string }) {
             className="btn danger"
             onClick={() => setConfirmDel(true)}
           >
-            {isOwner ? t('Supprimer le groupe') : t('Quitter le groupe')}
+            {/* MÊME décision que la feuille de confirmation (b444) : le
+                libellé vient de `texteSuppression` (lib/deleteband, b254),
+                jamais d'un second calcul — un groupe rejoint jamais publié
+                affichait « Quitter » sur le bouton et « Supprimer » dans
+                la feuille. */}
+            {texteSuppression(band).libelle}
           </button>
         </div>
         <p className="help">

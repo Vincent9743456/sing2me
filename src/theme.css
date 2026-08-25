@@ -727,6 +727,71 @@ textarea.mono {
   border-color: var(--border-strong);
   transform: translateY(-1px);
 }
+/* Hub du groupe en TUILES (b444, revue UX Groupes) : les quatre espaces —
+   Discussion, Répertoire, Setlists, Page publique — côte à côte, chacun
+   avec son état (compteur, badge « à valider », non-lus). */
+.bandtiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: var(--sp-4);
+}
+@media (min-width: 720px) {
+  .bandtiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.btile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 96px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 13px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition:
+    border-color var(--transition),
+    transform var(--transition);
+}
+.btile:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.btile .i {
+  font-size: 1.3rem;
+}
+.btile .ti {
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+}
+.btile .su {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Badge « N à valider » : il appelle un geste — accent, jamais discret. */
+.btile .tilebadge {
+  margin-top: auto;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 750;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
 .bigrow .i {
   font-size: 1.4rem;
   flex-shrink: 0;
