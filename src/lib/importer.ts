@@ -238,6 +238,44 @@ export function mergeChordLyric(chordLine: string, lyricLine: string): string {
 }
 
 /**
+ * NUMÉROS DE PAGE (b431, arbitrage Vincent — passe UX). Les PDF importés
+ * laissaient leurs numéros de page au milieu des paroles : des lignes
+ * réduites à « 3 », « Page 2 », « 3/12 » ou « - 4 - », qu'aucun élément
+ * d'interface ne dessinait — c'était de la DONNÉE. On les retire à
+ * l'import, et « Reprendre mes partitions » rattrape l'existant.
+ *
+ * PRUDENCE avant tout : seule une ligne qui n'est QUE cela est retirée —
+ * « 1, 2, 3, soleil » ou « Couplet 2 » ne matchent jamais.
+ */
+export function estNumeroDePage(line: string): boolean {
+  const l = line.trim();
+  if (l === '') return false;
+  return (
+    /^\d{1,4}$/.test(l) ||
+    /^page\s*\d{1,4}$/i.test(l) ||
+    /^-\s*\d{1,4}\s*-$/.test(l) ||
+    /^\d{1,4}\s*\/\s*\d{1,4}$/.test(l)
+  );
+}
+
+/** Retire les lignes de numéro de page d'une partition déjà enregistrée. */
+export function retirerNumerosDePage(lyrics: string): string {
+  if (!lyrics.split('\n').some((l) => estNumeroDePage(l))) return lyrics;
+  return lyrics
+    .split('\n')
+    .filter((l) => !estNumeroDePage(l))
+    .join('\n')
+    // Le retrait peut laisser un triple saut de ligne : on retombe sur le
+    // séparateur de blocs habituel.
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+/** Combien de lignes seraient retirées (pour l'annonce des Réglages). */
+export function numerosDePageDansTexte(lyrics: string): number {
+  return lyrics.split('\n').filter((l) => estNumeroDePage(l)).length;
+}
+
+/**
  * RECALER LES ACCORDS D'UNE PARTITION DÉJÀ ENREGISTRÉE (b220).
  *
  * Le recalage de b219 opère à la FUSION des lignes d'accords et de paroles :
@@ -479,7 +517,10 @@ export function importText(raw: string, fallbackTitle: string): ImportOutcome {
       .filter((l) => !estDefinitionAccord(l))
       // Cr\u00e9dits de la source (\u00ab Transcrit par\u2026 \u00bb, \u00ab Auteurs: \u2026 \u00bb) : la
       // chanson commence aux accords ou aux paroles (b333).
-      .filter((l) => !estLigneDeCredits(l)),
+      .filter((l) => !estLigneDeCredits(l))
+      // Num\u00e9ros de page des PDF (\u00ab 3 \u00bb, \u00ab Page 2 \u00bb, \u00ab 3/12 \u00bb) : de la
+      // mise en page, jamais une parole (b431).
+      .filter((l) => !estNumeroDePage(l)),
   );
 
   // Une "zone" par en-tête rencontré ; les paroles restent continues.

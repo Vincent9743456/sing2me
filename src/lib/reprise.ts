@@ -21,7 +21,12 @@
  * (idée ou bibliothèque) : rien n'y touche.
  */
 import { meritteUneMiseEnForme } from './aiFormat';
-import { accordsARecaler, recalerAccordsEnLigne } from './importer';
+import {
+  accordsARecaler,
+  numerosDePageDansTexte,
+  recalerAccordsEnLigne,
+  retirerNumerosDePage,
+} from './importer';
 import { sectionDeLaLigne } from './sections';
 import { Song, SongVersion } from '../types';
 
@@ -36,23 +41,43 @@ export function accordsARecalerDuMorceau(song: Song): number {
   return n;
 }
 
+/** Combien de numéros de page traînent dans ce morceau (b431) ? */
+export function numerosDePageDuMorceau(song: Song): number {
+  let n = numerosDePageDansTexte(song.lyrics);
+  for (const v of song.versions ?? []) {
+    if (v.lyrics !== song.lyrics) n += numerosDePageDansTexte(v.lyrics ?? '');
+  }
+  return n;
+}
+
 /** Bilan d'un recalage, à annoncer avant de le lancer. */
 export interface BilanRecalage {
   morceaux: number;
   accords: number;
+  /** Lignes de numéro de page à retirer (b431) — même passe gratuite. */
+  numeros: number;
+  /** Morceaux concernés par les numéros de page. */
+  morceauxNumeros: number;
 }
 
 export function bilanRecalage(songs: Song[]): BilanRecalage {
   let morceaux = 0;
   let accords = 0;
+  let numeros = 0;
+  let morceauxNumeros = 0;
   for (const s of songs) {
     const n = accordsARecalerDuMorceau(s);
     if (n > 0) {
       morceaux++;
       accords += n;
     }
+    const p = numerosDePageDuMorceau(s);
+    if (p > 0) {
+      morceauxNumeros++;
+      numeros += p;
+    }
   }
-  return { morceaux, accords };
+  return { morceaux, accords, numeros, morceauxNumeros };
 }
 
 /**
@@ -106,9 +131,13 @@ export function aRemettreEnForme(songs: Song[]): Song[] {
  * inutilement toute une bibliothèque.
  */
 export function recalerMorceau(song: Song): Song {
-  const lyrics = recalerAccordsEnLigne(song.lyrics);
+  // Deux nettoyages de calcul pur dans la même passe : recalage des
+  // accords (b220) + retrait des numéros de page hérités des PDF (b431).
+  const nettoie = (l: string) =>
+    retirerNumerosDePage(recalerAccordsEnLigne(l));
+  const lyrics = nettoie(song.lyrics);
   const versions: SongVersion[] = (song.versions ?? []).map((v) => {
-    const l = recalerAccordsEnLigne(v.lyrics ?? '');
+    const l = nettoie(v.lyrics ?? '');
     return l === (v.lyrics ?? '') ? v : { ...v, lyrics: l };
   });
   const versionsChangees = versions.some(

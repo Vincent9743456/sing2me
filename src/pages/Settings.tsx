@@ -665,6 +665,30 @@ export function Settings() {
                 onClick={recalerTout}
               />
             )}
+            {/* Numéros de page hérités des PDF (b431) : même passe
+                gratuite que le recalage — annoncée à part, avec son
+                chiffre exact. */}
+            {bilan.numeros > 0 && (
+              <AccordionNav
+                title={t('🧹 Retirer les numéros de page')}
+                sub={
+                  bilan.numeros === 1
+                    ? t(
+                        '1 numéro de page traîne dans les paroles — gratuit et hors ligne',
+                      )
+                    : bilan.morceauxNumeros === 1
+                      ? t(
+                          '{a} numéros de page traînent dans les paroles, dans 1 morceau — gratuit et hors ligne',
+                          { a: bilan.numeros },
+                        )
+                      : t(
+                          '{a} numéros de page traînent dans les paroles, dans {m} morceaux — gratuit et hors ligne',
+                          { a: bilan.numeros, m: bilan.morceauxNumeros },
+                        )
+                }
+                onClick={recalerTout}
+              />
+            )}
             {aRemettre.length > 0 && (
               <AccordionNav
                 title={t('✨ Remettre en forme à l’IA')}

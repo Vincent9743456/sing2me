@@ -13,7 +13,7 @@ const pont = join(dir, 'pont.ts');
 const racine = new URL('../src/lib/', import.meta.url).pathname;
 writeFileSync(
   pont,
-  `export { decoupeAccordsColles, estAnnotationDeGrille, importText } from '${racine}importer';\n` +
+  `export { decoupeAccordsColles, estAnnotationDeGrille, estNumeroDePage, importText, retirerNumerosDePage } from '${racine}importer';\n` +
     `export { lireEnTeteDeSection } from '${racine}sections';\n` +
     `export { accordsPreserves, fusionMiseEnForme } from '${racine}aiFormat';\n` +
     `export { accordAppauvri, appliquerRecuperation, verdictRecuperation } from '${racine}recupaccords';\n`,
@@ -23,6 +23,8 @@ buildSync({ entryPoints: [pont], bundle: true, format: 'esm', outfile: out });
 const {
   decoupeAccordsColles,
   estAnnotationDeGrille,
+  estNumeroDePage,
+  retirerNumerosDePage,
   importText,
   lireEnTeteDeSection,
   accordsPreserves,
@@ -245,5 +247,30 @@ egal('Tonalité hors paroles', res.song.lyrics.includes('Tonalité'), false);
 }
 
 rmSync(dir, { recursive: true, force: true });
+
+// b431 — les numéros de page des PDF ne sont pas des paroles.
+egal('numéro nu', estNumeroDePage('  3  '), true);
+egal('Page 12', estNumeroDePage('Page 12'), true);
+egal('3/12', estNumeroDePage('3 / 12'), true);
+egal('- 4 -', estNumeroDePage('- 4 -'), true);
+egal('parole avec chiffres', estNumeroDePage('1, 2, 3, soleil'), false);
+egal('en-tête numéroté', estNumeroDePage('Couplet 2'), false);
+egal('ligne vide', estNumeroDePage(''), false);
+egal(
+  'retrait chirurgical',
+  retirerNumerosDePage('Refrain :\nLa la la\n\n3\n\nCouplet 2 :\nSuite'),
+  'Refrain :\nLa la la\n\nCouplet 2 :\nSuite',
+);
+egal(
+  'rien à faire = texte identique',
+  retirerNumerosDePage('La la la\n1, 2, 3, soleil'),
+  'La la la\n1, 2, 3, soleil',
+);
+// À l'import aussi : la ligne « 3 » d'un PDF n'entre pas dans la partition.
+{
+  const out = importText('Ma chanson\n\n[C]Premier vers\n3\n[G]Deuxième vers', 'x');
+  egal('import sans numéro de page', out.song.lyrics.includes('\n3'), false);
+}
+
 console.log(ko === 0 ? '\nTous les tests passent.' : `\n${ko} test(s) en échec.`);
 process.exit(ko === 0 ? 0 : 1);

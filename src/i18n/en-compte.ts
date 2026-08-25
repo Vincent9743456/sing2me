@@ -180,6 +180,14 @@ export const EN_COMPTE: Record<string, string> = {
 
   // Settings.tsx — reprendre mes partitions (b220)
   'Reprendre mes partitions': 'Redo my charts',
+  // b431 — numéros de page hérités des PDF, même passe gratuite
+  '🧹 Retirer les numéros de page': '🧹 Remove page numbers',
+  '1 numéro de page traîne dans les paroles — gratuit et hors ligne':
+    '1 page number is lingering in the lyrics — free and offline',
+  '{a} numéros de page traînent dans les paroles, dans 1 morceau — gratuit et hors ligne':
+    '{a} page numbers are lingering in the lyrics, in 1 song — free and offline',
+  '{a} numéros de page traînent dans les paroles, dans {m} morceaux — gratuit et hors ligne':
+    '{a} page numbers are lingering in the lyrics, in {m} songs — free and offline',
   'Applique à ta bibliothèque ce que l’import fait désormais tout seul. Rien d’autre n’est touché : titres, artistes, notes, cœurs et setlists restent tels quels.':
     'Apply to your library what importing now does on its own. Nothing else is touched: titles, artists, notes, hearts, setlists and ideas stay as they are.',
   '🎯 Recaler les accords sur les mots': '🎯 Snap chords back onto words',
