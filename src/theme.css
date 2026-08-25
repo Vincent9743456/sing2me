@@ -2171,6 +2171,45 @@ textarea.mono {
   font-size: 0.85rem;
   opacity: 0.75;
 }
+/* Fermeture du mode scène en haut à droite (b438) : hors de la zone de
+   jeu — dans la barre du bas, un faux tap fermait la scène en pleine
+   chanson. Cible 48 px (règle scène), jetons --stage-* uniquement. */
+.stage-close {
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top));
+  right: 10px;
+  z-index: 60;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--stage-bar);
+  color: var(--stage-text);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  cursor: pointer;
+}
+/* Pendant un live, la pastille ● LIVE laisse le coin à la ✕. */
+.stage ~ .onair {
+  right: 68px;
+}
+/* L'astuce « Ne pas déranger » (premier lancement) laisse aussi le coin :
+   sans cette réserve, son bouton OK passait sous la ✕. */
+.stage .dndhint {
+  margin-right: 56px;
+}
+/* Groupes de la barre (b438) : navigation · performance · taille — un
+   séparateur léger entre chaque groupe, rien d'autre ne change. */
+.stage .controls .ctrlgrp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.stage .controls .ctrlgrp + .ctrlgrp {
+  border-left: 1px solid var(--border-soft);
+  padding-left: 8px;
+}
 .stage .controls {
   position: fixed;
   bottom: 0;

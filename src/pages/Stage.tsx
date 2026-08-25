@@ -534,16 +534,25 @@ export function Stage({
           }}
         />
       )}
+      {/* Fermeture en HAUT À DROITE (b438, revue UX) : la ✕ vivait dans
+          la barre du bas, collée aux contrôles de navigation — un faux tap
+          en pleine chanson fermait la scène. Le coin haut-droit est le
+          geste universel de fermeture, loin de la zone de jeu. Pendant un
+          live, la pastille ● LIVE se décale (CSS .stage-close ~ règle
+          .onair) pour lui laisser le coin. */}
+      <button
+        className="stage-close"
+        aria-label={t('Quitter le mode scène')}
+        title={t('Quitter le mode scène')}
+        onClick={() => history.back()}
+      >
+        <Icon name="x" size={20} />
+      </button>
+      {/* Barre regroupée par fonction (b438) : navigation · performance ·
+          taille du texte — séparateurs légers, aucun contrôle nouveau. */}
       <div className="controls">
-        <button
-          className="btn ghost"
-          aria-label={t('Quitter le mode scène')}
-          onClick={() => history.back()}
-        >
-          <Icon name="x" size={18} />
-        </button>
         {items.length > 1 && (
-          <>
+          <span className="ctrlgrp">
             <button
               className="btn ghost"
               title={t('Morceau précédent')}
@@ -571,51 +580,61 @@ export function Stage({
             >
               <Icon name="chevron-right" size={20} />
             </button>
-          </>
+          </span>
         )}
-        <button
-          className={`btn ${scroll ? '' : 'ghost'}`}
-          title={t('Défilement automatique')}
-          onClick={() => setScroll((s) => !s)}
-        >
-          <Icon name="scroll" size={17} />
-        </button>
-        {scroll && (
-          <>
-            <button
-              className="btn ghost"
-              onClick={() => setSpeed((s) => Math.max(10, s - 10))}
-            >
-              −
-            </button>
-            <button
-              className="btn ghost"
-              onClick={() => setSpeed((s) => Math.min(120, s + 10))}
-            >
-              ＋
-            </button>
-          </>
-        )}
-        <button
-          className="btn ghost"
-          title={t('Note de répétition (dictée possible)')}
-          aria-label={t('Ajouter une note de répétition')}
-          onClick={() => setNoteOpen(true)}
-        >
-          <Icon name="message" size={17} />
-        </button>
-        <button
-          className="btn ghost"
-          onClick={() => setFontSize((f) => Math.max(0.9, +(f - 0.15).toFixed(2)))}
-        >
-          A−
-        </button>
-        <button
-          className="btn ghost"
-          onClick={() => setFontSize((f) => Math.min(2.2, +(f + 0.15).toFixed(2)))}
-        >
-          A＋
-        </button>
+        <span className="ctrlgrp">
+          {/* Icône « texte qui défile » + état actif (le bouton passe en
+              plein quand le défilement tourne) : la simple flèche ↓ ne
+              disait ni la fonction ni l'état (b438). */}
+          <button
+            className={`btn ${scroll ? '' : 'ghost'}`}
+            title={t('Défilement automatique')}
+            aria-label={t('Défilement automatique')}
+            onClick={() => setScroll((s) => !s)}
+          >
+            <Icon name="autoscroll" size={17} />
+          </button>
+          {scroll && (
+            <>
+              <button
+                className="btn ghost"
+                onClick={() => setSpeed((s) => Math.max(10, s - 10))}
+              >
+                −
+              </button>
+              <button
+                className="btn ghost"
+                onClick={() => setSpeed((s) => Math.min(120, s + 10))}
+              >
+                ＋
+              </button>
+            </>
+          )}
+          {/* Pense-bête, pas bulle de chat : la 💬 évoquait un message du
+              public (b438). */}
+          <button
+            className="btn ghost"
+            title={t('Note de répétition (dictée possible)')}
+            aria-label={t('Ajouter une note de répétition')}
+            onClick={() => setNoteOpen(true)}
+          >
+            <Icon name="note" size={17} />
+          </button>
+        </span>
+        <span className="ctrlgrp">
+          <button
+            className="btn ghost"
+            onClick={() => setFontSize((f) => Math.max(0.9, +(f - 0.15).toFixed(2)))}
+          >
+            A−
+          </button>
+          <button
+            className="btn ghost"
+            onClick={() => setFontSize((f) => Math.min(2.2, +(f + 0.15).toFixed(2)))}
+          >
+            A＋
+          </button>
+        </span>
       </div>
 
       {/* Choix libre d'un morceau : l'ordre de la setlist reste inchangé */}
