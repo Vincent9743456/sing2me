@@ -194,6 +194,10 @@ export const EN_SETLISTS: Record<string, string> = {
   'Capo {n}': 'Capo {n}',
   'sonne en {ton}': 'sounds in {ton}',
   'Mes réglages': 'My settings',
+  // b433 — pastilles de gestion du mode scène
+  Notes: 'Notes',
+  'Voir les notes de répétition (en bas)': 'See the rehearsal notes (below)',
+  'Voir mes réglages (en bas)': 'See my settings (below)',
   Répétition: 'Rehearsal',
   'Quitter le mode scène': 'Exit stage mode',
   'Morceau précédent': 'Previous song',
