@@ -711,7 +711,17 @@ export function BandEdit({ id }: { id: string }) {
   function confirmEdit() {
     if (editDraft === null) return;
     // Geste délibéré : horodaté, pour gagner la fusion entre appareils (b373).
-    saveBand(tamponneBand(editDraft));
+    const enregistre = tamponneBand(editDraft);
+    saveBand(enregistre);
+    /**
+     * LE BROUILLON REJOINT L'ENREGISTRÉ (b445, constat de Vincent : « les
+     * boutons Valider et Annuler restent » après un Valider réussi).
+     * `tamponneBand` pose un `updatedAt` NEUF sur la copie enregistrée ;
+     * sans ce recalage, le brouillon gardait l'ancienne date, la
+     * comparaison brouillon ≠ groupe restait vraie pour toujours, et la
+     * barre — qui n'existe que pour cette différence — ne tombait jamais.
+     */
+    setEditDraft(draftOf(enregistre));
     setEditSaved(true);
     window.setTimeout(() => setEditSaved(false), 1400);
   }
