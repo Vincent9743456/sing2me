@@ -884,11 +884,42 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   jamais pré-cochée, stockée sur le compte
   (`user_metadata.marketing_consent`) — les messages de service n'en
   dépendent pas.
+- **Revue UX GROUPES (b441+, audit + arbitrages du prompt)** — constats de
+  code à ne pas re-deviner :
+  - **Liaison par ID, jamais par nom** : setlists (`Setlist.bandId`),
+    versions (`SongVersion.bandId`) et propositions (`pendingBandId`)
+    pointent l'id LOCAL du groupe (+ `cloudId` pour la synchro). La
+    prémisse « les setlists lient par nom » de l'audit était fausse — une
+    collision de noms est un enjeu d'UX, pas d'intégrité.
+  - **La visibilité d'un groupe est un choix PERSONNEL** (b227, champ
+    `Band.hiddenFromPublic`, jamais synchronisé) : un membre qui masque
+    n'affecte QUE sa propre fiche publique — la case reste donc offerte à
+    tous les membres, elle n'est PAS réservée au créateur (la crainte
+    « un membre masque un groupe dont les autres dépendent » ne
+    correspond pas au modèle).
+  - **Suppression d'un message de discussion (b441/Q7)** : c'est un DELETE
+    SERVEUR (`band_messages` via REST + retrait local ensuite) — jamais
+    client-only. L'interface ne montre le × qu'à l'AUTEUR ; la politique
+    RLS autorise aussi le créateur du groupe à supprimer, capacité
+    volontairement non exposée pour l'instant. La confirmation passe
+    encore par `confirm()` natif (dette règle 10, au backlog).
+  - **L'œil a DEUX sens dans l'app** : « prévisualiser » (Vue du public
+    d'un morceau, aperçu de la page artiste, « Voir la partition ») et
+    « visibilité d'un groupe » (bascule Visible/Masqué). Le contrôle de
+    visibilité porte donc TOUJOURS son libellé texte (« Visible » /
+    « Masqué ») — l'icône seule serait ambiguë.
+  - **Lot « QR / domaine » sans objet** : le domaine de production est
+    verrouillé (mojosong.com, b307) — « il ne change jamais » est vrai,
+    l'incitation à imprimer le QR reste.
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
-  par les composants Feedback (règle 10 — dette existante) ; OAuth
+  par les composants Feedback (règle 10 — dette existante, dont le
+  `confirm()` de suppression d'un message de discussion) ; OAuth
   Google/Facebook à configurer ; OCR des PDF scannés ; app native
   Capacitor (v3) ; parseurs OnSong Archive / SongbookPro .SBPBackup ;
-  MusicXML.
+  MusicXML ; aperçu intégré (embed YouTube) dans la discussion de groupe
+  — valider d'abord sur le terrain que le lien cliquable ne suffit pas ;
+  regrouper les cartes « Ajoutée au répertoire… » répétées de la
+  discussion si le bruit se confirme à l'usage.
 
 ## Techniques (rappels du projet)
 
