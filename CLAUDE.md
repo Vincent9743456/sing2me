@@ -911,6 +911,16 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   - **Lot « QR / domaine » sans objet** : le domaine de production est
     verrouillé (mojosong.com, b307) — « il ne change jamais » est vrai,
     l'incitation à imprimer le QR reste.
+  - **La fiche d'un groupe est un HUB à quatre tuiles** (b444 — amende la
+    liste verticale de b272) : Discussion (non-lus), Répertoire (compteur
+    + badge « N à valider », PER-USER : les propositions vivent dans MA
+    bibliothèque), Setlists, Page publique (état Visible/Masqué).
+    « Modifier » est monté dans le HEADER (bouton visible et étiqueté —
+    l'objection de b272 sur les ⋯ ne revient pas) ; l'action destructive
+    ne vit QUE dans l'écran Modifier, et son libellé vient de
+    `texteSuppression` (deleteband) — jamais d'un second calcul (un
+    groupe rejoint jamais publié affichait « Quitter » sur le bouton et
+    « Supprimer » dans la feuille).
   - **Un groupe se crée MASQUÉ par défaut** (b443, arbitrage du prompt —
     remplace le défaut visible) : un groupe neuf, vide, n'apparaît sur la
     fiche publique de son créateur que quand il l'a décidé (défaut = le

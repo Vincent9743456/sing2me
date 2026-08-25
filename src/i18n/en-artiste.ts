@@ -551,6 +551,9 @@ export const EN_ARTISTE: Record<string, string> = {
   'Créer mon premier groupe': 'Create my first band',
   'Donne un nom au groupe.': 'Give the band a name.',
   'Tu as déjà un groupe à ce nom.': 'You already have a band with this name.',
+  Répertoire: 'Repertoire',
+  'Page publique': 'Public page',
+  '{n} à valider': '{n} to review',
 
   // b228 — masquer / démasquer depuis la liste des groupes
   'masqué au public': 'hidden from the audience',
