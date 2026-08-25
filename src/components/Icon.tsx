@@ -42,13 +42,18 @@ export type IconName =
   | 'speaker'
   | 'zap'
   | 'plug'
-  | 'more';
+  | 'more'
+  | 'more-v'
+  | 'bookmark'
+  | 'note'
+  | 'autoscroll';
 
 const FILLED: Partial<Record<IconName, boolean>> = {
   play: true,
   skip: true,
   grip: true,
   more: true,
+  'more-v': true,
 };
 
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -191,6 +196,23 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <circle cx="12" cy="12" r="1.6" />
       <circle cx="19" cy="12" r="1.6" />
     </>
+  ),
+  'more-v': (
+    <>
+      <circle cx="12" cy="5" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="12" cy="19" r="1.6" />
+    </>
+  ),
+  bookmark: <path d="M19 21 12 16.8 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />,
+  note: (
+    <>
+      <path d="M4 4h16v11l-5 5H4V4z" />
+      <path d="M15 20v-5h5M8 9h8M8 13h5" />
+    </>
+  ),
+  autoscroll: (
+    <path d="M4 5h16M4 10h16M4 15h9M17 12v9m0 0 3.2-3.2M17 21l-3.2-3.2" />
   ),
 };
 

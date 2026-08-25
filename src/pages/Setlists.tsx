@@ -21,7 +21,6 @@ import { navigate } from '../router';
 import { useStore } from '../store';
 import {
   emptySetlist,
-  formatDuration,
   makeId,
   Setlist,
   Song,
@@ -182,13 +181,35 @@ export function Setlists() {
     setlists.some((sl) => dansContexte(sl, b.id)),
   );
 
-  /** À qui appartient cette setlist, en toutes lettres (b211). */
-  const contexteDe = (sl: Setlist): string =>
-    (sl.bandId ?? '') !== ''
-      ? `👥 ${bands.find((b) => b.id === sl.bandId)?.name || t('Groupe sans nom')}`
-      : (sl.context ?? '') !== ''
-        ? `🎉 ${sl.context}`
-        : `🎤 ${t('Solo')}`;
+  /** À qui appartient cette setlist, en toutes lettres (b211). Un groupe
+   *  sans nom s'affiche en style « placeholder » (b436) : atténué, pour ne
+   *  pas ressembler à un vrai nom — ni à un bug. */
+  const contexteDe = (sl: Setlist): React.ReactNode => {
+    if ((sl.bandId ?? '') !== '') {
+      const nom = bands.find((b) => b.id === sl.bandId)?.name ?? '';
+      return nom !== '' ? (
+        `👥 ${nom}`
+      ) : (
+        <>👥 <span className="placeholder">{t('Groupe sans nom')}</span></>
+      );
+    }
+    return (sl.context ?? '') !== '' ? `🎉 ${sl.context}` : `🎤 ${t('Solo')}`;
+  };
+
+  /**
+   * Durée de setlist en minutes (b436, audit UX : « ≈ 10:00 » se lit
+   * minutes:secondes ou heures:minutes selon les gens). « ≈ 10 min » ne
+   * s'interprète que d'une seule façon ; au-delà d'une heure, « 1 h 05 ».
+   */
+  const dureeLisible = (sec: number): string => {
+    const min = Math.max(1, Math.round(sec / 60));
+    if (min < 60) return `${min} min`;
+    const h = Math.floor(min / 60);
+    const reste = min % 60;
+    return reste === 0
+      ? `${h} h`
+      : `${h} h ${reste.toString().padStart(2, '0')}`;
+  };
 
   /** Le ＋ crée directement dans le contexte affiché ; sans contexte
    *  choisi, il demande lequel (une action, un geste). */
@@ -235,7 +256,11 @@ export function Setlists() {
       <>
         <div className="grow" style={{ minWidth: 0 }}>
           <div className="title">
-            {sl.name || t('(sans nom)')}
+            {sl.name !== '' ? (
+              sl.name
+            ) : (
+              <span className="placeholder">{t('(sans nom)')}</span>
+            )}
             {sl.id === nextConcertSetlistId && prochain && (
               <span className="badge-next">
                 {t('Concert le {date}', {
@@ -264,7 +289,11 @@ export function Setlists() {
               info.count > 1
                 ? t('{n} morceaux', { n: info.count })
                 : t('{n} morceau', { n: info.count }),
-              info.sec > 0 ? `${info.estimated ? '≈ ' : ''}${formatDuration(info.sec)}` : '',
+              // « ≈ N min » plutôt que « ≈ 10:00 » (b436) : des minutes en
+              // toutes lettres ne s'interprètent que d'une seule façon.
+              info.sec > 0
+                ? `${info.estimated ? '≈ ' : ''}${dureeLisible(info.sec)}`
+                : '',
               info.reserve > 0
                 ? t('{n} en réserve', { n: info.reserve })
                 : '',
@@ -272,30 +301,44 @@ export function Setlists() {
               sl.comment,
             ]
               .filter((x) => x !== undefined && x !== '')
-              .join(' · ')}
+              .map((x, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && ' · '}
+                  {x}
+                </React.Fragment>
+              ))}
           </div>
         </div>
         {sl.items.length > 0 && (
           <>
+            {/* « ⋮ » : icône-bouton nu (b436, audit UX) — le rectangle
+                bordé ressemblait à un champ désactivé. */}
             <button
-              className="btn ghost small"
-              style={{ minWidth: 44, minHeight: 44 }}
+              className="btn icon"
+              style={{ color: 'var(--text-dim)' }}
               title={t('Plus d’actions')}
+              aria-label={t('Plus d’actions')}
               onClick={(e) => {
                 e.stopPropagation();
                 setRowMenu(sl);
               }}
             >
-              <Icon name="more" size={16} />
+              <Icon name="more-v" size={18} />
             </button>
+            {/* Mode scène en icône seule (b436) : le corps de la carte est
+                la navigation principale — six gros boutons identiques
+                noyaient la liste. Même vue que « Mode scène » de la page
+                setlist (vérifié : même route /stage/:id). */}
             <button
-              className="btn small"
+              className="btn icon"
+              title={t('Mode scène')}
+              aria-label={t('Mode scène')}
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/stage/${sl.id}`);
               }}
             >
-              <Icon name="play" size={13} /> {t('Scène')}
+              <Icon name="play" size={18} />
             </button>
           </>
         )}
@@ -474,7 +517,11 @@ export function Setlists() {
                     marginRight: 2,
                   }}
                 />
-                {b.name || t('Groupe sans nom')}
+                {b.name !== '' ? (
+                  b.name
+                ) : (
+                  <span className="placeholder">{t('Groupe sans nom')}</span>
+                )}
               </button>
             ))}
             {contextes.map((ctx) => (
@@ -495,8 +542,12 @@ export function Setlists() {
             création n'a qu'UN bouton — le jaune en bas à droite (b351,
             demande de Vincent : la carte en pointillés sous la liste
             faisait doublon). */}
+        {/* `.setliste` (b436) : sous 900 px la liste repasse à UNE colonne —
+            les cartes portent titre + méta + deux boutons, et deux colonnes
+            de 320 px les tronquaient toutes (audit UX, iPad portrait).
+            Au-delà de 900 px, la grille habituelle. */}
         {setlists.length > 0 && (
-          <div className="list" style={{ marginTop: 'var(--sp-2)' }}>
+          <div className="list setliste" style={{ marginTop: 'var(--sp-2)' }}>
             {visibles.length === 0 && (
               <p className="help" style={{ margin: '6px 0' }}>
                 {t('Rien encore ici — le bouton en bas à droite crée une setlist.')}
@@ -615,7 +666,13 @@ export function Setlists() {
                 BAND_COLORS[i % BAND_COLORS.length],
               )}
               <div className="grow" style={{ marginLeft: 10 }}>
-                <div className="title">{b.name || t('Groupe sans nom')}</div>
+                <div className="title">
+                  {b.name !== '' ? (
+                    b.name
+                  ) : (
+                    <span className="placeholder">{t('Groupe sans nom')}</span>
+                  )}
+                </div>
               </div>
               <span className="chevron">
                 <Icon name="plus" size={16} />
