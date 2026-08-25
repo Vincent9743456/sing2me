@@ -22,6 +22,7 @@ import {
   postBandMessage,
   quiPropose,
 } from '../lib/bands';
+import { decoupeLiens } from '../lib/liens';
 import { findSameSong, songKey } from '../lib/importer';
 import { duplicateVersion, switchVersion, versionForBand } from '../lib/model';
 import { replier } from '../lib/recherche';
@@ -304,8 +305,25 @@ export function BandChat({ id }: { id: string }) {
                     </button>
                   )}
                 </div>
+                {/* Liens cliquables (b441, revue UX Groupes) : une adresse
+                    collée s'ouvre d'un tap. Contenu externe → nouvel onglet ;
+                    pas d'aperçu intégré (backlog), juste le lien. Le texte
+                    du musicien n'est jamais modifié — seul le rendu change. */}
                 <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>
-                  {m.text}
+                  {decoupeLiens(m.text).map((seg, i) =>
+                    seg.type === 'lien' ? (
+                      <a
+                        key={i}
+                        href={seg.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {seg.url}
+                      </a>
+                    ) : (
+                      <React.Fragment key={i}>{seg.contenu}</React.Fragment>
+                    ),
+                  )}
                 </div>
                 {m.kind === 'chanson' && (
                   <ChezMoi text={m.text} bandId={id} />
@@ -314,8 +332,6 @@ export function BandChat({ id }: { id: string }) {
             ))}
           </React.Fragment>
         ))}
-        <div ref={bottomRef} />
-
         <div className="spacer" />
         <button
           className="btn ghost block"
@@ -346,6 +362,11 @@ export function BandChat({ id }: { id: string }) {
             'Visible par tous les membres du groupe. Actualisé automatiquement.',
           )}
         </p>
+        {/* La sentinelle de défilement vit en VRAI bas de page (b441) :
+            posée avant le formulaire, elle laissait ~250 px hors champ et
+            la discussion s'ouvrait « au milieu ». Ici, l'ouverture montre
+            le dernier message ET la zone d'écriture, comme tout chat. */}
+        <div ref={bottomRef} />
       </div>
 
       {pickOpen && (
