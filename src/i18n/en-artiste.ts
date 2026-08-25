@@ -546,6 +546,9 @@ export const EN_ARTISTE: Record<string, string> = {
   // b309 — liste des groupes : juste public / privé
   public: 'public',
   privé: 'private',
+  Visible: 'Visible',
+  Masqué: 'Hidden',
+  'Créer mon premier groupe': 'Create my first band',
 
   // b228 — masquer / démasquer depuis la liste des groupes
   'masqué au public': 'hidden from the audience',
