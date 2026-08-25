@@ -927,6 +927,25 @@ textarea.mono {
 .sheetitem.danger {
   color: var(--danger);
 }
+/* Trait entre les actions courantes et une action destructrice (b427). */
+.sheetsep {
+  height: 1px;
+  background: var(--border-soft);
+  margin: var(--sp-2) 0;
+}
+/* Badge « ⚠ À vérifier » d'une ligne de morceau (b427) : compact, la
+   raison complète se déplie au tap. Hérite la taille du sous-titre. */
+.checkbadge {
+  display: inline-block;
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  background: transparent;
+  border-radius: var(--radius-s);
+  padding: 0 6px;
+  font: inherit;
+  line-height: 1.5;
+  cursor: pointer;
+}
 .toast {
   position: fixed;
   left: 50%;

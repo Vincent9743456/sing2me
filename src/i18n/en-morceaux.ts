@@ -83,7 +83,9 @@ export const EN_MORCEAUX: Record<string, string> = {
   '✨ Nouveautés ({n})': '✨ New ({n})',
   'Ce qu’un groupe te propose, et ce que tu as gardé à un bœuf':
     'Imported songs not yet confirmed — work-in-progress stash',
-  '📥 Propositions ({n})': '📥 Proposals ({n})',
+  // b427 — polish de la liste : label de tags, badge « À vérifier »
+  'Tags :': 'Tags:',
+  'Voir pourquoi ce morceau est à relire': 'See why this song needs a check',
   'Groupes :': 'Bands:',
   'Répertoire jouable en solo (tous les morceaux par défaut, sauf déqualifiés depuis leur fiche)':
     'Repertoire playable solo (every song by default, unless disqualified from its page)',

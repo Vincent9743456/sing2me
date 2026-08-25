@@ -51,6 +51,9 @@ export interface MenuItem {
   label: string;
   icon?: IconName;
   danger?: boolean;
+  /** Trait au-dessus de l'entrée (b427) : isole une action destructrice
+   *  des actions courantes, contre le tap accidentel. */
+  sep?: boolean;
   onClick: () => void;
 }
 
@@ -66,17 +69,19 @@ export function MenuSheet({
   return (
     <Sheet title={title} onClose={onClose}>
       {items.map((it, i) => (
-        <button
-          key={i}
-          className={`sheetitem ${it.danger ? 'danger' : ''}`}
-          onClick={() => {
-            it.onClick();
-            onClose();
-          }}
-        >
-          {it.icon && <Icon name={it.icon} size={19} />}
-          <span>{it.label}</span>
-        </button>
+        <React.Fragment key={i}>
+          {it.sep === true && <div className="sheetsep" aria-hidden="true" />}
+          <button
+            className={`sheetitem ${it.danger ? 'danger' : ''}`}
+            onClick={() => {
+              it.onClick();
+              onClose();
+            }}
+          >
+            {it.icon && <Icon name={it.icon} size={19} />}
+            <span>{it.label}</span>
+          </button>
+        </React.Fragment>
       ))}
     </Sheet>
   );
