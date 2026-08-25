@@ -933,6 +933,40 @@ textarea.mono {
   background: var(--border-soft);
   margin: var(--sp-2) 0;
 }
+/* LIGNE-BOUTON de la couche de gestion d'un morceau (b428) : label à
+   gauche, état à droite — le contenu s'ouvre en modale. */
+.gestline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+  text-align: left;
+  margin-bottom: var(--sp-2);
+}
+/* BASCULE À DEUX SEGMENTS « Ma partition | Vue du public » (b428) :
+   les deux états se lisent, l'actif est plein. */
+.segtoggle {
+  display: inline-flex;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+.segtoggle button {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.segtoggle button:not(.off) {
+  background: var(--surface-hover);
+  font-weight: 600;
+}
+.segtoggle button.off {
+  color: var(--text-dim);
+}
 /* Badge « ⚠ À vérifier » d'une ligne de morceau (b427) : compact, la
    raison complète se déplie au tap. Hérite la taille du sous-titre. */
 .checkbadge {

@@ -25,8 +25,7 @@ import {
   versionForBand,
 } from '../lib/model';
 import { parolesPubliques } from '../lib/publiclyrics';
-import { PublicEye, PublicView } from '../components/PublicView';
-import { SongDeleteSheet } from '../components/SongDeleteSheet';
+import { PublicView, VueToggle } from '../components/PublicView';
 import { songKey } from '../lib/importer';
 import { signalerLimite } from '../components/UpgradeSheet';
 import { propositionBloquee } from '../lib/limites';
@@ -36,6 +35,7 @@ import {
   ConfirmSheet,
   MenuSheet,
   PromptSheet,
+  Sheet,
   useToast,
 } from '../components/Feedback';
 import { CoachMark } from '../components/CoachMark';
@@ -139,7 +139,10 @@ export function SongView({
   const [promoteOpen, setPromoteOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const toast = useToast();
-  const [delSongOpen, setDelSongOpen] = useState(false);
+  /** Modales de la couche de gestion (b428/B-1 et B-3). */
+  const [retoursOpen, setRetoursOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
   // 👁 Vue du public (LECTURE SEULE, b302) : la partition bascule sur ce que
   // liront les spectateurs. On consulte, on ne corrige pas (retouche retirée
   // en b294) — pour changer, on modifie la partition.
@@ -471,14 +474,25 @@ export function SongView({
               {t}
             </span>
           ))}
-          {song.hearts > 0 && (
-            <span className="chip static" style={{ color: 'var(--heart)' }}>
+          {/* RETOURS DU PUBLIC — cœurs ET messages ENSEMBLE (b428/B-1,
+              passe UX de Vincent) : deux retours de même nature étaient
+              séparés par toute la chanson (cœurs en haut, messages tout en
+              bas). Un seul témoin, le tap ouvre le détail. */}
+          {(song.hearts > 0 || song.fanMessages.length > 0) && (
+            <button
+              className="chip off"
+              style={{ color: 'var(--heart)' }}
+              title={t('Retours du public — voir les messages')}
+              onClick={() => setRetoursOpen(true)}
+            >
               ❤ {song.hearts}
-            </span>
+              {song.fanMessages.length > 0 &&
+                ` · 💬 ${song.fanMessages.length}`}
+            </button>
           )}
-          {/* 👁 Consultation de la vue du public (lecture seule, b302) —
-              visible sur la partition, pas rangé dans un pli. */}
-          <PublicEye actif={vuePublic} onToggle={() => setVuePublic((v) => !v)} />
+          {/* 👁 Vue du public : VRAI bascule à deux segments (b428) — les
+              deux états se lisent en permanence, l'actif se voit. */}
+          <VueToggle actif={vuePublic} onChange={setVuePublic} />
         </div>
 
         {/* Bandeau de version : dit toujours CE QUE tu consultes et si c'est
@@ -704,24 +718,33 @@ export function SongView({
             « version Solo » (l'originale EST ma façon de le jouer seul),
             pas de versions de setlist. */}
 
+        {/* COUCHE DE GESTION (b428/B-3, passe UX de Vincent) : des
+            LIGNES-BOUTONS homogènes — label + état toujours visibles, le
+            contenu s'ouvre en modale. La surface de lecture reste stable,
+            et c'est identique dans les deux vues (partition et publique). */}
         {showNotes && (
-          <div className="notesbox">
-            <div className="label" style={{ display: 'flex', gap: 8 }}>
-              <span style={{ flex: 1 }}>
-                {t('Notes de répétition')}
-                {current.bandId !== '' && bandName(current.bandId) !== ''
-                  ? t(' · contexte {band}', { band: bandName(current.bandId) })
-                  : t(' · solo / tous')}
-              </span>
-              <button
-                className="btn ghost small"
-                onClick={() => setNoteModal('new')}
-              >
-                {t('＋ Note')}
-              </button>
-            </div>
+          <button
+            className="btn ghost block gestline"
+            onClick={() => setNotesOpen(true)}
+          >
+            <span>
+              🎤 {t('Notes de répétition')}
+              {allNotes.length > 0 ? ` · ${allNotes.length}` : ''}
+            </span>
+            <span className="stauthor">
+              {current.bandId !== '' && bandName(current.bandId) !== ''
+                ? t('contexte {band}', { band: bandName(current.bandId) })
+                : t('solo / tous')}
+            </span>
+          </button>
+        )}
+        {notesOpen && (
+          <Sheet
+            title={t('Notes de répétition')}
+            onClose={() => setNotesOpen(false)}
+          >
             {allNotes.length === 0 && (
-              <p className="help" style={{ margin: 0 }}>
+              <p className="help" style={{ marginTop: 0 }}>
                 {t(
                   'Le journal du travail sur ce morceau : datées, signées, partagées au groupe ou personnelles. Dictée vocale 🎤.',
                 )}
@@ -740,7 +763,10 @@ export function SongView({
                 <span
                   style={{ flex: 1, cursor: 'pointer' }}
                   title={t('Modifier la note')}
-                  onClick={() => setNoteModal(n)}
+                  onClick={() => {
+                    setNotesOpen(false);
+                    setNoteModal(n);
+                  }}
                 >
                   <Icon name={n.visibility === 'privee' ? 'lock' : 'message'} size={13} />{' '}
                   {n.text}
@@ -759,14 +785,35 @@ export function SongView({
                 </button>
               </div>
             ))}
-          </div>
+            <button
+              className="btn block"
+              onClick={() => {
+                setNotesOpen(false);
+                setNoteModal('new');
+              }}
+            >
+              {t('＋ Note')}
+            </button>
+          </Sheet>
         )}
 
-        {showNotes && song.fanMessages.length > 0 && (
-          <div className="notesbox" style={{ borderLeftColor: 'var(--heart)' }}>
-            <div className="label">
-              {t('💬 Messages du public ({n})', { n: song.fanMessages.length })}
-            </div>
+        {/* Les messages du public ont quitté le bas de page (b428/B-1) :
+            ils vivent dans la modale des retours, ouverte par le témoin
+            « ❤ N · 💬 N » en haut. */}
+        {retoursOpen && (
+          <Sheet
+            title={t('Retours du public')}
+            onClose={() => setRetoursOpen(false)}
+          >
+            <p className="help" style={{ marginTop: 0 }}>
+              ❤{' '}
+              {song.hearts > 1
+                ? t('{n} cœurs reçus en concert', { n: song.hearts })
+                : t('{n} cœur reçu en concert', { n: song.hearts })}
+            </p>
+            {song.fanMessages.length === 0 && (
+              <p className="help">{t('Aucun message du public pour ce morceau.')}</p>
+            )}
             {[...song.fanMessages]
               .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
               .map((m) => (
@@ -801,79 +848,78 @@ export function SongView({
                   </button>
                 </div>
               ))}
-          </div>
+          </Sheet>
         )}
 
-        {/* Réglages personnels du musicien : locaux, jamais partagés */}
-        <details className="stfold">
-          <summary>
-            {t('Mes réglages perso')}
-            {song.mySetup?.instrument
-              ? ` — ${song.mySetup.instrument}`
-              : ''}
-          </summary>
-          <div className="spacer" />
-          <Field label={t('Instrument joué sur ce morceau')}>
-            <input
-              type="text"
-              value={song.mySetup?.instrument ?? ''}
-              placeholder={t('Congas, cajon, guitare électro…')}
-              onChange={(e) =>
-                saveSong({
-                  ...song,
-                  mySetup: {
-                    instrument: e.target.value,
-                    notes: song.mySetup?.notes ?? '',
-                  },
-                })
-              }
-            />
-          </Field>
-          <Field label={t('Réglages (ampli, effets, retours…)')}>
-            <textarea
-              value={song.mySetup?.notes ?? ''}
-              placeholder={t('Drive canal 2, delay 320 ms\nRetour : voix + claviers')}
-              onChange={(e) =>
-                saveSong({
-                  ...song,
-                  mySetup: {
-                    instrument: song.mySetup?.instrument ?? '',
-                    notes: e.target.value,
-                  },
-                })
-              }
-            />
-          </Field>
-          <p className="help">
-            {t(
-              'Personnel : visible uniquement dans ton application (et affiché en mode scène) — jamais inclus dans les partages.',
-            )}
-          </p>
-        </details>
+        {/* Réglages personnels du musicien : locaux, jamais partagés.
+            L'accordéon inline devient une LIGNE-BOUTON + modale (b428/B-3),
+            alignée sur le modèle des notes de répétition. */}
+        <button
+          className="btn ghost block gestline"
+          onClick={() => setSetupOpen(true)}
+        >
+          <span>🎚 {t('Réglages perso')}</span>
+          <span className="stauthor">
+            {(song.mySetup?.instrument ?? '') !== '' ||
+            (song.mySetup?.notes ?? '') !== ''
+              ? song.mySetup?.instrument || t('renseignés')
+              : t('à compléter')}
+          </span>
+        </button>
+        {setupOpen && (
+          <Sheet
+            title={t('Réglages perso')}
+            onClose={() => setSetupOpen(false)}
+          >
+            <Field label={t('Instrument joué sur ce morceau')}>
+              <input
+                type="text"
+                value={song.mySetup?.instrument ?? ''}
+                placeholder={t('Congas, cajon, guitare électro…')}
+                onChange={(e) =>
+                  saveSong({
+                    ...song,
+                    mySetup: {
+                      instrument: e.target.value,
+                      notes: song.mySetup?.notes ?? '',
+                    },
+                  })
+                }
+              />
+            </Field>
+            <Field label={t('Réglages (ampli, effets, retours…)')}>
+              <textarea
+                value={song.mySetup?.notes ?? ''}
+                placeholder={t('Drive canal 2, delay 320 ms\nRetour : voix + claviers')}
+                onChange={(e) =>
+                  saveSong({
+                    ...song,
+                    mySetup: {
+                      instrument: song.mySetup?.instrument ?? '',
+                      notes: e.target.value,
+                    },
+                  })
+                }
+              />
+            </Field>
+            <p className="help">
+              {t(
+                'Personnel : visible uniquement dans ton application (et affiché en mode scène) — jamais inclus dans les partages.',
+              )}
+            </p>
+          </Sheet>
+        )}
 
         {/* Décision produit (Vincent, août 2026) : une chanson ne circule
             QUE de deux façons — poussée dans le répertoire d'un groupe
             (« Ajouter à… », synchro auto) ou diffusée par QR en mode ON AIR.
             Aucun envoi de copie par lien depuis la fiche morceau. */}
 
-        <div className="spacer" />
-        {/* Le bouton revient AUSSI sur une proposition (b421) : la feuille
-            n'est plus un refus expliqué (b418/b252) — elle offre la vraie
-            sortie, retirer le morceau du répertoire du groupe. */}
-        <button
-          className="btn ghost block"
-          style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-          onClick={() => setDelSongOpen(true)}
-        >
-          <Icon name="trash" size={15} /> {t('Supprimer ce morceau')}
-        </button>
-        {delSongOpen && (
-          <SongDeleteSheet
-            song={song}
-            onDeleted={() => navigate('/')}
-            onClose={() => setDelSongOpen(false)}
-          />
-        )}
+        {/* PLUS DE « Supprimer ce morceau » ICI (b428/B-2, passe UX de
+            Vincent) : c'était un doublon — la suppression vit dans la page
+            Modifier et dans le ⋯ / balayage de la liste, qui ouvrent tous la
+            même feuille (b239). La sortie d'une proposition (b421) reste
+            donc accessible par ces chemins-là. */}
       </div>
 
       {/* Lecture de setlist : précédent / suivant toujours accessibles */}
