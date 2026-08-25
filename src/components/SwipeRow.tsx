@@ -41,12 +41,19 @@ export function SwipeRow({
   label,
   className = 'row',
   onClick,
+  rowId,
 }: {
   children: React.ReactNode;
   onDelete: () => void;
   /** Ce que la corbeille supprimera — annoncé aux lecteurs d'écran. */
   label: string;
   className?: string;
+  /**
+   * Identifiant posé en `data-rowid` sur le corps de la ligne (b434) : il
+   * permet de retrouver la ligne dans le DOM pour la garder au même endroit
+   * de l'écran quand la liste se re-dispose (ouverture du volet d'aperçu).
+   */
+  rowId?: string;
   /**
    * Ce que fait la ligne quand on la touche (b280). Il vit ICI et pas dans
    * un div enfant : une ligne emboîtée dans une autre double son
@@ -125,6 +132,7 @@ export function SwipeRow({
       </button>
       <div
         className={`swiperow-body ${className}`}
+        data-rowid={rowId}
         style={{
           transform: `translateX(-${decalage}px)`,
           transition: depart.current ? 'none' : 'transform 160ms ease',

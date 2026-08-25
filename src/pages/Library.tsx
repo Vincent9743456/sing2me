@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { useAccount } from '../components/Account';
 import { Icon } from '../components/Icon';
@@ -267,6 +273,31 @@ export function Library() {
   const limites = useLimits();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  /**
+   * LA LISTE NE BOUGE PAS QUAND LE VOLET S'OUVRE (b434, constat de Vincent :
+   * « lorsque j'ouvre une partition, la liste remonte »). Ouvrir ou fermer
+   * l'aperçu re-dispose la liste (plusieurs colonnes ↔ une colonne de
+   * 400 px) : chaque carte change de position verticale, mais la fenêtre
+   * garde son défilement en PIXELS — on se retrouvait donc plus haut dans la
+   * liste, la ligne qu'on venait de toucher hors de vue. On note la position
+   * à l'écran de la ligne concernée AVANT le changement, et on recale le
+   * défilement juste après le rendu pour qu'elle n'ait pas bougé.
+   */
+  const ancreReflow = useRef<{ id: string; top: number } | null>(null);
+  function ancrerLigne(id: string | null) {
+    if (id === null) return;
+    const el = document.querySelector(`[data-rowid="${CSS.escape(id)}"]`);
+    if (el) ancreReflow.current = { id, top: el.getBoundingClientRect().top };
+  }
+  useLayoutEffect(() => {
+    const a = ancreReflow.current;
+    ancreReflow.current = null;
+    if (!a) return;
+    const el = document.querySelector(`[data-rowid="${CSS.escape(a.id)}"]`);
+    if (!el) return;
+    const delta = el.getBoundingClientRect().top - a.top;
+    if (delta !== 0) window.scrollBy(0, delta);
+  }, [selectedId]);
   /**
    * Le groupe DONT on regarde le répertoire — `null` partout ailleurs. C'est
    * lui qui décide si « Retirer du répertoire » a un sens : hors de cette
@@ -593,6 +624,7 @@ export function Library() {
   const renderRow = (song: (typeof filtered)[number]) => (
     <SwipeRow
       key={song.id}
+      rowId={song.id}
       label={song.title || t('ce morceau')}
       onDelete={() => setRowDelete(song)}
       /* La CLASSE va au corps du balayage, pas à un div de plus (b280) :
@@ -610,8 +642,11 @@ export function Library() {
           return;
         }
         openWithContext(song);
-        if (isSplitScreen()) setSelectedId(song.id);
-        else navigate(`/song/${song.id}`);
+        if (isSplitScreen()) {
+          // La ligne cliquée reste au même endroit de l'écran (b434).
+          ancrerLigne(song.id);
+          setSelectedId(song.id);
+        } else navigate(`/song/${song.id}`);
       }}
     >
                     <div className="grow" style={{ minWidth: 0 }}>
@@ -1335,7 +1370,12 @@ export function Library() {
           {/* Volet de droite (ordinateur) : le morceau sélectionné */}
           <SongPreview
             id={selectedId}
-            onClose={() => setSelectedId(null)}
+            onClose={() => {
+              // Même recalage à la fermeture : la liste se re-déploie en
+              // colonnes, la ligne qu'on lisait ne doit pas bouger (b434).
+              ancrerLigne(selectedId);
+              setSelectedId(null);
+            }}
             onPickSetlist={(id) => setPickerFor(id)}
           />
         </div>
