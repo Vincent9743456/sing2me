@@ -361,6 +361,8 @@ export function Library() {
   const [nudgeHidden, setNudgeHidden] = useState(
     () => localStorage.getItem('sing2me/accountNudge') === '1',
   );
+  /** Ligne « À vérifier » dont la raison est dépliée (b427) — au tap. */
+  const [checkDetail, setCheckDetail] = useState<string | null>(null);
   const showNudge =
     account?.available === true && account.email === null && !nudgeHidden;
   // Dépassement du plan gratuit (b422) : horloge du serveur, bandeau, et
@@ -570,10 +572,19 @@ export function Library() {
    * Le groupe filtré n'y figure pas : le répéter sur chaque ligne
    * n'apprend rien (même raison qu'en b203).
    */
-  const bandsOfSong = (songId: string): string[] =>
+  const bandsOfSong = (songId: string) =>
     [...(membership.bandsBySong.get(songId) ?? [])]
       .filter((bid) => bid !== bandFilter)
-      .map((bid) => bands[bandIndex.get(bid) ?? 0]?.name?.trim() || t('Groupe sans nom'));
+      .map((bid) => {
+        const i = bandIndex.get(bid) ?? 0;
+        return {
+          id: bid,
+          name: bands[i]?.name?.trim() || t('Groupe sans nom'),
+          // La MÊME couleur que la pastille des filtres (b427/F-2) : le
+          // groupe se reconnaît d'un coup d'œil, du filtre à la ligne.
+          color: BAND_COLORS[i % BAND_COLORS.length],
+        };
+      });
 
   /* GLISSER VERS LA GAUCHE POUR RÉVÉLER LA CORBEILLE (b279, demande de
      Vincent) — le même geste que sur la liste des groupes (b254), donc
@@ -606,9 +617,18 @@ export function Library() {
                     <div className="grow" style={{ minWidth: 0 }}>
                       <div className="title">{song.title || t('(sans titre)')}</div>
                       {(song.pendingBandId ?? '') !== '' ? (
+                        /* Une seule ligne, comme le sous-titre ordinaire
+                           (b427) : la provenance qui s'étalait sur trois
+                           lignes faisait des cartes de hauteurs inégales. */
                         <div
                           className="sub"
-                          style={{ color: 'var(--accent)', fontWeight: 600 }}
+                          style={{
+                            color: 'var(--accent)',
+                            fontWeight: 600,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
                         >
                           {/* Dans une vue de groupe, répéter un nom de groupe
                               n'apprend rien — et nommer un AUTRE groupe est
@@ -639,11 +659,32 @@ export function Library() {
                           {song.artist !== '' ? ` · ${song.artist}` : ''}
                         </div>
                       ) : song.needsCheck ? (
-                        /* L'import a douté : on le dit sur la ligne, avec la
-                           raison. Le morceau est bien là — il est juste à
-                           relire. Modifier le morceau efface ce badge. */
+                        /* L'import a douté : BADGE compact, la raison au tap
+                           (b427 — la phrase complète inline gonflait la ligne
+                           sur 3 hauteurs). Modifier le morceau efface tout. */
                         <div className="sub" style={{ color: 'var(--warn)' }}>
-                          🔎 {t('À vérifier')} · {song.needsCheck.reason}
+                          <button
+                            className="checkbadge"
+                            aria-expanded={checkDetail === song.id}
+                            title={t('Voir pourquoi ce morceau est à relire')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCheckDetail(
+                                checkDetail === song.id ? null : song.id,
+                              );
+                            }}
+                          >
+                            ⚠ {t('À vérifier')}
+                          </button>
+                          {song.artist !== '' ? ` · ${song.artist}` : ''}
+                          {checkDetail === song.id && (
+                            <div
+                              className="help"
+                              style={{ margin: '4px 0 0', color: 'var(--warn)' }}
+                            >
+                              {song.needsCheck.reason}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div
@@ -654,22 +695,50 @@ export function Library() {
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {[
-                            (song.tags ?? []).includes(EXAMPLE_TAG)
-                              ? t('Exemple')
-                              : '',
-                            song.artist,
-                            // Le nom du groupe, en clair, à la place des
-                            // pastilles à initiales (b211) — AVANT la
-                            // technique : sur un écran de 360 px, ce qui est
-                            // en bout de ligne est ce qui se fait couper.
-                            ...bandsOfSong(song.id).map((n) => `👥 ${n}`),
-                            song.key,
-                            song.tempo > 0 ? `${song.tempo} BPM` : '',
-                            formatDuration(song.durationSec),
-                          ]
-                            .filter((x) => x !== '')
-                            .join(' · ') || ' '}
+                          {(() => {
+                            // Le nom du groupe, en clair (b211) — AVANT la
+                            // technique — et avec SA couleur (b427/F-2), la
+                            // même que dans les filtres.
+                            const noeuds: React.ReactNode[] = [
+                              ...[
+                                (song.tags ?? []).includes(EXAMPLE_TAG)
+                                  ? t('Exemple')
+                                  : '',
+                                song.artist,
+                              ].filter((x) => x !== ''),
+                              ...bandsOfSong(song.id).map((b) => (
+                                <span
+                                  key={b.id}
+                                  style={{ whiteSpace: 'nowrap' }}
+                                >
+                                  <span
+                                    aria-hidden="true"
+                                    style={{
+                                      display: 'inline-block',
+                                      width: 8,
+                                      height: 8,
+                                      borderRadius: '50%',
+                                      background: b.color,
+                                      marginRight: 3,
+                                    }}
+                                  />
+                                  {b.name}
+                                </span>
+                              )),
+                              ...[
+                                song.key,
+                                song.tempo > 0 ? `${song.tempo} BPM` : '',
+                                formatDuration(song.durationSec),
+                              ].filter((x) => x !== ''),
+                            ];
+                            if (noeuds.length === 0) return ' ';
+                            return noeuds.map((n, i) => (
+                              <React.Fragment key={i}>
+                                {i > 0 ? ' · ' : ''}
+                                {n}
+                              </React.Fragment>
+                            ));
+                          })()}
                         </div>
                       )}
                     </div>
@@ -955,6 +1024,30 @@ export function Library() {
               <span className="filtercount">{activeFilters}</span>
             )}
           </button>
+          {/* 📥 PROPOSITIONS — compacte, DANS la barre (b427, passe UX de
+              Vincent : « ne doit plus occuper une ligne pleine dédiée »).
+              La doctrine b225 tient toujours : elle reste À L'ÉCRAN, jamais
+              derrière « Filtrer » (c'est le seul filtre qui cache des
+              morceaux), et n'existe que s'il y a quelque chose à montrer.
+              Ce n'est PAS un filtre du panneau : objet à part, la sortie
+              vit dans la rangée « Filtre actif » (b414). */}
+          {ideaCount > 0 && (
+            <button
+              className={`btn ${showIdeas ? '' : 'ghost'}`}
+              style={{ flexShrink: 0, minHeight: 44 }}
+              aria-pressed={showIdeas}
+              title={t(
+                'Ce qu’un groupe te propose, et ce que tu as gardé à un bœuf',
+              )}
+              onClick={() => {
+                setShowIdeas(!showIdeas);
+                setBandFilter(null);
+                setShowCheck(false);
+              }}
+            >
+              📥<span className="filtercount">{ideaCount}</span>
+            </button>
+          )}
           {/* SOMBRE / CLAIR : déménagé dans les Réglages (b354, demande de
               Vincent — remplace le placement b234 dans cette barre). */}
         </div>
@@ -1106,7 +1199,15 @@ export function Library() {
         {filtersOpen && allTags.length > 0 && (
           <>
             <div className="spacer" />
-            <div className="chips">
+            {/* Même grammaire que la rangée des groupes (b427/F-1) : un
+                label dit ce que les pastilles listent. */}
+            <div
+              className="chips filterchips scrollrow"
+              style={{ alignItems: 'center' }}
+            >
+              <span className="help" style={{ margin: 0 }}>
+                {t('Tags :')}
+              </span>
               {allTags.map((t) => (
                 <button
                   key={t}
@@ -1142,48 +1243,9 @@ export function Library() {
               : ''}
           </p>
         )}
-        {/* 📥 PROPOSITIONS — À L'ÉCRAN, PAS DERRIÈRE « FILTRER » (b225,
-            demande de Vincent ; renommé en b274). C'est le seul filtre qui
-            CACHE des morceaux : une proposition n'apparaît nulle part
-            ailleurs dans la bibliothèque. La ranger dans un pli, c'était
-            masquer une partie du répertoire sans le dire. Le bouton n'existe
-            QUE s'il y en a : l'écran reste « recherche + liste » pour tous
-            les autres. */}
-        {ideaCount > 0 && (
-          /* De l'air en dessous (b241, constat de Vincent : « ils sont
-             collés, ce n'est pas joli ») : cette rangée sort de la barre
-             d'outils figée, donc rien ne la séparait de la première carte. */
-          <div
-            className="chips"
-            style={{
-              marginTop: 'var(--sp-2)',
-              marginBottom: 'var(--sp-3)',
-            }}
-          >
-            <button
-              className={`chip ${showIdeas ? '' : 'off'}`}
-              aria-pressed={showIdeas}
-              title={t(
-                'Ce qu’un groupe te propose, et ce que tu as gardé à un bœuf',
-              )}
-              onClick={() => {
-                setShowIdeas(!showIdeas);
-                setBandFilter(null);
-                setShowCheck(false);
-              }}
-            >
-              {t('📥 Propositions ({n})', { n: ideaCount })}
-            </button>
-            {showIdeas && (
-              <button
-                className="chip off"
-                onClick={() => setShowIdeas(false)}
-              >
-                {t('Tous les morceaux')}
-              </button>
-            )}
-          </div>
-        )}
+        {/* La rangée pleine « 📥 Propositions » a rejoint la barre d'outils
+            en bouton compact (b427) — la sortie vit dans « Filtre actif »
+            (b414), l'explication reste juste en dessous. */}
         {/* L'explication vient APRÈS le bouton qui l'a déclenchée — au-dessus,
             elle répondait à une question que personne ne s'était encore posée. */}
         {showIdeas && (
@@ -1396,6 +1458,9 @@ export function Library() {
               label: t('Supprimer'),
               icon: 'trash',
               danger: true,
+              // Isolée des actions courantes (b427/A-9) : un trait au-dessus
+              // réduit le tap accidentel depuis « Ajouter à… ».
+              sep: true,
               onClick: () => setRowDelete(rowMenu),
             },
           ]}
