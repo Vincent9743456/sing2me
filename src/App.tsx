@@ -13,6 +13,7 @@ import { Artist } from './pages/Artist';
 import { Settings } from './pages/Settings';
 import { Dashboard } from './pages/Dashboard';
 import { Songbook } from './pages/Songbook';
+import { BandCloudLink } from './components/BandCloudLink';
 import { BandChat } from './pages/BandChat';
 import { Bands } from './pages/Bands';
 import { BandEdit } from './pages/BandEdit';
@@ -210,6 +211,9 @@ function Screen() {
       break;
     case 'bandChat':
       page = <BandChat id={route.id} key={route.id} />;
+      break;
+    case 'bandCloud':
+      page = <BandCloudLink cloudId={route.cloudId} key={route.cloudId} />;
       break;
     case 'follow':
       page = <Follow code={route.code} />;
