@@ -362,6 +362,7 @@ export function SongEdit({ id }: { id: string | null }) {
               >
                 {draft.versions.map((v, i) => (
                   <option key={v.id} value={v.id}>
+                    {i === 0 && !v.name.startsWith('⭐') ? '⭐ ' : ''}
                     {v.name}
                     {i === 0 ? ` — ${t('principale')}` : ''}
                     {v.key !== '' ? ` (${v.key})` : ''}

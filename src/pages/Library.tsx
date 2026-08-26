@@ -1732,7 +1732,7 @@ function SongPreview({
             title={t('Changer de version (solo, groupe…)')}
             onChange={(e) => saveSong(switchVersion(song, e.target.value))}
           >
-            {song.versions.map((v) => {
+            {song.versions.map((v, i) => {
               const bandName =
                 v.bandId !== ''
                   ? (bands.find((b) => b.id === v.bandId)?.name ?? '')
@@ -1743,8 +1743,11 @@ function SongPreview({
                 bandName !== '' && bandName.trim() !== v.name.trim()
                   ? ` · ${bandName}`
                   : '';
+              // ⭐ sur la référence dans la liste (b456), comme SongView.
+              const etoile = i === 0 && !v.name.startsWith('⭐');
               return (
                 <option key={v.id} value={v.id}>
+                  {etoile ? '⭐ ' : ''}
                   {v.name}
                   {suffix}
                   {v.key !== '' ? ` (${v.key})` : ''}
