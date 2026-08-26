@@ -428,7 +428,7 @@ export const EN_ARTISTE: Record<string, string> = {
   // Refonte navigation, lot 1 (b378)
   'Live en cours': 'Live in progress',
   'Live en pause': 'Live paused',
-  'ouvrir le mode chanteur': 'open singer mode',
+  'ouvrir la régie': 'open the control mode',
   'gérer le live': 'manage the live',
   'Lancer un live': 'Start a live',
   'Reprendre le live en cours': 'Resume the current live',

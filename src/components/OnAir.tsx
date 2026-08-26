@@ -1014,7 +1014,7 @@ export function LiveBadge() {
           : t('{n} spectateur', { n: viewers }))
       : '') +
     ' — ' +
-    (versRegie ? t('ouvrir le mode chanteur') : t('gérer le live'));
+    (versRegie ? t('ouvrir la régie') : t('gérer le live'));
   return (
     <button
       className={`livebar ${status}`}

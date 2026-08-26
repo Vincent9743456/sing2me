@@ -747,13 +747,13 @@ export function SetlistEdit({ id }: { id: string | null }) {
               </button>
               <button
                 className="btn ghost"
-                title={t('Vue chanteur sans partition')}
+                title={t('Mode régie (sans partition)')}
                 onClick={() => {
                   saveSetlist(stamp(withValidatedMeta(draft)));
                   navigate(`/remote/${draft.id}`);
                 }}
               >
-                <Icon name="sliders" size={15} /> {t('Mode chanteur')}
+                <Icon name="sliders" size={15} /> {t('Mode régie')}
               </button>
               <button
                 className="btn ghost"
