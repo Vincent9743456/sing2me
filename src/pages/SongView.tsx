@@ -516,14 +516,21 @@ export function SongView({
                 aria-label={t('Changer de version affichée')}
                 onChange={(e) => onVersionChange(e.target.value)}
               >
-                {song.versions.map((v) => {
+                {song.versions.map((v, i) => {
                   const bn = v.bandId !== '' ? bandName(v.bandId) : '';
                   // Évite « Vince et Marcus · Vince et Marcus » quand le nom
                   // de version reprend déjà celui du groupe.
                   const suffix =
                     bn !== '' && bn.trim() !== v.name.trim() ? ` · ${bn}` : '';
+                  // La RÉFÉRENCE (versions[0], toujours personnelle) se
+                  // reconnaît DANS la liste, pas seulement une fois choisie
+                  // (b456, demande de Vincent : son originale s'appelait
+                  // « Version UG » et rien ne la distinguait d'une version
+                  // de groupe dans le menu).
+                  const etoile = i === 0 && !v.name.startsWith('⭐');
                   return (
                     <option key={v.id} value={v.id}>
+                      {etoile ? '⭐ ' : ''}
                       {v.name}
                       {suffix}
                       {v.key !== '' ? ` (${v.key})` : ''}
