@@ -106,7 +106,9 @@ export function Concerts() {
             </button>
           ))}
         <p className="help" style={{ marginTop: 0, marginBottom: 12 }}>
-          {t('Tes paroles s’affichent sur les téléphones du public.')}
+          {t(
+            'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords.',
+          )}
         </p>
         <h2 className="pagetitle">{t('À venir')}</h2>
         <button
