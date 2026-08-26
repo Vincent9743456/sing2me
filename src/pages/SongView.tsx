@@ -128,6 +128,25 @@ export function SongView({
       ? (((semitonesBetween(song.key, ctxItem.keyOverride) ?? 0) % 12) + 12) % 12
       : 0;
   const capo = song?.capo ?? 0;
+  /**
+   * RETOUR À LA LISTE (b457, demande de Vincent : « le fait de la fermer
+   * doit faire que je me retrouve dans la liste à un endroit où
+   * visuellement la chanson est la première »). La fiche NOTE le morceau
+   * qu'elle montre ; la bibliothèque, à son prochain montage, replace sa
+   * carte en tête de l'écran — l'exploration reprend là où on l'a
+   * laissée. sessionStorage : un repère d'onglet, jamais synchronisé.
+   * Pas depuis une setlist : on y revient à la setlist, pas à la liste.
+   */
+  useEffect(() => {
+    if (fromSetlist) return;
+    try {
+      sessionStorage.setItem('sing2me/libRetour', ctxItem?.songId ?? id);
+    } catch {
+      /* stockage indisponible : on retombe sur le comportement d'avant */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
   // null = fermé · 'new' = nouvelle note · sinon la note à modifier
   const [noteModal, setNoteModal] = useState<'new' | SongNote | null>(null);
   // Éditeur « Ajouter à un groupe / une setlist » (à la demande).

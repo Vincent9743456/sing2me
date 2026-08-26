@@ -283,16 +283,36 @@ export function Library() {
    * à l'écran de la ligne concernée AVANT le changement, et on recale le
    * défilement juste après le rendu pour qu'elle n'ait pas bougé.
    */
-  const ancreReflow = useRef<{ id: string; top: number } | null>(null);
+  const ancreReflow = useRef<{ id: string; top: number | 'tete' } | null>(
+    null,
+  );
   function ancrerLigne(id: string | null) {
     if (id === null) return;
     const el = document.querySelector(`[data-rowid="${CSS.escape(id)}"]`);
     if (el) ancreReflow.current = { id, top: el.getBoundingClientRect().top };
   }
+  /** Place la carte du morceau EN TÊTE de l'écran, sous la barre collante
+   *  (b457) — la position d'où l'on explore « les chansons qui suivent ». */
+  function caleEnTete(id: string) {
+    const el = document.querySelector(`[data-rowid="${CSS.escape(id)}"]`);
+    if (!el) return;
+    const brut = getComputedStyle(document.documentElement).getPropertyValue(
+      '--lib-sticky-top',
+    );
+    const sticky = parseFloat(brut) || 76;
+    const delta = el.getBoundingClientRect().top - sticky - 8;
+    if (Math.abs(delta) > 1) window.scrollBy(0, delta);
+  }
   useLayoutEffect(() => {
     const a = ancreReflow.current;
     ancreReflow.current = null;
     if (!a) return;
+    // Fermeture du volet (b457) : le morceau consulté devient la PREMIÈRE
+    // carte visible — il ne se contente plus de « ne pas bouger » (b434).
+    if (a.top === 'tete') {
+      caleEnTete(a.id);
+      return;
+    }
     const el = document.querySelector(`[data-rowid="${CSS.escape(a.id)}"]`);
     if (!el) return;
     const delta = el.getBoundingClientRect().top - a.top;
@@ -321,6 +341,31 @@ export function Library() {
       pending = null;
     }
     if (pending) setBandFilter(pending);
+    // au montage uniquement
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  /**
+   * RETOUR D'UNE FICHE MORCEAU (b457, demande de Vincent : « je me
+   * retrouve en fin de liste »). La fiche a noté le morceau consulté
+   * (sing2me/libRetour, posé par SongView) : au montage, sa carte est
+   * replacée EN TÊTE de l'écran — juste sous la barre d'outils collante —
+   * pour que l'exploration reprenne sur les chansons qui suivent. Un
+   * morceau absent de la vue (filtre, recherche) ne fait rien bouger, et
+   * le repère se consomme dans tous les cas — il ne vaut que pour CE
+   * retour. Double rAF : on recale après que la grille ET la mesure de la
+   * barre (--lib-sticky-top) sont posées.
+   */
+  useEffect(() => {
+    let cible: string | null = null;
+    try {
+      cible = sessionStorage.getItem('sing2me/libRetour');
+      if (cible) sessionStorage.removeItem('sing2me/libRetour');
+    } catch {
+      cible = null;
+    }
+    if (!cible) return;
+    const idc = cible;
+    requestAnimationFrame(() => requestAnimationFrame(() => caleEnTete(idc)));
     // au montage uniquement
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1371,9 +1416,12 @@ export function Library() {
           <SongPreview
             id={selectedId}
             onClose={() => {
-              // Même recalage à la fermeture : la liste se re-déploie en
-              // colonnes, la ligne qu'on lisait ne doit pas bouger (b434).
-              ancrerLigne(selectedId);
+              // À la fermeture, le morceau qu'on vient de lire devient la
+              // PREMIÈRE carte visible (b457, demande de Vincent) — pour
+              // explorer la suite de la liste à partir de lui.
+              if (selectedId !== null) {
+                ancreReflow.current = { id: selectedId, top: 'tete' };
+              }
               setSelectedId(null);
             }}
             onPickSetlist={(id) => setPickerFor(id)}
