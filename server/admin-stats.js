@@ -146,81 +146,58 @@ async function countRows(table, filter = '') {
   }
 }
 
-/** Dépense IA mesurée, par fournisseur et par fonction. */
+/**
+ * Dépense IA mesurée, par fournisseur et par fonction.
+ *
+ * UNE seule requête (b455, « le chargement est assez long », Vincent) :
+ * l'ancien code interrogeait la table DEUX fois de suite — les 30 jours,
+ * puis TOUTES les lignes — alors qu'une seule lecture permet de calculer
+ * les deux fenêtres en un passage. La sonde `measurement` (b161) est
+ * devenue un sous-produit : le succès de CETTE requête dit si la table
+ * existe, plus besoin d'une requête de sonde à part.
+ */
 async function aiSpend() {
-  const since = (d) =>
-    new Date(Date.now() - d * 86400000).toISOString();
+  const since30 = Date.now() - 30 * 86400000;
   const empty = { total: 0, byProvider: {}, byFn: {}, calls: 0 };
   try {
     const r = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/ai_usage` +
-        `?select=provider,fn,cost_usd&at=gte.${since(30)}`,
+      `${process.env.SUPABASE_URL}/rest/v1/ai_usage?select=provider,fn,cost_usd,at`,
       { headers: sbHeaders() },
     );
-    if (!r.ok) return { d30: empty, all: empty };
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      return {
+        d30: empty,
+        all: empty,
+        probe: { ok: false, status: r.status, detail: detail.slice(0, 200) },
+      };
+    }
     const rows = await r.json();
-    const acc = { total: 0, byProvider: {}, byFn: {}, calls: rows.length };
+    const d30 = { total: 0, byProvider: {}, byFn: {}, calls: 0 };
+    const all = { total: 0, byProvider: {}, byFn: {}, calls: rows.length };
     for (const row of rows) {
       const c = Number(row.cost_usd) || 0;
-      acc.total += c;
-      acc.byProvider[row.provider] = (acc.byProvider[row.provider] ?? 0) + c;
-      acc.byFn[row.fn] = (acc.byFn[row.fn] ?? 0) + c;
-    }
-    // Dépense TOTALE depuis le début, par fournisseur (pour le restant).
-    const r2 = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/ai_usage?select=provider,cost_usd`,
-      { headers: sbHeaders() },
-    );
-    const all = { total: 0, byProvider: {}, byFn: {}, calls: 0 };
-    if (r2.ok) {
-      const rows2 = await r2.json();
-      all.calls = rows2.length;
-      for (const row of rows2) {
-        const c = Number(row.cost_usd) || 0;
-        all.total += c;
-        all.byProvider[row.provider] = (all.byProvider[row.provider] ?? 0) + c;
+      all.total += c;
+      all.byProvider[row.provider] = (all.byProvider[row.provider] ?? 0) + c;
+      if ((Date.parse(row.at ?? '') || 0) >= since30) {
+        d30.calls++;
+        d30.total += c;
+        d30.byProvider[row.provider] = (d30.byProvider[row.provider] ?? 0) + c;
+        d30.byFn[row.fn] = (d30.byFn[row.fn] ?? 0) + c;
       }
     }
-    return { d30: acc, all };
+    return { d30, all, probe: { ok: true } };
   } catch {
-    return { d30: empty, all: empty };
+    return {
+      d30: empty,
+      all: empty,
+      probe: { ok: false, status: 0, detail: 'injoignable' },
+    };
   }
 }
 
-/**
- * Les tables de mesure existent-elles ? (b161) Sans `supabase/admin.sql`
- * exécuté, tout échoue en silence : la dépense reste à zéro et les
- * rechargements ne s'enregistrent pas. On le DIT plutôt que de laisser
- * croire à une consommation nulle.
- */
-async function measurement() {
-  const probe = async (table) => {
-    try {
-      const r = await fetch(
-        `${process.env.SUPABASE_URL}/rest/v1/${table}?select=id&limit=1`,
-        { headers: sbHeaders() },
-      );
-      if (r.ok) return { ok: true };
-      const detail = await r.text().catch(() => '');
-      return { ok: false, status: r.status, detail: detail.slice(0, 200) };
-    } catch {
-      return { ok: false, status: 0, detail: 'injoignable' };
-    }
-  };
-  const [usage, tops] = await Promise.all([
-    probe('ai_usage'),
-    probe('billing_topups'),
-  ]);
-  return {
-    ready: usage.ok && tops.ok,
-    aiUsage: usage,
-    topups: tops,
-    // Depuis quand mesure-t-on ? (le premier enregistrement)
-    since: null,
-  };
-}
-
-/** Rechargements saisis à la main, par fournisseur. */
+/** Rechargements saisis à la main, par fournisseur — avec, en sous-produit,
+ *  la sonde b161 (la table existe-t-elle ?), comme pour `aiSpend`. */
 async function topups() {
   const out = {};
   try {
@@ -228,14 +205,25 @@ async function topups() {
       `${process.env.SUPABASE_URL}/rest/v1/billing_topups?select=provider,amount_usd,at&order=at.desc`,
       { headers: sbHeaders() },
     );
-    if (!r.ok) return { byProvider: out, last: [] };
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      return {
+        byProvider: out,
+        last: [],
+        probe: { ok: false, status: r.status, detail: detail.slice(0, 200) },
+      };
+    }
     const rows = await r.json();
     for (const row of rows) {
       out[row.provider] = (out[row.provider] ?? 0) + (Number(row.amount_usd) || 0);
     }
-    return { byProvider: out, last: rows.slice(0, 5) };
+    return { byProvider: out, last: rows.slice(0, 5), probe: { ok: true } };
   } catch {
-    return { byProvider: out, last: [] };
+    return {
+      byProvider: out,
+      last: [],
+      probe: { ok: false, status: 0, detail: 'injoignable' },
+    };
   }
 }
 
@@ -293,17 +281,25 @@ export default async function handler(req, res) {
     // « Morceaux partagés en groupe » (band_library) est retiré (b411,
     // demande de Vincent : pas à jour, pas utile) au profit du compteur de
     // partitions des bibliothèques personnelles.
-    const [acc, spend, tops, meas, bands, lives, plans, songs] =
+    const [acc, spend, tops, bands, lives, plans, songs] =
       await Promise.all([
         accounts(),
         aiSpend(),
         topups(),
-        measurement(),
         countRows('cloud_bands'),
         countRows('lives'),
         plansBreakdown(),
         songStats(),
       ]);
+    // Diagnostic b161, sans requêtes dédiées (b455) : les lectures
+    // ci-dessus ont déjà touché les deux tables de mesure — leur succès
+    // EST la sonde.
+    const meas = {
+      ready: spend.probe.ok && tops.probe.ok,
+      aiUsage: spend.probe,
+      topups: tops.probe,
+      since: null,
+    };
 
     const remaining = {};
     for (const p of ['anthropic', 'openai']) {

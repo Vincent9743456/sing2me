@@ -85,6 +85,9 @@ const CLES_DU_COMPTE = [
   // b382 : dernier compteur de suiveurs affiché (fiche Artiste) — même
   // logique que liveCache, il appartient au compte.
   'sing2me/fanCache',
+  // b455 : derniers chiffres du tableau de bord fondateur — des données
+  // d'exploitation qui n'ont rien à faire sous un autre compte.
+  'sing2me/adminCache',
 ];
 
 export function oublierCachesDuCompte(): void {
