@@ -33,7 +33,7 @@ export const EN_SETLISTS: Record<string, string> = {
   'Prochain concert': 'Next show',
   'de {nom}': 'by {nom}',
   '{n} en réserve': '{n} in reserve',
-  'Mode chanteur (sans partition)': 'Singer mode (no sheet music)',
+  'Mode régie (sans partition)': 'Control mode (no sheet music)',
   Scène: 'Stage',
   'Supprimer cette setlist': 'Delete this setlist',
   '{n} setlist': '{n} setlist',
@@ -130,8 +130,7 @@ export const EN_SETLISTS: Record<string, string> = {
   "Vue d'ensemble propre et imprimable": 'Clean, printable overview',
   Imprimer: 'Print',
   'Mode scène': 'Stage mode',
-  'Vue chanteur sans partition': 'Singer view without sheet music',
-  'Mode chanteur': 'Singer mode',
+  'Mode régie': 'Control mode',
   '✓ Enregistré': '✓ Saved',
   'Ajouter des morceaux': 'Add songs',
   'Ajouter {n} morceau': 'Add {n} song',
@@ -210,7 +209,7 @@ export const EN_SETLISTS: Record<string, string> = {
     "Tap a song to display it — the setlist order doesn't change.",
   'EN COURS': 'PLAYING',
 
-  // Mode chanteur (Remote)
+  // Mode régie (Remote)
   'Tape le morceau qui démarre — le public et les musiciens suivent. Re-taper le morceau en cours le désélectionne.':
     'Tap the song that\'s starting — the audience and musicians follow along. Tapping the current song again deselects it.',
   '▶ EN COURS': '▶ PLAYING',

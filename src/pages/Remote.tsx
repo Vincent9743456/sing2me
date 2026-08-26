@@ -87,7 +87,7 @@ export function Remote({ setlistId }: { setlistId: string }) {
     return (
       <>
         <TopBar
-          title={t('Mode chanteur')}
+          title={t('Mode régie')}
           onBack={() => navigate('/setlists')}
         />
         <div className="page">
@@ -102,7 +102,7 @@ export function Remote({ setlistId }: { setlistId: string }) {
       {/* Plus d'icône 🎛 devant le titre (b439, revue UX) : elle
           n'apprenait rien — le header dit le nom, c'est tout. */}
       <TopBar
-        title={setlist.name || t('Mode chanteur')}
+        title={setlist.name || t('Mode régie')}
         onBack={() => navigate('/setlists')}
       />
       <div className="page remote">

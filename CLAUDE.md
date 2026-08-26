@@ -1692,7 +1692,15 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
   Test de non-régression : `b258.mjs` parcourt dix écrans, panneau du direct
   ouvert, en français ET en anglais — un audit du code ne prouve pas ce que
   l'utilisateur lit.
-- Textes UI en français, ton chaleureux, tutoiement.
+- **La vue de pilotage s'appelle « MODE RÉGIE »** (b451, correction de
+  Vincent — annule le « Mode chanteur » posé par l'audit b439 : « c'est bien
+  le mode Régie »). Ce mode sert aux artistes qui n'ont PAS besoin des
+  partitions en concert mais actionnent les morceaux un à un pour que le
+  public et leurs musiciens suivent — le nom doit dire le pilotage, pas un
+  pupitre de chant. Libellés : « Mode régie » (bouton de la setlist, titre de
+  l'écran Remote), « Mode régie (sans partition) » (menu ⋮ des setlists),
+  « ouvrir la régie » (badge live). Le code (`Remote.tsx`, `.regie`,
+  `regieSetlistId`) ne se renomme pas, comme toujours.
 - **Bilingue (b156) — le français reste la langue SOURCE du code.**
   Toute chaîne d'INTERFACE s'écrit en français dans le code et passe par
   `t('…')` (`src/i18n.ts`) ; la chaîne française EST la clé. L'anglais
