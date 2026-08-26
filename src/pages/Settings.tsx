@@ -37,7 +37,7 @@ import {
 } from '../lib/ug';
 import { Icon } from '../components/Icon';
 import { AccordionNav, ProgressBar, TopBar } from '../components/ui';
-import { rememberLang, storedLang, t } from '../i18n';
+import { rememberLang, resolveLang, storedLang, t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import { ensurePublicPage, profilAPublier } from '../lib/publicPages';
 import { emptyArtist } from '../types';
@@ -522,6 +522,10 @@ export function Settings() {
   // Le choix affiché doit refléter la langue RÉELLEMENT appliquée : si la
   // synchro a effacé le champ, on retombe sur le choix mémorisé à part.
   const langPref = (prefs.lang ?? '') !== '' ? (prefs.lang ?? '') : storedLang();
+  // La puce allumée est la langue EFFECTIVE (b453) : un compte resté en
+  // automatique ('' — le défaut de l'inscription) voit la langue que
+  // l'app lui parle, pas une puce éteinte.
+  const langActive = resolveLang(langPref);
 
   return (
     <>
@@ -554,23 +558,18 @@ export function Settings() {
         </div>
         <div className="spacer" />
 
-        {/* Langue de l'interface (b156) : automatique = langue du
-            téléphone. Les contenus musicaux ne sont JAMAIS traduits. */}
+        {/* Langue de l'interface (b156, simplifiée b453) : elle se règle
+            TOUTE SEULE à l'inscription (langue du téléphone) — l'option
+            « Automatique » n'a donc rien à faire ici, le réglage ne sert
+            qu'à CHANGER : Français ou English. Tant qu'aucun choix n'est
+            fait, la puce allumée est la langue effective. Les contenus
+            musicaux ne sont JAMAIS traduits. */}
         <h2 className="pagetitle">
           {t('Langue de l’application')}
         </h2>
         <div className="chips">
           <button
-            className={`chip ${langPref === '' ? '' : 'off'}`}
-            onClick={() => {
-              rememberLang('');
-              savePrefs({ ...prefs, lang: '' });
-            }}
-          >
-            {t('🌐 Automatique (langue du téléphone)')}
-          </button>
-          <button
-            className={`chip ${langPref === 'fr' ? '' : 'off'}`}
+            className={`chip ${langActive === 'fr' ? '' : 'off'}`}
             onClick={() => {
               rememberLang('fr');
               savePrefs({ ...prefs, lang: 'fr' });
@@ -579,7 +578,7 @@ export function Settings() {
             Français
           </button>
           <button
-            className={`chip ${langPref === 'en' ? '' : 'off'}`}
+            className={`chip ${langActive === 'en' ? '' : 'off'}`}
             onClick={() => {
               rememberLang('en');
               savePrefs({ ...prefs, lang: 'en' });
