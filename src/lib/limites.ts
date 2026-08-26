@@ -21,8 +21,8 @@
  *    grâce de reconnexion, le 16ᵉ voit « salle pleine » — jamais
  *    d'éviction en cours de concert) : api/live.js porte la même
  *    valeur (CAP_SALLE) ;
- *  • les TARIFS sont arrêtés (0 € / 39 €/an ou 3,99 €/mois / 89 €/an ou
- *    8,99 €/mois) mais le PAIEMENT n'existe pas encore : l'app n'affiche
+ *  • les TARIFS sont arrêtés (0 € / 59 €/an ou 5,99 €/mois / 99 €/an ou
+ *    9,90 €/mois — mise à jour b454) mais le PAIEMENT n'existe pas encore : l'app n'affiche
  *    aucun prix tant qu'on ne peut pas acheter.
  *
  * Le PLAN vit côté serveur (`user_plans`, jamais modifiable par le

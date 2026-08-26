@@ -775,8 +775,9 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **Modèle économique — LES TROIS OFFRES (b387, arbitrage Vincent)** :
   **gratuit** (30 morceaux — 50→30 en b424, demande de Vincent · 15
   spectateurs simultanés en live), **musicien** (morceaux illimités ·
-  15 spectateurs — 39 €/an ou 3,99 €/mois), **scène** (tout illimité —
-  89 €/an ou 8,99 €/mois). Remplace b386 (50 tout court), b385
+  15 spectateurs — 59 €/an ou 5,99 €/mois), **scène** (tout illimité —
+  99 €/an ou 9,90 €/mois). Tarifs relevés en b454 (demande de Vincent —
+  remplacent 39/3,99 et 89/8,99). Remplace b386 (50 tout court), b385
   (actifs/réserve), b381 (30/2), la « Licence Scène » et le Premium
   2,99 €. Le nom reste **mojosong**.
   - **Morceaux : 30 en gratuit, c'est tout** (b386 : 50 ; abaissé à 30
@@ -843,8 +844,8 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     `max(existant, 50)`) ; refus intercepté dans Account (feuille +
     message qui se lève seul, règle 11) ; mesure `limit_events`.
     Config centrale : `src/lib/limites.ts` ; fondateurs `admin`.
-  - **Tarifs ARRÊTÉS (0 / 39 €/an ou 3,99 €/mois / 89 €/an ou
-    8,99 €/mois) mais PAIEMENT INEXISTANT** : l'app n'affiche AUCUN prix
+  - **Tarifs ARRÊTÉS (0 / 59 €/an ou 5,99 €/mois / 99 €/an ou
+    9,90 €/mois — relevés b454) mais PAIEMENT INEXISTANT** : l'app n'affiche AUCUN prix
     tant qu'on ne peut pas acheter (la page de l'offre, elle, les
     porte). Pas de paiement à la session (retiré b386).
   - Garde-fous intangibles : **jamais de coupure en plein concert** ;
