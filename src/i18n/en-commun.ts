@@ -24,7 +24,6 @@ export const EN_COMMUN: Record<string, string> = {
   'Enregistrer tes modifications ?': 'Save your changes?',
   '💾 Enregistrer et sortir': '💾 Save and leave',
   'Sortir sans enregistrer': 'Leave without saving',
-  '🌐 Automatique (langue du téléphone)': '🌐 Automatic (phone language)',
   'Tes partitions, paroles, notes et messages ne sont jamais traduits — seule l’interface change de langue.':
     'Your charts, lyrics, notes and messages are never translated — only the interface changes language.',
   Exporter: 'Export',
