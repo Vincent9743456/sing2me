@@ -79,18 +79,47 @@ const FN_LABEL: Record<string, string> = {
   setlist: 'Setlists par IA',
 };
 
+/**
+ * DERNIERS CHIFFRES CONNUS (b455, « le chargement est assez long »,
+ * Vincent) — même réflexe que l'historique des lives (b343) : l'écran
+ * affiche immédiatement ce qu'on a su la dernière fois, et rafraîchit en
+ * silence derrière. Le gros du délai est incompressible côté serveur
+ * (réveil de la fonction, huit lectures Supabase) ; ce qui se corrige,
+ * c'est l'ATTENTE devant un écran vide. Un cache local ne conclut jamais
+ * à l'absence (règle b245) : il ne sert qu'à montrer plus vite.
+ */
+const CACHE_ADMIN = 'sing2me/adminCache';
+function statsLues(): Stats | null {
+  try {
+    const raw = localStorage.getItem(CACHE_ADMIN);
+    if (!raw) return null;
+    const c = JSON.parse(raw) as Partial<Stats>;
+    if (c?.accounts == null || c?.ai?.last30 == null) return null;
+    return c as Stats;
+  } catch {
+    return null;
+  }
+}
+
 export function Dashboard() {
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<Stats | null>(() => statsLues());
   const [error, setError] = useState<string | null>(null);
   const [topup, setTopup] = useState<'anthropic' | 'openai' | null>(null);
   const toast = useToast();
+
+  // Un rafraîchissement qui échoue ne remplace JAMAIS des chiffres déjà
+  // affichés par un message d'erreur (b455, même règle que b343) :
+  // l'erreur ne se montre que quand il n'y a rien à montrer.
+  function echec(msg: string) {
+    if (statsLues() === null) setError(msg);
+  }
 
   async function load() {
     setError(null);
     try {
       const s = await getValidSession();
       if (!s) {
-        setError(t('Il faut être connecté.'));
+        echec(t('Il faut être connecté.'));
         return;
       }
       const r = await fetch('/api/admin-stats', {
@@ -98,12 +127,12 @@ export function Dashboard() {
       });
       const type = r.headers.get('content-type') ?? '';
       if (!type.includes('application/json')) {
-        setError(t('Tableau de bord indisponible — nécessite la version en ligne.'));
+        echec(t('Tableau de bord indisponible — nécessite la version en ligne.'));
         return;
       }
       const body = await r.json();
       if (!r.ok) {
-        setError(body?.error ?? `Erreur ${r.status}`);
+        echec(body?.error ?? `Erreur ${r.status}`);
         return;
       }
       // Réponse inattendue (proxy, ancienne version du serveur, panne
@@ -113,12 +142,17 @@ export function Dashboard() {
         body?.ai?.last30 == null ||
         body?.billing?.remaining == null
       ) {
-        setError(t('Réponse inattendue du serveur — chiffres indisponibles.'));
+        echec(t('Réponse inattendue du serveur — chiffres indisponibles.'));
         return;
       }
       setStats(body as Stats);
+      try {
+        localStorage.setItem(CACHE_ADMIN, JSON.stringify(body));
+      } catch {
+        /* stockage indisponible : l'affichage direct suffit */
+      }
     } catch {
-      setError(t('Impossible de charger les chiffres.'));
+      echec(t('Impossible de charger les chiffres.'));
     }
   }
 
