@@ -99,6 +99,26 @@ export function suivreLeClavier(): void {
     racine.classList.toggle('clavier-ouvert', px > 0);
   };
 
+  /**
+   * RÉALIGNEMENT APRÈS LA SAISIE (b447, capture de Vincent : barre
+   * d'onglets peinte AU MILIEU de l'écran, liste décalée sous l'horloge —
+   * la récidive du « pire » décrit en b264). iOS referme parfois le
+   * clavier en laissant la fenêtre VISUELLE décalée par rapport à la
+   * fenêtre de mise en page : les éléments `position: fixed` (barre
+   * d'onglets, barre de titre) se peignent alors à un « bas » qui n'est
+   * plus le bas visible, jusqu'au prochain geste de défilement. Quand la
+   * saisie se termine et que le décalage persiste, un micro-défilement
+   * aller-retour force Safari à réaligner les deux fenêtres. Déclenché
+   * UNIQUEMENT à la fin d'une saisie — jamais pendant un zoom au doigt,
+   * où un décalage est légitime — et sans décalage, aucun effet.
+   */
+  const realigner = () => {
+    if (saisieEnCours()) return;
+    if (vv.offsetTop <= 0.5) return;
+    window.scrollBy(0, 1);
+    window.scrollBy(0, -1);
+  };
+
   poser();
   vv.addEventListener('resize', poser);
   vv.addEventListener('scroll', poser);
@@ -109,11 +129,19 @@ export function suivreLeClavier(): void {
   window.addEventListener('focusin', poser);
   window.addEventListener('focusout', () => {
     poser();
-    window.setTimeout(poser, 300);
+    window.setTimeout(() => {
+      poser();
+      realigner();
+    }, 300);
   });
   // Retour au premier plan : les mesures du lancement peuvent être fausses,
-  // celles-ci sont les vraies.
+  // celles-ci sont les vraies — et un décalage resté collé pendant
+  // l'absence se réaligne au passage (b447), même filet qu'en fin de
+  // saisie.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') poser();
+    if (document.visibilityState === 'visible') {
+      poser();
+      window.setTimeout(realigner, 300);
+    }
   });
 }
