@@ -89,6 +89,7 @@ export function suivreLeClavier(): void {
 
   const racine = document.documentElement;
   let dernier = -1;
+  let dernierOuvert = false;
   // Hauteur de la fenêtre SANS clavier (b448) — recalée dès qu'aucune
   // saisie n'est en cours, figée pendant la saisie. Remise à zéro au
   // changement d'orientation : l'ancienne référence n'y vaut plus rien.
@@ -126,16 +127,40 @@ export function suivreLeClavier(): void {
       document.documentElement.clientHeight,
       saisie,
     );
-    const px = saisie
-      ? hauteurDuClavier(reference, vv.height, vv.offsetTop)
+    /**
+     * DEUX DÉCISIONS, PAS UNE (b449, capture de Vincent : « c'est en
+     * ouvrant le clavier et en commençant à scroller »).
+     *
+     * · Le clavier est-il OUVERT ? — comparaison à la référence SEULE,
+     *   jamais au décalage : pendant la saisie, iOS peut faire défiler la
+     *   fenêtre visuelle jusqu'en bas de la mise en page (`offsetTop`
+     *   grandit), et « l'espace caché SOUS la fenêtre » retombe à zéro
+     *   alors que le clavier est toujours là. L'ancienne formule unique
+     *   concluait « fermé » en plein défilement : la barre d'onglets
+     *   réapparaissait au milieu de l'écran. L'état ouvert/fermé ne
+     *   dépend donc jamais du défilement. C'est lui qui pose la classe.
+     * · Que RECOUVRE-t-il de la mise en page ? — géométrie pour
+     *   `--clavier` (réserve de défilement, voiles), mesurée sur la
+     *   hauteur COURANTE et avec le décalage : quand iOS rétrécit la mise
+     *   en page avec le clavier (PWA, b448), rien n'est recouvert et les
+     *   éléments ancrés en bas n'ont pas à être remontés.
+     */
+    const ouvert = saisie && hauteurDuClavier(reference, vv.height, 0) > 0;
+    const courante = Math.max(
+      window.innerHeight,
+      document.documentElement.clientHeight,
+    );
+    const px = ouvert
+      ? Math.max(0, hauteurDuClavier(courante, vv.height, vv.offsetTop))
       : 0;
     // Le défilement de la fenêtre visuelle déclenche cet écouteur en rafale :
     // on n'écrit que si la valeur a VRAIMENT changé, sinon chaque geste
     // provoquerait un recalcul de mise en page complet.
-    if (px === dernier) return;
+    if (px === dernier && ouvert === dernierOuvert) return;
     dernier = px;
+    dernierOuvert = ouvert;
     racine.style.setProperty('--clavier', `${px}px`);
-    racine.classList.toggle('clavier-ouvert', px > 0);
+    racine.classList.toggle('clavier-ouvert', ouvert);
   };
 
   /**
