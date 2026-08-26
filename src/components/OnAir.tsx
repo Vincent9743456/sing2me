@@ -788,7 +788,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 </div>
                 <p className="help" style={{ textAlign: 'center', margin: '8px 0 12px' }}>
                   {mode === 'concert'
-                    ? t('Le public voit les paroles du morceau en cours.')
+                    ? t(
+                        'Le public voit les paroles du morceau en cours. Les musiciens qui se greffent voient paroles et accords.',
+                      )
                     : t('Seuls les musiciens du groupe suivent.')}
                 </p>
               </>

@@ -432,8 +432,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'gérer le live': 'manage the live',
   'Lancer un live': 'Start a live',
   'Reprendre le live en cours': 'Resume the current live',
-  'Tes paroles s’affichent sur les téléphones du public.':
-    'Your lyrics show up on your audience’s phones.',
+  'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords.':
+    'Your lyrics show up on your audience’s phones. Musicians joining the jam see lyrics and chords.',
   'Session en cours': 'Session in progress',
   'Session en pause': 'Session paused',
   'Toucher pour revenir au live.': 'Tap to get back to the live.',

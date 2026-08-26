@@ -148,8 +148,8 @@ export const EN_COMPTE: Record<string, string> = {
 
   // Refonte de la modale live (b345)
   'Le groupe': 'The band',
-  'Le public voit les paroles du morceau en cours.':
-    'The audience sees the lyrics of the current song.',
+  'Le public voit les paroles du morceau en cours. Les musiciens qui se greffent voient paroles et accords.':
+    'The audience sees the lyrics of the current song. Musicians joining the jam see lyrics and chords.',
   'Seuls les musiciens du groupe suivent.':
     'Only the band’s musicians follow along.',
   'Démarrer la répétition': 'Start the rehearsal',
