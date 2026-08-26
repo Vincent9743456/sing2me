@@ -46,6 +46,15 @@ egal('en saisie : monte si la courante dépasse', fenetreDeReference(500, 844, 5
   egal('PWA iOS : le clavier est bien vu', hauteurDuClavier(ref, 500, 0), 344);
 }
 
+// Le scénario b449 (clavier ouvert PUIS défilement : la fenêtre visuelle
+// descend en bas de la mise en page, offsetTop = 424). L'ancienne formule
+// unique concluait « fermé » ; l'état OUVERT se juge sans le décalage.
+{
+  const ref = fenetreDeReference(844, 844, 844, true);
+  egal('défilement : la géométrie retombe à 0', hauteurDuClavier(ref, 420, 424), 0);
+  egal('défilement : le clavier reste OUVERT', hauteurDuClavier(ref, 420, 0), 424);
+}
+
 if (ko > 0) {
   console.log(`\n${ko} test(s) en échec.`);
   process.exit(1);
