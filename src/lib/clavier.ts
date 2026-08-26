@@ -50,6 +50,34 @@ export function hauteurDuClavier(
   return cache > SEUIL_CLAVIER ? cache : 0;
 }
 
+/**
+ * LA FENÊTRE DE RÉFÉRENCE, C'EST LA FENÊTRE SANS CLAVIER (b448, capture de
+ * Vincent : clavier OUVERT, barre d'onglets peinte au milieu de l'écran —
+ * la classe `clavier-ouvert` n'était jamais posée PENDANT la saisie).
+ *
+ * La formule « innerHeight − visible » suppose que la fenêtre de mise en
+ * page garde sa hauteur quand le clavier s'ouvre. C'est vrai dans Safari,
+ * FAUX dans l'app installée sur l'écran d'accueil : là, iOS RÉTRÉCIT la
+ * fenêtre de mise en page avec le clavier — `innerHeight` retombe à la
+ * hauteur visible, la différence vaut ~0, et la mesure conclut « pas de
+ * clavier » alors qu'il occupe la moitié de l'écran.
+ *
+ * On compare donc à une hauteur de RÉFÉRENCE : la plus grande hauteur
+ * connue pendant qu'aucune saisie n'est en cours (clavier forcément fermé).
+ * Pendant la saisie, cette mémoire ne se recale jamais vers le bas — c'est
+ * précisément le moment où les hauteurs mentent. Fonction pure, comme
+ * `hauteurDuClavier` : elle rend la nouvelle valeur de la mémoire.
+ */
+export function fenetreDeReference(
+  memoire: number,
+  hauteurFenetre: number,
+  hauteurDocument: number,
+  saisie: boolean,
+): number {
+  const courante = Math.max(hauteurFenetre, hauteurDocument);
+  return saisie ? Math.max(memoire, courante) : courante;
+}
+
 let demarre = false;
 
 /** Idempotent : appelable depuis chaque entrée sans doubler les écouteurs. */
@@ -61,6 +89,10 @@ export function suivreLeClavier(): void {
 
   const racine = document.documentElement;
   let dernier = -1;
+  // Hauteur de la fenêtre SANS clavier (b448) — recalée dès qu'aucune
+  // saisie n'est en cours, figée pendant la saisie. Remise à zéro au
+  // changement d'orientation : l'ancienne référence n'y vaut plus rien.
+  let reference = 0;
 
   /**
    * PAS DE CLAVIER SANS CHAMP DE SAISIE (b367, constat de Vincent : « les
@@ -87,8 +119,15 @@ export function suivreLeClavier(): void {
   const poser = () => {
     racine.style.setProperty('--vv-h', `${Math.round(vv.height)}px`);
     racine.style.setProperty('--vv-t', `${Math.round(vv.offsetTop)}px`);
-    const px = saisieEnCours()
-      ? hauteurDuClavier(window.innerHeight, vv.height, vv.offsetTop)
+    const saisie = saisieEnCours();
+    reference = fenetreDeReference(
+      reference,
+      window.innerHeight,
+      document.documentElement.clientHeight,
+      saisie,
+    );
+    const px = saisie
+      ? hauteurDuClavier(reference, vv.height, vv.offsetTop)
       : 0;
     // Le défilement de la fenêtre visuelle déclenche cet écouteur en rafale :
     // on n'écrit que si la valeur a VRAIMENT changé, sinon chaque geste
@@ -122,7 +161,10 @@ export function suivreLeClavier(): void {
   poser();
   vv.addEventListener('resize', poser);
   vv.addEventListener('scroll', poser);
-  window.addEventListener('orientationchange', poser);
+  window.addEventListener('orientationchange', () => {
+    reference = 0;
+    poser();
+  });
   // Le focus est désormais une ENTRÉE de la mesure : on rejoue au moment où
   // il change. Au blur, iOS anime la fermeture (~250 ms) sans toujours
   // émettre de resize — une relecture différée récupère l'état final.
