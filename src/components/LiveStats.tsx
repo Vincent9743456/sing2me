@@ -27,61 +27,28 @@
  * suiveurs, qui viennent d'un autre service (fanbase), gagnent le même
  * réflexe avec leur propre petit cache.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { useToast } from './Feedback';
 import { t } from '../i18n';
 import { heartTotals, messagesBySong } from '../lib/live';
-import { liveReady } from '../lib/liveAuth';
-import { fetchFollowerStats, FollowerStats } from '../lib/fanbase';
 import { usePastLives } from './usePastLives';
 import { useStore } from '../store';
 
-/** Dernier compteur de suiveurs connu (cache du COMPTE — CLES_DU_COMPTE). */
-const CACHE_FANS = 'sing2me/fanCache';
-function fansLus(): FollowerStats | null {
-  try {
-    const raw = localStorage.getItem(CACHE_FANS);
-    if (!raw) return null;
-    const c = JSON.parse(raw) as Partial<FollowerStats>;
-    if (typeof c.count !== 'number') return null;
-    return {
-      count: c.count,
-      sharedEmails: Array.isArray(c.sharedEmails) ? c.sharedEmails : [],
-    };
-  } catch {
-    return null;
-  }
-}
-
+/**
+ * SUIVEURS : tuile RETIRÉE (b452, demande de Vincent). Le compteur existait
+ * (service fanbase, cache `sing2me/fanCache`) mais l'interface PUBLIQUE qui
+ * permet au public de suivre un artiste n'est pas développée : un chiffre
+ * qui ne peut pas bouger n'informe pas, il interroge. Le module
+ * `lib/fanbase.ts` et le serveur restent en place pour le jour où le suivi
+ * s'ouvre au public — la tuile reviendra avec lui.
+ */
 export function LiveStats() {
-  const { prefs, artist, songs, saveSong } = useStore();
+  const { songs, saveSong } = useStore();
   const toast = useToast();
   // UNE récupération, UN calcul (b207) : exactement les lives de l'onglet
   // Live — cache instantané compris (b343). Plus de fetch parallèle ici.
   const { lives, stats, messages, loading, failed, ready } = usePastLives();
-  const [followers, setFollowers] = useState<FollowerStats | null>(() =>
-    fansLus(),
-  );
-
-  useEffect(() => {
-    if (!liveReady(prefs.liveKey) || artist.name.trim() === '') return;
-    let cancelled = false;
-    void fetchFollowerStats(prefs.liveKey, artist.name).then((fo) => {
-      // `null` = panne : on garde ce qu'on savait (règle b245) — un zéro
-      // de panne écraserait un vrai compteur.
-      if (cancelled || fo === null) return;
-      setFollowers(fo);
-      try {
-        localStorage.setItem(CACHE_FANS, JSON.stringify(fo));
-      } catch {
-        /* stockage indisponible : l'affichage direct suffit */
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [prefs.liveKey, artist.name]);
 
   // Report AUTOMATIQUE (instruction Vincent, b175) : les ❤ descendaient déjà
   // tout seuls dans la bibliothèque, les mots du public attendaient un clic.
@@ -110,15 +77,13 @@ export function LiveStats() {
   const totalPublic = lives.reduce((n, l) => n + l.uniques, 0);
   // Même règle : les mots comptés sont ceux de MES lives.
   const nbMessages = lives.reduce((n, l) => n + l.messages.length, 0);
-  const nbFollowers = followers?.count ?? 0;
   const rien =
     !loading &&
     !failed &&
     nbLives === 0 &&
     totalHearts === 0 &&
     totalPublic === 0 &&
-    nbMessages === 0 &&
-    nbFollowers === 0;
+    nbMessages === 0;
 
   /** Recopie ❤ et mots du public sur les morceaux de la bibliothèque. */
   function reporter(silencieux = false) {
@@ -184,10 +149,6 @@ export function LiveStats() {
               <div className="statlabel">
                 👥 {t('spectateurs (toutes séances)')}
               </div>
-            </div>
-            <div className="statcard">
-              <div className="statvalue">{nbFollowers}</div>
-              <div className="statlabel">⭐ {t('suiveurs')}</div>
             </div>
           </div>
         </>
