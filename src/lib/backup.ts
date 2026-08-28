@@ -64,6 +64,29 @@ export function backupFileName(at = new Date()): string {
 }
 
 /**
+ * Écrit le fichier de sauvegarde et le fait télécharger (b461 — mis en
+ * commun entre les Réglages et la page « Changer de plan » : le
+ * téléchargement vit à UN endroit, chaque écran garde ses suites — toast,
+ * mise à jour du rappel). Le lien de téléchargement est le seul chemin
+ * qui marche partout, y compris dans l'app installée sur iPhone, où le
+ * fichier atterrit dans « Fichiers ».
+ */
+export function telechargerSauvegarde(etat: AppState, build: string): void {
+  const backup = makeBackup(etat, build);
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = backupFileName();
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/**
  * Relit un fichier de sauvegarde. Renvoie le contenu, ou une raison claire
  * du refus — jamais un échec muet : quelqu'un qui restaure est déjà dans
  * une mauvaise journée, il a droit à une phrase qui l'aide.

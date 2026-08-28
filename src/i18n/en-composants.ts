@@ -126,6 +126,11 @@ export const EN_COMPOSANTS: Record<string, string> = {
   'Trois offres, un même mojosong : tout ce que tu as importé reste à toi, consultable et exportable, quel que soit ton choix.':
     'Three plans, one mojosong: everything you imported stays yours — viewable and exportable — whatever you choose.',
   'Ton plan actuel': 'Your current plan',
+  'Sauvegarde enregistrée ✓': 'Backup saved ✓',
+  'La sauvegarde a échoué — réessaie.': 'The backup failed — try again.',
+  'En gratuit, ta bibliothèque est limitée à 30 morceaux. Au-delà, tu gardes tout pendant 30 jours ; ensuite l’app conserve les 30 plus utilisés — pense à télécharger tes partitions avant.':
+    'On Free, your library is limited to 30 songs. Above that, you keep everything for 30 days; then the app keeps the 30 most used — remember to download your charts first.',
+  'Tu en as {n} aujourd’hui.': 'You have {n} today.',
   'Choisir {offre}': 'Choose {offre}',
   'Le changement de plan ouvre très bientôt, avec le paiement en ligne. Tu seras prévenu ici même.':
     'Plan changes open very soon, together with online payment. You will be notified right here.',
