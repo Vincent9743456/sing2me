@@ -4047,6 +4047,48 @@ h2.pagetitle {
   font-weight: 650;
   font-size: 0.85rem;
 }
+/* TON OFFRE en tête de la fiche Artiste (b459) : la carte commerciale.
+   Jetons seulement (règle 2) — l'ambre DOUX fait le halo du fond, l'ambre
+   plein ne sert qu'à l'étoile et au CTA (un seul bouton ambre par écran). */
+.offrecard {
+  border: 1px solid var(--accent-soft);
+  background: linear-gradient(135deg, var(--surface), var(--accent-soft));
+  border-radius: var(--radius);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.offrecard .offrehead {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.offrecard .offrestar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 18px var(--accent-soft);
+}
+.offrecard .offretitre {
+  font-weight: 700;
+  line-height: 1.25;
+}
+.offrecard .offresub {
+  color: var(--text-dim);
+  font-size: 0.88rem;
+}
+.offrecard .offrepitch {
+  margin: var(--sp-2) 0;
+  color: var(--text-dim);
+}
+.offrecard .btn {
+  margin-bottom: 0;
+}
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.12em;
