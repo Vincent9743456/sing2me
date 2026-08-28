@@ -113,6 +113,26 @@ export const EN_COMPOSANTS: Record<string, string> = {
 
   // UpgradeSheet.tsx — limites du plan (b381, habillage b384, offre v2 b385)
   'Passer en illimité': 'Go unlimited',
+  'Changer de plan': 'Change plan',
+  '0 €': '€0',
+  'pour toujours': 'forever',
+  '30 morceaux dans ta bibliothèque': '30 songs in your library',
+  'Live : jusqu’à 15 spectateurs en simultané': 'Live: up to 15 simultaneous audience members',
+  'Groupes et setlists illimités': 'Unlimited bands and setlists',
+  'Page publique, QR et pourboires (sans commission)': 'Public page, QR and tips (no commission)',
+  '{an}/an': '{an}/yr',
+  'ou {mois}/mois': 'or {mois}/mo',
+  'Morceaux illimités': 'Unlimited songs',
+  'Trois offres, un même mojosong : tout ce que tu as importé reste à toi, consultable et exportable, quel que soit ton choix.':
+    'Three plans, one mojosong: everything you imported stays yours — viewable and exportable — whatever you choose.',
+  'Ton plan actuel': 'Your current plan',
+  'Choisir {offre}': 'Choose {offre}',
+  'Le changement de plan ouvre très bientôt, avec le paiement en ligne. Tu seras prévenu ici même.':
+    'Plan changes open very soon, together with online payment. You will be notified right here.',
+  'Upgrade en cours d’abonnement annuel : tu ne paies que la différence, au prorata des mois restants déjà payés (ex. Musicien → Scène).':
+    'Upgrading during an annual subscription: you only pay the difference, prorated over the remaining months already paid (e.g. Musician → Stage).',
+  'Downgrade : au-dessus de 30 morceaux en repassant en gratuit, tu gardes tout pendant 30 jours pour t’organiser — rien n’est pris en otage.':
+    'Downgrading: if you go back to Free with more than 30 songs, you keep everything for 30 days to get organized — nothing is held hostage.',
   '{an}/an ou {mois}/mois': '{an}/yr or {mois}/mo',
   'Morceaux illimités · live jusqu’à 15 spectateurs en simultané.':
     'Unlimited songs · live with up to 15 simultaneous audience members.',

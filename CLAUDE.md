@@ -849,11 +849,19 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     b458 (décision Vincent)** : les prix S'AFFICHENT désormais dans
     l'app — carte « Ton offre » de la page Artiste + feuille des offres
     (`UpgradeSheet`, tarifs dans `limites.TARIFS`, mêmes valeurs que la
-    landing, à changer ENSEMBLE). Le CHANGEMENT d'offre reste
-    inexistant tant que le paiement ne l'est pas : affichage seul
-    (arbitrage Vincent, b458 — pas de bascule ni de sélecteur, le CTA
-    répond « bientôt »), le plan reste établi côté serveur (b381).
-    Pas de paiement à la session (retiré b386).
+    landing, à changer ENSEMBLE). **b460 (demande de Vincent)** : page
+    « CHANGER DE PLAN » (`#/offres`, `src/pages/Offres.tsx`) —
+    comparatif des trois offres, plan actuel marqué, un bouton
+    « Choisir {offre} » par offre. La carte de la page Artiste et le CTA
+    de l'UpgradeSheet y mènent (« Changer de plan »). La BASCULE reste
+    inexistante tant que le paiement ne l'est pas : choisir une offre
+    répond « très bientôt, avec le paiement en ligne » — le plan reste
+    établi côté serveur (b381). **Règles de paiement ACTÉES (b460,
+    Vincent), à implémenter avec la caisse** : un upgrade en cours
+    d'abonnement ANNUEL ne facture que le DIFFÉRENTIEL, au prorata des
+    mois restants déjà payés (ex. Musicien → Scène) ; le downgrade
+    passe par la fenêtre b422 (30 jours). Ces règles sont écrites sur
+    la page. Pas de paiement à la session (retiré b386).
   - Garde-fous intangibles : **jamais de coupure en plein concert** ;
     **pourboires** = lien personnel, aucune commission ; **rien n'est
     pris en otage** (tout reste consultable et exportable).

@@ -30,6 +30,7 @@ export type Route =
   | { name: 'pastlive'; id: string }
   | { name: 'artist' }
   | { name: 'settings' }
+  | { name: 'offres' }
   | { name: 'dashboard' }
   | { name: 'songbook' }
   | { name: 'bands' }
@@ -108,6 +109,9 @@ export function parseHash(hash: string): Route {
       return { name: 'artist' };
     case 'reglages':
       return { name: 'settings' };
+    // Page « Changer de plan » (b460) : comparatif des offres.
+    case 'offres':
+      return { name: 'offres' };
     case 'tableau-de-bord':
       return { name: 'dashboard' };
     case 'export-pdf':
