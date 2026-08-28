@@ -18,14 +18,16 @@
  * feuille générique.
  *
  * Habillage b384 d'après les maquettes de Vincent — tout en JETONS du
- * thème (règle 12). Garde-fou du modèle : JAMAIS de prix — les montants
- * de l'offre ne sont pas arrêtés. Le CTA ambre est un emplacement, pas
- * une vente : il répond la vérité (« bientôt ») au lieu de faire
- * semblant.
+ * thème (règle 12). Depuis b458 (décision Vincent), la feuille AFFICHE
+ * les tarifs (b454, `TARIFS` dans limites.ts) et détaille les deux
+ * offres — le « jamais de prix » de b384/b387 est levé. Le CTA ambre
+ * reste un emplacement, pas une vente : il répond la vérité
+ * (« bientôt ») au lieu de faire semblant.
  */
 import React, { useEffect, useState } from 'react';
 
 import { t } from '../i18n';
+import { TARIFS } from '../lib/limites';
 import { noterLimiteAtteinte } from '../lib/plan';
 import { Sheet } from './Feedback';
 import { Icon } from './Icon';
@@ -88,19 +90,36 @@ export function UpgradeSheet({
             )}
           </p>
         )}
+        {/* Les DEUX offres, avec leurs tarifs (b458). */}
+        <div className="card" style={{ textAlign: 'left', width: '100%' }}>
+          <div className="usagerow">
+            <strong>{t('Musicien')}</strong>
+            <span className="planbadge">
+              {t('{an}/an ou {mois}/mois', {
+                an: TARIFS.musicien.an,
+                mois: TARIFS.musicien.mois,
+              })}
+            </span>
+          </div>
+          <p className="help" style={{ marginBottom: 0 }}>
+            {t('Morceaux illimités · live jusqu’à 15 spectateurs en simultané.')}
+          </p>
+        </div>
+        <div className="card" style={{ textAlign: 'left', width: '100%' }}>
+          <div className="usagerow">
+            <strong>{t('Scène')}</strong>
+            <span className="planbadge">
+              {t('{an}/an ou {mois}/mois', {
+                an: TARIFS.scene.an,
+                mois: TARIFS.scene.mois,
+              })}
+            </span>
+          </div>
+          <p className="help" style={{ marginBottom: 0 }}>
+            {t('Morceaux illimités · salle de live illimitée.')}
+          </p>
+        </div>
         <ul className="uplist">
-          <li>
-            <span className="upcheck" aria-hidden="true">
-              ✓
-            </span>
-            {t('Morceaux illimités')}
-          </li>
-          <li>
-            <span className="upcheck" aria-hidden="true">
-              ✓
-            </span>
-            {t('Salle de live illimitée')}
-          </li>
           <li>
             <span className="upcheck" aria-hidden="true">
               ✓

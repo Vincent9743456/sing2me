@@ -113,14 +113,17 @@ export const EN_COMPOSANTS: Record<string, string> = {
 
   // UpgradeSheet.tsx — limites du plan (b381, habillage b384, offre v2 b385)
   'Passer en illimité': 'Go unlimited',
+  '{an}/an ou {mois}/mois': '{an}/yr or {mois}/mo',
+  'Morceaux illimités · live jusqu’à 15 spectateurs en simultané.':
+    'Unlimited songs · live with up to 15 simultaneous audience members.',
+  'Morceaux illimités · salle de live illimitée.':
+    'Unlimited songs · unlimited live audience.',
   'Ton répertoire mérite plus grand': 'Your repertoire deserves bigger',
   'Ton compte gratuit va jusqu’à {n} morceaux. Passe en illimité pour continuer à l’enrichir.':
     'Your free account goes up to {n} songs. Go unlimited to keep it growing.',
   '{n} / {max} morceaux': '{n} / {max} songs',
   'Morceaux sans plafond, pour un répertoire qui grandit avec toi.':
     'Songs without a cap, for a repertoire that grows with you.',
-  'Morceaux illimités': 'Unlimited songs',
-  'Salle de live illimitée': 'Unlimited live audience',
   'Groupes, setlists et import : déjà sans limite pour tous':
     'Bands, setlists and import: already unlimited for everyone',
   'Tout le reste, sans limite': 'Everything else, without limits',
