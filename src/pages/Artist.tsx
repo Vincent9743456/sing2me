@@ -8,7 +8,6 @@ import { AccountSection } from '../components/Account';
 import { GearEditor } from '../components/GearEditor';
 import { LinkPreviews } from '../components/LinkPreviews';
 import { LiveStats } from '../components/LiveStats';
-import { UpgradeSheet } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
 import { TARIFS } from '../lib/limites';
 import { liveReady } from '../lib/liveAuth';
@@ -367,7 +366,6 @@ export function Artist() {
   // compris — décision b458). Pas de bascule tant que le paiement n'existe
   // pas : le plan reste établi côté serveur (b381).
   const limites = useLimits();
-  const [offresOuvertes, setOffresOuvertes] = useState(false);
   const liveUrl = `${location.origin}${location.pathname}#/live`;
   // Exemple « en direct » : un vrai morceau de ta bibliothèque
   const sampleSong = useMemo(
@@ -440,14 +438,24 @@ export function Artist() {
               </div>
               {limites.maxMorceaux === null &&
               limites.maxSpectateurs === null ? (
-                <p className="offrepitch" style={{ marginBottom: 0 }}>
-                  {t('✦ Tout est ouvert. Merci de faire vivre mojosong !')}
-                </p>
+                <>
+                  <p className="offrepitch">
+                    {t('✦ Tout est ouvert. Merci de faire vivre mojosong !')}
+                  </p>
+                  {/* Le downgrade a droit à son chemin (b460) — discret. */}
+                  <button
+                    className="btn ghost block"
+                    onClick={() => navigate('/offres')}
+                  >
+                    {t('Changer de plan')}
+                  </button>
+                </>
               ) : limites.maxMorceaux === null ? (
                 <>
                   <p className="offrepitch">
                     {t(
-                      'Ta salle affiche complet ? L’offre Scène ouvre le live en illimité.',
+                      'Ta salle affiche complet ? L’offre Scène ouvre le live en illimité — {mois}/mois.',
+                      { mois: TARIFS.scene.mois },
                     )}
                   </p>
                   <button
@@ -456,18 +464,17 @@ export function Artist() {
                         ? 'btn block'
                         : 'btn ghost block'
                     }
-                    onClick={() => setOffresOuvertes(true)}
+                    onClick={() => navigate('/offres')}
                   >
-                    {t('Découvrir Scène — {mois}/mois', {
-                      mois: TARIFS.scene.mois,
-                    })}
+                    {t('Changer de plan')}
                   </button>
                 </>
               ) : (
                 <>
                   <p className="offrepitch">
                     {t(
-                      'Fais grandir ton répertoire sans plafond — et remplis ta salle sans limite.',
+                      'Fais grandir ton répertoire sans plafond — et remplis ta salle sans limite. Dès {mois}/mois.',
+                      { mois: TARIFS.musicien.mois },
                     )}
                   </p>
                   <button
@@ -476,21 +483,13 @@ export function Artist() {
                         ? 'btn block'
                         : 'btn ghost block'
                     }
-                    onClick={() => setOffresOuvertes(true)}
+                    onClick={() => navigate('/offres')}
                   >
-                    ⭐ {t('Passer en illimité — dès {mois}/mois', {
-                      mois: TARIFS.musicien.mois,
-                    })}
+                    ⭐ {t('Changer de plan')}
                   </button>
                 </>
               )}
             </div>
-            {offresOuvertes && (
-              <UpgradeSheet
-                motif={null}
-                onClose={() => setOffresOuvertes(false)}
-              />
-            )}
           </>
         )}
         <div className="spacer" />

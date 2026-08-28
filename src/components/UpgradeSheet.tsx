@@ -20,15 +20,16 @@
  * Habillage b384 d'après les maquettes de Vincent — tout en JETONS du
  * thème (règle 12). Depuis b458 (décision Vincent), la feuille AFFICHE
  * les tarifs (b454, `TARIFS` dans limites.ts) et détaille les deux
- * offres — le « jamais de prix » de b384/b387 est levé. Le CTA ambre
- * reste un emplacement, pas une vente : il répond la vérité
- * (« bientôt ») au lieu de faire semblant.
+ * offres — le « jamais de prix » de b384/b387 est levé. Depuis b460, le
+ * CTA ambre mène à la page « Changer de plan » (#/offres) : le
+ * comparatif complet, et demain la caisse.
  */
 import React, { useEffect, useState } from 'react';
 
 import { t } from '../i18n';
 import { TARIFS } from '../lib/limites';
 import { noterLimiteAtteinte } from '../lib/plan';
+import { navigate } from '../router';
 import { Sheet } from './Feedback';
 import { Icon } from './Icon';
 import { useLimits } from './useLimits';
@@ -57,8 +58,6 @@ export function UpgradeSheet({
   onClose: () => void;
 }) {
   const { morceaux, maxMorceaux } = useLimits();
-  // Le CTA dit la vérité quand on le touche : l'offre n'est pas ouverte.
-  const [bientot, setBientot] = useState(false);
   const surMorceaux = motif === 'LIMIT_SONGS' && maxMorceaux !== null;
   return (
     <Sheet onClose={onClose}>
@@ -127,18 +126,17 @@ export function UpgradeSheet({
             {t('Groupes, setlists et import : déjà sans limite pour tous')}
           </li>
         </ul>
-        {/* CTA ambre : l'emplacement du paiement à venir (hors périmètre).
-            Un seul bouton ambre par écran — celui qui fera avancer. */}
-        <button className="btn block" onClick={() => setBientot(true)}>
-          {t('Passer en illimité')}
+        {/* CTA ambre : depuis b460 il mène à la page « Changer de plan »
+            (#/offres) — le comparatif complet, et demain la caisse. */}
+        <button
+          className="btn block"
+          onClick={() => {
+            onClose();
+            navigate('/offres');
+          }}
+        >
+          {t('Changer de plan')}
         </button>
-        {bientot && (
-          <p className="help" aria-live="polite" style={{ marginBottom: 0 }}>
-            {t(
-              'L’offre illimitée arrive bientôt. Rien ne presse : tu seras prévenu ici même.',
-            )}
-          </p>
-        )}
         <button className="btn ghost block uplater" onClick={onClose}>
           {t('Plus tard')}
         </button>

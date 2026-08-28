@@ -11,6 +11,7 @@ import { TabBar } from './components/ui';
 import { LimiteHost } from './components/UpgradeSheet';
 import { Artist } from './pages/Artist';
 import { Settings } from './pages/Settings';
+import { Offres } from './pages/Offres';
 import { Dashboard } from './pages/Dashboard';
 import { Songbook } from './pages/Songbook';
 import { BandCloudLink } from './components/BandCloudLink';
@@ -196,6 +197,9 @@ function Screen() {
       break;
     case 'settings':
       page = <Settings />;
+      break;
+    case 'offres':
+      page = <Offres />;
       break;
     case 'dashboard':
       page = <Dashboard />;

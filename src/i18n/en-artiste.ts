@@ -430,17 +430,15 @@ export const EN_ARTISTE: Record<string, string> = {
   'ouvrir la régie': 'open the control mode',
   'gérer le live': 'manage the live',
   'Offre Scène': 'Stage plan',
+  'Ta salle affiche complet ? L’offre Scène ouvre le live en illimité — {mois}/mois.':
+    'Playing to a full house? The Stage plan opens unlimited live audiences — {mois}/mo.',
+  'Fais grandir ton répertoire sans plafond — et remplis ta salle sans limite. Dès {mois}/mois.':
+    'Grow your repertoire without a ceiling — and fill your venue without limits. From {mois}/mo.',
   'Offre Musicien': 'Musician plan',
   'Morceaux et salle de live illimités': 'Unlimited songs and live audience',
   'Morceaux illimités · {n} spectateurs en live': 'Unlimited songs · {n} live audience members',
   '{max} morceaux · {n} spectateurs en live': '{max} songs · {n} live audience members',
   '✦ Tout est ouvert. Merci de faire vivre mojosong !': '✦ Everything is unlocked. Thank you for keeping mojosong alive!',
-  'Ta salle affiche complet ? L’offre Scène ouvre le live en illimité.':
-    'Playing to a full house? The Stage plan opens up unlimited live audiences.',
-  'Découvrir Scène — {mois}/mois': 'Discover Stage — {mois}/mo',
-  'Fais grandir ton répertoire sans plafond — et remplis ta salle sans limite.':
-    'Grow your repertoire without a ceiling — and fill your venue without limits.',
-  'Passer en illimité — dès {mois}/mois': 'Go unlimited — from {mois}/mo',
   'Lancer un live': 'Start a live',
   'Reprendre le live en cours': 'Resume the current live',
   'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords.':
