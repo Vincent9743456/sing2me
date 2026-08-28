@@ -50,10 +50,9 @@ import { LiveStatus, pushLive, pushSetlist } from '../lib/live';
 import { navigate } from '../router';
 import { AppState, ResetParts, useStore } from '../store';
 import {
-  backupFileName,
   decrireRestauration,
-  makeBackup,
   readBackup,
+  telechargerSauvegarde,
 } from '../lib/backup';
 import { mergeStates, SyncState } from '../lib/sync';
 import { APP_BUILD } from '../version';
@@ -417,18 +416,8 @@ export function Settings() {
    */
   function sauvegarder() {
     try {
-      const backup = makeBackup(etatComplet(), APP_BUILD);
-      const blob = new Blob([JSON.stringify(backup, null, 2)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = backupFileName();
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      // Téléchargement mis en commun avec « Changer de plan » (b461).
+      telechargerSauvegarde(etatComplet(), APP_BUILD);
       // On note la date : c'est ce qui fait TAIRE le rappel discret.
       savePrefs({
         ...store.prefs,
