@@ -10,6 +10,7 @@ import { LinkPreviews } from '../components/LinkPreviews';
 import { LiveStats } from '../components/LiveStats';
 import { UpgradeSheet } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
+import { TARIFS } from '../lib/limites';
 import { liveReady } from '../lib/liveAuth';
 import { Field, Modal, TopBar } from '../components/ui';
 import { t } from '../i18n';
@@ -393,6 +394,105 @@ export function Artist() {
       <div className="page">
         <LiveBanner />
         <AccountSection />
+        {/* TON OFFRE en tête de page (b459, demande de Vincent : « plus en
+            évidence, avec quelque chose de commercial »). La carte dit
+            l'offre du compte et PROPOSE la suivante — tarifs compris
+            (b458). Toujours affichage seul : le CTA ouvre la feuille des
+            offres, l'achat viendra avec le paiement. */}
+        {!editing && (
+          <>
+            <div className="offrecard">
+              <div className="offrehead">
+                <span className="offrestar" aria-hidden="true">
+                  <Icon name="star" size={17} />
+                </span>
+                <div className="grow" style={{ minWidth: 0 }}>
+                  <div className="offretitre">
+                    {limites.maxMorceaux === null &&
+                    limites.maxSpectateurs === null
+                      ? t('Offre Scène')
+                      : limites.maxMorceaux === null
+                        ? t('Offre Musicien')
+                        : t('Compte gratuit')}
+                  </div>
+                  <div className="offresub">
+                    {limites.maxMorceaux === null &&
+                    limites.maxSpectateurs === null
+                      ? t('Morceaux et salle de live illimités')
+                      : limites.maxMorceaux === null
+                        ? t('Morceaux illimités · {n} spectateurs en live', {
+                            n: limites.maxSpectateurs ?? 15,
+                          })
+                        : t('{max} morceaux · {n} spectateurs en live', {
+                            max: limites.maxMorceaux,
+                            n: limites.maxSpectateurs ?? 15,
+                          })}
+                  </div>
+                </div>
+                {limites.maxMorceaux !== null && (
+                  <span className="planbadge">
+                    {t('{n} / {max} morceaux', {
+                      n: limites.morceaux,
+                      max: limites.maxMorceaux,
+                    })}
+                  </span>
+                )}
+              </div>
+              {limites.maxMorceaux === null &&
+              limites.maxSpectateurs === null ? (
+                <p className="offrepitch" style={{ marginBottom: 0 }}>
+                  {t('✦ Tout est ouvert. Merci de faire vivre mojosong !')}
+                </p>
+              ) : limites.maxMorceaux === null ? (
+                <>
+                  <p className="offrepitch">
+                    {t(
+                      'Ta salle affiche complet ? L’offre Scène ouvre le live en illimité.',
+                    )}
+                  </p>
+                  <button
+                    className={
+                      artist.name.trim() !== ''
+                        ? 'btn block'
+                        : 'btn ghost block'
+                    }
+                    onClick={() => setOffresOuvertes(true)}
+                  >
+                    {t('Découvrir Scène — {mois}/mois', {
+                      mois: TARIFS.scene.mois,
+                    })}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="offrepitch">
+                    {t(
+                      'Fais grandir ton répertoire sans plafond — et remplis ta salle sans limite.',
+                    )}
+                  </p>
+                  <button
+                    className={
+                      artist.name.trim() !== ''
+                        ? 'btn block'
+                        : 'btn ghost block'
+                    }
+                    onClick={() => setOffresOuvertes(true)}
+                  >
+                    ⭐ {t('Passer en illimité — dès {mois}/mois', {
+                      mois: TARIFS.musicien.mois,
+                    })}
+                  </button>
+                </>
+              )}
+            </div>
+            {offresOuvertes && (
+              <UpgradeSheet
+                motif={null}
+                onClose={() => setOffresOuvertes(false)}
+              />
+            )}
+          </>
+        )}
         <div className="spacer" />
         <button className="bigrow" onClick={() => navigate('/reglages')}>
           <span className="i" aria-hidden="true">
@@ -541,63 +641,6 @@ export function Artist() {
             {/* Les chiffres des directs, visibles SANS passer par « Modifier »
                 (b171). Privés : cette page vit dans l'app, jamais sur le QR. */}
             <LiveStats />
-            {/* TON OFFRE (b458) : le plan du compte, lisible sans passer par
-                les Réglages, et la porte vers les offres (avec tarifs).
-                Affichage seul — le changement viendra avec le paiement. */}
-            <h2 className="pagetitle">{t('Ton offre')}</h2>
-            <div className="card">
-              <div className="usagerow">
-                <strong>
-                  {limites.maxMorceaux === null &&
-                  limites.maxSpectateurs === null
-                    ? t('Scène')
-                    : limites.maxMorceaux === null
-                      ? t('Musicien')
-                      : t('Compte gratuit')}
-                </strong>
-                {limites.maxMorceaux !== null && (
-                  <span className="planbadge">
-                    {t('{n} / {max} morceaux', {
-                      n: limites.morceaux,
-                      max: limites.maxMorceaux,
-                    })}
-                  </span>
-                )}
-              </div>
-              <p className="help" style={{ marginBottom: 10 }}>
-                {limites.maxMorceaux === null && limites.maxSpectateurs === null
-                  ? t(
-                      '✦ Morceaux et salle de live sans plafond. Merci de faire vivre mojosong !',
-                    )
-                  : limites.maxMorceaux === null
-                    ? t(
-                        '✦ Morceaux sans plafond · live jusqu’à {n} spectateurs en simultané.',
-                        { n: limites.maxSpectateurs ?? 15 },
-                      )
-                    : t(
-                        'Jusqu’à {max} morceaux · live jusqu’à {n} spectateurs en simultané.',
-                        {
-                          max: limites.maxMorceaux,
-                          n: limites.maxSpectateurs ?? 15,
-                        },
-                      )}
-              </p>
-              {(limites.maxMorceaux !== null ||
-                limites.maxSpectateurs !== null) && (
-                <button
-                  className="btn ghost block"
-                  onClick={() => setOffresOuvertes(true)}
-                >
-                  {t('Voir les offres et les tarifs')}
-                </button>
-              )}
-            </div>
-            {offresOuvertes && (
-              <UpgradeSheet
-                motif={null}
-                onClose={() => setOffresOuvertes(false)}
-              />
-            )}
             {/* Mes groupes : icônes cliquables (accès direct à la fiche). */}
             <h2 className="pagetitle">{t('Mes groupes')}</h2>
             {bands.length === 0 ? (
