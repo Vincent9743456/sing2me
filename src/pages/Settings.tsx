@@ -881,8 +881,8 @@ export function Settings() {
         </button>
 
         {/* MON COMPTE (b381, habillé b384 d'après les maquettes de Vincent) :
-            l'offre, l'usage en jauges, et la porte vers l'illimité. Jamais
-            de prix : les chiffres de l'offre ne sont pas arrêtés. */}
+            l'offre, l'usage en jauges, et la porte vers l'illimité. Les prix
+            s'affichent depuis b458 (feuille des offres — décision Vincent). */}
         {compte?.email != null && (
           <>
             <div className="spacer" />

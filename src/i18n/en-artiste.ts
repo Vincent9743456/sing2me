@@ -429,6 +429,9 @@ export const EN_ARTISTE: Record<string, string> = {
   'Live en pause': 'Live paused',
   'ouvrir la régie': 'open the control mode',
   'gérer le live': 'manage the live',
+  'Jusqu’à {max} morceaux · live jusqu’à {n} spectateurs en simultané.':
+    'Up to {max} songs · live with up to {n} simultaneous audience members.',
+  'Voir les offres et les tarifs': 'See plans and pricing',
   'Lancer un live': 'Start a live',
   'Reprendre le live en cours': 'Resume the current live',
   'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords.':

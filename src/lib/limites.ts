@@ -37,6 +37,18 @@
 
 export type Plan = 'free' | 'musicien' | 'scene' | 'pro' | 'admin';
 
+/**
+ * TARIFS AFFICHÉS (b458, décision Vincent — lève le « jamais de prix dans
+ * l'app » de b387) : les montants apparaissent sur la feuille des offres
+ * et la carte « Ton offre » de la page Artiste. L'ACHAT, lui, n'existe
+ * toujours pas : le bouton répond la vérité (« bientôt »). Valeurs b454 —
+ * les mêmes que la landing, à changer ENSEMBLE.
+ */
+export const TARIFS = {
+  musicien: { an: '59 €', mois: '5,99 €' },
+  scene: { an: '99 €', mois: '9,90 €' },
+} as const;
+
 export interface Limites {
   /** Morceaux de la bibliothèque (hors propositions en attente). */
   maxSongs: number | null;

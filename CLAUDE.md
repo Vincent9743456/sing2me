@@ -845,9 +845,15 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     message qui se lève seul, règle 11) ; mesure `limit_events`.
     Config centrale : `src/lib/limites.ts` ; fondateurs `admin`.
   - **Tarifs ARRÊTÉS (0 / 59 €/an ou 5,99 €/mois / 99 €/an ou
-    9,90 €/mois — relevés b454) mais PAIEMENT INEXISTANT** : l'app n'affiche AUCUN prix
-    tant qu'on ne peut pas acheter (la page de l'offre, elle, les
-    porte). Pas de paiement à la session (retiré b386).
+    9,90 €/mois — relevés b454) mais PAIEMENT INEXISTANT**. **AMENDÉ
+    b458 (décision Vincent)** : les prix S'AFFICHENT désormais dans
+    l'app — carte « Ton offre » de la page Artiste + feuille des offres
+    (`UpgradeSheet`, tarifs dans `limites.TARIFS`, mêmes valeurs que la
+    landing, à changer ENSEMBLE). Le CHANGEMENT d'offre reste
+    inexistant tant que le paiement ne l'est pas : affichage seul
+    (arbitrage Vincent, b458 — pas de bascule ni de sélecteur, le CTA
+    répond « bientôt »), le plan reste établi côté serveur (b381).
+    Pas de paiement à la session (retiré b386).
   - Garde-fous intangibles : **jamais de coupure en plein concert** ;
     **pourboires** = lien personnel, aucune commission ; **rien n'est
     pris en otage** (tout reste consultable et exportable).
