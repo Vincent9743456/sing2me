@@ -436,10 +436,18 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   // vers l'écran d'accueil quand on passe simplement d'une chanson à une autre.
   const clearTimer = useRef<number | null>(null);
 
+  // b472 (point 2 des retours de Vincent) : miroir d'ÉTAT de currentRef,
+  // pour que le panneau puisse dire « aucun morceau diffusé » tant que
+  // l'artiste n'a pas ouvert de partition — et que la mention se lève
+  // TOUTE SEULE dès qu'un morceau s'affiche (règle 11). Même grâce de
+  // 600 ms que la diffusion pour ne pas clignoter entre deux morceaux.
+  const [morceauDiffuse, setMorceauDiffuse] = useState(false);
+
   const setCurrent = useCallback(
     (song: LiveSong | null) => {
       currentRef.current = song;
       if (song) {
+        setMorceauDiffuse(true);
         // La tonalité envoyée aux autres musiciens vient du MORCEAU, pas de la
         // clé de rafraîchissement (b169). Celle-ci contient aussi le capo
         // (« Am:0 ») : envoyée telle quelle, elle était illisible et le suivi
@@ -468,6 +476,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         if (clearTimer.current !== null) window.clearTimeout(clearTimer.current);
         clearTimer.current = window.setTimeout(() => {
           clearTimer.current = null;
+          setMorceauDiffuse(currentRef.current !== null);
           if (currentRef.current === null && statusRef.current === 'on') {
             pushLive(prefs.liveKey, { status: 'on', song: null }).catch(() => {});
             void pushBandSong(prefs.liveKey, null);
@@ -807,11 +816,16 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                   </button>
                 </div>
                 <p className="help" style={{ textAlign: 'center', margin: '8px 0 12px' }}>
+                  {/* b472 (point 2) : l'étape suivante s'annonce AVANT le
+                      lancement — sans elle, rien ne se passe côté public et
+                      ce n'est pas devinable. Mécanisme réel (useOnAirSong) :
+                      c'est le morceau AFFICHÉ qui est diffusé — fiche
+                      morceau, mode scène ou régie, pas seulement la scène. */}
                   {mode === 'concert'
                     ? t(
-                        'Le public voit les paroles du morceau en cours. Les musiciens qui se greffent voient paroles et accords.',
+                        'Le public voit les paroles du morceau en cours. Les musiciens qui se greffent voient paroles et accords. Une fois le live lancé, ouvre un morceau (ou ta setlist en mode scène) : c’est lui que le public lit.',
                       )
-                    : t('Seuls les musiciens du groupe suivent.')}
+                    : t('Seuls les musiciens du groupe suivent. Une fois la répétition lancée, ouvre un morceau : c’est lui qu’ils suivent.')}
                 </p>
               </>
             )}
@@ -914,6 +928,21 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 {status === 'pause' && (
                   <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
                     {t('Les spectateurs restent connectés, l’affichage est vide.')}
+                  </p>
+                )}
+                {/* b472 (point 2) : tant qu'aucun morceau n'est affiché, le
+                    public regarde l'écran d'attente — on le DIT, avec le
+                    geste qui débloque. La mention se lève d'elle-même dès
+                    qu'un morceau se diffuse (règle 11). */}
+                {status === 'on' && !morceauDiffuse && (
+                  <p
+                    className="help"
+                    aria-live="polite"
+                    style={{ textAlign: 'center', marginTop: 0 }}
+                  >
+                    {mode === 'concert'
+                      ? t('Aucun morceau diffusé pour l’instant — ouvre un morceau (ou ta setlist en mode scène) : le public lira ses paroles.')
+                      : t('Aucun morceau diffusé pour l’instant — ouvre un morceau : tes musiciens le suivront.')}
                   </p>
                 )}
                 {/* Le QR reste affiché EN PAUSE : un retardataire peut
