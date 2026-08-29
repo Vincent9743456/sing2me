@@ -649,6 +649,8 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Titre, artiste… (ex. hallelujah cohen)':
     'Title, artist… (e.g. hallelujah cohen)',
   'Chercher sur le web': 'Search the web',
+  // b472 (point 4) — retour à la liste des résultats de recherche
+  'Retour aux résultats': 'Back to results',
   'Recherche en cours : ': 'Current search: ',
   '« {titre} » existe déjà dans ton répertoire.':
     '“{titre}” is already in your repertoire.',

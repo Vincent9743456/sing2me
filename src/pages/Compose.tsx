@@ -52,6 +52,15 @@ import { useStore } from '../store';
 import { estBrouillon, Song } from '../types';
 import { extractUgLinks } from './Import';
 
+/** Étape courante, déduite de l'état du brouillon (reprise au bon endroit). */
+function etapeCourante(draft: Song | null): 'recherche' | 'colle' | 'apercu' {
+  return draft === null
+    ? 'recherche'
+    : draft.lyrics.trim() === ''
+      ? 'colle'
+      : 'apercu';
+}
+
 export function Compose({ draftId }: { draftId: string | null }) {
   const { songs, saveSong, purgeBrouillon } = useStore();
   // Plafond du plan (b390) : créer, c'est ajouter — même garde que le ＋.
@@ -79,6 +88,9 @@ export function Compose({ draftId }: { draftId: string | null }) {
   const [resultats, setResultats] = useState<UgSearchResult[] | null>(null);
   const [rechercheEnCours, setRechercheEnCours] = useState(false);
   const [choixEnCours, setChoixEnCours] = useState('');
+  // b472 (point 4) : le dernier résultat ouvert reste marqué ✓ — au retour
+  // dans la liste, on retrouve où l'on en était (et la ligne est recadrée).
+  const [dernierChoisi, setDernierChoisi] = useState('');
 
   async function lancerRecherche() {
     const q = query.trim();
@@ -104,6 +116,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
       return;
     }
     setChoixEnCours(r.url);
+    setDernierChoisi(r.url);
     try {
       const tab = await fetchUgTab(r.url);
       // Une seule création en cours : la nouvelle remplace l'ancien
@@ -134,9 +147,26 @@ export function Compose({ draftId }: { draftId: string | null }) {
      reprend le brouillon vivant au lieu de repartir de zéro. ─────────── */
   React.useEffect(() => {
     if (draft !== null) return;
+    /* b472 (point 4) : quand des RÉSULTATS vivent en mémoire, arriver sur
+       /creer sans identifiant est un CHOIX — le bouton « Retour aux
+       résultats » ou le geste retour du téléphone — pas une route perdue.
+       On ne rebondit donc pas vers le brouillon : la liste s'affiche, le
+       brouillon attend (en choisir un autre le remplace, comme toujours).
+       La récupération de b323 ne joue qu'au vrai rechargement, où l'état
+       de recherche n'existe plus. */
+    if (resultats !== null) return;
     const vivant = songs.find((s) => estBrouillon(s));
     if (vivant) navigate(`/creer/${vivant.id}`);
-  }, [draft, songs]);
+  }, [draft, songs, resultats]);
+
+  // b472 (point 4) : au retour dans la liste, la ligne du résultat qu'on
+  // vient de consulter est recadrée — on reprend l'exploration où on était.
+  React.useEffect(() => {
+    if (etapeCourante(draft) !== 'recherche' || dernierChoisi === '') return;
+    document
+      .querySelector('[data-resultat="choisi"]')
+      ?.scrollIntoView({ block: 'center' });
+  }, [draft, dernierChoisi]);
 
   const [lienEnCours, setLienEnCours] = useState(false);
 
@@ -268,9 +298,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
     return findSameSong(validees, draft.title, '', draft.artist);
   }, [draft, validees]);
 
-  // Étape courante, déduite de l'état du brouillon (reprise au bon endroit).
-  const etape: 'recherche' | 'colle' | 'apercu' =
-    draft === null ? 'recherche' : draft.lyrics.trim() === '' ? 'colle' : 'apercu';
+  const etape = etapeCourante(draft);
 
   return (
     <>
@@ -282,7 +310,14 @@ export function Compose({ draftId }: { draftId: string | null }) {
       <TopBar
         live={false}
         title={t('Ajouter un morceau')}
-        onBack={() => navigate('/import')}
+        // b472 (point 4) : depuis l'aperçu d'un résultat, le ← revient à la
+        // LISTE des résultats (encore en mémoire), pas au début du flux —
+        // même chemin que le geste retour du téléphone.
+        onBack={() =>
+          etape !== 'recherche' && resultats !== null
+            ? navigate('/creer')
+            : navigate('/import')
+        }
       />
       <div className="page">
 
@@ -325,13 +360,15 @@ export function Compose({ draftId }: { draftId: string | null }) {
             <div className="card" style={{ marginTop: 'var(--sp-3)', padding: 6 }}>
               {resultats.map((r, i) => (
                 <div
-                  className="row"
+                  className={`row ${r.url === dernierChoisi ? 'active' : ''}`}
                   key={i}
+                  data-resultat={r.url === dernierChoisi ? 'choisi' : undefined}
                   style={{ cursor: 'pointer' }}
                   onClick={() => void choisirResultat(r)}
                 >
                   <div className="grow" style={{ minWidth: 0 }}>
                     <div className="title">
+                      {r.url === dernierChoisi ? '✓ ' : ''}
                       {r.title}
                       {r.version > 1 ? ` (v${r.version})` : ''}
                     </div>
@@ -424,6 +461,11 @@ export function Compose({ draftId }: { draftId: string | null }) {
           )}
           <div className="spacer" />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {resultats !== null && resultats.length > 0 && (
+              <button className="btn ghost" onClick={() => navigate('/creer')}>
+                ← {t('Retour aux résultats')}
+              </button>
+            )}
             <button className="btn ghost" onClick={abandonner}>
               {t('Annuler')}
             </button>
@@ -478,7 +520,15 @@ export function Compose({ draftId }: { draftId: string | null }) {
                 {t('Enregistrer dans ma bibliothèque')}
               </button>
               <div className="spacer" />
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {/* b472 (point 4) : consulter un résultat ne coûte plus la
+                    recherche — la liste vit encore en mémoire, on y REVIENT
+                    (le brouillon attend ; en choisir un autre le remplace). */}
+                {resultats !== null && resultats.length > 0 && (
+                  <button className="btn ghost" onClick={() => navigate('/creer')}>
+                    ← {t('Retour aux résultats')}
+                  </button>
+                )}
                 {/* Retour vers le collage : le brouillon est CONSERVÉ
                     (l'utilisateur veut peut-être copier une autre version). */}
                 <button
