@@ -22,6 +22,10 @@ import { presDeLaLimite, propositionBloquee } from '../lib/limites';
 import { EXAMPLE_TAG } from '../seed';
 import { Empty, HeaderPlus, TopBar } from '../components/ui';
 import { t } from '../i18n';
+import {
+  leverNouveauPourGroupe,
+  poserNouveauPourGroupe,
+} from '../lib/nouveaupourgroupe';
 import { replier } from '../lib/recherche';
 
 /** Ajout / retrait d'un morceau dans les setlists, sans quitter la liste. */
@@ -331,6 +335,15 @@ export function Library() {
   // Collecteur « Ajouter des morceaux » quand la bibliothèque est filtrée
   // sur un groupe (vue répertoire — porte du groupe, règle 1).
   const [bandCollect, setBandCollect] = useState(false);
+  // b472 (point 1) : menu du ＋ en contexte groupe — deux intentions nommées.
+  const [plusGroupe, setPlusGroupe] = useState(false);
+
+  // b472 : revenir à la bibliothèque, c'est quitter le trajet de création —
+  // un marqueur « morceau pour le groupe » encore posé serait un piège (il
+  // rattacherait une création future sans rapport).
+  useEffect(() => {
+    leverNouveauPourGroupe();
+  }, []);
   // Filtre demandé par une autre page (porte « Répertoire du groupe »).
   useEffect(() => {
     let pending: string | null = null;
@@ -919,9 +932,15 @@ export function Library() {
         title={t('Morceaux')}
         right={
           bandFilter !== null && bandFilter !== '' ? (
+            /* b472 (point 1, retour de Vincent) : en contexte groupe, le ＋
+               faisait UNE chose (ajouter des morceaux existants) sans le
+               dire — le même bouton, au même endroit, que « Nouveau
+               morceau ». Il OUVRE désormais un menu qui nomme les deux
+               intentions, dont la création d'un morceau qui n'existe pas
+               encore, ajouté au répertoire à sa validation. */
             <HeaderPlus
               label={t('Ajouter des morceaux')}
-              onClick={() => setBandCollect(true)}
+              onClick={() => setPlusGroupe(true)}
             />
           ) : (
             <HeaderPlus
@@ -1428,6 +1447,40 @@ export function Library() {
           />
         </div>
       </div>
+
+      {/* b472 (point 1) : le ＋ du contexte groupe nomme ses deux gestes.
+          « Créer » pose le marqueur de session (consommé par saveSong à la
+          validation — voir lib/nouveaupourgroupe) et part sur le flux
+          d'ajout habituel : recherche, lien, collage, écriture à la main. */}
+      {plusGroupe && bandFilter !== null && bandFilter !== '' && (
+        <MenuSheet
+          title={t('Ajouter au répertoire — {band}', {
+            band: bands.find((b) => b.id === bandFilter)?.name || t('groupe'),
+          })}
+          items={[
+            {
+              label: t('Ajouter des morceaux existants'),
+              icon: 'music',
+              onClick: () => setBandCollect(true),
+            },
+            {
+              label: t('Créer un nouveau morceau (ajouté au répertoire)'),
+              icon: 'plus',
+              onClick: () => {
+                // Même garde que le ＋ ordinaire : au plafond, la feuille
+                // « Passer en illimité » parle avant d'importer pour rien.
+                if (!limites.peutAjouter) {
+                  signalerLimite('LIMIT_SONGS');
+                  return;
+                }
+                poserNouveauPourGroupe(bandFilter);
+                navigate('/import');
+              },
+            },
+          ]}
+          onClose={() => setPlusGroupe(false)}
+        />
+      )}
 
       {bandCollect && bandFilter !== null && bandFilter !== '' && (
         <SongCollector

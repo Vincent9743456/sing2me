@@ -124,6 +124,13 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Aucun morceau ne correspond à ta recherche.': 'No song matches your search.',
   'Ajouter des morceaux au répertoire du groupe': "Add songs to the band's repertoire",
   'Ajouter des morceaux': 'Add songs',
+  // b472 (point 1) — menu du ＋ en contexte groupe + bannière de création
+  'Ajouter des morceaux existants': 'Add existing songs',
+  'Créer un nouveau morceau (ajouté au répertoire)':
+    'Create a new song (added to the repertoire)',
+  'Ce morceau sera ajouté au répertoire de {band} dès son enregistrement.':
+    'This song will be added to the {band} repertoire as soon as it is saved.',
+  'Ne pas l’ajouter au groupe': 'Don’t add it to the band',
   "Ajouter un morceau (importer un texte, un lien, un PDF… ou écrire à la main)":
     'Add a song (import text, a link, a PDF… or write it by hand)',
   'Nouveau morceau': 'New song',

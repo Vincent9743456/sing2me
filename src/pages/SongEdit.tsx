@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
+import { BandeauPourGroupe } from '../components/BandeauPourGroupe';
 import { Icon } from '../components/Icon';
 import { MenuSheet } from '../components/Feedback';
 import { Field, TopBar } from '../components/ui';
@@ -273,6 +274,9 @@ export function SongEdit({ id }: { id: string | null }) {
         onBack={() => history.back()}
       />
       <div className="page">
+        {/* b472 (point 1) : « Écrire à la main » fait partie du trajet de
+            création — l'intention « pour le groupe » s'y affiche aussi. */}
+        {isNew && <BandeauPourGroupe />}
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
           {t('🎵 Le morceau — commun à toutes les versions')}
         </h2>

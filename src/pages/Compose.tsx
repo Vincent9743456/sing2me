@@ -32,6 +32,7 @@
  */
 import React, { useMemo, useState } from 'react';
 
+import { BandeauPourGroupe } from '../components/BandeauPourGroupe';
 import { useToast } from '../components/Feedback';
 import { signalerLimite } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
@@ -343,6 +344,9 @@ export function Compose({ draftId }: { draftId: string | null }) {
         }
       />
       <div className="page">
+
+      {/* b472 (point 1) : l'intention « pour le groupe » suit le trajet. */}
+      <BandeauPourGroupe />
 
       {etape === 'recherche' && (
         <>

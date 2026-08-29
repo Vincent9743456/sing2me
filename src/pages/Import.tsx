@@ -28,7 +28,9 @@ import {
   UgSearchResult,
   ugTabToImportText,
 } from '../lib/ug';
+import { BandeauPourGroupe } from '../components/BandeauPourGroupe';
 import { ConfirmSheet, useToast } from '../components/Feedback';
+import { leverNouveauPourGroupe } from '../lib/nouveaupourgroupe';
 import { signalerLimite } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
 import { t } from '../i18n';
@@ -150,6 +152,12 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
   // #/import/bulk arrive directement sur l'import en masse (b295) : c'est le
   // parcours de qui migre toute une collection d'un coup.
   const [method, setMethod] = useState<AddMethod>(mode === 'bulk' ? 'bulk' : 'ug');
+  // b472 (point 1) : une collection entière n'est pas « un morceau pour le
+  // groupe » — entrer dans l'import en masse lève le marqueur, sans quoi le
+  // PREMIER morceau du lot serait rattaché au groupe en silence.
+  useEffect(() => {
+    if (method === 'bulk') leverNouveauPourGroupe();
+  }, [method]);
   // Pli « Autres façons d'importer » (fermé par défaut : un seul chemin
   // visible ; forcé ouvert quand une alternative est en cours).
   const [othersOpen, setOthersOpen] = useState(false);
@@ -1359,6 +1367,9 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           history.back(), qui peut renvoyer n'importe où (b371). */}
       <TopBar live={false} title={t('Ajouter un morceau')} onBack={() => navigate('/')} />
       <div className="page">
+        {/* b472 (point 1) : l'intention « pour le groupe » se VOIT pendant
+            tout le trajet de création, et s'écarte d'un geste. */}
+        {method !== 'bulk' && <BandeauPourGroupe />}
         {/* Mojo EN LIGNE, plus en surcouche (b371) : l'overlay plein écran
             recouvrait la liste de progression ET le bouton « Arrêter » —
             pendant tout un import en masse, impossible de suivre le détail

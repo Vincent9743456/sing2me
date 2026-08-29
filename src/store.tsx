@@ -20,6 +20,11 @@ import {
   songKey,
 } from './lib/normalizeTitle';
 import { monId } from './lib/auth';
+import { announceBandSong, quiPropose } from './lib/bands';
+import {
+  leverNouveauPourGroupe,
+  lireNouveauPourGroupe,
+} from './lib/nouveaupourgroupe';
 import { ResetMarks } from './lib/sync';
 import { remisEnIdee, sortDuMorceau } from './lib/deletesong';
 import { planDeTri } from './lib/depassement';
@@ -32,6 +37,7 @@ import {
   migrateSetlist,
   migrateSong,
   removeVersion,
+  switchVersion,
   versionForBand,
 } from './lib/model';
 import {
@@ -234,6 +240,11 @@ function loadState(): AppState {
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(loadState);
   const timer = useRef<number | null>(null);
+  // Lecture de l'état courant hors setState (b472) : saveSong doit décider
+  // AVANT d'écrire (le morceau est-il nouveau ? le groupe existe-t-il ?)
+  // sans réexécuter d'effets dans l'updater — React peut le rejouer.
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   /**
    * Contenu témoin : deux morceaux d'exemple à la toute première ouverture.
@@ -358,13 +369,66 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [state]);
 
   const saveSong = useCallback((song: Song) => {
-    const stamped = { ...song, updatedAt: new Date().toISOString() };
+    let stamped = { ...song, updatedAt: new Date().toISOString() };
+    /*
+     * MORCEAU CRÉÉ POUR UN GROUPE (b472, point 1 des retours de Vincent) :
+     * le ＋ de Morceaux en contexte groupe pose un marqueur de session ;
+     * il se consomme ICI, au point d'écriture unique, à l'instant où le
+     * morceau devient DÉFINITIF (nouveau, ou brouillon qui se valide) —
+     * ainsi tous les chemins de création (recherche, lien, collage,
+     * écriture à la main) l'appliquent sans y penser. Même geste que le
+     * SongCollector : version de groupe + provenance (b420), retrait
+     * annulé (tombstone), annonce dans la discussion (best-effort).
+     */
+    const etat = stateRef.current;
+    let auGroupe: { bandId: string; cloudId?: string } | null = null;
+    if (!estBrouillon(stamped)) {
+      const avant = etat.songs.find((s) => s.id === stamped.id);
+      if (avant === undefined || estBrouillon(avant)) {
+        const bandId = lireNouveauPourGroupe();
+        const b =
+          bandId !== '' ? etat.bands.find((x) => x.id === bandId) : undefined;
+        if (bandId !== '') leverNouveauPourGroupe();
+        if (b && versionForBand(stamped, b.id) === null) {
+          stamped = switchVersion(
+            duplicateVersion(
+              stamped,
+              b.name || 'Groupe',
+              b.id,
+              quiPropose(etat.prefs.userName || etat.artist.name),
+            ),
+            stamped.activeVersionId,
+          );
+          auGroupe = { bandId: b.id, cloudId: b.cloudId };
+        }
+      }
+    }
+    const aj = auGroupe;
     setState((prev) => ({
       ...prev,
       songs: prev.songs.some((s) => s.id === stamped.id)
         ? prev.songs.map((s) => (s.id === stamped.id ? stamped : s))
         : [...prev.songs, stamped],
+      // Un retrait passé de ce titre ne doit pas ré-effacer l'ajout.
+      bandRemovals:
+        aj === null
+          ? prev.bandRemovals
+          : (prev.bandRemovals ?? []).filter(
+              (r) =>
+                !(
+                  r.bandId === aj.bandId &&
+                  bandKeysMatch(r.key, songKey(stamped.title, stamped.artist))
+                ),
+            ),
     }));
+    if (aj !== null) {
+      void announceBandSong(
+        aj.cloudId,
+        etat.prefs.userName || etat.artist.name || 'Moi',
+        stamped.title,
+        stamped.artist,
+      );
+    }
   }, []);
 
   /**
