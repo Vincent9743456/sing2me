@@ -49,6 +49,7 @@ import {
   monAdressePublique,
 } from '../lib/publicPages';
 import { cibleDuLive, libelleBadge } from '../lib/livenav';
+import { originePublique } from '../lib/origine';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { t } from '../i18n';
@@ -752,7 +753,7 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
       // (il change à chaque session) : le même QR imprimé sert à vie.
       // Cache d'abord, serveur si le cache est muet (b245, `monAdressePublique`).
       const name = await monAdressePublique();
-      const url = name !== '' ? `${location.origin}/${name}` : liveUrl();
+      const url = name !== '' ? `${originePublique()}/${name}` : liveUrl();
       setQrUrl(url);
       setQr(await QRCode.toDataURL(url, { width: 440, margin: 1 }));
     } catch {

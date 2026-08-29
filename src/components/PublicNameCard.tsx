@@ -20,6 +20,7 @@ import {
   rememberPublicName,
 } from '../lib/publicPages';
 import { normalizePublicName, publicNameError } from '../lib/publicName';
+import { originePublique } from '../lib/origine';
 import { ArtistProfile } from '../types';
 import { t } from '../i18n';
 
@@ -82,7 +83,9 @@ export function PublicNameCard({ artist }: { artist: ArtistProfile }) {
 
   if (!publicPagesAvailable()) return null;
 
-  const base = `${location.origin}/`;
+  // Adresse CANONIQUE (b471) : une app installée depuis l'ancienne adresse
+  // Vercel affichait et copiait des liens « sing2me-… ».
+  const base = `${originePublique()}/`;
   const host = base.replace(/^https?:\/\//, '');
 
   async function publish() {

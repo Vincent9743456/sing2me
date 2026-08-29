@@ -29,6 +29,7 @@ import {
   publierFichesGroupes,
 } from '../lib/publicPages';
 import { bandToProfile, creatorMember } from '../lib/model';
+import { originePublique } from '../lib/origine';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { isUpcoming } from './Concerts';
@@ -366,7 +367,7 @@ export function Artist() {
   // compris — décision b458). Pas de bascule tant que le paiement n'existe
   // pas : le plan reste établi côté serveur (b381).
   const limites = useLimits();
-  const liveUrl = `${location.origin}${location.pathname}#/live`;
+  const liveUrl = `${originePublique()}${location.pathname}#/live`;
   // Exemple « en direct » : un vrai morceau de ta bibliothèque
   const sampleSong = useMemo(
     () => songs.find((s) => s.idea !== true && s.lyrics.trim() !== '') ?? null,
