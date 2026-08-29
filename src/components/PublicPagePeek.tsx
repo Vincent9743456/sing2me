@@ -27,6 +27,7 @@ import { Modal } from './ui';
 import { useToast } from './Feedback';
 import { PublicPageView } from './PublicPageView';
 import { fetchPublicPage, PublicPage } from '../lib/publicPages';
+import { originePublique } from '../lib/origine';
 import { t } from '../i18n';
 
 export function PublicPagePeek({
@@ -54,8 +55,12 @@ export function PublicPagePeek({
   const [page, setPage] = useState<PublicPage | null | undefined>(undefined);
   const [qr, setQr] = useState<string>('');
 
+  // Origine CANONIQUE (b471) : le lien et le QR portent mojosong.com, jamais
+  // l'adresse d'installation de l'app.
   const lien =
-    adresse !== null && adresse !== '' ? `${location.origin}/${adresse}` : '';
+    adresse !== null && adresse !== ''
+      ? `${originePublique()}/${adresse}`
+      : '';
 
   useEffect(() => {
     let annule = false;
@@ -74,7 +79,7 @@ export function PublicPagePeek({
       const p = await fetchPublicPage(adresse);
       if (!annule) setPage(p);
       try {
-        const d = await QRCode.toDataURL(`${location.origin}/${adresse}`, {
+        const d = await QRCode.toDataURL(`${originePublique()}/${adresse}`, {
           width: 640,
           margin: 1,
         });

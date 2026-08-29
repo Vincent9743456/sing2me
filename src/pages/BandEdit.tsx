@@ -59,6 +59,7 @@ import {
   switchVersion,
   versionForBand,
 } from '../lib/model';
+import { originePublique } from '../lib/origine';
 import { normalizeTitle } from '../lib/importer';
 import { resizePhoto } from '../lib/photo';
 import { navigate } from '../router';
@@ -2039,7 +2040,7 @@ export function BandEdit({ id }: { id: string }) {
               <button
                 className="btn block"
                 onClick={() => {
-                  const url = `${location.origin}/${memberPage.name}`;
+                  const url = `${originePublique()}/${memberPage.name}`;
                   void navigator.clipboard
                     ?.writeText(url)
                     .then(() => toast.show(t('Lien de sa page copié.')))

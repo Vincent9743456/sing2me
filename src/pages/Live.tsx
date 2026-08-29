@@ -26,6 +26,7 @@ import {
   sendHearts,
 } from '../lib/live';
 import { fetchSouvenir, Souvenir } from '../lib/fanbase';
+import { originePublique } from '../lib/origine';
 import { decodeHtmlEntities } from '../lib/textRepair';
 import { useWakeLock } from '../lib/wakelock';
 import { defaultPublicScreen } from '../types';
@@ -362,10 +363,12 @@ export function Live({
   // est ouverte sur /sonnom, c'est l'adresse STABLE de l'artiste — elle
   // survit à l'arrêt et au redémarrage du concert, contrairement à un code
   // de session.
+  // Origine CANONIQUE (b471) : même ouverte depuis l'ancienne adresse
+  // Vercel (vieux QR), la page fait circuler mojosong.com.
   const shareUrl =
     artistName !== ''
-      ? `${location.origin}${location.pathname}`
-      : `${location.origin}/live`;
+      ? `${originePublique()}${location.pathname}`
+      : `${originePublique()}/live`;
 
   async function openBrowse() {
     setBrowseIdx(null);

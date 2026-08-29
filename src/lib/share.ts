@@ -6,6 +6,7 @@
  * (Avec Supabase, ces liens deviendront de courts identifiants.)
  */
 import { liveHeaders } from './liveAuth';
+import { originePublique } from './origine';
 import { SharePayload } from '../types';
 
 function bytesToBase64Url(bytes: Uint8Array): string {
@@ -60,7 +61,7 @@ export async function decodeShare(encoded: string): Promise<SharePayload> {
 
 /** URL complète de partage à copier / transformer en QR code. */
 export function shareUrl(encoded: string): string {
-  const base = `${location.origin}${location.pathname}`;
+  const base = `${originePublique()}${location.pathname}`;
   return `${base}#/s/${encoded}`;
 }
 
@@ -87,7 +88,7 @@ export async function createShortLink(
     if (!type.includes('application/json')) return null;
     const body = (await res.json()) as { id?: string };
     if (!res.ok || !body.id) return null;
-    return `${location.origin}${location.pathname}#/p/${body.id}`;
+    return `${originePublique()}${location.pathname}#/p/${body.id}`;
   } catch {
     return null;
   }

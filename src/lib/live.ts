@@ -4,6 +4,7 @@
  */
 import { liveHeaders } from './liveAuth';
 import { normalizeTitle } from './normalizeTitle';
+import { originePublique } from './origine';
 import { ArtistProfile } from '../types';
 
 /** `full` (b387) : le direct est EN COURS mais la salle gratuite est pleine
@@ -927,7 +928,7 @@ export async function rejouerCloture(key: string): Promise<boolean> {
  *  spectateur ne télécharge jamais le bundle de l'app musicien. Les anciens
  *  QR (/#/live) restent servis par l'app, en compatibilité. */
 export function liveUrl(code = ''): string {
-  return `${location.origin}/live${code !== '' ? `?c=${code}` : ''}`;
+  return `${originePublique()}/live${code !== '' ? `?c=${code}` : ''}`;
 }
 
 /* ------------------------------------------------------------------ */

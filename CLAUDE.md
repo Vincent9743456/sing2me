@@ -125,11 +125,20 @@
   et l'ambre se lit sur les deux thèmes (plus de couple 128/256 px à choisir).
 - **DOMAINE DE PRODUCTION : https://mojosong.com** (migration b307). L'ancienne
   adresse Vercel `sing2me-three.vercel.app` reste valable (Vercel la garde),
-  mais l'adresse officielle est le domaine. RIEN à changer dans le CODE
-  applicatif : tous les liens (partage, QR, invitation) et le `redirect_to`
-  de l'auth sont dérivés de `location.origin` — ils suivent le domaine tout
-  seuls. Seules ont changé les URL EN DUR de la landing (`public/site`) et des
-  docs. **Côté Vincent (hors code)** : DNS/domaine dans Vercel, et surtout
+  mais l'adresse officielle est le domaine. Seules ont changé les URL EN DUR
+  de la landing (`public/site`) et des docs.
+  **AMENDÉ b471 (constat de Vincent : « le lien généré pour le public
+  s'affiche avec l'adresse sing2me »)** : le « tout suit `location.origin` »
+  de b307 avait un angle mort — une app INSTALLÉE depuis l'ancienne adresse
+  Vercel garde cette origine pour toujours, donc ses liens, QR et adresses
+  affichées portaient encore `sing2me-three.vercel.app`. Tout lien qu'on
+  DONNE (partage `#/s/`/`#/p/`, QR, adresse publique `/sonnom`, lien `/live`,
+  lien de la page d'un musicien) passe désormais par `originePublique()`
+  (`src/lib/origine.ts`) : mojosong.com dès que l'hôte n'est ni mojosong.com
+  ni local (localhost / IP / `.local`, gardés pour le dev). Deux choses ne
+  passent JAMAIS par là : le `redirect_to` de l'auth (Supabase doit ramener
+  sur l'adresse où l'on est vraiment, `src/lib/auth.ts`) et les navigations
+  internes de la page courante. **Côté Vincent (hors code)** : DNS/domaine dans Vercel, et surtout
   Supabase → Auth → URL Configuration : **Site URL = https://mojosong.com** +
   ajouter `https://mojosong.com` (et `https://mojosong.com/**`) aux **Redirect
   URLs**, sinon les liens magiques / OAuth vers le nouveau domaine sont
