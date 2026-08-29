@@ -3,18 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0A1128">
-<title>mojotune — accordeur</title>
+<meta name="theme-color" content="#0A0F1D">
+<title>mojotune — accordeur en ligne gratuit (guitare, basse, ukulélé, violon)</title>
+<meta name="description" content="Accordeur chromatique gratuit, précis et automatique, dans le navigateur : guitare, basse, ukulélé, violon. Par mojosong, l’app des musiciens qui jouent en public.">
 <style>
   :root{
-    --navy:#0A1128;
-    --navy-2:#111A38;
-    --navy-3:#1A2547;
-    --orange:#F2A20C;
-    --orange-soft:#F5B940;
-    --cream:#F7F2E4;
-    --dim:#8A93B0;
-    --dim-2:#3A4568;
+    --navy:#0A0F1D;
+    --navy-2:#121A2E;
+    --navy-3:#1B2540;
+    --orange:#FCA711;
+    --orange-soft:#DE8F00;
+    --cream:#F4F0E9;
+    --dim:#A7AFC2;
+    --dim-2:#69728A;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
@@ -54,7 +55,7 @@
   .chip.active{
     background:var(--orange);border-color:var(--orange);
     color:var(--navy);
-    box-shadow:0 0 18px rgba(242,162,12,.35);
+    box-shadow:0 0 18px rgba(252,167,17,.35);
   }
   /* ---------- main ---------- */
   main{
@@ -76,7 +77,7 @@
   }
   .note-name .oct{font-size:.38em;font-weight:700;vertical-align:baseline;margin-left:2px;}
   .note-name.listening{color:var(--cream);}
-  .note-name.intune{color:var(--orange);text-shadow:0 0 34px rgba(242,162,12,.65);}
+  .note-name.intune{color:var(--orange);text-shadow:0 0 34px rgba(252,167,17,.65);}
   .note-solfege{font-size:15px;color:var(--dim);margin-top:4px;font-weight:600;letter-spacing:2px;text-transform:uppercase;}
   .cents-readout{
     margin-top:8px;font-size:17px;font-weight:700;
@@ -84,7 +85,6 @@
     transition:color .15s ease;min-height:22px;
   }
   .cents-readout.intune{color:var(--orange);}
-  .freq-readout{font-size:12px;color:var(--dim-2);margin-top:3px;font-variant-numeric:tabular-nums;font-weight:600;}
   /* ---------- status ---------- */
   .status{
     font-size:16px;font-weight:700;letter-spacing:.5px;
@@ -114,11 +114,11 @@
   .string.active .dot{
     border-color:var(--cream);color:var(--cream);
     transform:scale(1.12);
-    box-shadow:0 0 14px rgba(247,242,228,.22);
+    box-shadow:0 0 14px rgba(244,240,233,.22);
   }
   .string.active.intune .dot{
     border-color:var(--orange);background:var(--orange);color:var(--navy);
-    box-shadow:0 0 20px rgba(242,162,12,.55);
+    box-shadow:0 0 20px rgba(252,167,17,.55);
   }
   .string.done .dot::after{
     content:'✓';position:absolute;top:-7px;right:-5px;
@@ -128,31 +128,9 @@
     display:flex;align-items:center;justify-content:center;
   }
   .string .hz{font-size:10px;color:var(--dim-2);font-weight:600;font-variant-numeric:tabular-nums;}
-  /* ---------- strobe ---------- */
-  .strobe{
-    width:min(92vw,440px);height:22px;display:block;
-    border-radius:11px;background:var(--navy-2);
-    border:1px solid var(--dim-2);
-  }
-  .strobe-label{
-    font-size:9px;color:var(--dim-2);font-weight:700;
-    letter-spacing:2px;text-transform:uppercase;
-    text-align:center;margin-top:4px;
-  }
-  /* ---------- niveau micro ---------- */
-  .level-zone{display:flex;flex-direction:column;align-items:center;gap:5px;}
-  .level-wrap{
-    width:min(64vw,280px);height:6px;border-radius:999px;
-    background:var(--navy-3);overflow:hidden;
-  }
-  .level-bar{
-    height:100%;width:0%;background:var(--orange);
-    border-radius:999px;transition:width .07s linear;
-  }
-  .level-label{font-size:10px;color:var(--dim-2);font-weight:600;letter-spacing:1px;text-transform:uppercase;}
   /* ---------- start overlay ---------- */
   .overlay{
-    position:fixed;inset:0;background:rgba(10,17,40,.96);
+    position:fixed;inset:0;background:rgba(10,15,29,.96);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:22px;z-index:10;padding:30px;text-align:center;
     backdrop-filter:blur(4px);
@@ -165,11 +143,24 @@
     border:none;border-radius:999px;
     padding:16px 38px;font-size:17px;font-weight:800;
     cursor:pointer;font-family:inherit;
-    box-shadow:0 0 30px rgba(242,162,12,.4);
+    box-shadow:0 0 30px rgba(252,167,17,.4);
     transition:transform .15s ease;
   }
   .start-btn:active{transform:scale(.96);}
-  .err{color:#E86A5E;font-size:13px;max-width:320px;line-height:1.5;display:none;}
+  .err{color:#F4677E;font-size:13px;max-width:320px;line-height:1.5;display:none;}
+  /* ---------- lien mojosong (b462 : vecteur d'acquisition) ---------- */
+  .mojolink{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;max-width:520px;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    color:var(--dim);text-decoration:none;font-size:14px;font-weight:600;
+    border-top:1px solid var(--navy-3);
+  }
+  .mojolink img{width:22px;height:22px;flex-shrink:0;}
+  .mojolink b{font-weight:800;color:var(--cream);}
+  .mojolink b i{color:var(--orange);font-style:normal;}
+  .mojolink .arr{color:var(--orange);font-weight:800;}
+  .overlay .mojolink{border-top:none;padding:0;}
 </style>
 </head>
 <body>
@@ -178,9 +169,9 @@
   <div class="logo">
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <path d="M10 8 L23 15 L23 40 C23 40 20 36 15 36 C11 36 8 38.5 8 41.5 C8 44.5 11 46 14 45.5 L10 8Z" fill="none"/>
-      <path d="M12 6 L26 13 V34.5 a7 7 0 1 0 3 5.8 V19 l-14-7 Z" fill="#F2A20C"/>
-      <path d="M33 16 q6 8 0 16" stroke="#F7F2E4" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <path d="M39 12 q9 12 0 24" stroke="#F2A20C" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M12 6 L26 13 V34.5 a7 7 0 1 0 3 5.8 V19 l-14-7 Z" fill="#FCA711"/>
+      <path d="M33 16 q6 8 0 16" stroke="#F4F0E9" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M39 12 q9 12 0 24" stroke="#FCA711" stroke-width="3" fill="none" stroke-linecap="round"/>
     </svg>
     <div class="wordmark"><span class="mojo">mojo</span><span class="tune">tune</span></div>
   </div>
@@ -195,40 +186,39 @@
       <g id="ticks"></g>
       <g id="labels"></g>
       <!-- in-tune center zone marker -->
-      <path id="centerZone" fill="none" stroke="#F2A20C" stroke-width="10" stroke-linecap="round" opacity="0.28"/>
+      <path id="centerZone" fill="none" stroke="#FCA711" stroke-width="10" stroke-linecap="round" opacity="0.28"/>
       <!-- needle -->
       <g id="needleG">
-        <line id="needle" x1="220" y1="235" x2="220" y2="72" stroke="#F7F2E4" stroke-width="4" stroke-linecap="round"/>
-        <circle cx="220" cy="235" r="9" fill="#F7F2E4" id="needleHub"/>
+        <line id="needle" x1="220" y1="235" x2="220" y2="72" stroke="#F4F0E9" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="220" cy="235" r="9" fill="#F4F0E9" id="needleHub"/>
       </g>
     </svg>
     <div class="note-display">
       <div class="note-name" id="noteName">—</div>
       <div class="note-solfege" id="noteSolfege">&nbsp;</div>
       <div class="cents-readout" id="cents">&nbsp;</div>
-      <div class="freq-readout" id="freq">&nbsp;</div>
     </div>
   </div>
 
-  <div>
-    <canvas id="strobe" class="strobe"></canvas>
-    <div class="strobe-label">strobe — immobile = juste</div>
-  </div>
-
-  <div class="level-zone">
-    <div class="status" id="status">Jouez une corde…</div>
-    <div class="level-wrap"><div class="level-bar" id="levelBar"></div></div>
-    <div class="level-label">niveau micro</div>
-  </div>
+  <div class="status" id="status">Jouez une corde…</div>
 
   <div class="strings" id="strings"></div>
 </main>
+
+<a class="mojolink" href="https://mojosong.com/">
+  <img src="/mojosong-emblem.svg" alt="">
+  Tes paroles &amp; accords sur scène&nbsp;— <b>mojo<i>song</i></b> <span class="arr">→</span>
+</a>
 
 <div class="overlay" id="overlay">
   <div class="big-logo"><span style="color:var(--cream)">mojo</span><span style="color:var(--orange)">tune</span></div>
   <p>Accordeur automatique pour guitare, basse, ukulélé et violon.<br>Aucune sélection de note : jouez, mojotune écoute.</p>
   <button class="start-btn" id="startBtn">🎤 &nbsp;Activer le micro</button>
   <p class="err" id="errMsg"></p>
+  <a class="mojolink" href="https://mojosong.com/">
+    <img src="/mojosong-emblem.svg" alt="">
+    Par <b>mojo<i>song</i></b>&nbsp;— l&rsquo;app des musiciens qui jouent en public
+  </a>
 </div>
 
 <script>
@@ -329,7 +319,7 @@ function polar(angleDeg, radius){
     const l = document.createElementNS(NS, 'line');
     l.setAttribute('x1',x1); l.setAttribute('y1',y1);
     l.setAttribute('x2',x2); l.setAttribute('y2',y2);
-    l.setAttribute('stroke', c === 0 ? '#F2A20C' : (major ? '#8A93B0' : '#3A4568'));
+    l.setAttribute('stroke', c === 0 ? '#FCA711' : (major ? '#A7AFC2' : '#69728A'));
     l.setAttribute('stroke-width', c === 0 ? 4 : major ? 3 : 2);
     l.setAttribute('stroke-linecap','round');
     ticks.appendChild(l);
@@ -337,7 +327,7 @@ function polar(angleDeg, radius){
       const [lx,ly] = polar(ang, R + 30);
       const t = document.createElementNS(NS, 'text');
       t.setAttribute('x',lx); t.setAttribute('y',ly);
-      t.setAttribute('fill', c === 0 ? '#F2A20C' : '#8A93B0');
+      t.setAttribute('fill', c === 0 ? '#FCA711' : '#A7AFC2');
       t.setAttribute('font-size','15');
       t.setAttribute('font-weight','700');
       t.setAttribute('text-anchor','middle');
@@ -361,7 +351,7 @@ const needleHub = document.getElementById('needleHub');
 function setNeedle(cents, intune, silent){
   const ang = centsToAngle(cents);
   needleG.setAttribute('transform', 'rotate(' + ang + ' ' + CX + ' ' + CY + ')');
-  const col = silent ? '#3A4568' : intune ? '#F2A20C' : '#F7F2E4';
+  const col = silent ? '#69728A' : intune ? '#FCA711' : '#F4F0E9';
   needle.setAttribute('stroke', col);
   needleHub.setAttribute('fill', col);
 }
@@ -371,7 +361,6 @@ setNeedle(0, false, true);
 const noteNameEl = document.getElementById('noteName');
 const noteSolfegeEl = document.getElementById('noteSolfege');
 const centsEl = document.getElementById('cents');
-const freqEl = document.getElementById('freq');
 const statusEl = document.getElementById('status');
 
 /* ================= détection de hauteur =================
@@ -605,9 +594,10 @@ function refineFreq(f0, sr){
 
 /* ================= strobe ================= */
 const strobeCanvas = document.getElementById('strobe');
-const sctx = strobeCanvas.getContext('2d');
+const sctx = strobeCanvas ? strobeCanvas.getContext('2d') : null;
 let strobeOn = false, strobeInTune = false, strobeOffset = 0;
 function drawStrobe(){
+  if (!sctx) return;   // strobe retiré de l'écran (b462) — moteur inchangé
   const dpr = window.devicePixelRatio || 1;
   const w = Math.round(strobeCanvas.clientWidth * dpr), h = Math.round(strobeCanvas.clientHeight * dpr);
   if (!w || !h) return;
@@ -615,8 +605,8 @@ function drawStrobe(){
   sctx.clearRect(0, 0, w, h);
   const period = 28 * dpr, bar = 14 * dpr;
   if (strobeOn) strobeOffset += displayedCents * 0.12 * dpr;   // vitesse ∝ écart ; immobile = juste
-  sctx.fillStyle = !strobeOn ? 'rgba(58,69,104,0.5)'
-                 : strobeInTune ? '#F2A20C' : 'rgba(247,242,228,0.75)';
+  sctx.fillStyle = !strobeOn ? 'rgba(105,114,138,0.5)'
+                 : strobeInTune ? '#FCA711' : 'rgba(244,240,233,0.75)';
   for (let x = ((strobeOffset % period) + period) % period - period; x < w; x += period){
     sctx.fillRect(x, 0, bar, h);
   }
@@ -644,13 +634,11 @@ function resetDetection(){
   noteSolfegeEl.innerHTML = '&nbsp;';
   centsEl.innerHTML = '&nbsp;';
   centsEl.className = 'cents-readout';
-  freqEl.innerHTML = '&nbsp;';
   statusEl.textContent = 'Jouez une corde…';
   statusEl.className = 'status';
 }
 
 let deadFrames = 0, recoveryTried = false, helpShown = false, frameNo = 0;
-const levelBar = document.getElementById('levelBar');
 
 let analysisCost = 0;   // coût moyen d'une analyse (ms) — pour s'adapter aux appareils lents
 function loop(){
@@ -673,9 +661,6 @@ function loop(){
   }
   const now = performance.now();
   analysisCost = analysisCost * 0.9 + (now - tA) * 0.1;
-
-  // barre de niveau micro
-  levelBar.style.width = Math.min(100, Math.round((rms || 0) / 0.08 * 100)) + '%';
 
   // surveillance : flux micro mort (bug connu de Safari iOS)
   if (!rms || rms < 1e-6){
@@ -739,7 +724,6 @@ function loop(){
     noteSolfegeEl.textContent = SOLFEGE[noteIdx];
     centsEl.textContent = (c > 0 ? '+' : '') + c.toFixed(1) + ' cents';
     centsEl.className = 'cents-readout' + (intune ? ' intune' : '');
-    freqEl.textContent = freq.toFixed(2) + ' Hz  ·  ' + NOTE_NAMES[noteIdx] + noteOct + ' = ' + refFreq.toFixed(2) + ' Hz';
 
     target.el.classList.toggle('intune', onString && intune);
 
