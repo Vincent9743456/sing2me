@@ -37,7 +37,7 @@ const OBLIGATOIRES = ['/index.html', '/public.html'];
  * EMPOISONNERAIT la coquille de l'app (l'app hors-ligne servirait l'outil à
  * sa place). On les exclut donc du précache ET on les laisse passer au réseau.
  */
-const AUTONOMES = ['/mojocomposer.html', '/mojotune.html'];
+const AUTONOMES = ['/mojocomposer.html', '/mojotune.html', '/mojobeat.html'];
 
 /**
  * Ce qui ne doit JAMAIS être mis en cache :
