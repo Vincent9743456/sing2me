@@ -589,10 +589,15 @@ export function BandEdit({ id }: { id: string }) {
       // qu'elle utilise (double inscription).
       setDirMsg(
         t(
-          '✓ Invitation envoyée à {name} — elle l’attend dans son onglet Groupes, et un e-mail la prévient. Si elle ne voit rien, vérifiez qu’elle se connecte bien avec le compte de ce profil.',
+          '✓ Invitation envoyée à {name} — elle l’attend dans son onglet Groupes, et un e-mail la prévient. Si elle ne reçoit rien d’ici quelques minutes, envoie-lui plutôt un lien d’invitation (bouton ci-dessous) : lui fonctionne avec le compte qu’elle utilise vraiment.',
           { name: person.name },
         ),
       );
+      // LE SECOURS EST PRÉREMPLI (b470) : l'annuaire peut viser un compte
+      // que la personne n'utilise plus (double inscription) — le lien, lui,
+      // se referme sur le compte qui l'OUVRE, quel qu'il soit. Si l'inviteur
+      // bascule sur « Inviter par lien », le prénom est déjà posé.
+      setPendingName(person.name);
       // On matérialise l'invitation par un profil « en attente d'acceptation »
       // dans le groupe : le musicien apparaît tout de suite, marqué comme
       // pas encore accepté (il deviendra un membre normal à son adhésion).
