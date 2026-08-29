@@ -582,6 +582,17 @@ export function BandEdit({ id }: { id: string }) {
       if (!s) return;
       await inviteToBand(s, cid, person.user_id);
       setInvited((prev) => new Set(prev).add(person.user_id));
+      // CONFIRMER LE CANAL (b469, cas de l'amie de Vincent : « sa fille ne
+      // reçoit pas l'invitation ») : dire OÙ l'invitation attend aide les
+      // deux côtés à vérifier — et si l'invitée ne voit rien à cet endroit,
+      // le profil choisi dans l'annuaire n'est probablement pas le compte
+      // qu'elle utilise (double inscription).
+      setDirMsg(
+        t(
+          '✓ Invitation envoyée à {name} — elle l’attend dans son onglet Groupes, et un e-mail la prévient. Si elle ne voit rien, vérifiez qu’elle se connecte bien avec le compte de ce profil.',
+          { name: person.name },
+        ),
+      );
       // On matérialise l'invitation par un profil « en attente d'acceptation »
       // dans le groupe : le musicien apparaît tout de suite, marqué comme
       // pas encore accepté (il deviendra un membre normal à son adhésion).
