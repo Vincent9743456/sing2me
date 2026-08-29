@@ -117,7 +117,6 @@ export const EN_COMPTE: Record<string, string> = {
   '{from} t\'invite à rejoindre {band} sur mojosong': '{from} invites you to join {band} on mojosong',
   '{name} (solo)': '{name} (solo)',
   '⏳ Arrêt…': '⏳ Stopping…',
-  '⏳ Lancement…': '⏳ Starting…',
   '⏳ Reprise…': '⏳ Resuming…',
   '⏸ En pause — le public voit un écran d’attente.': '⏸ Paused — the audience sees a waiting screen.',
   '⏸ Pause': '⏸ Pause',
@@ -148,6 +147,11 @@ export const EN_COMPTE: Record<string, string> = {
 
   // Refonte de la modale live (b345)
   'Le groupe': 'The band',
+  '✓ C’est parti…': '✓ Here we go…',
+  'Ton live démarre — en ligne dans quelques secondes.':
+    'Your live is starting — online in a few seconds.',
+  'Ta répétition démarre — en ligne dans quelques secondes.':
+    'Your rehearsal is starting — online in a few seconds.',
   'Le public voit les paroles du morceau en cours. Les musiciens qui se greffent voient paroles et accords.':
     'The audience sees the lyrics of the current song. Musicians joining the jam see lyrics and chords.',
   'Seuls les musiciens du groupe suivent.':

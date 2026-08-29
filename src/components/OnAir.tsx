@@ -198,6 +198,21 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
     () => (localStorage.getItem('sing2me/onair') as LiveStatus) || 'off',
   );
   const [panel, setPanel] = useState(false);
+  /**
+   * RÉCHAUFFEMENT DU SERVEUR (b464) : la modale ouverte, le tap sur
+   * « Démarrer » arrive dans les secondes qui suivent — on réveille la
+   * fonction /api/live TOUT DE SUITE (démarrage à froid Vercel + poignée
+   * de main TLS + réveil Supabase), pour que le vrai lancement ne paie
+   * que son aller-retour. Lecture anodine, résultat jeté, jamais bloquant.
+   */
+  useEffect(() => {
+    if (!panel || status !== 'off') return;
+    void fetch('/api/live').catch(() => {
+      /* hors ligne : le lancement le dira, pas ce réchauffement */
+    });
+    // une fois par ouverture du panneau
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panel]);
   const [busy, setBusy] = useState(false);
   // L'arrêt n'a pas atteint le serveur : on propose de couper ici (b216).
   const [arretForce, setArretForce] = useState(false);
@@ -540,47 +555,25 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
        * Solo → mes groupes. Groupe → ses musiciens. Best-effort : si la
        * préparation échoue, le direct part quand même, sans les liens.
        */
-      let vitrine = performer;
-      if (next !== 'off' && performer) {
-        try {
-          /**
-           * DÉLAI MAXIMUM SUR LA PRÉPARATION (b440, signalement de Vincent :
-           * « ⏳ Lancement… » sans fin sur une 5G faible — le live ne
-           * partait jamais). Cette préparation enchaîne des appels réseau
-           * SANS délai propre (adresses publiques, fiches de groupes,
-           * vignettes) : le try/catch attrape un échec, jamais un fetch qui
-           * RESTE EN ATTENTE — et tout le lancement pendait derrière elle.
-           * Même règle que b216 : une action déclenchée par un bouton doit
-           * toujours pouvoir se terminer. 4 s, puis le live part avec la
-           * fiche nue — c'était déjà la promesse du commentaire ci-dessus
-           * (« si la préparation échoue, le direct part quand même »).
-           */
-          const enrichie = await Promise.race([
-            (async () =>
-              liveBand
-                ? {
-                    ...performer,
-                    publicMembers: (await ficheGroupe(liveBand, artist))
-                      .publicMembers,
-                  }
-                : {
-                    ...performer,
-                    publicBands: await groupesPublics(bands, artist),
-                  })(),
-            new Promise<null>((r) => window.setTimeout(() => r(null), 4000)),
-          ]);
-          if (enrichie !== null) vitrine = enrichie;
-        } catch {
-          /* la fiche part sans ses liens plutôt que pas de concert */
-        }
-      }
+      /**
+       * LE LIVE PART TOUT DE SUITE, LA VITRINE LE RATTRAPE (b464, constat
+       * de Vincent : « le temps d'attente pour le lancement est très long —
+       * et peut être angoissant pour le musicien sur scène »). b440 avait
+       * plafonné la préparation de la vitrine à 4 s ; c'était encore 4 s
+       * d'attente au pire moment. Le lancement envoie désormais la fiche
+       * NUE — le concert démarre en un aller-retour serveur — et la
+       * version enrichie (groupes/musiciens, b232) est POUSSÉE derrière,
+       * en silence, dès qu'elle est prête. Le spectateur des premières
+       * secondes voit la fiche sans ses liens, exactement ce que b232
+       * promettait déjà en cas d'échec de la préparation.
+       */
       await pushLive(prefs.liveKey, {
         status: next,
         mode,
         song: next === 'off' ? null : currentRef.current,
         bandSong: next === 'off' ? null : lastMetaRef.current,
         setlist: next === 'off' ? null : setlistRef.current,
-        artist: vitrine,
+        artist: performer,
         bandId: next === 'off' ? '' : (liveBand?.cloudId ?? ''),
         startedBy: next === 'off' ? '' : artist.name,
         concert:
@@ -595,6 +588,32 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
               : null,
       });
       setStatus(next);
+      // La vitrine ENRICHIE (groupes/musiciens, b232) rattrape le live en
+      // arrière-plan, APRÈS sa création — jamais avant : deux envois
+      // concurrents sans référence créeraient DEUX lives.
+      if (next !== 'off' && performer) {
+        void (async () => {
+          try {
+            const enrichie = liveBand
+              ? {
+                  ...performer,
+                  publicMembers: (await ficheGroupe(liveBand, artist))
+                    .publicMembers,
+                }
+              : {
+                  ...performer,
+                  publicBands: await groupesPublics(bands, artist),
+                };
+            // Le statut a pu changer pendant la préparation (pause, arrêt) :
+            // on renvoie l'état COURANT — et plus rien si le live est clos.
+            const st = statusRef.current;
+            if (st === 'off') return;
+            await pushLive(prefs.liveKey, { status: st, artist: enrichie });
+          } catch {
+            /* la fiche reste nue plutôt que de retarder le concert */
+          }
+        })();
+      }
       if (next === 'off') {
         setPanel(false);
         setHearts(0);
@@ -848,12 +867,26 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                   onClick={() => void demarrer()}
                 >
                   {busy
-                    ? t('⏳ Lancement…')
+                    ? t('✓ C’est parti…')
                     : mode === 'repet'
                       ? t('Démarrer la répétition')
                       : t('Démarrer le live')}
                 </button>
-                {who !== 'solo' && (
+                {/* Message RASSURANT dès le tap (b464) : sur scène, un
+                    sablier muet fait douter — on dit tout de suite que le
+                    lancement est acquis et qu'il se compte en secondes. */}
+                {busy && (
+                  <p
+                    className="help"
+                    aria-live="polite"
+                    style={{ textAlign: 'center', marginTop: 8 }}
+                  >
+                    {mode === 'repet'
+                      ? t('Ta répétition démarre — en ligne dans quelques secondes.')
+                      : t('Ton live démarre — en ligne dans quelques secondes.')}
+                  </p>
+                )}
+                {!busy && who !== 'solo' && (
                   <p className="help" style={{ textAlign: 'center', marginTop: 8 }}>
                     {t('Les musiciens du groupe suivent automatiquement.')}
                   </p>
