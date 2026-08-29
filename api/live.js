@@ -60,6 +60,25 @@ function randomToken() {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * TOUT APPEL SORTANT A UN DÉLAI MAXIMAL (b466, capture de Vincent : « Le
+ * serveur ne répond pas » après 12 s de sablier au lancement d'un live).
+ * Une base qui TRAÎNE est pire qu'une base en panne : le fetch Node attend
+ * indéfiniment, la fonction dépasse le délai du client (12 s, b216), et le
+ * musicien reste sur scène sans réponse. 6 s par appel : une Supabase
+ * muette produit une ERREUR rapide et claire, que le client affiche —
+ * réessayer prend alors deux secondes, pas douze. Même esprit que
+ * fetchAvecDelai côté client ; les chemins best-effort existants (try/
+ * catch) absorbent l'échec comme avant, les autres remontent en 500 net.
+ */
+const fetchSb = (url, opts = {}, ms = 6000) => {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { ...opts, signal: ctrl.signal }).finally(() =>
+    clearTimeout(t),
+  );
+};
+
 const sanitizeSetlist = (v) =>
   Array.isArray(v)
     ? v.slice(0, 60).map((s) => ({
@@ -73,7 +92,7 @@ const sanitizeSetlist = (v) =>
 async function archivePlayedSong(base, row) {
   const title = row?.song?.title ?? '';
   if (title === '') return;
-  let ins = await fetch(`${base}/rest/v1/live_stats`, {
+  let ins = await fetchSb(`${base}/rest/v1/live_stats`, {
     method: 'POST',
     headers: sbHeaders(),
     body: JSON.stringify({
@@ -94,7 +113,7 @@ async function archivePlayedSong(base, row) {
     }),
   });
   if (ins.status === 400) {
-    await fetch(`${base}/rest/v1/live_stats`, {
+    await fetchSb(`${base}/rest/v1/live_stats`, {
       method: 'POST',
       headers: sbHeaders(),
       body: JSON.stringify({
@@ -112,7 +131,7 @@ async function finalizeSession(base, sessionId) {
   if (!sessionId) return;
   let uniques = 0;
   try {
-    const c = await fetch(
+    const c = await fetchSb(
       `${base}/rest/v1/live_attendance?session_id=eq.${sessionId}&select=device_id`,
       { headers: { ...sbHeaders(), prefer: 'count=exact' } },
     );
@@ -122,7 +141,7 @@ async function finalizeSession(base, sessionId) {
   } catch {
     /* comptage best-effort */
   }
-  await fetch(`${base}/rest/v1/live_sessions?id=eq.${sessionId}`, {
+  await fetchSb(`${base}/rest/v1/live_sessions?id=eq.${sessionId}`, {
     method: 'PATCH',
     headers: sbHeaders(),
     body: JSON.stringify({ ended_at: new Date().toISOString(), uniques }),
@@ -156,7 +175,7 @@ const SENTINELLE_PLEINE = '__salle_pleine__';
 async function planDuProprio(base, ownerId) {
   if (!ownerId) return 'free';
   try {
-    const r = await fetch(
+    const r = await fetchSb(
       `${base}/rest/v1/user_plans?user_id=eq.${encodeURIComponent(ownerId)}&select=plan&limit=1`,
       { headers: sbHeaders() },
     );
@@ -180,7 +199,7 @@ async function reserverSiege(base, liveId, device) {
     const dev = encodeURIComponent(device);
     const now = Date.now();
     // Mon siège tient-il encore ? (grâce de reconnexion comprise)
-    const r = await fetch(
+    const r = await fetchSb(
       `${base}/rest/v1/live_seats?live_id=eq.${lid}&device_id=eq.${dev}&select=last_seen&limit=1`,
       { headers: sbHeaders() },
     );
@@ -189,7 +208,7 @@ async function reserverSiege(base, liveId, device) {
     const mien = Array.isArray(rows) && rows[0] ? rows[0] : null;
     if (mien && Date.parse(mien.last_seen) > now - SIEGE_TTL_MS) {
       if (Date.parse(mien.last_seen) < now - SIEGE_REFRESH_MS) {
-        await fetch(
+        await fetchSb(
           `${base}/rest/v1/live_seats?live_id=eq.${lid}&device_id=eq.${dev}`,
           {
             method: 'PATCH',
@@ -202,7 +221,7 @@ async function reserverSiege(base, liveId, device) {
     }
     // Pas de siège frais : reste-t-il une place ? (la sentinelle ne compte pas)
     const seuil = new Date(now - SIEGE_TTL_MS).toISOString();
-    const c = await fetch(
+    const c = await fetchSb(
       `${base}/rest/v1/live_seats?live_id=eq.${lid}&last_seen=gt.${encodeURIComponent(seuil)}&device_id=neq.${SENTINELLE_PLEINE}&select=device_id`,
       { headers: { ...sbHeaders(), prefer: 'count=exact' } },
     );
@@ -210,7 +229,7 @@ async function reserverSiege(base, liveId, device) {
     const occupes = m ? parseInt(m[1], 10) : 0;
     if (occupes >= CAP_SALLE) {
       // On note UNE fois que la salle a été pleine (e-mail de clôture).
-      await fetch(`${base}/rest/v1/live_seats`, {
+      await fetchSb(`${base}/rest/v1/live_seats`, {
         method: 'POST',
         headers: { ...sbHeaders(), prefer: 'resolution=ignore-duplicates' },
         body: JSON.stringify({
@@ -222,7 +241,7 @@ async function reserverSiege(base, liveId, device) {
       return false;
     }
     // Une place : on s'assied (merge ranime un siège expiré du même appareil).
-    await fetch(`${base}/rest/v1/live_seats`, {
+    await fetchSb(`${base}/rest/v1/live_seats`, {
       method: 'POST',
       headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
       body: JSON.stringify({
@@ -260,7 +279,7 @@ async function envoyerMailSallePleine(base, row) {
   try {
     const resendKey = process.env.RESEND_API_KEY;
     if (!resendKey || !row?.owner_id) return;
-    const u = await fetch(
+    const u = await fetchSb(
       `${base}/auth/v1/admin/users/${encodeURIComponent(row.owner_id)}`,
       { headers: sbHeaders() },
     );
@@ -290,7 +309,7 @@ async function envoyerMailSallePleine(base, row) {
       `(Settings → My account).\n\n` +
       `Well done again — see you at your next show 🎸\n` +
       `The mojosong team — https://mojosong.com`;
-    await fetch('https://api.resend.com/emails', {
+    await fetchSb('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         authorization: `Bearer ${resendKey}`,
@@ -311,7 +330,7 @@ async function envoyerMailSallePleine(base, row) {
 /** Clôt un live (auto-arrêt ou arrêt manuel) : archive, finalise, purge. */
 async function closeLive(base, row) {
   try {
-    const claim = await fetch(
+    const claim = await fetchSb(
       `${base}/rest/v1/lives?id=eq.${row.id}&status=neq.off`,
       {
         method: 'PATCH',
@@ -356,7 +375,7 @@ async function closeLive(base, row) {
       // Cap de salle (b387) : si la salle a été pleine pendant ce live, on
       // le dit à l'artiste par e-mail — puis on rend les sièges.
       try {
-        const s = await fetch(
+        const s = await fetchSb(
           `${base}/rest/v1/live_seats?live_id=eq.${encodeURIComponent(row.id)}&device_id=eq.${SENTINELLE_PLEINE}&select=device_id&limit=1`,
           { headers: sbHeaders() },
         );
@@ -364,7 +383,7 @@ async function closeLive(base, row) {
         if (Array.isArray(sr) && sr.length > 0) {
           await envoyerMailSallePleine(base, row);
         }
-        await fetch(
+        await fetchSb(
           `${base}/rest/v1/live_seats?live_id=eq.${encodeURIComponent(row.id)}`,
           { method: 'DELETE', headers: sbHeaders() },
         );
@@ -407,7 +426,7 @@ async function proprietaireDeLAdresse(base, nomPublic) {
   const nom = String(nomPublic).slice(0, 30).toLowerCase();
   if (!/^[a-z0-9]{3,30}$/.test(nom)) return null;
   try {
-    const r = await fetch(
+    const r = await fetchSb(
       `${base}/rest/v1/public_pages?name=eq.${enc(nom)}&select=user_id,profile&limit=1`,
       { headers: sbHeaders() },
     );
@@ -423,7 +442,7 @@ async function proprietaireDeLAdresse(base, nomPublic) {
       }
     }
     // Adresse de groupe : on remonte au détenteur.
-    const rb = await fetch(
+    const rb = await fetchSb(
       `${base}/rest/v1/band_pages?name=eq.${enc(nom)}&select=band_id&limit=1`,
       { headers: sbHeaders() },
     );
@@ -431,7 +450,7 @@ async function proprietaireDeLAdresse(base, nomPublic) {
     const bandes = await rb.json();
     const bande = Array.isArray(bandes) && bandes[0] ? bandes[0] : null;
     if (!bande?.band_id) return null;
-    const rc = await fetch(
+    const rc = await fetchSb(
       `${base}/rest/v1/cloud_bands?id=eq.${enc(bande.band_id)}&select=owner,name&limit=1`,
       { headers: sbHeaders() },
     );
@@ -499,7 +518,7 @@ async function resolveLive(base, q) {
      * l'adresse.
      */
     if (proprio.bandId) {
-      const parGroupe = await fetch(
+      const parGroupe = await fetchSb(
         `${base}/rest/v1/lives?band_id=eq.${enc(proprio.bandId)}&status=neq.off` +
           `&select=${LIVE_COLS}&order=started_at.desc&limit=1`,
         { headers: sbHeaders() },
@@ -509,7 +528,7 @@ async function resolveLive(base, q) {
         if (Array.isArray(rows) && rows[0]) return rows[0];
       }
     } else if (proprio.ownerId !== '') {
-      const parCompte = await fetch(
+      const parCompte = await fetchSb(
         `${base}/rest/v1/lives?owner_id=eq.${enc(proprio.ownerId)}&status=neq.off` +
           `&select=${LIVE_COLS}&order=started_at.desc&limit=1`,
         { headers: sbHeaders() },
@@ -546,16 +565,16 @@ async function resolveLive(base, q) {
   } else {
     url = `${base}/rest/v1/lives?status=neq.off&select=${LIVE_COLS}&order=started_at.desc&limit=1`;
   }
-  let r = await fetch(url, { headers: sbHeaders() });
+  let r = await fetchSb(url, { headers: sbHeaders() });
   if (!r.ok && url.includes('setlist_name,')) {
     // Colonne facultative absente (supabase/live.sql pas rejoué) : on redemande
     // sans elle plutôt que de rendre le direct introuvable. Jamais de coupure
     // en plein concert pour un nom de setlist.
-    r = await fetch(url.replace('setlist_name,', ''), { headers: sbHeaders() });
+    r = await fetchSb(url.replace('setlist_name,', ''), { headers: sbHeaders() });
   }
   if (!r.ok && url.includes('owner_id,')) {
     // Colonne b192 pas encore créée : on redemande sans elle.
-    r = await fetch(url.replace('owner_id,', '').replace('setlist_name,', ''), {
+    r = await fetchSb(url.replace('owner_id,', '').replace('setlist_name,', ''), {
       headers: sbHeaders(),
     });
   }
@@ -567,7 +586,7 @@ async function resolveLive(base, q) {
 /** Ligne legacy live_state (vieux bundles encore en direct). */
 async function legacyRow(base) {
   try {
-    const r = await fetch(
+    const r = await fetchSb(
       `${base}/rest/v1/live_state?id=eq.live&select=status,mode,song,artist,hearts,band_song,concert,setlist_count,updated_at,band_id,started_by,started_at,last_song_at,session_id`,
       { headers: sbHeaders() },
     );
@@ -692,7 +711,7 @@ export default async function handler(req, res) {
       }
       if (row && row.status !== 'off') {
         if (wantSetlist) {
-          const r = await fetch(
+          const r = await fetchSb(
             `${base}/rest/v1/lives?id=eq.${row.id}&select=status,mode,setlist`,
             { headers: sbHeaders() },
           );
@@ -709,7 +728,7 @@ export default async function handler(req, res) {
         if (req.query?.id && row.session_id) {
           const vue = publicView(row);
           try {
-            const c = await fetch(
+            const c = await fetchSb(
               `${base}/rest/v1/live_attendance?session_id=eq.${encodeURIComponent(row.session_id)}&select=device_id`,
               { headers: { ...sbHeaders(), prefer: 'count=exact' } },
             );
@@ -736,7 +755,7 @@ export default async function handler(req, res) {
         if (leg && leg.status && leg.status !== 'off' && !liveExpired(leg)) {
           if (wantSetlist) {
             const visible = leg.mode !== 'repet';
-            const r = await fetch(
+            const r = await fetchSb(
               `${base}/rest/v1/live_state?id=eq.live&select=setlist`,
               { headers: sbHeaders() },
             );
@@ -781,7 +800,7 @@ export default async function handler(req, res) {
       ) {
         // Mise à jour / clôture d'un live existant.
         if (body.liveId) {
-          const r = await fetch(
+          const r = await fetchSb(
             `${base}/rest/v1/lives?id=eq.${encodeURIComponent(String(body.liveId))}&select=${LIVE_COLS},write_token&limit=1`,
             { headers: sbHeaders() },
           );
@@ -800,7 +819,7 @@ export default async function handler(req, res) {
               patch.setlist = list;
               patch.setlist_count = list.length;
             }
-            const u = await fetch(`${base}/rest/v1/lives?id=eq.${row.id}`, {
+            const u = await fetchSb(`${base}/rest/v1/lives?id=eq.${row.id}`, {
               method: 'PATCH',
               headers: sbHeaders(),
               body: JSON.stringify(patch),
@@ -865,7 +884,7 @@ export default async function handler(req, res) {
           if (patch.song && patch.song.title) {
             patch.last_song_at = new Date().toISOString();
           }
-          const u = await fetch(`${base}/rest/v1/lives?id=eq.${row.id}`, {
+          const u = await fetchSb(`${base}/rest/v1/lives?id=eq.${row.id}`, {
             method: 'PATCH',
             headers: sbHeaders(),
             body: JSON.stringify(patch),
@@ -892,7 +911,7 @@ export default async function handler(req, res) {
         // Session de mesure (chantier 2) — best-effort.
         let sessionId = null;
         try {
-          const s = await fetch(`${base}/rest/v1/live_sessions`, {
+          const s = await fetchSb(`${base}/rest/v1/live_sessions`, {
             method: 'POST',
             headers: { ...sbHeaders(), prefer: 'return=representation' },
             body: JSON.stringify({
@@ -909,7 +928,7 @@ export default async function handler(req, res) {
         }
         const now = new Date().toISOString();
         const list = sanitizeSetlist(body.setlist);
-        const ins = await fetch(`${base}/rest/v1/lives`, {
+        const ins = await fetchSb(`${base}/rest/v1/lives`, {
           method: 'POST',
           headers: { ...sbHeaders(), prefer: 'return=representation' },
           body: JSON.stringify({
@@ -951,7 +970,7 @@ export default async function handler(req, res) {
             setlist_count: list.length,
             updated_at: now,
           };
-          let lr = await fetch(`${base}/rest/v1/live_state`, {
+          let lr = await fetchSb(`${base}/rest/v1/live_state`, {
             method: 'POST',
             headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
             body: JSON.stringify({
@@ -968,7 +987,7 @@ export default async function handler(req, res) {
             }),
           });
           if (lr.status === 400) {
-            lr = await fetch(`${base}/rest/v1/live_state`, {
+            lr = await fetchSb(`${base}/rest/v1/live_state`, {
               method: 'POST',
               headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
               body: JSON.stringify(legacyPatch),
@@ -994,7 +1013,7 @@ export default async function handler(req, res) {
 
       /* — Chemin LEGACY (bundles avant b121) : ligne unique live_state — */
       if (!('status' in body) && 'bandSong' in body) {
-        const u = await fetch(`${base}/rest/v1/live_state?id=eq.live`, {
+        const u = await fetchSb(`${base}/rest/v1/live_state?id=eq.live`, {
           method: 'PATCH',
           headers: sbHeaders(),
           body: JSON.stringify({ band_song: body.bandSong ?? null }),
@@ -1004,7 +1023,7 @@ export default async function handler(req, res) {
       }
       if (!('status' in body) && 'setlist' in body) {
         const list = sanitizeSetlist(body.setlist);
-        const u = await fetch(`${base}/rest/v1/live_state?id=eq.live`, {
+        const u = await fetchSb(`${base}/rest/v1/live_state?id=eq.live`, {
           method: 'PATCH',
           headers: sbHeaders(),
           body: JSON.stringify({ setlist: list, setlist_count: list.length }),
@@ -1045,7 +1064,7 @@ export default async function handler(req, res) {
 
       let liveRow = null;
       try {
-        const cur = await fetch(
+        const cur = await fetchSb(
           `${base}/rest/v1/live_state?id=eq.live&select=song,hearts,concert,status,session_id`,
           { headers: sbHeaders() },
         );
@@ -1068,7 +1087,7 @@ export default async function handler(req, res) {
         if (status !== 'off' && !wasLive) {
           patch.started_at = new Date().toISOString();
           if (!patch.last_song_at) patch.last_song_at = patch.started_at;
-          const s = await fetch(`${base}/rest/v1/live_sessions`, {
+          const s = await fetchSb(`${base}/rest/v1/live_sessions`, {
             method: 'POST',
             headers: { ...sbHeaders(), prefer: 'return=representation' },
             body: JSON.stringify({
@@ -1090,7 +1109,7 @@ export default async function handler(req, res) {
       // b180 : même raison — un mot laissé hors direct (ou par un ancien
       // bundle) appartient quand même à l'artiste. On ne l'efface plus.
 
-      let r = await fetch(`${base}/rest/v1/live_state`, {
+      let r = await fetchSb(`${base}/rest/v1/live_state`, {
         method: 'POST',
         headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
         body: JSON.stringify(patch),
@@ -1107,7 +1126,7 @@ export default async function handler(req, res) {
         void started_by;
         void started_at;
         void last_song_at;
-        r = await fetch(`${base}/rest/v1/live_state`, {
+        r = await fetchSb(`${base}/rest/v1/live_state`, {
           method: 'POST',
           headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
           body: JSON.stringify(safe),
@@ -1122,7 +1141,17 @@ export default async function handler(req, res) {
     }
 
     res.status(405).json({ error: 'Méthode non autorisée' });
-  } catch {
+  } catch (e) {
+    // Un appel Supabase coupé par son délai (b466) : on le DIT — c'est la
+    // base qui traîne, pas la connexion du musicien, et réessayer dans
+    // quelques secondes est le bon geste.
+    if (e && e.name === 'AbortError') {
+      res.status(503).json({
+        error:
+          'La base de données met trop de temps à répondre — réessaie dans quelques secondes.',
+      });
+      return;
+    }
     res.status(500).json({ error: 'Erreur inattendue côté serveur' });
   }
 }
