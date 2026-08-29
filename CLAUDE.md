@@ -758,13 +758,14 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     En pratique, on préfère quand même RECONNAÎTRE le format déposé
     plutôt que de demander à l'utilisateur quelle application il utilise :
     la procédure s'adapte sans qu'aucune liste de marques ne s'affiche.
-    **LEVÉE PARTIELLE en b319** (décision explicite de Vincent, contre la
-    recommandation de garder le libellé neutre) : le flux « Recherche &
-    création » AFFICHE « Chercher sur Ultimate Guitar » — usage
-    référentiel, TEXTE SEUL (jamais le logo, jamais « powered by », jamais
-    une formulation suggérant un partenariat). La règle §A.5 reste en
-    vigueur PARTOUT AILLEURS (aide, landing, README) : ne pas étendre le
-    nom hors de ce flux sans nouvel arbitrage.
+    **LEVÉE b319 ANNULÉE en b472** (demande de Vincent : « renommer en
+    "Chercher sur le web", rester implicite sur la source ») : le bouton du
+    flux « Recherche & création » dit « Chercher sur le web », et PLUS AUCUN
+    message visible ne nomme la source — les erreurs serveur de
+    `search-tabs.js`/`fetch-tab.js` sont neutres (« le service de
+    recherche », « la page de la partition »). La règle §A.5 s'applique donc
+    à nouveau PARTOUT. Le code interne garde ses noms (ug.ts, ugHtml…),
+    comme toujours (b258).
     **PIVOT b334 (décision explicite de Vincent)** : la justification
     d'origine (« c'est l'utilisateur qui navigue lui-même, aucune requête
     serveur ») n'a pas survécu au terrain — sur iPhone avec l'app UG
@@ -953,6 +954,29 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     Et la CRÉATION valide : nom vide refusé (le placeholder n'est pas une
     valeur), doublon de nom refusé (comparaison repliée accents/casse) —
     message inline sous le champ, jamais d'alert().
+- **Lot de retours de test b472 (6 points de Vincent)** — décisions à retenir :
+  - **le ＋ de Morceaux en contexte groupe OUVRE UN MENU** (deux gestes
+    nommés : ajouter des morceaux existants / créer un nouveau morceau
+    ajouté au répertoire). La création pour un groupe passe par un marqueur
+    de session (`src/lib/nouveaupourgroupe.ts`, 30 min), AFFICHÉ en bannière
+    écartable pendant tout le trajet (`BandeauPourGroupe` — import, Compose,
+    écriture à la main), consommé par `store.saveSong` quand le morceau
+    devient définitif (même geste que le SongCollector : version de groupe +
+    provenance b420 + tombstone levée + annonce). Levé au retour à la
+    bibliothèque et à l'entrée de l'import en masse.
+  - **la diffusion se dit** : l'aide du live (onglet + modale) écrit l'étape
+    « ouvre un morceau », et le panneau EN LIVE porte « Aucun morceau
+    diffusé… » qui se lève seule (règle 11). Mécanisme réel : c'est le
+    morceau AFFICHÉ qui se diffuse (`useOnAirSong` — fiche, scène, régie).
+  - **recherche « titre + artiste »** : la source ne cherche que les TITRES ;
+    `search-tabs.js` retire des mots par la fin quand la requête complète ne
+    rend rien et classe l'artiste voulu en tête (jamais d'exclusion). Une
+    page en échec coupe la pagination. Pastilles « Artiste : » sur la liste.
+  - **retour aux résultats** (Compose) : /creer sans identifiant avec des
+    résultats en mémoire = la LISTE (bouton, ←, geste retour) ; le rebond
+    b323 ne joue qu'au vrai rechargement (résultats perdus).
+  - **Vue du public pleine page** (`.pubpage`) — le cadre `.pubframe` ne
+    sert plus qu'à l'aperçu de la modale « Page publique / QR ».
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
   par les composants Feedback (règle 10 — dette existante, dont le
   `confirm()` de suppression d'un message de discussion) ; OAuth

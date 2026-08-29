@@ -2653,10 +2653,9 @@ textarea.mono {
   margin-top: 0;
 }
 
-/* Aperçu du texte du public sur la fiche d'un morceau (b223) — l'artiste doit
-   pouvoir vérifier d'un coup d'œil ce que lisent ses spectateurs. Encadré,
-   parce que c'est un AUTRE écran que le sien ; et défilant, pour qu'un long
-   morceau ne repousse pas le reste de la fiche hors de portée. */
+/* Aperçu ENCADRÉ (b223) — ne sert plus qu'à la modale « Page publique /
+   QR » (PublicPagePeek) : l'aperçu d'une AUTRE page se distingue de la
+   modale qui l'entoure. */
 .pubframe {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -2667,6 +2666,16 @@ textarea.mono {
 }
 .pubframe .publyrics {
   font-size: 1rem;
+}
+/* Vue du public sur la fiche d'un morceau — PLEIN ÉCRAN (b472, retour de
+   Vincent : « le cadre n'apporte rien et réduit fortement la
+   lisibilité »). Plus d'encadré défilant à mi-hauteur : les paroles
+   occupent la page, au MÊME format que le vrai écran du spectateur
+   (1.18rem centré, interligne 1.75 — règle 6 : aucun effet ne coûte du
+   contraste ou de la place au contenu musical). Un long morceau se lit
+   en défilant la page, comme partout ailleurs. */
+.pubpage {
+  padding: var(--sp-3) 0;
 }
 
 /* ---------- Barre d'interaction du public (b172) ----------

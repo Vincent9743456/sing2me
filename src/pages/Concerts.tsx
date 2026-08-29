@@ -105,8 +105,11 @@ export function Concerts() {
               </button>
             ))}
           <p className="help">
+            {/* b472 (point 2, retour de Vincent) : l'étape qui suit le
+                lancement est écrite — sinon « rien ne se passe » côté
+                public et ce n'est pas devinable. */}
             {t(
-              'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords.',
+              'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords. Une fois le live lancé, ouvre un morceau (ou ta setlist en mode scène) : c’est lui que le public lit.',
             )}
           </p>
         </div>

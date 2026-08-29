@@ -67,7 +67,8 @@ export function PublicView({
       <div className="pubview-head">
         <span>👁 {t('Ce que verra le public')}</span>
       </div>
-      <div className="pubframe">
+      {/* Pleine page depuis b472 : `.pubpage`, plus le cadre `.pubframe`. */}
+      <div className="pubpage">
         {vide ? (
           <p className="help" style={{ textAlign: 'center', margin: 0 }}>
             {t(
