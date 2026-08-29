@@ -4047,6 +4047,27 @@ h2.pagetitle {
   font-weight: 650;
   font-size: 0.85rem;
 }
+/* L'ONGLET LIVE EN TROIS ZONES (b468, demande de Vincent : « 3 fonctions
+   distinctes… là c'est un peu mélangé ») : le LANCEMENT vit dans une carte
+   héros au halo ambre — même recette de jetons que .offrecard — et se voit
+   avant tout le reste ; planifier et l'historique suivent, aérés. */
+.livehero {
+  border: 1px solid var(--accent-soft);
+  background: linear-gradient(160deg, var(--surface), var(--accent-soft));
+  border-radius: var(--radius);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  text-align: center;
+}
+.livehero .btn.golive {
+  font-size: 1.08rem;
+  padding: 16px 18px;
+  margin-bottom: 0;
+}
+.livehero .help {
+  margin: 10px 0 0;
+}
+
 /* TON OFFRE en tête de la fiche Artiste (b459) : la carte commerciale.
    Jetons seulement (règle 2) — l'ambre DOUX fait le halo du fond, l'ambre
    plein ne sert qu'à l'étoile et au CTA (un seul bouton ambre par écran). */

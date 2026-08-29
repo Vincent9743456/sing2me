@@ -83,33 +83,35 @@ export function Concerts() {
             l'onglet (le seul ambre), « Planifier un concert » redevient
             secondaire. Session déjà active → « Reprendre le live en cours »,
             vers la Régie si une setlist est diffusée, sinon le panneau. */}
-        {enLive &&
-          (enLive.status !== 'off' ? (
-            <button
-              className="btn block"
-              style={{ marginBottom: 4 }}
-              onClick={() => {
-                const cible = cibleDuLive(enLive.regieSetlistId);
-                if (cible.type === 'regie') navigate(cible.chemin);
-                else enLive.openPanel();
-              }}
-            >
-              <Icon name="play" size={16} /> {t('Reprendre le live en cours')}
-            </button>
-          ) : (
-            <button
-              className="btn block"
-              style={{ marginBottom: 4 }}
-              onClick={enLive.openPanel}
-            >
-              <Icon name="antenna" size={16} /> {t('Lancer un live')}
-            </button>
-          ))}
-        <p className="help" style={{ marginTop: 0, marginBottom: 12 }}>
-          {t(
-            'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords.',
-          )}
-        </p>
+        {/* ZONE 1 — LE LANCEMENT, en héros (b468) : la fonction principale
+            de l'onglet vit dans sa carte au halo ambre, bouton en grand.
+            Les deux autres zones (planifier, historique) suivent, aérées. */}
+        <div className="livehero">
+          {enLive &&
+            (enLive.status !== 'off' ? (
+              <button
+                className="btn block golive"
+                onClick={() => {
+                  const cible = cibleDuLive(enLive.regieSetlistId);
+                  if (cible.type === 'regie') navigate(cible.chemin);
+                  else enLive.openPanel();
+                }}
+              >
+                <Icon name="play" size={18} /> {t('Reprendre le live en cours')}
+              </button>
+            ) : (
+              <button className="btn block golive" onClick={enLive.openPanel}>
+                <Icon name="antenna" size={18} /> {t('Lancer un live')}
+              </button>
+            ))}
+          <p className="help">
+            {t(
+              'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords.',
+            )}
+          </p>
+        </div>
+        <div className="spacer" />
+        {/* ZONE 2 — préparer. */}
         <h2 className="pagetitle">{t('À venir')}</h2>
         <button
           className="btn ghost"
