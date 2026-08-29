@@ -908,27 +908,31 @@ export default async function handler(req, res) {
         // vérification préalable coûtait des allers-retours au lancement.
         const joinCode = randomCode();
         const writeToken = randomToken();
-        // Session de mesure (chantier 2) — best-effort.
-        let sessionId = null;
-        try {
-          const s = await fetchSb(`${base}/rest/v1/live_sessions`, {
-            method: 'POST',
-            headers: { ...sbHeaders(), prefer: 'return=representation' },
-            body: JSON.stringify({
-              artist_name: body.artist?.name ?? '',
-              owner_id: ownerId,
-            }),
-          });
-          if (s.ok) {
-            const arr = await s.json();
-            sessionId = Array.isArray(arr) && arr[0] ? arr[0].id : null;
-          }
-        } catch {
-          /* mesure best-effort */
-        }
+        /**
+         * LANCEMENT EN PARALLÈLE (b467, constat de Vincent : « ça a mis
+         * 8 secondes »). Le GO LIVE empilait TROIS allers-retours Supabase
+         * SÉQUENTIELS : authentification, création de la séance de mesure
+         * (juste pour récupérer son id), puis création du live — sur une
+         * base lente, 3 × 2-3 s. L'identifiant de séance est désormais
+         * engendré ICI (uuid, la colonne l'accepte) : la séance et le live
+         * partent EN MÊME TEMPS. La séance reste best-effort — si son
+         * insertion échoue, le live porte un session_id orphelin, que les
+         * lectures traitent déjà comme « séance absente ».
+         */
+        const sessionId = crypto.randomUUID();
+        const seance = fetchSb(`${base}/rest/v1/live_sessions`, {
+          method: 'POST',
+          headers: { ...sbHeaders(), prefer: 'return=minimal' },
+          body: JSON.stringify({
+            id: sessionId,
+            artist_name: body.artist?.name ?? '',
+            owner_id: ownerId,
+          }),
+        }).catch(() => null);
         const now = new Date().toISOString();
         const list = sanitizeSetlist(body.setlist);
-        const ins = await fetchSb(`${base}/rest/v1/lives`, {
+        const [ins] = await Promise.all([
+          fetchSb(`${base}/rest/v1/lives`, {
           method: 'POST',
           headers: { ...sbHeaders(), prefer: 'return=representation' },
           body: JSON.stringify({
@@ -953,7 +957,9 @@ export default async function handler(req, res) {
             session_id: sessionId,
             updated_at: now,
           }),
-        });
+          }),
+          seance,
+        ]);
         if (!ins.ok) {
           // Table `lives` absente (supabase/live.sql pas rejoué) : on
           // démarre le direct sur l'ancienne ligne live_state — JAMAIS de
