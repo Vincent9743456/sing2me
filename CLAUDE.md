@@ -954,6 +954,29 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     Et la CRÉATION valide : nom vide refusé (le placeholder n'est pas une
     valeur), doublon de nom refusé (comparaison repliée accents/casse) —
     message inline sous le champ, jamais d'alert().
+- **Lot de retours de test b472 (6 points de Vincent)** — décisions à retenir :
+  - **le ＋ de Morceaux en contexte groupe OUVRE UN MENU** (deux gestes
+    nommés : ajouter des morceaux existants / créer un nouveau morceau
+    ajouté au répertoire). La création pour un groupe passe par un marqueur
+    de session (`src/lib/nouveaupourgroupe.ts`, 30 min), AFFICHÉ en bannière
+    écartable pendant tout le trajet (`BandeauPourGroupe` — import, Compose,
+    écriture à la main), consommé par `store.saveSong` quand le morceau
+    devient définitif (même geste que le SongCollector : version de groupe +
+    provenance b420 + tombstone levée + annonce). Levé au retour à la
+    bibliothèque et à l'entrée de l'import en masse.
+  - **la diffusion se dit** : l'aide du live (onglet + modale) écrit l'étape
+    « ouvre un morceau », et le panneau EN LIVE porte « Aucun morceau
+    diffusé… » qui se lève seule (règle 11). Mécanisme réel : c'est le
+    morceau AFFICHÉ qui se diffuse (`useOnAirSong` — fiche, scène, régie).
+  - **recherche « titre + artiste »** : la source ne cherche que les TITRES ;
+    `search-tabs.js` retire des mots par la fin quand la requête complète ne
+    rend rien et classe l'artiste voulu en tête (jamais d'exclusion). Une
+    page en échec coupe la pagination. Pastilles « Artiste : » sur la liste.
+  - **retour aux résultats** (Compose) : /creer sans identifiant avec des
+    résultats en mémoire = la LISTE (bouton, ←, geste retour) ; le rebond
+    b323 ne joue qu'au vrai rechargement (résultats perdus).
+  - **Vue du public pleine page** (`.pubpage`) — le cadre `.pubframe` ne
+    sert plus qu'à l'aperçu de la modale « Page publique / QR ».
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
   par les composants Feedback (règle 10 — dette existante, dont le
   `confirm()` de suppression d'un message de discussion) ; OAuth
