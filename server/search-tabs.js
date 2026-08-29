@@ -67,11 +67,13 @@ const usable = (p) =>
  * Recherche paginée pour UNE requête. Plusieurs pages, mais EN SÉQUENCE
  * et en s'arrêtant poliment : le parallèle déclenchait la limite de débit
  * (429). On garde ce qu'on a déjà si une page suivante est refusée.
+ * `maxPages` : les tentatives de REPLI (b472) se contentent de 2 pages —
+ * chaque page en moins ménage la limite de débit et le délai de réponse.
  */
-async function searchPaged(q) {
+async function searchPaged(q, maxPages = 4) {
   const pages = [];
   let good = 0;
-  for (let n = 1; n <= 4; n++) {
+  for (let n = 1; n <= maxPages; n++) {
     let p = await fetchResultsPage(q, n);
     if (p.status === 429 && n === 1) {
       // Seule la première page mérite une seconde chance (3 s)
@@ -81,10 +83,14 @@ async function searchPaged(q) {
     pages.push(p);
     good += usable(p);
     if (p.status === 429) break; // la source sature : on rend ce qu'on a
+    // b472 : une page en échec (404 = aucun résultat) rend les suivantes
+    // inutiles — insister quadruplait le temps de réponse des requêtes
+    // « titre + artiste », que la source ne connaît pas.
+    if (!p.ok) break;
     // Assez de versions texte ? Inutile d'insister — chaque page en moins
     // ménage la limite de débit.
     if (good >= 15) break;
-    if (n < 4) await new Promise((r) => setTimeout(r, 250));
+    if (n < maxPages) await new Promise((r) => setTimeout(r, 250));
   }
   return { pages, good };
 }
@@ -110,6 +116,41 @@ export default async function handler(req, res) {
         good = alt.good;
       }
     }
+    /*
+     * REPLI « TITRE + ARTISTE » (b472, cas de Vincent : « sweet dreams
+     * marilyn manson » ne rendait rien). La source ne cherche que dans les
+     * TITRES (search_type=title) : les mots de l'artiste font échouer la
+     * requête entière. Quand la recherche complète ne rend rien, on retire
+     * des mots par la FIN (l'artiste se tape après le titre), jusqu'à 3,
+     * et on retient les mots retirés comme ARTISTE VOULU : ses versions
+     * remontent en tête du classement (jamais d'exclusion — les autres
+     * versions restent visibles derrière).
+     */
+    let artisteVoulu = [];
+    if (good === 0) {
+      const mots = query.split(/\s+/).filter((m) => m !== '');
+      for (let k = 1; k <= 3 && mots.length - k >= 1 && good === 0; k++) {
+        const titre = mots.slice(0, mots.length - k).join(' ');
+        let alt = await searchPaged(titre, 2);
+        if (alt.good === 0) {
+          const flatTitre = stripAccents(titre);
+          if (flatTitre !== titre) alt = await searchPaged(flatTitre, 2);
+        }
+        if (alt.good > 0) {
+          pages = alt.pages;
+          good = alt.good;
+          artisteVoulu = mots
+            .slice(mots.length - k)
+            .map((m) => stripAccents(m.toLowerCase()));
+        }
+      }
+    }
+    /** L'artiste du résultat porte-t-il TOUS les mots retirés ? */
+    const artisteCorrespond = (nom) => {
+      if (artisteVoulu.length === 0) return false;
+      const ref = stripAccents(String(nom).toLowerCase());
+      return artisteVoulu.every((m) => ref.includes(m));
+    };
     if (!pages.some((p) => p.ok)) {
       const status = pages[0]?.status ?? 502;
       // 404 = recherche sans résultat côté source : ce n'est pas une
@@ -155,7 +196,13 @@ export default async function handler(req, res) {
         votes: typeof r.votes === 'number' ? r.votes : 0,
         url: r.tab_url,
       }))
-      .sort((a, b) => b.votes - a.votes)
+      .sort(
+        // b472 : l'artiste demandé d'abord, puis les votes — « sweet dreams
+        // marilyn manson » remonte la version de Marilyn Manson en tête.
+        (a, b) =>
+          Number(artisteCorrespond(b.artist)) -
+            Number(artisteCorrespond(a.artist)) || b.votes - a.votes,
+      )
       .slice(0, 60);
     // Cache CDN : la même recherche relancée (par n'importe qui) ne
     // retape pas UG pendant 24 h — précieux contre la limite de débit.

@@ -651,6 +651,9 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Chercher sur le web': 'Search the web',
   // b472 (point 4) — retour à la liste des résultats de recherche
   'Retour aux résultats': 'Back to results',
+  // b472 (point 5) — filtre par artiste sur les résultats de recherche
+  'Artiste :': 'Artist:',
+  Tous: 'All',
   'Recherche en cours : ': 'Current search: ',
   '« {titre} » existe déjà dans ton répertoire.':
     '“{titre}” is already in your repertoire.',

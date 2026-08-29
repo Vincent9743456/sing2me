@@ -91,12 +91,35 @@ export function Compose({ draftId }: { draftId: string | null }) {
   // b472 (point 4) : le dernier résultat ouvert reste marqué ✓ — au retour
   // dans la liste, on retrouve où l'on en était (et la ligne est recadrée).
   const [dernierChoisi, setDernierChoisi] = useState('');
+  // b472 (point 5) : filtre par artiste SUR la liste — quand une recherche
+  // rend vingt versions (« sweet dreams » : Eurythmics, Marilyn Manson…),
+  // un appui isole celles de l'artiste voulu. Simple vue filtrée, locale.
+  const [filtreArtiste, setFiltreArtiste] = useState('');
+  const artistesDesResultats = useMemo(() => {
+    if (resultats === null) return [];
+    const compte = new Map<string, number>();
+    for (const r of resultats) {
+      const a = r.artist.trim();
+      if (a !== '') compte.set(a, (compte.get(a) ?? 0) + 1);
+    }
+    return [...compte.entries()]
+      .sort((x, y) => y[1] - x[1])
+      .map((x) => x[0])
+      .slice(0, 8);
+  }, [resultats]);
+  const resultatsAffiches = useMemo(() => {
+    if (resultats === null) return null;
+    if (filtreArtiste === '') return resultats;
+    return resultats.filter((r) => r.artist === filtreArtiste);
+  }, [resultats, filtreArtiste]);
 
   async function lancerRecherche() {
     const q = query.trim();
     if (q === '' || rechercheEnCours) return;
     setRechercheEnCours(true);
     setResultats(null);
+    setFiltreArtiste('');
+    setDernierChoisi('');
     try {
       setResultats(await searchUgTabs(q));
     } catch (e) {
@@ -356,9 +379,36 @@ export function Compose({ draftId }: { draftId: string | null }) {
               {t('Aucun résultat — précise le titre (et l’artiste).')}
             </p>
           )}
-          {resultats !== null && resultats.length > 0 && (
+          {/* b472 (point 5) : quand plusieurs artistes cohabitent dans les
+              résultats, une rangée de pastilles isole ceux d'un artiste. */}
+          {resultats !== null && artistesDesResultats.length > 1 && (
+            <div
+              className="chips scrollrow"
+              style={{ marginTop: 'var(--sp-3)', alignItems: 'center' }}
+            >
+              <span className="help" style={{ margin: 0 }}>
+                {t('Artiste :')}
+              </span>
+              <button
+                className={`chip ${filtreArtiste === '' ? '' : 'off'}`}
+                onClick={() => setFiltreArtiste('')}
+              >
+                {t('Tous')}
+              </button>
+              {artistesDesResultats.map((a) => (
+                <button
+                  key={a}
+                  className={`chip ${filtreArtiste === a ? '' : 'off'}`}
+                  onClick={() => setFiltreArtiste(filtreArtiste === a ? '' : a)}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          )}
+          {resultatsAffiches !== null && resultatsAffiches.length > 0 && (
             <div className="card" style={{ marginTop: 'var(--sp-3)', padding: 6 }}>
-              {resultats.map((r, i) => (
+              {resultatsAffiches.map((r, i) => (
                 <div
                   className={`row ${r.url === dernierChoisi ? 'active' : ''}`}
                   key={i}
