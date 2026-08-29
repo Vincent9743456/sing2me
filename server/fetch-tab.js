@@ -188,15 +188,16 @@ export default async function handler(req, res) {
     );
     if (!hostOk || parsed.protocol !== 'https:') {
       res.status(400).json({
-        error: "Seuls les liens ultimate-guitar.com sont pris en charge",
+        error:
+          "Ce type de lien n'est pas pris en charge — colle le lien d'une page de partition (accords + paroles).",
       });
       return;
     }
     isPersonal = /\/user\/tab\b/.test(parsed.pathname);
     const personalHint =
-      ' — ce lien pointe vers une tablature personnelle Ultimate Guitar ' +
-      '(« Personal tab »), souvent visible uniquement une fois connecté à ' +
-      'UG. Le plus simple : ouvre la tablature dans ton navigateur, copie ' +
+      ' — ce lien pointe vers une tablature personnelle (« Personal ' +
+      'tab »), souvent visible uniquement une fois connecté sur le site. ' +
+      'Le plus simple : ouvre la tablature dans ton navigateur, copie ' +
       'son texte et importe-le via « Document / texte ».';
 
     let page;
@@ -216,7 +217,7 @@ export default async function handler(req, res) {
         withDebug(
           {
             error:
-              'Impossible de charger la page Ultimate Guitar' +
+              'Impossible de charger la page de la partition' +
               (isPersonal ? personalHint : ' — réessaie dans un instant.'),
           },
           [String(e && e.message)],
@@ -229,7 +230,7 @@ export default async function handler(req, res) {
         withDebug(
           {
             error:
-              'Ultimate Guitar redirige en boucle sur ce lien' +
+              'La page de la partition redirige en boucle' +
               (isPersonal ? personalHint : ''),
           },
           chain,
@@ -262,8 +263,8 @@ export default async function handler(req, res) {
           {
             error:
               page.status === 429
-                ? 'Ultimate Guitar limite le débit (trop de requêtes rapprochées) — attends une minute et réessaie. (429)'
-                : `Ultimate Guitar a répondu ${page.status}` +
+                ? 'Le service de recherche limite le débit (trop de requêtes rapprochées) — attends une minute et réessaie. (429)'
+                : `Le site de la partition a répondu ${page.status}` +
                   (isPersonal ? personalHint : ''),
           },
           chain,
@@ -359,7 +360,7 @@ export default async function handler(req, res) {
           error:
             'Erreur inattendue côté serveur' +
             (isPersonal
-              ? " — ce lien de tablature personnelle UG n'a pas pu être lu. " +
+              ? " — ce lien de tablature personnelle n'a pas pu être lu. " +
                 'Copie le texte de la partition et importe-le via « Document / texte ».'
               : ''),
         },

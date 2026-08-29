@@ -1423,7 +1423,9 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
               className={method === 'ug' ? 'btn block' : 'btn ghost block'}
               onClick={() => navigate('/creer')}
             >
-              <Icon name="search" size={16} /> {t('Chercher sur Ultimate Guitar')}
+              {/* « Chercher sur le web » (b472, demande de Vincent — annule
+                  la levée b319) : la source ne se nomme plus à l'écran. */}
+              <Icon name="search" size={16} /> {t('Chercher sur le web')}
             </button>
             {/* Une ligne pour situer le parcours (b331, réécrite b334). */}
             <p className="help" style={{ marginTop: 4, marginBottom: 'var(--sp-3)' }}>

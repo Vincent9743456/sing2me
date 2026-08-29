@@ -18,8 +18,9 @@
  * recherche ET récupération passent par NOTRE serveur — même exposition que
  * « Meilleure version ? », en production depuis des mois.
  *
- * Le libellé NOMME « Ultimate Guitar » (décision b319) : texte seul, jamais
- * de logo ni de « powered by ».
+ * Le libellé disait « Ultimate Guitar » (levée b319) ; depuis b472 (demande
+ * de Vincent) il redevient neutre : « Chercher sur le web » — la règle §A.5
+ * s'applique à nouveau partout.
  *
  * L'écran de COLLAGE reste en repli : « Recoller un autre texte » depuis
  * l'aperçu, reprise d'un ancien brouillon — texte traité 100 % en local,
@@ -311,7 +312,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
               : (
                   <>
                     <Icon name="search" size={16} />{' '}
-                    {t('Chercher sur Ultimate Guitar')}
+                    {t('Chercher sur le web')}
                   </>
                 )}
           </button>

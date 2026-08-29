@@ -123,7 +123,7 @@ export default async function handler(req, res) {
       res.status(502).json({
         error:
           status === 429
-            ? 'Ultimate Guitar limite le débit (trop de requêtes rapprochées) — attends une minute et réessaie.'
+            ? 'Le service de recherche limite le débit (trop de requêtes rapprochées) — attends une minute et réessaie.'
             : status === 422
               ? 'Format de page de recherche non reconnu'
               : `Le service de recherche a répondu ${status}`,

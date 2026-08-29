@@ -648,7 +648,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Créer une partition': 'Create a chart',
   'Titre, artiste… (ex. hallelujah cohen)':
     'Title, artist… (e.g. hallelujah cohen)',
-  'Chercher sur Ultimate Guitar': 'Search on Ultimate Guitar',
+  'Chercher sur le web': 'Search the web',
   'Recherche en cours : ': 'Current search: ',
   '« {titre} » existe déjà dans ton répertoire.':
     '“{titre}” is already in your repertoire.',
