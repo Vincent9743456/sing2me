@@ -429,6 +429,8 @@ export const EN_ARTISTE: Record<string, string> = {
   'Live en pause': 'Live paused',
   'ouvrir la régie': 'open the control mode',
   'gérer le live': 'manage the live',
+  '✓ Invitation envoyée à {name} — elle l’attend dans son onglet Groupes, et un e-mail la prévient. Si elle ne voit rien, vérifiez qu’elle se connecte bien avec le compte de ce profil.':
+    '✓ Invitation sent to {name} — it’s waiting in their Bands tab, and an email lets them know. If they see nothing, check that they sign in with the account behind this profile.',
   'Offre Scène': 'Stage plan',
   'Ta salle affiche complet ? L’offre Scène ouvre le live en illimité — {mois}/mois.':
     'Playing to a full house? The Stage plan opens unlimited live audiences — {mois}/mo.',

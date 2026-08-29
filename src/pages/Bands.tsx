@@ -117,11 +117,14 @@ export function Bands() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Invitations reçues (annuaire) : acceptation obligatoire.
+  // Invitations reçues (annuaire) : acceptation obligatoire. Relues au
+  // RETOUR AU PREMIER PLAN (b469) : la page ne se remonte pas quand on
+  // laisse l'app ouverte sur cet onglet — une invitation arrivée entre
+  // temps gonflait la pastille sans jamais apparaître dans la liste.
   useEffect(() => {
     if (account?.email == null) return;
     let cancelled = false;
-    void (async () => {
+    const charger = async () => {
       const s = await getValidSession();
       if (!s || cancelled) return;
       const list = await fetchMyInvites(s);
@@ -134,9 +137,15 @@ export function Bands() {
         setDepartures(gone);
         setMyId(s.userId);
       }
-    })();
+    };
+    void charger();
+    const surRetour = () => {
+      if (document.visibilityState === 'visible') void charger();
+    };
+    document.addEventListener('visibilitychange', surRetour);
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', surRetour);
     };
   }, [account?.email]);
 
