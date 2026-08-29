@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0A0F1D">
+<title>mojobeat — métronome en ligne gratuit</title>
+<meta name="description" content="Métronome gratuit et précis, dans le navigateur : tempo au tap, accent de mesure, de 30 à 252 BPM. Par mojosong, l’app des musiciens qui jouent en public.">
+<style>
+  :root{
+    --navy:#0A0F1D;
+    --navy-2:#121A2E;
+    --navy-3:#1B2540;
+    --orange:#FCA711;
+    --orange-soft:#DE8F00;
+    --cream:#F4F0E9;
+    --dim:#A7AFC2;
+    --dim-2:#69728A;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:var(--navy);
+    color:var(--cream);
+    font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+    display:flex;flex-direction:column;align-items:center;
+    overflow:hidden;
+    user-select:none;-webkit-user-select:none;
+    height:100dvh;
+  }
+  /* ---------- header ---------- */
+  header{
+    width:100%;max-width:520px;
+    display:flex;align-items:center;justify-content:center;
+    gap:10px;padding:18px 20px 6px;
+  }
+  .logo{display:flex;align-items:center;gap:9px;}
+  .logo svg{width:30px;height:30px;}
+  .wordmark{font-size:26px;font-weight:800;letter-spacing:-0.5px;line-height:1;}
+  .wordmark .mojo{color:var(--cream);}
+  .wordmark .beat{color:var(--orange);}
+  /* ---------- main ---------- */
+  main{
+    flex:1;width:100%;max-width:520px;
+    display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;
+    padding:0 20px 10px;min-height:0;
+  }
+  /* ---------- temps (pastilles) ---------- */
+  .beats{display:flex;gap:12px;justify-content:center;min-height:26px;}
+  .beat-dot{
+    width:18px;height:18px;border-radius:50%;
+    border:2px solid var(--dim-2);background:var(--navy-2);
+    transition:transform .08s ease, background .08s ease, border-color .08s ease, box-shadow .08s ease;
+  }
+  .beat-dot.first{width:22px;height:22px;}
+  .beat-dot.on{
+    background:var(--cream);border-color:var(--cream);
+    transform:scale(1.25);
+  }
+  .beat-dot.on.first{
+    background:var(--orange);border-color:var(--orange);
+    box-shadow:0 0 22px rgba(252,167,17,.55);
+  }
+  /* ---------- tempo ---------- */
+  .tempo-zone{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .bpm-row{display:flex;align-items:center;gap:18px;}
+  .bpm{
+    font-size:clamp(72px,24vw,110px);font-weight:800;line-height:1;
+    letter-spacing:-3px;font-variant-numeric:tabular-nums;
+  }
+  .bpm-label{font-size:13px;color:var(--dim-2);font-weight:700;letter-spacing:3px;text-transform:uppercase;}
+  .tempo-name{font-size:15px;color:var(--dim);font-weight:600;letter-spacing:1px;margin-top:6px;}
+  .step{
+    width:56px;height:56px;border-radius:50%;
+    border:2px solid var(--dim-2);background:transparent;color:var(--cream);
+    font-size:30px;font-weight:700;cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s ease;line-height:1;
+  }
+  .step:active{transform:scale(.94);border-color:var(--cream);}
+  /* ---------- curseur ---------- */
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;
+    width:min(80vw,380px);height:6px;border-radius:999px;
+    background:var(--navy-3);outline:none;margin-top:14px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:26px;height:26px;border-radius:50%;
+    background:var(--orange);cursor:pointer;
+    box-shadow:0 0 14px rgba(252,167,17,.4);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:26px;height:26px;border-radius:50%;border:none;
+    background:var(--orange);cursor:pointer;
+  }
+  /* ---------- mesure ---------- */
+  .sig-zone{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .sig-label{font-size:11px;color:var(--dim-2);font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+  .sigs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .chip{
+    border:1.5px solid var(--dim-2);
+    background:transparent;color:var(--dim);
+    padding:8px 15px;border-radius:999px;
+    font-size:14px;font-weight:600;cursor:pointer;
+    transition:all .18s ease;font-family:inherit;
+  }
+  .chip.active{
+    background:var(--orange);border-color:var(--orange);
+    color:var(--navy);
+    box-shadow:0 0 18px rgba(252,167,17,.35);
+  }
+  /* ---------- actions ---------- */
+  .actions{display:flex;align-items:center;gap:14px;}
+  .start-btn{
+    background:var(--orange);color:var(--navy);
+    border:none;border-radius:999px;
+    padding:16px 44px;font-size:17px;font-weight:800;
+    cursor:pointer;font-family:inherit;min-width:180px;
+    box-shadow:0 0 30px rgba(252,167,17,.4);
+    transition:transform .15s ease;
+  }
+  .start-btn:active{transform:scale(.96);}
+  .start-btn.running{
+    background:var(--navy-2);color:var(--cream);
+    border:2px solid var(--dim-2);box-shadow:none;
+  }
+  .tap-btn{
+    background:transparent;color:var(--dim);
+    border:2px solid var(--dim-2);border-radius:999px;
+    padding:14px 24px;font-size:15px;font-weight:700;
+    cursor:pointer;font-family:inherit;
+    transition:all .12s ease;
+  }
+  .tap-btn:active{transform:scale(.94);border-color:var(--cream);color:var(--cream);}
+  /* ---------- lien mojosong (vecteur d'acquisition, comme mojotune) ---------- */
+  .mojolink{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;max-width:520px;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    color:var(--dim);text-decoration:none;font-size:14px;font-weight:600;
+    border-top:1px solid var(--navy-3);
+  }
+  .mojolink img{width:22px;height:22px;flex-shrink:0;}
+  .mojolink b{font-weight:800;color:var(--cream);}
+  .mojolink b i{color:var(--orange);font-style:normal;}
+  .mojolink .arr{color:var(--orange);font-weight:800;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M12 6 L26 13 V34.5 a7 7 0 1 0 3 5.8 V19 l-14-7 Z" fill="#FCA711"/>
+      <path d="M33 16 q6 8 0 16" stroke="#F4F0E9" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M39 12 q9 12 0 24" stroke="#FCA711" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="wordmark"><span class="mojo">mojo</span><span class="beat">beat</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="beats" id="beats"></div>
+
+  <div class="tempo-zone">
+    <div class="bpm-row">
+      <button class="step" id="minus" aria-label="Moins vite">−</button>
+      <div style="text-align:center">
+        <div class="bpm" id="bpm">120</div>
+        <div class="bpm-label">BPM</div>
+      </div>
+      <button class="step" id="plus" aria-label="Plus vite">＋</button>
+    </div>
+    <div class="tempo-name" id="tempoName">Allegro</div>
+    <input type="range" id="slider" min="30" max="252" value="120" aria-label="Tempo">
+  </div>
+
+  <div class="sig-zone">
+    <div class="sig-label">temps par mesure</div>
+    <div class="sigs" id="sigs"></div>
+  </div>
+
+  <div class="actions">
+    <button class="tap-btn" id="tap">TAP<br><span style="font-size:11px;font-weight:600;color:inherit">tempo</span></button>
+    <button class="start-btn" id="start">▶&nbsp; Démarrer</button>
+  </div>
+</main>
+
+<a class="mojolink" href="https://mojosong.com/">
+  <img src="/mojosong-emblem.svg" alt="">
+  Tes paroles &amp; accords sur scène&nbsp;— <b>mojo<i>song</i></b> <span class="arr">→</span>
+</a>
+
+<script>
+'use strict';
+/* ================= état ================= */
+const BPM_MIN = 30, BPM_MAX = 252;
+let bpm = 120;
+let beatsPerBar = 4;       // 1 = pas d'accent
+let running = false;
+
+/* ================= UI : tempo ================= */
+const bpmEl = document.getElementById('bpm');
+const tempoNameEl = document.getElementById('tempoName');
+const slider = document.getElementById('slider');
+const TEMPO_NAMES = [
+  [40,'Grave'],[60,'Largo'],[66,'Larghetto'],[76,'Adagio'],[108,'Andante'],
+  [120,'Moderato'],[156,'Allegro'],[176,'Vivace'],[200,'Presto'],[999,'Prestissimo'],
+];
+function tempoName(v){
+  for (const [max,nom] of TEMPO_NAMES) if (v <= max) return nom;
+  return '';
+}
+function setBpm(v){
+  bpm = Math.max(BPM_MIN, Math.min(BPM_MAX, Math.round(v)));
+  bpmEl.textContent = bpm;
+  tempoNameEl.textContent = tempoName(bpm);
+  slider.value = bpm;
+}
+slider.addEventListener('input', () => setBpm(Number(slider.value)));
+
+/* − / ＋ : un pas au tap, répétition en restant appuyé */
+function holdable(el, delta){
+  let t1 = null, t2 = null;
+  const step = () => setBpm(bpm + delta);
+  const down = (e) => {
+    e.preventDefault();
+    step();
+    t1 = setTimeout(() => { t2 = setInterval(step, 70); }, 450);
+  };
+  const up = () => { clearTimeout(t1); clearInterval(t2); t1 = t2 = null; };
+  el.addEventListener('pointerdown', down);
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointerleave', up);
+  el.addEventListener('pointercancel', up);
+}
+holdable(document.getElementById('minus'), -1);
+holdable(document.getElementById('plus'), +1);
+
+/* ================= UI : mesure ================= */
+const sigsEl = document.getElementById('sigs');
+const SIGS = [
+  { n:1, label:'•' }, { n:2, label:'2' }, { n:3, label:'3' },
+  { n:4, label:'4' }, { n:6, label:'6' },
+];
+for (const s of SIGS){
+  const b = document.createElement('button');
+  b.className = 'chip' + (s.n === beatsPerBar ? ' active' : '');
+  b.textContent = s.label;
+  b.dataset.n = s.n;
+  b.addEventListener('click', () => {
+    beatsPerBar = s.n;
+    document.querySelectorAll('.sigs .chip').forEach(c =>
+      c.classList.toggle('active', Number(c.dataset.n) === s.n));
+    buildDots();
+    beatIndex = 0;
+  });
+  sigsEl.appendChild(b);
+}
+const beatsEl = document.getElementById('beats');
+function buildDots(){
+  beatsEl.innerHTML = '';
+  for (let i = 0; i < beatsPerBar; i++){
+    const d = document.createElement('div');
+    d.className = 'beat-dot' + (i === 0 && beatsPerBar > 1 ? ' first' : '');
+    beatsEl.appendChild(d);
+  }
+}
+buildDots();
+
+/* ================= son : ordonnanceur à anticipation =================
+   Le principe classique des métronomes web fiables : un setInterval
+   LÉGER (25 ms) ne fait que PROGRAMMER les clics à venir dans l'horloge
+   de l'AudioContext (précise à l'échantillon près). Jamais de son
+   déclenché par un timer JS — un onglet occupé ferait boiter la mesure. */
+let audioCtx = null;
+let nextTime = 0;          // horloge audio du prochain temps
+let beatIndex = 0;         // temps courant dans la mesure (0 = accent)
+let schedulerId = null;
+const LOOKAHEAD_MS = 25, AHEAD_S = 0.1;
+const queue = [];          // [{time, beat}] pour l'affichage
+
+function click(time, accent){
+  const osc = audioCtx.createOscillator();
+  const env = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = accent ? 1568 : 1046;   // Sol6 / Do6 — clic bref et net
+  env.gain.setValueAtTime(0.0001, time);
+  env.gain.exponentialRampToValueAtTime(accent ? 0.5 : 0.3, time + 0.002);
+  env.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
+  osc.connect(env); env.connect(audioCtx.destination);
+  osc.start(time); osc.stop(time + 0.06);
+}
+function scheduler(){
+  while (nextTime < audioCtx.currentTime + AHEAD_S){
+    const accent = beatsPerBar > 1 && beatIndex === 0;
+    click(nextTime, accent);
+    queue.push({ time: nextTime, beat: beatIndex });
+    nextTime += 60 / bpm;
+    beatIndex = (beatIndex + 1) % beatsPerBar;
+  }
+}
+
+/* ---- affichage synchronisé sur l'horloge audio ---- */
+let rafId = null;
+function draw(){
+  rafId = requestAnimationFrame(draw);
+  if (!audioCtx) return;
+  let current = -1;
+  while (queue.length && queue[0].time <= audioCtx.currentTime){
+    current = queue.shift().beat;
+  }
+  if (current < 0) return;
+  const dots = beatsEl.children;
+  for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i === current);
+}
+
+/* ================= écran allumé pendant l'usage ================= */
+let wakeLock = null;
+async function garderEcran(on){
+  try{
+    if (on && 'wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+    } else if (wakeLock){
+      await wakeLock.release(); wakeLock = null;
+    }
+  }catch(e){ /* best-effort : un refus ne casse rien */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && running) garderEcran(true);
+  if (!document.hidden && audioCtx && audioCtx.state !== 'running'){
+    audioCtx.resume().catch(()=>{});
+  }
+});
+
+/* ================= démarrer / arrêter ================= */
+const startBtn = document.getElementById('start');
+function stop(){
+  running = false;
+  clearInterval(schedulerId); schedulerId = null;
+  if (rafId) cancelAnimationFrame(rafId); rafId = null;
+  queue.length = 0;
+  for (const d of beatsEl.children) d.classList.remove('on');
+  startBtn.textContent = '▶  Démarrer';
+  startBtn.classList.remove('running');
+  garderEcran(false);
+}
+async function start(){
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  await audioCtx.resume();
+  running = true;
+  beatIndex = 0;
+  nextTime = audioCtx.currentTime + 0.08;
+  scheduler();
+  schedulerId = setInterval(scheduler, LOOKAHEAD_MS);
+  draw();
+  startBtn.textContent = '⏸  Arrêter';
+  startBtn.classList.add('running');
+  garderEcran(true);
+}
+startBtn.addEventListener('click', () => (running ? stop() : start()));
+
+/* ================= tap tempo ================= */
+const taps = [];
+document.getElementById('tap').addEventListener('click', () => {
+  const now = performance.now();
+  if (taps.length && now - taps[taps.length - 1] > 2000) taps.length = 0;
+  taps.push(now);
+  if (taps.length > 5) taps.shift();
+  if (taps.length >= 2){
+    const intervals = [];
+    for (let i = 1; i < taps.length; i++) intervals.push(taps[i] - taps[i - 1]);
+    const avg = intervals.reduce((a,b) => a + b, 0) / intervals.length;
+    setBpm(60000 / avg);
+  }
+});
+
+/* ================= clavier (ordinateur) ================= */
+document.addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  if (e.code === 'Space'){ e.preventDefault(); running ? stop() : start(); }
+  else if (e.key === 'ArrowUp' || e.key === '+') setBpm(bpm + 1);
+  else if (e.key === 'ArrowDown' || e.key === '-') setBpm(bpm - 1);
+  else if (e.key === 'ArrowRight') setBpm(bpm + 5);
+  else if (e.key === 'ArrowLeft') setBpm(bpm - 5);
+});
+
+setBpm(120);
+</script>
+</body>
+</html>
