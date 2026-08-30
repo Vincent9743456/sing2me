@@ -242,9 +242,105 @@ export function dedupeSongsByContent<
     })),
     deleted: [
       ...(state.deleted ?? []),
-      ...morts.map((id) => ({ id, at: now })),
+      // La tombe d'un dédoublonnage porte la REDIRECTION vers le survivant
+      // (b473) : une setlist restée en retard sur un autre appareil peut
+      // revenir par la fusion APRÈS cet enterrement — sans trace, ses items
+      // afficheraient « (morceau supprimé) » pour toujours (bug de Marco).
+      // Pas de `key` ici : le jumeau survivant est vivant, une clé de titre
+      // bloquerait sa circulation par le répertoire de groupe.
+      ...morts.map((id) => ({ id, at: now, vers: remap.get(id) as string })),
     ],
   } as S;
+}
+
+/**
+ * RÉPARATION DES ITEMS DE SETLIST ORPHELINS (b473, bug signalé par Marco :
+ * une setlist entière en « (morceau supprimé) » alors que les morceaux sont
+ * toujours dans sa bibliothèque).
+ *
+ * Cause : le dédoublonnage par contenu redirige les setlists présentes DANS
+ * LA MÊME PASSE — mais une setlist modifiée sur un appareil resté en retard
+ * revient par la fusion APRÈS l'enterrement des doublons (son objet, plus
+ * récent, gagne la fusion par id). Ses items pointent alors des ids déjà
+ * tombstonés : le « problème de séquencement » exactement.
+ *
+ * Deux filets, dans cet ordre :
+ *  1. la REDIRECTION portée par la tombe (`Tombstone.vers`, suivie en
+ *     chaîne — un survivant peut lui-même avoir été dédoublonné plus tard) ;
+ *  2. la CLÉ DE CONTENU tamponnée sur l'item (`SetlistItem.cle`), cherchée
+ *     dans la bibliothèque.
+ * Un item qui ne se résout par aucun des deux reste TEL QUEL : l'écran dit
+ * « (morceau supprimé) », ce qui est alors la vérité. On ne devine jamais
+ * (règle b290) et on ne supprime rien.
+ *
+ * Silencieuse : `updatedAt` des setlists n'est PAS retouché (une réparation
+ * n'a pas à gagner la fusion suivante — cicatrice b248). Idempotente : sans
+ * orphelin résoluble, l'objet est renvoyé tel quel.
+ */
+export function reparerSetlists<
+  S extends { songs: Song[]; setlists: Setlist[]; deleted?: Tombstone[] },
+>(state: S): S {
+  const vivants = new Map(state.songs.map((s) => [s.id, s]));
+  if (state.setlists.length === 0) return state;
+  const redirige = new Map<string, string>();
+  for (const t of state.deleted ?? []) {
+    if (t.vers) redirige.set(t.id, t.vers);
+  }
+  const parCle = new Map<string, Song>();
+  for (const s of state.songs) {
+    if (s.status === 'draft' || s.status === 'formatting') continue;
+    const k = songKey(s.title, s.artist);
+    if (k !== '' && !parCle.has(k)) parCle.set(k, s);
+  }
+  /** Suit la chaîne de redirections jusqu'à un morceau vivant (garde-fou
+   *  anti-cycle : 10 sauts max). */
+  const suivre = (id: string): Song | undefined => {
+    let cur = id;
+    for (let i = 0; i < 10; i++) {
+      const s = vivants.get(cur);
+      if (s) return s;
+      const next = redirige.get(cur);
+      if (!next || next === cur) return undefined;
+      cur = next;
+    }
+    return undefined;
+  };
+  let repare = false;
+  const setlists = state.setlists.map((sl) => {
+    let touche = false;
+    const items = sl.items.map((it) => {
+      if (vivants.has(it.songId)) return it;
+      const cible =
+        suivre(it.songId) ??
+        (it.cle ? parCle.get(it.cle) : undefined);
+      if (!cible) return it;
+      touche = true;
+      return {
+        ...it,
+        songId: cible.id,
+        // L'ancienne version est morte avec l'ancien id : version de
+        // contexte du groupe de la setlist si elle existe, sinon la
+        // version active ('').
+        versionId: versionForBandLocal(cible, sl.bandId ?? '')?.id ?? '',
+      };
+    });
+    if (!touche) return sl;
+    repare = true;
+    return { ...sl, items };
+  });
+  return repare ? { ...state, setlists } : state;
+}
+
+/** Version de CONTEXTE de groupe — volontairement différente de
+ *  `model.versionForBand` : pour une setlist SOLO (bandId ''), on rend
+ *  undefined afin que l'item retombe sur '' = « version active », jamais
+ *  épinglé sur l'originale. */
+function versionForBandLocal(
+  song: Song,
+  bandId: string,
+): { id: string } | undefined {
+  if (bandId === '') return undefined;
+  return song.versions.find((v) => (v.bandId ?? '') === bandId);
 }
 
 export function mergeStates(
@@ -329,7 +425,18 @@ export function mergeStates(
   for (const t of [...(local.deleted ?? []), ...(cloud.deleted ?? [])]) {
     const cur = tombs.get(t.id);
     if (!cur || t.at > cur.at) {
-      tombs.set(t.id, cur?.key && !t.key ? { ...t, key: cur.key } : t);
+      // La plus récente gagne, mais une info portée par l'autre (clé de
+      // titre, redirection de dédoublonnage b473) n'est jamais perdue.
+      tombs.set(
+        t.id,
+        cur
+          ? {
+              ...t,
+              ...(cur.key && !t.key ? { key: cur.key } : {}),
+              ...(cur.vers && !t.vers ? { vers: cur.vers } : {}),
+            }
+          : t,
+      );
     }
   }
   // Retraits de répertoires de groupes : union, le plus récent gagne.
@@ -391,19 +498,24 @@ export function mergeStates(
   // même morceau créées séparément (double connexion / course de synchro).
   // La redirection des items de setlist et les tombstones du perdant sont
   // portés par `deduped` ci-dessous.
-  const deduped = dedupeSongsByContent({
-    songs: afterReset(
-      alive(mergeById(local.songs, cloud.songs ?? [])),
-      local.songs,
-      resetAt.songs,
-    ),
-    setlists: afterReset(
-      alive(mergeById(local.setlists, cloud.setlists ?? [])),
-      local.setlists,
-      resetAt.setlists,
-    ),
-    deleted: [...tombs.values()],
-  });
+  // …puis RÉPARATION des items orphelins (b473) : une setlist plus récente
+  // venue d'un appareil en retard peut pointer des ids enterrés AVANT cette
+  // fusion — les tombes portent la redirection, les items la clé de contenu.
+  const deduped = reparerSetlists(
+    dedupeSongsByContent({
+      songs: afterReset(
+        alive(mergeById(local.songs, cloud.songs ?? [])),
+        local.songs,
+        resetAt.songs,
+      ),
+      setlists: afterReset(
+        alive(mergeById(local.setlists, cloud.setlists ?? [])),
+        local.setlists,
+        resetAt.setlists,
+      ),
+      deleted: [...tombs.values()],
+    }),
+  );
   return {
     songs: deduped.songs,
     setlists: deduped.setlists,

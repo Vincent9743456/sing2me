@@ -977,6 +977,27 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     b323 ne joue qu'au vrai rechargement (résultats perdus).
   - **Vue du public pleine page** (`.pubpage`) — le cadre `.pubframe` ne
     sert plus qu'à l'aperçu de la modale « Page publique / QR ».
+- **UN ITEM DE SETLIST ORPHELIN SE RÉPARE, IL NE MENT PAS** (b473, bug de
+  Marco : « (morceau supprimé) » sur presque toute une setlist alors que
+  les morceaux sont toujours dans sa bibliothèque). Cause — un problème de
+  SÉQUENCEMENT, comme il le soupçonnait : le dédoublonnage par contenu
+  (b316) redirige les setlists présentes dans la MÊME passe, mais une
+  setlist modifiée sur un appareil resté en retard revient par la fusion
+  APRÈS l'enterrement des doublons (son objet, plus récent, gagne la fusion
+  par id) — ses items pointent des ids déjà tombstonés, pour toujours.
+  Trois verrous : la tombe d'un dédoublonnage porte la REDIRECTION
+  (`Tombstone.vers`, préservée à la fusion des tombes comme `key`) ; chaque
+  item tamponne la CLÉ de contenu de son morceau (`SetlistItem.cle`, posée
+  par `store.saveSetlist` et par la réception du blob de groupe) ;
+  `reparerSetlists` (lib/sync) suit redirections puis clés, au chargement
+  ET à chaque fusion — silencieuse (jamais d'updatedAt retouché, b248),
+  idempotente, et un orphelin sans piste reste tel quel (on ne devine
+  jamais, b290). Et l'EXPORT d'une setlist de groupe n'ampute plus un item
+  non résolu : sa clé voyage, sinon le trou se propageait aux membres dont
+  la copie était intacte. Les données cassées AVANT b473 (ni `vers` ni
+  `cle`) ne se réparent pas seules : la voie de secours d'une setlist de
+  GROUPE est qu'un membre à la copie intacte la ré-enregistre (le blob,
+  par clés, regarnit tout le monde) ; une setlist solo se reconstruit.
 - Backlog connu : remplacer les `alert/confirm/prompt` natifs restants
   par les composants Feedback (règle 10 — dette existante, dont le
   `confirm()` de suppression d'un message de discussion) ; OAuth

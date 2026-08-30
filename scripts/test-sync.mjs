@@ -15,12 +15,20 @@ writeFileSync(
   pont,
   `export { mergeStates } from '${racine}lib/sync';\n` +
     `export { tamponneBand } from '${racine}types';\n` +
-    `export { applyBandData, exportBandData, mergeBandData } from '${racine}lib/bandSync';\n`,
+    `export { applyBandData, exportBandData, mergeBandData } from '${racine}lib/bandSync';\n` +
+    `export { dedupeSongsByContent, reparerSetlists } from '${racine}lib/sync';\n`,
 );
 const out = join(dir, 'pont.mjs');
 buildSync({ entryPoints: [pont], bundle: true, format: 'esm', outfile: out });
-const { mergeStates, tamponneBand, applyBandData, exportBandData, mergeBandData } =
-  await import(out);
+const {
+  mergeStates,
+  tamponneBand,
+  applyBandData,
+  exportBandData,
+  mergeBandData,
+  dedupeSongsByContent,
+  reparerSetlists,
+} = await import(out);
 
 let ko = 0;
 function egal(nom, obtenu, attendu) {
@@ -212,6 +220,105 @@ const groupe = (extra = {}) => ({
   const adoptee = applyBandData(blob, [enBoite], [], 'zk', undefined, undefined, 'compte-marco');
   egal('proposition en boîte adoptée (c’était la mienne)', adoptee.songs[0].idea, false);
   egal('…sans groupe en attente', adoptee.songs[0].pendingBandId, undefined);
+}
+
+/* ------------------------------------------------------------------ */
+/* b473 — items de setlist orphelins (bug de Marco : « (morceau         */
+/* supprimé) » alors que les morceaux sont toujours en bibliothèque).   */
+/* ------------------------------------------------------------------ */
+
+const chanson = (id, titre, createdAt, extra = {}) => ({
+  id, title: titre, artist: 'Artiste', key: 'C', tempo: 0, capo: 0,
+  durationSec: 0, tags: [], structure: [], lyrics: 'la',
+  versions: [{ id: `v-${id}`, name: 'Originale', bandId: '', key: 'C', tempo: 0, capo: 0, structure: [], lyrics: 'la', updatedAt: createdAt }],
+  activeVersionId: `v-${id}`, rehearsalNotes: [], hearts: 0, fanMessages: [],
+  createdAt, updatedAt: createdAt, ...extra,
+});
+
+// A. Le dédoublonnage pose la REDIRECTION sur la tombe du perdant.
+{
+  const etat = dedupeSongsByContent({
+    songs: [chanson('anc', 'Machistador', '2026-01-01T00:00:00Z'), chanson('dbl', 'Machistador', '2026-02-01T00:00:00Z')],
+    setlists: [],
+    deleted: [],
+  });
+  egal('dédoublonnage : le doublon est enterré', etat.songs.map((s) => s.id), ['anc']);
+  egal('…et sa tombe redirige vers le survivant', etat.deleted[0].vers, 'anc');
+}
+
+// B. LE BUG DE MARCO : la setlist d'un appareil en retard revient APRÈS
+// l'enterrement du doublon — la fusion la répare par la redirection.
+{
+  const local = {
+    ...base(),
+    songs: [chanson('dbl', 'Machistador', '2026-02-01T00:00:00Z')],
+    setlists: [{
+      id: 'sl1', name: 'Concert', comment: '', bandId: '',
+      items: [{ id: 'i1', songId: 'dbl', note: '', keyOverride: '', versionId: 'v-dbl' }],
+      createdAt: '2026-08-20T10:00:00Z', updatedAt: '2026-08-29T10:00:00Z',
+    }],
+  };
+  const cloud = {
+    ...base(),
+    songs: [chanson('anc', 'Machistador', '2026-01-01T00:00:00Z')],
+    deleted: [{ id: 'dbl', at: '2026-08-25T10:00:00Z', vers: 'anc' }],
+  };
+  const fusion = mergeStates(local, cloud);
+  egal('marco : le survivant reste en bibliothèque', fusion.songs.map((s) => s.id), ['anc']);
+  egal('marco : l’item est réparé vers le survivant', fusion.setlists[0].items[0].songId, 'anc');
+  egal('marco : version = active (setlist solo)', fusion.setlists[0].items[0].versionId, '');
+  egal('marco : la date de la setlist n’a pas bougé', fusion.setlists[0].updatedAt, '2026-08-29T10:00:00Z');
+}
+
+// C. Deuxième filet : la CLÉ tamponnée sur l'item retrouve le morceau
+// même sans redirection (tombe d'avant b473, ou tombe disparue).
+{
+  const etat = reparerSetlists({
+    songs: [chanson('neuf', 'Machistador', '2026-01-01T00:00:00Z')],
+    setlists: [{
+      id: 'sl1', name: 'Concert', comment: '', bandId: '',
+      items: [{ id: 'i1', songId: 'mort', note: '', keyOverride: '', versionId: '', cle: 'machistador @ artiste' }],
+      createdAt: '2026-08-20T10:00:00Z', updatedAt: '2026-08-29T10:00:00Z',
+    }],
+    deleted: [],
+  });
+  egal('clé d’item : réparation sans tombe', etat.setlists[0].items[0].songId, 'neuf');
+}
+
+// D. Un orphelin IRRÉCUPÉRABLE reste tel quel — on ne devine jamais.
+{
+  const avant = {
+    songs: [chanson('x', 'Autre', '2026-01-01T00:00:00Z')],
+    setlists: [{
+      id: 'sl1', name: 'Concert', comment: '', bandId: '',
+      items: [{ id: 'i1', songId: 'inconnu', note: '', keyOverride: '', versionId: '' }],
+      createdAt: '2026-08-20T10:00:00Z', updatedAt: '2026-08-29T10:00:00Z',
+    }],
+    deleted: [],
+  };
+  const etat = reparerSetlists(avant);
+  egal('orphelin sans piste : inchangé', etat.setlists[0].items[0].songId, 'inconnu');
+  egal('…et l’objet est rendu tel quel (idempotence)', etat === avant, true);
+}
+
+// E. L'export vers le groupe ne perd plus un item non résolu : sa clé part.
+{
+  const sl = {
+    id: 'slg', name: 'Set groupe', comment: '', bandId: 'zk',
+    items: [
+      { id: 'i1', songId: 'ok', note: '', keyOverride: '', versionId: '' },
+      { id: 'i2', songId: 'mort', note: 'n', keyOverride: 'D', versionId: '', cle: 'machistador @ artiste' },
+    ],
+    createdAt: '2026-08-20T10:00:00Z', updatedAt: '2026-08-29T10:00:00Z',
+  };
+  const vivant = chanson('ok', 'Vivante', '2026-01-01T00:00:00Z', {
+    versions: [
+      { id: 'v-ok', name: 'Originale', bandId: '', key: 'C', tempo: 0, capo: 0, structure: [], lyrics: 'la', updatedAt: '2026-01-01T00:00:00Z' },
+      { id: 'v-zk', name: 'Zakoustiks', bandId: 'zk', key: 'C', tempo: 0, capo: 0, structure: [], lyrics: 'la', updatedAt: '2026-01-01T00:00:00Z' },
+    ],
+  });
+  const blob = exportBandData([vivant], [sl], 'zk');
+  egal('export : l’item orphelin voyage par sa clé', blob.setlists[0].items.map((i) => i.key), ['vivante @ artiste', 'machistador @ artiste']);
 }
 
 rmSync(dir, { recursive: true, force: true });

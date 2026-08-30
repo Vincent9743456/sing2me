@@ -207,7 +207,11 @@ export function exportBandData(
       items: sl.items
         .map((it) => {
           const song = bySongId.get(it.songId);
-          const key = song ? songKey(song.title, song.artist) : '';
+          // b473 : un item dont l'id local ne résout pas (doublon enterré
+          // sur cet appareil, réparation pas encore passée) garde sa CLÉ
+          // tamponnée — l'amputer ici propagerait le trou à tous les
+          // membres, y compris ceux dont la copie est intacte.
+          const key = song ? songKey(song.title, song.artist) : (it.cle ?? '');
           return key === ''
             ? null
             : { key, note: it.note, keyOverride: it.keyOverride };
@@ -745,6 +749,9 @@ export function applyBandData(
             note: it.note,
             keyOverride: it.keyOverride,
             versionId: versionForBand(song, localBandId)?.id ?? '',
+            // Clé de contenu tamponnée (b473) : si l'id local meurt un
+            // jour, `reparerSetlists` retrouve le morceau par cette clé.
+            cle: songKey(song.title, song.artist),
           };
         })
         .filter((x): x is NonNullable<typeof x> => x !== null);
