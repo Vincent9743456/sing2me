@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { t } from '../i18n';
+import { viderFiltresLibrairie } from '../lib/filtreslib';
 import { navigate, Route } from '../router';
 import { Icon, IconName } from './Icon';
 import { Brand, LogoMark } from './Logo';
@@ -290,7 +291,14 @@ export function TabBar({
         <button
           key={tab.route}
           className={tab.match.includes(current) ? 'active' : ''}
-          onClick={() => navigate(tab.route)}
+          onClick={() => {
+            // b478 (audit N-3) : la barre navigue vers un écran NEUF —
+            // taper « Morceaux » vide la mémoire de filtres, sinon un
+            // détour oublié par un répertoire de groupe laissait croire
+            // que la moitié de la bibliothèque avait disparu.
+            if (tab.route === '/') viderFiltresLibrairie();
+            navigate(tab.route);
+          }}
         >
           <span className="ico">
             <Icon name={tab.ico} size={19} />
