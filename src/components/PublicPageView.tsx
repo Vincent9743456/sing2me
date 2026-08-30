@@ -17,6 +17,44 @@ import { TipBox } from './TipBox';
 import { t } from '../i18n';
 import { ArtistProfile } from '../types';
 
+/** Prochaines dates publiques (b479) — refiltrées au rendu. */
+function ProchainsConcerts({
+  concerts,
+}: {
+  concerts: ArtistProfile['publicConcerts'];
+}) {
+  const seuil = Date.now() - 6 * 3600 * 1000;
+  const aVenir = (concerts ?? []).filter((c) => {
+    if (c.date === '') return false;
+    const d = new Date(`${c.date}T${c.time || '00:00'}`).getTime();
+    return Number.isFinite(d) && d >= seuil;
+  });
+  if (aVenir.length === 0) return null;
+  return (
+    <div className="pubconcerts">
+      <h2 className="pubsection">{t('Prochains concerts')}</h2>
+      {aVenir.map((c, i) => {
+        const d = new Date(`${c.date}T${c.time || '00:00'}`);
+        const quand =
+          d.toLocaleDateString(undefined, {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+          }) + (c.time !== '' ? ` · ${c.time}` : '');
+        return (
+          <div key={i} className="pubconcert">
+            <strong>{quand}</strong>
+            {[c.title, c.venue]
+              .filter((x) => x !== '')
+              .map((x) => ` · ${x}`)
+              .join('')}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function PublicPageView({
   profile,
   sorte = 'artiste',
@@ -51,6 +89,11 @@ export function PublicPageView({
           </div>
         )}
       </div>
+
+      {/* PROCHAINES DATES (b479, audit P-1) : publiées avec la fiche,
+          REFILTRÉES au rendu — une fiche pas republiée depuis un moment ne
+          montre jamais une date passée. */}
+      <ProchainsConcerts concerts={profile.publicConcerts} />
 
       {/* Réciproque exacte : la page de l'artiste nomme ses groupes, celle du
           groupe nomme ses musiciens, et chaque nom mène à la page de l'autre

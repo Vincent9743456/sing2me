@@ -695,6 +695,20 @@ export interface ArtistProfile {
    */
   publicBands?: PublicBand[];
   /**
+   * PROCHAINES DATES PUBLIQUES (b479, audit P-1) : les concerts marqués
+   * « public » voyagent avec la fiche publiée — hors concert, la page du
+   * QR disait le nom du groupe et plus rien. Rempli à la publication par
+   * `datesPubliques` (publicPages), refiltré AU RENDU (une fiche pas
+   * republiée ne montre jamais une date passée). Champ additif : les
+   * fiches d'avant b479 n'en ont pas, la section ne s'affiche pas.
+   */
+  publicConcerts?: {
+    title: string;
+    date: string;
+    time: string;
+    venue: string;
+  }[];
+  /**
    * LES MUSICIENS — rempli UNIQUEMENT sur la fiche publique d'un GROUPE
    * (b232). Un groupe se présente au public exactement comme un artiste
    * (photo, présentation, liens, pourboire) : sa fiche a donc la même forme,

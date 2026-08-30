@@ -465,7 +465,7 @@ export const EN_ARTISTE: Record<string, string> = {
   '❤ et messages reportés sur {n} morceau.': '❤ and messages carried over to {n} song.',
   '❤ et messages reportés sur {n} morceaux.': '❤ and messages carried over to {n} songs.',
   '⭐ Suivre {nom}': '⭐ Follow {nom}',
-  '🎵 « Téléchargez mojosong — votre songbook, gratuit »': '🎵 "Get mojosong — your free songbook"',
+  '🎵 « Télécharge mojosong — ton songbook, gratuit »': '🎵 "Get mojosong — your free songbook"',
   '🎶 Concert en cours — profitez du moment !': '🎶 Gig in progress — enjoy the moment!',
   '🎸 Rejoindre un direct': '🎸 Join a live session',
   '💛 Pourboire : 2 € · 5 € · 10 € · libre': '💛 Tip: 2 € · 5 € · 10 € · any amount',

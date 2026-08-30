@@ -11,7 +11,56 @@ import { AuthSession, getValidSession, monId } from './auth';
 import { memeMusicien, memePersonne } from './model';
 import { miniature } from './photo';
 import { normalizePublicName, publicNameError } from './publicName';
-import { ArtistProfile, Band, PublicBand, PublicMember } from '../types';
+import {
+  ArtistProfile,
+  Band,
+  Concert,
+  PublicBand,
+  PublicMember,
+} from '../types';
+
+/* ------------------------------------------------------------------ */
+/* Prochaines dates publiques (b479, audit P-1)                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Source des concerts pour la publication — POSÉE PAR LE STORE, une fois.
+ * Neuf endroits publient une fiche (profil, GO LIVE, réservation
+ * d'adresse, aperçus, masquage…) : leur faire passer les concerts en
+ * paramètre, c'est la liste écrite à la main qui finit par oublier un
+ * appelant (cicatrice b202). Ici, TOUTE publication embarque les dates
+ * sans qu'aucun appelant n'y pense. Sans source (entrée publique, tests),
+ * les fiches partent simplement sans dates.
+ */
+let sourceConcerts: (() => Concert[]) | null = null;
+export function brancherConcertsPublics(fn: () => Concert[]): void {
+  sourceConcerts = fn;
+}
+
+/** Les dates PUBLIQUES à venir — celles de l'artiste (bandId null = toutes
+ *  ses dates publiques, solo et groupes) ou celles d'UN groupe. */
+function datesPubliques(
+  bandId: string | null,
+): NonNullable<ArtistProfile['publicConcerts']> {
+  const tous = sourceConcerts?.() ?? [];
+  const seuil = Date.now() - 6 * 3600 * 1000;
+  return tous
+    .filter((c) => c.visibility === 'public')
+    .filter((c) => bandId === null || (c.bandId ?? '') === bandId)
+    .filter((c) => {
+      if (c.date === '') return false; // « date à définir » : rien à annoncer
+      const d = new Date(`${c.date}T${c.time || '00:00'}`).getTime();
+      return Number.isFinite(d) && d >= seuil;
+    })
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+    .slice(0, 5)
+    .map((c) => ({
+      title: c.title ?? '',
+      date: c.date,
+      time: c.time ?? '',
+      venue: c.venue ?? '',
+    }));
+}
 
 function sbUrl(): string {
   return (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
@@ -868,10 +917,15 @@ export async function profilAPublier(
   // d'artiste, que l'adresse suffit à porter.
   if (masquee) return ficheMasquee('');
   try {
-    return { ...artist, publicBands: await groupesPublics(bands, artist) };
+    return {
+      ...artist,
+      publicBands: await groupesPublics(bands, artist),
+      // b479 (audit P-1) : les dates publiques voyagent avec la fiche.
+      publicConcerts: datesPubliques(null),
+    };
   } catch {
     // Jamais bloquant : sans la liste, la fiche part quand même.
-    return artist;
+    return { ...artist, publicConcerts: datesPubliques(null) };
   }
 }
 
@@ -896,6 +950,8 @@ export async function ficheGroupe(
     links: (band.links ?? []).filter((l) => (l.url ?? '') !== ''),
     tipUrl: band.tipUrl ?? '',
     publicMembers: membres,
+    // b479 (audit P-1) : les dates publiques DE CE GROUPE.
+    publicConcerts: datesPubliques(band.id),
   };
 }
 
