@@ -658,6 +658,9 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Chercher sur le web': 'Search the web',
   // b472 (point 4) — retour à la liste des résultats de recherche
   'Retour aux résultats': 'Back to results',
+  // b478 (audit D-3) — les trois chemins d'import présentés
+  'Un document ou un lien (PDF, Word, ChordPro, OnSong…), toute une collection d’un coup, ou une partition écrite à la main.':
+    'A document or a link (PDF, Word, ChordPro, OnSong…), a whole collection at once, or a chart written by hand.',
   // b477 (audit lot 2) — session de recherche, aperçus, provenance
   'Choisir un autre résultat': 'Pick another result',
   'Reprendre : {titre}': 'Resume: {titre}',

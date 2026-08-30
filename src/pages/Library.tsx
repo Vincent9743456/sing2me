@@ -23,6 +23,10 @@ import { EXAMPLE_TAG } from '../seed';
 import { Empty, HeaderPlus, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import {
+  lireFiltresLibrairie,
+  poserFiltresLibrairie,
+} from '../lib/filtreslib';
+import {
   leverNouveauPourGroupe,
   poserNouveauPourGroupe,
 } from '../lib/nouveaupourgroupe';
@@ -208,23 +212,11 @@ type SortMode = 'title' | 'artist' | 'recent';
  * `sessionStorage` : propre à l'appareil et à la session, jamais
  * synchronisé — un filtre est un réglage d'écran, pas une donnée.
  */
-const FILTRES_KEY = 'sing2me/libFiltres';
-interface FiltresMemo {
-  query: string;
-  tag: string | null;
-  bandFilter: string | null;
-  showIdeas: boolean;
-  showCheck: boolean;
-}
-function litFiltres(): Partial<FiltresMemo> {
-  try {
-    const raw = sessionStorage.getItem(FILTRES_KEY);
-    const v = raw !== null ? (JSON.parse(raw) as Partial<FiltresMemo>) : {};
-    return v && typeof v === 'object' ? v : {};
-  } catch {
-    return {};
-  }
-}
+// b478 (audit N-3) : la mémoire vit dans lib/filtreslib — état de
+// NAVIGATION (mémoire de module), plus une préférence de session. Le ←
+// d'une partition retrouve la même liste ; un rechargement ou un tap sur
+// l'onglet Morceaux repartent de la bibliothèque complète.
+const litFiltres = lireFiltresLibrairie;
 
 /** Couleurs des pastilles de groupe (tokens --band-*, stables par ordre). */
 const BAND_COLORS = [
@@ -492,15 +484,11 @@ export function Library() {
     return () => window.removeEventListener('scroll', save);
   }, []);
 
-  // Mémoire des filtres (b402) : notée à chaque changement, relue au
-  // montage — le ← d'une partition retrouve la même liste.
+  // Mémoire des filtres (b402, en module depuis b478) : notée à chaque
+  // changement, relue au montage — le ← d'une partition retrouve la même
+  // liste ; rechargement ou onglet Morceaux = bibliothèque complète.
   useEffect(() => {
-    try {
-      const memo: FiltresMemo = { query, tag, bandFilter, showIdeas, showCheck };
-      sessionStorage.setItem(FILTRES_KEY, JSON.stringify(memo));
-    } catch {
-      /* stockage indisponible */
-    }
+    poserFiltresLibrairie({ query, tag, bandFilter, showIdeas, showCheck });
   }, [query, tag, bandFilter, showIdeas, showCheck]);
   const [sort, setSort] = useState<SortMode>(() => {
     const saved = localStorage.getItem('sing2me/librarySort');
@@ -1170,26 +1158,37 @@ export function Library() {
               alignItems: 'center',
             }}
           >
-            <span className="help" style={{ margin: 0, minWidth: 0 }}>
-              {t('Filtre actif :')}{' '}
-              <strong style={{ color: 'var(--accent)' }}>
-                {[
-                  bandFilter !== null
-                    ? (bands.find((b) => b.id === bandFilter)?.name ??
-                      t('Groupe'))
-                    : '',
-                  tag !== null ? `#${tag}` : '',
-                  showIdeas ? t('📥 Propositions') : '',
-                  showCheck ? t('🔎 À vérifier') : '',
-                ]
-                  .filter((x) => x !== '')
-                  .join(' · ')}
-              </strong>{' '}
-              —{' '}
-              {filtered.length > 1
-                ? t('{n} morceaux', { n: filtered.length })
-                : t('{n} morceau', { n: filtered.length })}
-            </span>
+            {/* b478 (audit N-3) : un filtre de GROUPE se présente en fil
+                d'Ariane — le nom EST le chemin de retour vers la fiche du
+                groupe, qui manquait depuis cette liste filtrée. */}
+            {bandFilter !== null && bandFilter !== '' && (
+              <button
+                className="btn ghost small"
+                style={{ minWidth: 0 }}
+                onClick={() => navigate(`/band/${bandFilter}`)}
+              >
+                ← {bands.find((b) => b.id === bandFilter)?.name ?? t('Groupe')}{' '}
+                · {t('Répertoire')} ({filtered.length})
+              </button>
+            )}
+            {(tag !== null || showIdeas || showCheck || bandFilter === null) && (
+              <span className="help" style={{ margin: 0, minWidth: 0 }}>
+                {t('Filtre actif :')}{' '}
+                <strong style={{ color: 'var(--accent)' }}>
+                  {[
+                    tag !== null ? `#${tag}` : '',
+                    showIdeas ? t('📥 Propositions') : '',
+                    showCheck ? t('🔎 À vérifier') : '',
+                  ]
+                    .filter((x) => x !== '')
+                    .join(' · ')}
+                </strong>{' '}
+                —{' '}
+                {filtered.length > 1
+                  ? t('{n} morceaux', { n: filtered.length })
+                  : t('{n} morceau', { n: filtered.length })}
+              </span>
+            )}
             {/* Fantôme, pas ambre : le bouton Filtrer actif porte déjà
                 l'accent, et un seul bouton ambre par écran (charte). */}
             <button

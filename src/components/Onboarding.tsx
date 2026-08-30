@@ -86,6 +86,8 @@ export function Onboarding() {
       return true;
     }
   });
+  // b478 (audit D-1) : repliée par défaut — une ligne, dépliable au tap.
+  const [checklistOuverte, setChecklistOuverte] = useState(false);
 
   function dismissWelcome() {
     try {
@@ -279,88 +281,91 @@ export function Onboarding() {
       </div>
     ) : null;
 
-  // E3 — Checklist de démarrage (variante « invité » si arrivée par lien).
+  /* E3 — Checklist de démarrage, REPLIÉE EN UNE LIGNE (b478, audit D-1/D-2).
+     Le bloc à quatre étapes + paragraphe de pitch repoussait la
+     bibliothèque sous la ligne de flottaison : deux morceaux visibles sur
+     un iPhone. Le pitch est retiré de l'app connectée (il vit sur la
+     landing et dans la carte de bienvenue) ; la checklist se réduit à
+     « Prise en main · 2/4 ⟶ prochaine étape », dépliable à la demande —
+     et les étapes RESTANTES passent en tête (l'ordre affiché suggérait
+     une séquence que l'état contredisait). Toutes accomplies → plus rien,
+     sans geste (audit D-1) : le motif a disparu, la mention aussi
+     (règle 11). */
   const showChecklist =
     (invited || welcomeDismissed) && !checklistHidden && !allDone;
-  // 3.1c (b380) : toutes les étapes cochées → une ligne discrète, avec sa
-  // sortie (règle 11), au lieu d'un bloc plein de lignes barrées.
-  const ligneTerminee =
-    (invited || welcomeDismissed) && !checklistHidden && allDone ? (
-      <div
-        className="hstack"
-        style={{ justifyContent: 'space-between', alignItems: 'center' }}
-      >
-        <span className="help">✓ {t('Prise en main terminée')}</span>
-        <button
-          className="btn ghost small"
-          aria-label={t('Masquer')}
-          onClick={() => {
-            try {
-              localStorage.setItem(CHECKLIST_HIDDEN, '1');
-            } catch {
-              // ignore
-            }
-            setChecklistHidden(true);
-          }}
-        >
-          <Icon name="x" size={14} />
-        </button>
-      </div>
-    ) : null;
+  const faites = steps.filter((s) => s.done).length;
+  const prochaine = steps.find((s) => !s.done);
   const checklist = showChecklist ? (
-    <div className="card onbcard">
-      {/* 3.1a (b380) : la PROMESSE d'abord — le différenciateur produit. */}
-      <p className="help" style={{ marginTop: 0 }}>
-        {t(
-          'Avec mojosong, tes paroles s’affichent en live sur le téléphone de ton public pendant que tu joues. Rien à installer pour eux, rien conservé après le concert.',
+    <div className="card onbcard" style={{ padding: '4px 12px' }}>
+      <button
+        className="onbfold"
+        aria-expanded={checklistOuverte}
+        onClick={() => setChecklistOuverte((v) => !v)}
+      >
+        <span className="onbtitle" style={{ fontSize: '0.92rem' }}>
+          {t('Prise en main')} · {faites}/{steps.length}
+        </span>
+        {!checklistOuverte && prochaine && (
+          <span className="help onbnext">⟶ {prochaine.label}</span>
         )}
-      </p>
-      <div className="hstack" style={{ justifyContent: 'space-between' }}>
-        <div className="onbtitle" style={{ fontSize: '0.98rem' }}>
-          {t('Prise en main')}
-        </div>
-        <button
-          className="btn ghost small"
-          onClick={() => {
-            try {
-              localStorage.setItem(CHECKLIST_HIDDEN, '1');
-            } catch {
-              // ignore
-            }
-            setChecklistHidden(true);
-          }}
-        >
-          {t('Masquer')}
-        </button>
-      </div>
-      {steps.map((s) => (
-        <button
-          key={s.key}
-          className="onbstep"
-          onClick={s.onClick}
-          disabled={s.done}
-        >
-          <span className={`onbcheck ${s.done ? 'on' : ''}`} aria-hidden="true">
-            {s.done ? '✓' : ''}
-          </span>
-          <span className={s.done ? 'onbdone' : ''}>{s.label}</span>
-          {!s.done && (
-            <span className="onbgo" aria-hidden="true">
-              ›
-            </span>
-          )}
-        </button>
-      ))}
+        <Icon
+          name={checklistOuverte ? 'chevron-up' : 'chevron-down'}
+          size={16}
+        />
+      </button>
+      {checklistOuverte && (
+        <>
+          {/* Restantes d'abord (D-2) : une liste qui a l'air d'une séquence
+              ne coche pas sa dernière ligne avant les précédentes. */}
+          {[...steps]
+            .sort((a, b) => Number(a.done) - Number(b.done))
+            .map((s) => (
+              <button
+                key={s.key}
+                className="onbstep"
+                onClick={s.onClick}
+                disabled={s.done}
+              >
+                <span
+                  className={`onbcheck ${s.done ? 'on' : ''}`}
+                  aria-hidden="true"
+                >
+                  {s.done ? '✓' : ''}
+                </span>
+                <span className={s.done ? 'onbdone' : ''}>{s.label}</span>
+                {!s.done && (
+                  <span className="onbgo" aria-hidden="true">
+                    ›
+                  </span>
+                )}
+              </button>
+            ))}
+          <div style={{ textAlign: 'right', margin: '2px 0 6px' }}>
+            <button
+              className="btn ghost small"
+              onClick={() => {
+                try {
+                  localStorage.setItem(CHECKLIST_HIDDEN, '1');
+                } catch {
+                  // ignore
+                }
+                setChecklistHidden(true);
+              }}
+            >
+              {t('Masquer')}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   ) : null;
 
-  if (!banner && !welcome && !checklist && !ligneTerminee) return null;
+  if (!banner && !welcome && !checklist) return null;
   return (
     <>
       {banner}
       {welcome}
       {checklist}
-      {ligneTerminee}
     </>
   );
 }

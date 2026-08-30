@@ -2277,6 +2277,30 @@ textarea.mono {
 }
 /* (b476 : l'astuce « Ne pas déranger » est devenue un toast BAS — plus
    aucun conflit avec la ✕ du coin haut droit, la réserve a sauté.) */
+
+/* b478 (audit D-1) : la « Prise en main » repliée en UNE ligne — un tap
+   la déplie. La prochaine étape se lit sans déplier. */
+.onbfold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 4px 0;
+  cursor: pointer;
+  text-align: left;
+}
+.onbfold .onbnext {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* Groupes de la barre (b438) : navigation · performance · taille — un
    séparateur léger entre chaque groupe, rien d'autre ne change. */
 .stage .controls .ctrlgrp {

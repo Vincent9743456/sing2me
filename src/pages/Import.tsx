@@ -160,7 +160,10 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
   }, [method]);
   // Pli « Autres façons d'importer » (fermé par défaut : un seul chemin
   // visible ; forcé ouvert quand une alternative est en cours).
-  const [othersOpen, setOthersOpen] = useState(false);
+  // b478 (audit D-3, amende le « fermé par défaut » de b371) : l'écran
+  // était vide aux trois quarts — les trois autres chemins se montrent
+  // d'emblée, le pli reste refermable.
+  const [othersOpen, setOthersOpen] = useState(true);
   const toast = useToast();
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
@@ -1438,8 +1441,9 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
                   la levée b319) : la source ne se nomme plus à l'écran. */}
               <Icon name="search" size={16} /> {t('Chercher sur le web')}
             </button>
-            {/* Une ligne pour situer le parcours (b331, réécrite b334). */}
-            <p className="help" style={{ marginTop: 4, marginBottom: 'var(--sp-3)' }}>
+            {/* Une ligne pour situer le parcours (b331 ; respiration b478 —
+                audit D-3 : elle se cognait dans le bouton). */}
+            <p className="help" style={{ marginTop: 10, marginBottom: 'var(--sp-4)' }}>
               {t('Choisis un résultat : la partition se met en forme toute seule.')}
             </p>
           </>
@@ -1518,6 +1522,12 @@ export function Import({ mode }: { mode?: 'bulk' } = {}) {
           onToggle={(e) => setOthersOpen((e.target as HTMLDetailsElement).open)}
         >
           <summary>{t("Autres façons d'importer")}</summary>
+          {/* b478 (audit D-3) : les trois chemins se PRÉSENTENT — une ligne
+              chacun, au lieu d'un écran aux trois quarts vide où il fallait
+              deviner ce que cachait le pli. */}
+          <p className="help" style={{ margin: '8px 0 4px' }}>
+            {t('Un document ou un lien (PDF, Word, ChordPro, OnSong…), toute une collection d’un coup, ou une partition écrite à la main.')}
+          </p>
           <div className="chips" style={{ margin: '8px 0 12px' }}>
             <button
               className={`chip ${method === 'doc' ? '' : 'off'}`}
