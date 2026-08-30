@@ -918,6 +918,22 @@ export function formatDuration(sec: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/**
+ * Durée d'ENSEMBLE en heures et minutes (b480, audit C-1) : « 82:30 »
+ * pour une setlist se lisait comme une durée de morceau, et la liste des
+ * setlists disait déjà « 1 h 23 » pour la même chose. UNE seule écriture
+ * partout : « 45 min », « 1 h », « 1 h 23 ». `formatDuration` (mm:ss)
+ * reste pour la durée d'UN morceau.
+ */
+export function dureeHumaine(sec: number): string {
+  if (!sec || sec <= 0) return '';
+  const min = Math.max(1, Math.round(sec / 60));
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const reste = min % 60;
+  return reste === 0 ? `${h} h` : `${h} h ${reste.toString().padStart(2, '0')}`;
+}
+
 export function parseDuration(text: string): number {
   const m = /^(\d+):(\d{1,2})$/.exec(text.trim());
   if (m) return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);

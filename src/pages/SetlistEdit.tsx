@@ -38,7 +38,7 @@ import {
   SharePayload,
   Song,
   songSeconds,
-
+  dureeHumaine,
 } from '../types';
 
 /**
@@ -492,7 +492,7 @@ export function SetlistEdit({ id }: { id: string | null }) {
         <h2 className="pagetitle" style={{ marginTop: 0 }}>
           {t('Morceaux')} ({playedItems.length}
           {playedSec > 0
-            ? ` · ${hasEstimate ? '≈ ' : ''}${formatDuration(playedSec)}`
+            ? ` · ${hasEstimate ? '≈ ' : ''}${dureeHumaine(playedSec)}`
             : ''}
           )
         </h2>
@@ -785,11 +785,18 @@ export function SetlistEdit({ id }: { id: string | null }) {
               </button>
             </>
           )}
-          {/* Décision produit (Vincent, août 2026) : les partitions ne
-              circulent QUE par le répertoire de groupe ou le QR ON AIR —
-              pas de partage de setlist par lien. Supprimer vit dans le
-              menu « … » de l'en-tête (une seule occurrence, confirmée). */}
         </div>
+        {/* b480 (audit C-5) : la différence scène / régie s'écrit — deux
+            boutons côte à côte sans un mot laissaient deviner. */}
+        {draft.items.length > 0 && (
+          <p className="help" style={{ marginTop: -8 }}>
+            {t('Scène : les partitions plein écran, pour jouer. Régie : sans partition — tu fais défiler les morceaux, le public et tes musiciens suivent sur leur écran.')}
+          </p>
+        )}
+        {/* Décision produit (Vincent, août 2026) : les partitions ne
+            circulent QUE par le répertoire de groupe ou le QR ON AIR —
+            pas de partage de setlist par lien. Supprimer vit dans le
+            menu « … » de l'en-tête (une seule occurrence, confirmée). */}
         {saved && !metaDirty && (
           <div className="savedhint">{t('✓ Enregistré')}</div>
         )}

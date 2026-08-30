@@ -138,8 +138,8 @@ export const EN_ARTISTE: Record<string, string> = {
   '{n} ligne(s)': '{n} row(s)',
   'Historique indisponible pour l’instant — il reviendra.':
     'History unavailable right now — it’ll be back.',
-  'Aucun live pour l’instant — lance-en un depuis le bouton « Live ».':
-    'No live yet — start one from the "Live" button.',
+  'Aucun live pour l’instant — ton premier concert s’inscrira ici.':
+    'No live yet — your first show will appear here.',
   '← Fermer': '← Close',
   '✏️ Nommer ce live': '✏️ Name this live',
   '🗑 Supprimer': '🗑 Delete',
@@ -562,6 +562,9 @@ export const EN_ARTISTE: Record<string, string> = {
   'Donne un nom au groupe.': 'Give the band a name.',
   'Tu as déjà un groupe à ce nom.': 'You already have a band with this name.',
   Répertoire: 'Repertoire',
+  // b480 (audit C-6) — la portée du commutateur s'écrit
+  'Masqué du public': 'Hidden from the public',
+  'Visible du public': 'Public',
   'Page publique': 'Public page',
   '{n} à valider': '{n} to review',
   'Ouverture du groupe…': 'Opening the band…',

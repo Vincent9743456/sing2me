@@ -246,7 +246,12 @@ export function Bands() {
       <TopBar
         title={t('Groupes')}
         right={
-          <HeaderPlus label={t('Nouveau groupe')} onClick={() => setCreating(true)} />
+          /* b480 (audit C-3) : un mot visible, comme Morceaux et Setlists. */
+          <HeaderPlus
+            label={t('Nouveau groupe')}
+            texte={t('Groupe')}
+            onClick={() => setCreating(true)}
+          />
         }
       />
       <div className="page">
@@ -445,7 +450,7 @@ export function Bands() {
                     name={band.hiddenFromPublic === true ? 'eye-off' : 'eye'}
                     size={14}
                   />{' '}
-                  {band.hiddenFromPublic === true ? t('Masqué') : t('Visible')}
+                  {band.hiddenFromPublic === true ? t('Masqué du public') : t('Visible du public')}
                 </button>
                 <button
                   className="btn ghost small"

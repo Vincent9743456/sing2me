@@ -1,5 +1,8 @@
 /** Traductions anglaises — domaine setlists (clé = chaîne française exacte). */
 export const EN_SETLISTS: Record<string, string> = {
+  // b480 (audit C-5) — la différence scène / régie s'écrit
+  'Scène : les partitions plein écran, pour jouer. Régie : sans partition — tu fais défiler les morceaux, le public et tes musiciens suivent sur leur écran.':
+    'Stage: full-screen charts, for playing. Control room: no charts — you step through the songs, and the audience and your musicians follow on their screens.',
   // b380 — refonte navigation, lot 3
   'Concert le {date}': 'Gig on {date}',
   'Plus d’actions': 'More actions',

@@ -13,7 +13,9 @@ import { t } from '../i18n';
 import { resolveVersion } from '../lib/model';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { formatDuration, Setlist, songSeconds } from '../types';
+import { formatDuration, Setlist, songSeconds,
+  dureeHumaine,
+} from '../types';
 
 /** Couleurs des pastilles de groupe (mêmes tokens que partout). */
 const BAND_COLORS = [
@@ -189,14 +191,14 @@ export function SetlistView({ id }: { id: string }) {
                 : t('{n} morceau', { n: played.length })}{' '}
               ·{' '}
               {hasEstimate ? '≈ ' : ''}
-              {formatDuration(playedSec)}
+              {dureeHumaine(playedSec)}
             </strong>
             {reserve.length > 0 && (
               <span className="help" style={{ margin: 0 }}>
                 {' '}
                 {t('+ {n} en réserve (≈ {duree})', {
                   n: reserve.length,
-                  duree: formatDuration(reserveSec),
+                  duree: dureeHumaine(reserveSec),
                 })}
               </span>
             )}

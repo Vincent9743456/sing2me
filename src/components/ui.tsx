@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { t } from '../i18n';
+import { usePiegeModale } from './Feedback';
 import { viderFiltresLibrairie } from '../lib/filtreslib';
 import { navigate, Route } from '../router';
 import { Icon, IconName } from './Icon';
@@ -359,6 +360,9 @@ export function Modal({
   // empilement et la barre d'outils passait par-dessus (bug signalé par
   // Vincent). Rattachée au body, la modale échappe à tout ancêtre et se pose
   // au-dessus de l'app. `document.body` existe toujours au rendu client.
+  // b480 (audit N-5) : Échap, piège de focus, retour du focus au
+  // déclencheur, et une ✕ visible — même traitement que les feuilles.
+  const ref = usePiegeModale(onClose);
   return createPortal(
     <div
       className="modal-backdrop"
@@ -366,7 +370,21 @@ export function Modal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="modal">
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        ref={ref}
+        tabIndex={-1}
+      >
+        <button
+          className="sheet-close"
+          aria-label={t('Fermer')}
+          onClick={onClose}
+        >
+          <Icon name="x" size={16} />
+        </button>
         <h2>{title}</h2>
         {children}
       </div>

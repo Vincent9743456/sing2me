@@ -787,22 +787,17 @@ export function Library() {
                                   : '',
                                 song.artist,
                               ].filter((x) => x !== ''),
+                              /* b480 (audit C-8) : la pastille de couleur
+                                 devant le nom du groupe est RETIRÉE de la
+                                 ligne — signifiante en apparence, expliquée
+                                 nulle part, et le NOM dit déjà tout. La
+                                 couleur reste sur les pastilles de filtre,
+                                 où elle relie la pastille à sa vue. */
                               ...bandsOfSong(song.id).map((b) => (
                                 <span
                                   key={b.id}
                                   style={{ whiteSpace: 'nowrap' }}
                                 >
-                                  <span
-                                    aria-hidden="true"
-                                    style={{
-                                      display: 'inline-block',
-                                      width: 8,
-                                      height: 8,
-                                      borderRadius: '50%',
-                                      background: b.color,
-                                      marginRight: 3,
-                                    }}
-                                  />
                                   {b.name}
                                 </span>
                               )),
