@@ -85,8 +85,8 @@ export function exampleSongs(): Song[] {
       structure: [],
       structureNotes:
         'Le standard de La Nouvelle-Orléans — trois accords. Essaie le ' +
-        'défilement automatique en mode scène (bouton ▲ en bas), et ' +
-        'transpose-moi avec le bouton tonalité !',
+        'défilement automatique en mode scène (bouton « Défiler » en bas), ' +
+        'et transpose-moi avec le bouton tonalité !',
       lyrics:
         'Couplet 1 :\n' +
         'Oh, when the [C]saints go marching in\n' +
