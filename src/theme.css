@@ -2314,6 +2314,11 @@ textarea.mono {
 }
 .stage .controls .btn {
   padding: 10px 14px;
+  /* b476 (audit S-1) : cibles pleines SANS condition de pointeur — la
+     scène est un contexte tactile par nature, et la règle du bloc
+     pointer: coarse ne couvrait pas tous les navigateurs. */
+  min-height: 48px;
+  min-width: 44px;
 }
 /* Sous 430 px, un remplissage horizontal plus serré retarde le passage à
    deux rangées — la cible reste ≥ 44 px par les min-width/min-height du
