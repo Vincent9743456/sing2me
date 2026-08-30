@@ -47,7 +47,7 @@ import {
   SEED_KEY,
   SEED_VERSION,
 } from './seed';
-import { dedupeSongsByContent } from './lib/sync';
+import { dedupeSongsByContent, reparerSetlists } from './lib/sync';
 import { authAvailable } from './lib/auth';
 import {
   ArtistProfile,
@@ -178,8 +178,10 @@ function loadState(): AppState {
       // Effondre d'emblée les doublons de contenu (b286 pour les exemples,
       // b316 pour les vrais morceaux dupliqués par une double connexion) : on
       // nettoie au chargement, et les tombstones posés se propagent à la
-      // fusion suivante. Les deux passes sont idempotentes.
-      return dedupeSongsByContent(dedupeExamples(withEmbeddedLiveKey({
+      // fusion suivante. Puis RÉPARE les items de setlist orphelins (b473,
+      // bug de Marco) via les redirections de tombes et les clés d'items.
+      // Les trois passes sont idempotentes.
+      return reparerSetlists(dedupeSongsByContent(dedupeExamples(withEmbeddedLiveKey({
         // migration automatique de l'ancien modèle à sections.
         // Les BROUILLONS de création périmés (b319) sont balayés au
         // chargement : TTL de 6 h — pas de cimetière de brouillons. Un
@@ -218,7 +220,7 @@ function loadState(): AppState {
         bandRemovals: Array.isArray(parsed.bandRemovals)
           ? parsed.bandRemovals
           : [],
-      })));
+      }))));
     }
   } catch {
     // stockage illisible : on repart des données de démo
@@ -606,7 +608,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const saveSetlist = useCallback((setlist: Setlist) => {
-    const stamped = { ...setlist, updatedAt: new Date().toISOString() };
+    // Chaque item porte la CLÉ DE CONTENU de son morceau (b473) : si l'id
+    // local meurt un jour (dédoublonnage, réimport), `reparerSetlists`
+    // retrouve le morceau par cette clé au lieu d'afficher
+    // « (morceau supprimé) ». Tamponnée ici, au point d'écriture unique.
+    const chansons = new Map(stateRef.current.songs.map((s) => [s.id, s]));
+    const stamped = {
+      ...setlist,
+      items: setlist.items.map((it) => {
+        const s = chansons.get(it.songId);
+        const cle = s ? songKey(s.title, s.artist) : it.cle ?? '';
+        return cle !== '' && cle !== it.cle ? { ...it, cle } : it;
+      }),
+      updatedAt: new Date().toISOString(),
+    };
     // RÈGLE (décision Vincent, b174) : mettre un morceau dans une setlist
     // ENTÉRINE son inscription en bibliothèque. Une idée qu'on va jouer
     // n'est plus une idée ; une proposition qu'on programme n'a plus à être

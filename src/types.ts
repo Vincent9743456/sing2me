@@ -468,6 +468,14 @@ export interface SetlistItem {
   /** Version du morceau à jouer ('' = version active) */
   versionId: string;
   /**
+   * Clé de contenu du morceau visé (`songKey(titre, artiste)`), tamponnée à
+   * chaque enregistrement de la setlist (b473). Un id local peut mourir
+   * (dédoublonnage, réimport) : la clé, elle, permet de RETROUVER le
+   * morceau dans la bibliothèque et de réparer l'item au lieu d'afficher
+   * « (morceau supprimé) ». Absente des vieilles données — best-effort.
+   */
+  cle?: string;
+  /**
    * true = morceau « en réserve » : présent dans la setlist mais pas
    * prévu d'office — on le garde sous le coude selon l'ambiance. Par
    * défaut (absent/false) le morceau fait partie du set joué.
@@ -772,6 +780,16 @@ export interface Tombstone {
   /** Morceaux : titre normalisé — empêche la ré-importation par le
    *  répertoire partagé d'un groupe (sans supprimer chez les autres). */
   key?: string;
+  /**
+   * REDIRECTION de dédoublonnage (b473, bug de Marco : « (morceau
+   * supprimé) » sur toute une setlist alors que les morceaux sont là) :
+   * id du morceau SURVIVANT quand cette tombe vient d'un dédoublonnage
+   * par contenu. Une setlist restée en retard sur un autre appareil peut
+   * revenir par la fusion APRÈS l'enterrement du doublon : sans cette
+   * trace, ses items pointent pour toujours un id mort. La réparation
+   * (`reparerSetlists`) suit ces redirections.
+   */
+  vers?: string;
 }
 
 export function makeId(): string {
