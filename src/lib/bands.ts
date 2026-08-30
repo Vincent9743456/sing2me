@@ -180,6 +180,34 @@ export async function createBandInvite(
 }
 
 /**
+ * INVITATIONS PAR LIEN DÉJÀ CONSOMMÉES (b475, constat de Marco : « j'ai
+ * invité "Chris"… il a créé son compte avec borelli.christophe — du coup
+ * 2 profils »). L'invitation SAIT qui est venu : elle porte le nom écrit
+ * par l'inviteur ET le compte qui l'a utilisée (`used_by`). La RLS ne
+ * montre ces lignes qu'au CRÉATEUR du groupe — pour tout autre appelant la
+ * liste revient vide, et c'est le bon comportement : la ligne « en
+ * attente » à rapprocher n'existe que chez lui.
+ */
+export async function fetchInvitesConsommees(
+  s: AuthSession,
+  cloudId: string,
+): Promise<{ name: string; userId: string }[]> {
+  const res = await sbAuthed(
+    s,
+    `/rest/v1/band_invite_links?band_id=eq.${encodeURIComponent(cloudId)}` +
+      '&used_by=not.is.null&select=invited_name,used_by',
+  );
+  if (!res.ok) throw new Error(`Supabase a répondu ${res.status}`);
+  const rows = (await res.json()) as {
+    invited_name?: string;
+    used_by?: string;
+  }[];
+  return (Array.isArray(rows) ? rows : [])
+    .map((r) => ({ name: r.invited_name ?? '', userId: r.used_by ?? '' }))
+    .filter((r) => r.name.trim() !== '' && r.userId !== '');
+}
+
+/**
  * Annule une invitation EN ATTENTE (b307) — côté serveur, pas seulement en
  * local. Une seule fonction pour les deux chemins : par annuaire (compte
  * connu → `p_user`) et/ou par lien nominatif (→ `p_name`). Best-effort côté

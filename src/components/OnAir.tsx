@@ -823,9 +823,9 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                       morceau, mode scène ou régie, pas seulement la scène. */}
                   {mode === 'concert'
                     ? t(
-                        'Le public voit les paroles du morceau en cours. Les musiciens qui se greffent voient paroles et accords. Une fois le live lancé, ouvre un morceau (ou ta setlist en mode scène) : c’est lui que le public lit.',
+                        'Le public voit les paroles du morceau en cours. Les musiciens qui se greffent voient paroles et accords. Une fois le live lancé, ouvre un morceau (ou ta setlist) en mode scène : c’est lui que le public lit.',
                       )
-                    : t('Seuls les musiciens du groupe suivent. Une fois la répétition lancée, ouvre un morceau : c’est lui qu’ils suivent.')}
+                    : t('Seuls les musiciens du groupe suivent. Une fois la répétition lancée, ouvre un morceau en mode scène : c’est lui qu’ils suivent.')}
                 </p>
               </>
             )}
@@ -941,8 +941,8 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                     style={{ textAlign: 'center', marginTop: 0 }}
                   >
                     {mode === 'concert'
-                      ? t('Aucun morceau diffusé pour l’instant — ouvre un morceau (ou ta setlist en mode scène) : le public lira ses paroles.')
-                      : t('Aucun morceau diffusé pour l’instant — ouvre un morceau : tes musiciens le suivront.')}
+                      ? t('Aucun morceau diffusé pour l’instant — ouvre un morceau (ou ta setlist) en mode scène : le public lira ses paroles.')
+                      : t('Aucun morceau diffusé pour l’instant — ouvre un morceau en mode scène : tes musiciens le suivront.')}
                   </p>
                 )}
                 {/* Le QR reste affiché EN PAUSE : un retardataire peut

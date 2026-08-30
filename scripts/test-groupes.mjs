@@ -10,10 +10,14 @@ import { join } from 'node:path';
 const dir = mkdtempSync(join(tmpdir(), 'mojotest-'));
 const pont = join(dir, 'pont.ts');
 const racine = new URL('../src/lib/', import.meta.url).pathname;
-writeFileSync(pont, `export { decoupeLiens } from '${racine}liens';\n`);
+writeFileSync(
+  pont,
+  `export { decoupeLiens } from '${racine}liens';\n` +
+    `export { dedupeBandMembers, resoudreInvitations } from '${racine}model';\n`,
+);
 const out = join(dir, 'pont.mjs');
 buildSync({ entryPoints: [pont], bundle: true, format: 'esm', outfile: out });
-const { decoupeLiens } = await import(out);
+const { decoupeLiens, dedupeBandMembers, resoudreInvitations } = await import(out);
 
 let ko = 0;
 function egal(nom, obtenu, attendu) {
@@ -68,6 +72,57 @@ egal('multiligne', decoupeLiens('titre\nhttps://a.fr\nfin'), [
   { type: 'lien', url: 'https://a.fr' },
   { type: 'texte', contenu: '\nfin' },
 ]);
+
+/* ------------------------------------------------------------------ */
+/* b475 — le cas de Marco : « Chris » invité par lien, arrivé sous      */
+/* « borelli.christophe » — deux profils au lieu d'un.                  */
+/* ------------------------------------------------------------------ */
+
+const groupeAvec = (members) => ({
+  id: 'g1', name: 'Exigus', photo: '', bio: '', tipUrl: '', links: [],
+  members, owned: true, cloudId: 'cid',
+});
+
+// La ligne en attente reçoit l'identifiant du compte qui a consommé le lien,
+// puis fusionne avec la ligne du compte.
+{
+  const avant = groupeAvec([
+    { id: 'm1', name: 'Chris', instrument: 'basse', pending: true },
+    { id: 'm2', name: 'borelli.christophe', userId: 'u-chris', verified: true },
+  ]);
+  const apres = dedupeBandMembers(
+    resoudreInvitations(avant, [{ name: 'Chris', userId: 'u-chris' }]),
+  );
+  egal('marco : une seule ligne après résolution', apres.members.length, 1);
+  egal('marco : la ligne porte le compte', apres.members[0].userId, 'u-chris');
+  egal('marco : l’instrument noté sur « Chris » est gardé', apres.members[0].instrument, 'basse');
+}
+
+// Sans ligne du compte (fiche pas encore resynchronisée) : la ligne en
+// attente devient la ligne du membre, plus « en attente ».
+{
+  const apres = resoudreInvitations(
+    groupeAvec([{ id: 'm1', name: 'Chris', pending: true }]),
+    [{ name: 'Chris', userId: 'u-chris' }],
+  );
+  egal('résolution seule : identifiant posé', apres.members[0].userId, 'u-chris');
+  egal('résolution seule : plus en attente', apres.members[0].pending, undefined);
+}
+
+// Prudences b249 : un nom qui correspond à DEUX lignes n'attribue rien, et
+// une ligne qui porte déjà un identifiant n'est jamais réécrite.
+{
+  const deux = resoudreInvitations(
+    groupeAvec([
+      { id: 'm1', name: 'Chris', pending: true },
+      { id: 'm2', name: 'chris' },
+    ]),
+    [{ name: 'Chris', userId: 'u-chris' }],
+  );
+  egal('deux homonymes : rien n’est attribué', deux.members.map((m) => m.userId ?? ''), ['', '']);
+  const deja = groupeAvec([{ id: 'm1', name: 'Chris', userId: 'u-autre' }]);
+  egal('identifiant déjà posé : intact', resoudreInvitations(deja, [{ name: 'Chris', userId: 'u-chris' }]) === deja, true);
+}
 
 if (ko > 0) {
   console.log(`\n${ko} test(s) en échec.`);

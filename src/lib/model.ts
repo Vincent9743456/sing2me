@@ -1001,6 +1001,52 @@ export function stampMemberIds(
 }
 
 /**
+ * RAPPROCHER LES INVITATIONS PAR LIEN CONSOMMÉES (b475, constat de Marco :
+ * « j'ai invité "Chris"… il a créé son compte avec borelli.christophe — du
+ * coup 2 profils »).
+ *
+ * La ligne « en attente » d'un lien nominatif n'a pas d'identifiant (par
+ * lien on ne sait pas qui viendra, b251) ; à l'adhésion, le rapprochement
+ * se faisait par le NOM — « Chris » ≠ « borelli.christophe », la ligne
+ * n'était donc jamais fusionnée et le groupe affichait deux profils. Or
+ * l'INVITATION sait : elle porte le nom écrit par l'inviteur ET le compte
+ * qui l'a consommée (`used_by`, lisible par le créateur seul). On pose
+ * l'identifiant sur la ligne en attente ; `dedupeBandMembers` fusionne
+ * ensuite par identifiant, et le nom du compte remplace le prénom noté
+ * (c'est la promesse écrite dans l'aide de l'invitation).
+ *
+ * Prudences (famille b249) : jamais sur une ligne qui porte déjà un
+ * identifiant, et un nom d'invitation qui correspond à DEUX lignes sans
+ * identifiant n'attribue rien — mieux vaut un doublon visible qu'une
+ * fusion fausse. Silencieuse (`updatedAt` intact) et idempotente.
+ */
+export function resoudreInvitations(
+  band: Band,
+  consommees: { name: string; userId: string }[],
+): Band {
+  const src = band.members ?? [];
+  if (src.length === 0 || consommees.length === 0) return band;
+  let change = false;
+  const out = [...src];
+  for (const c of consommees) {
+    if ((c.userId ?? '') === '' || (c.name ?? '').trim() === '') continue;
+    // Le compte a peut-être déjà SA ligne (venue du serveur) : on pose
+    // quand même l'identifiant sur la ligne en attente — c'est justement
+    // ce qui permettra à dedupeBandMembers de les fondre en une.
+    const idx: number[] = [];
+    out.forEach((m, i) => {
+      if ((m.userId ?? '') === '' && memePersonne(m.name ?? '', c.name)) {
+        idx.push(i);
+      }
+    });
+    if (idx.length !== 1) continue;
+    out[idx[0]] = { ...out[idx[0]], userId: c.userId, pending: undefined };
+    change = true;
+  }
+  return change ? { ...band, members: out } : band;
+}
+
+/**
  * UN MUSICIEN, UNE LIGNE (b248, constat de Vincent : « Marco apparaît 2 fois
  * dans le groupe… alors que le menu d'avant on n'est que 2 »).
  *

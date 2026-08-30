@@ -443,8 +443,8 @@ export const EN_ARTISTE: Record<string, string> = {
   '✦ Tout est ouvert. Merci de faire vivre mojosong !': '✦ Everything is unlocked. Thank you for keeping mojosong alive!',
   'Lancer un live': 'Start a live',
   'Reprendre le live en cours': 'Resume the current live',
-  'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords. Une fois le live lancé, ouvre un morceau (ou ta setlist en mode scène) : c’est lui que le public lit.':
-    'Your lyrics show up on your audience’s phones. Musicians joining the jam see lyrics and chords. Once the live has started, open a song (or your setlist in stage mode): that’s what the audience reads.',
+  'Tes paroles s’affichent sur les téléphones du public. Les musiciens qui se greffent voient paroles et accords. Une fois le live lancé, ouvre un morceau (ou ta setlist) en mode scène : c’est lui que le public lit.':
+    'Your lyrics show up on your audience’s phones. Musicians joining the jam see lyrics and chords. Once the live has started, open a song (or your setlist) in stage mode: that’s what the audience reads.',
   'Session en cours': 'Session in progress',
   'Session en pause': 'Session paused',
   'Toucher pour revenir au live.': 'Tap to get back to the live.',
