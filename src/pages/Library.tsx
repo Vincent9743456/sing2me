@@ -940,11 +940,13 @@ export function Library() {
                encore, ajouté au répertoire à sa validation. */
             <HeaderPlus
               label={t('Ajouter des morceaux')}
+              texte={t('Ajouter')}
               onClick={() => setPlusGroupe(true)}
             />
           ) : (
             <HeaderPlus
               label={t('Nouveau morceau')}
+              texte={t('Ajouter')}
               onClick={() => {
                 // 50 morceaux, c'est tout (b386) : au plafond, le ＋
                 // annonce la limite au lieu de laisser importer pour rien.

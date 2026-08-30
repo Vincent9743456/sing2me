@@ -143,13 +143,35 @@ export function SaveBar({
  */
 export function HeaderPlus({
   label,
+  texte,
   onClick,
 }: {
   label: string;
+  /**
+   * Mot VISIBLE à toutes les tailles (b474, retour de Vincent : « le
+   * bouton pour ajouter des chansons est trop discret ») : le ＋ nu de la
+   * barre passait inaperçu. Avec `texte`, le bouton devient une vraie
+   * pilule ambre « ＋ {texte} » — sauf quand le badge Live occupe la
+   * barre, où l'icône seule évite le chevauchement.
+   */
+  texte?: string;
   onClick: () => void;
 }) {
   const live = useLiveStatus();
   const compact = live !== null && live.status !== 'off';
+  if (texte !== undefined && !compact) {
+    return (
+      <button
+        className="btn headerplus plein"
+        aria-label={label}
+        title={label}
+        onClick={onClick}
+      >
+        <Icon name="plus" size={17} />
+        {texte}
+      </button>
+    );
+  }
   return (
     <button
       className={`btn icon headerplus${compact ? ' compact' : ''}`}
