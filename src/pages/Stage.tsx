@@ -320,7 +320,7 @@ export function Stage({
           <CoachMark
             id="stage-gestures"
             text={t(
-              "Balaie pour changer de morceau · ▲ défilement automatique · l'écran ne se met pas en veille.",
+              "Balaie pour changer de morceau · « Défiler » fait avancer la partition toute seule · l'écran ne se met pas en veille.",
             )}
           />
         </div>
@@ -583,27 +583,33 @@ export function Stage({
           </span>
         )}
         <span className="ctrlgrp">
-          {/* Icône « texte qui défile » + état actif (le bouton passe en
-              plein quand le défilement tourne) : la simple flèche ↓ ne
-              disait ni la fonction ni l'état (b438). */}
+          {/* b481 (demande de Vincent) : l'icône seule (b438) ne suffisait
+              toujours pas — le bouton porte le MOT. « Défiler » à l'arrêt,
+              « Pause » en plein ambre quand la partition avance. La barre
+              sait passer à deux rangées depuis b476, le mot ne coupe rien. */}
           <button
             className={`btn ${scroll ? '' : 'ghost'}`}
             title={t('Défilement automatique')}
-            aria-label={t('Défilement automatique')}
+            aria-pressed={scroll}
             onClick={() => setScroll((s) => !s)}
           >
-            <Icon name="autoscroll" size={17} />
+            <Icon name={scroll ? 'pause' : 'autoscroll'} size={17} />{' '}
+            {scroll ? t('Pause') : t('Défiler')}
           </button>
           {scroll && (
             <>
               <button
                 className="btn ghost"
+                title={t('Moins vite')}
+                aria-label={t('Moins vite')}
                 onClick={() => setSpeed((s) => Math.max(10, s - 10))}
               >
                 −
               </button>
               <button
                 className="btn ghost"
+                title={t('Plus vite')}
+                aria-label={t('Plus vite')}
                 onClick={() => setSpeed((s) => Math.min(120, s + 10))}
               >
                 ＋

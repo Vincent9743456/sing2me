@@ -186,8 +186,8 @@ export const EN_SETLISTS: Record<string, string> = {
   "En réserve — à jouer selon l'ambiance": 'In reserve — play depending on the mood',
 
   // Mode scène (Stage)
-  "Balaie pour changer de morceau · ▲ défilement automatique · l'écran ne se met pas en veille.":
-    "Swipe to change song · ▲ auto-scroll · the screen won't sleep.",
+  "Balaie pour changer de morceau · « Défiler » fait avancer la partition toute seule · l'écran ne se met pas en veille.":
+    "Swipe to change song · “Scroll” moves the song along by itself · the screen won't sleep.",
   'Setlist vide ou introuvable.': 'Empty or missing setlist.',
   '✕ Quitter': '✕ Quit',
   'Le public peut ouvrir la setlist et lire les paroles depuis son téléphone':

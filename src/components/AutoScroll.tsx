@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 
+import { Icon } from './Icon';
 import { t } from '../i18n';
 
 const GLOBAL_KEY = 'sing2me/scrollSpeed';
@@ -93,8 +94,15 @@ export function useAutoScroll(
 }
 
 /**
- * Commande flottante : discrète sur le bord droit, toujours accessible
- * (au début du morceau comme en plein défilement), sans masquer la partition.
+ * Commande flottante sur le bord droit, toujours accessible (au début du
+ * morceau comme en plein défilement), sans masquer la partition.
+ *
+ * b481 (demande de Vincent : « le rendre plus visible et compréhensible ») :
+ * le rond gris « ⇣ » ne disait ni la fonction ni comment l'arrêter. Le
+ * bouton principal est une pastille verticale qui porte un MOT — « Défiler »
+ * à l'arrêt, « Pause » (sur fond ambre, l'état actif existant) quand la
+ * partition avance. ＋ / − ne changent pas : ils n'apparaissent qu'en
+ * marche, au-dessus et en dessous.
  */
 export function AutoScrollFab({
   scroll,
@@ -104,19 +112,36 @@ export function AutoScrollFab({
   return (
     <div className="scrollfab">
       {scroll.active && (
-        <button onClick={scroll.faster} title={t('Plus vite')}>
+        <button
+          onClick={scroll.faster}
+          title={t('Plus vite')}
+          aria-label={t('Plus vite')}
+        >
           ＋
         </button>
       )}
       <button
-        className={scroll.active ? 'active' : ''}
+        className={`sf-main${scroll.active ? ' active' : ''}`}
         onClick={scroll.toggle}
         title={t('Défilement automatique')}
+        aria-label={
+          scroll.active
+            ? t('Arrêter le défilement')
+            : t('Faire défiler la partition toute seule')
+        }
+        aria-pressed={scroll.active}
       >
-        {scroll.active ? '⏸' : '⇣'}
+        <Icon name={scroll.active ? 'pause' : 'autoscroll'} size={19} />
+        <span className="sf-label">
+          {scroll.active ? t('Pause') : t('Défiler')}
+        </span>
       </button>
       {scroll.active && (
-        <button onClick={scroll.slower} title={t('Moins vite')}>
+        <button
+          onClick={scroll.slower}
+          title={t('Moins vite')}
+          aria-label={t('Moins vite')}
+        >
           −
         </button>
       )}
@@ -134,9 +159,11 @@ export function AutoScrollControls({
       <button
         className={`btn ${scroll.active ? '' : 'ghost'}`}
         title={t('Défilement automatique')}
+        aria-pressed={scroll.active}
         onClick={scroll.toggle}
       >
-        {scroll.active ? '⏸' : '⇣'} {t('Défil.')}
+        <Icon name={scroll.active ? 'pause' : 'autoscroll'} size={16} />{' '}
+        {scroll.active ? t('Pause') : t('Défiler')}
       </button>
       {scroll.active && (
         <>

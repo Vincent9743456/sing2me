@@ -3299,6 +3299,32 @@ h2.pagetitle {
   border-color: var(--accent);
   color: var(--on-accent);
 }
+/* b481 (demande de Vincent : bouton « plus visible et compréhensible ») :
+   le bouton principal n'est plus un rond gris « ⇣ » — c'est une pastille
+   verticale qui porte l'icône ET le mot (« Défiler » / « Pause »). Plus
+   grande, texte plein (pas --text-dim) et ombre légère : elle se voit sur
+   la partition sans la masquer. ＋ / − gardent leur rond. La spécificité
+   (.scrollfab .sf-main) passe devant les largeurs fixes du rond, y compris
+   celles du bloc pointer: coarse. */
+.scrollfab .sf-main {
+  width: 54px;
+  height: auto;
+  min-height: 64px;
+  border-radius: 27px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 4px;
+  color: var(--text);
+  box-shadow: var(--shadow-soft);
+}
+.scrollfab .sf-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
 
 /* En mode scène, la barre du haut n'existe pas : on colle au bord */
 .stage ~ .onair,

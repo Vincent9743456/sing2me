@@ -96,7 +96,9 @@ export const EN_COMPOSANTS: Record<string, string> = {
   'Plus vite': 'Faster',
   'Défilement automatique': 'Auto-scroll',
   'Moins vite': 'Slower',
-  'Défil.': 'Scroll',
+  Défiler: 'Scroll',
+  'Faire défiler la partition toute seule': 'Scroll the song by itself',
+  'Arrêter le défilement': 'Stop scrolling',
 
   // TipBox.tsx
   '💛 Soutenir {name}': '💛 Support {name}',

@@ -47,7 +47,8 @@ export type IconName =
   | 'eye-off'
   | 'bookmark'
   | 'note'
-  | 'autoscroll';
+  | 'autoscroll'
+  | 'pause';
 
 const FILLED: Partial<Record<IconName, boolean>> = {
   play: true,
@@ -55,6 +56,7 @@ const FILLED: Partial<Record<IconName, boolean>> = {
   grip: true,
   more: true,
   'more-v': true,
+  pause: true,
 };
 
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -225,6 +227,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   autoscroll: (
     <path d="M4 5h16M4 10h16M4 15h9M17 12v9m0 0 3.2-3.2M17 21l-3.2-3.2" />
   ),
+  pause: <path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.4z" />,
 };
 
 export function Icon({
