@@ -658,6 +658,22 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Chercher sur le web': 'Search the web',
   // b472 (point 4) — retour à la liste des résultats de recherche
   'Retour aux résultats': 'Back to results',
+  // b477 (audit lot 2) — session de recherche, aperçus, provenance
+  'Choisir un autre résultat': 'Pick another result',
+  'Reprendre : {titre}': 'Resume: {titre}',
+  'brouillon en cours': 'draft in progress',
+  'Type :': 'Type:',
+  Aperçu: 'Preview',
+  'Voir les premières lignes de cette partition': 'See the first lines of this chart',
+  '(contenu vide)': '(empty content)',
+  'Aperçu indisponible pour l’instant — réessaie dans un moment.':
+    'Preview unavailable right now — try again in a moment.',
+  // b477 (C-9) — types de la source en clair
+  Accords: 'Chords',
+  Tablature: 'Tabs',
+  'Basse (tablature)': 'Bass (tabs)',
+  'Ukulélé (accords)': 'Ukulele (chords)',
+  'Batterie (tablature)': 'Drums (tabs)',
   // b472 (point 5) — filtre par artiste sur les résultats de recherche
   'Artiste :': 'Artist:',
   Tous: 'All',

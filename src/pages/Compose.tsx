@@ -46,6 +46,7 @@ import {
   fetchUgTab,
   searchUgTabs,
   UgSearchResult,
+  ugContentToText,
   ugTabToImportText,
 } from '../lib/ug';
 import { navigate } from '../router';
@@ -62,6 +63,37 @@ function etapeCourante(draft: Song | null): 'recherche' | 'colle' | 'apercu' {
       : 'apercu';
 }
 
+/**
+ * SESSION DE RECHERCHE, AU NIVEAU MODULE (b477, audit N-1). Les résultats
+ * vivaient dans l'état du composant : QUITTER le flux (Annuler, ← depuis
+ * l'écran d'ajout) démontait l'écran et perdait requête, résultats et
+ * position — b472 ne protégeait que les allers-retours À L'INTÉRIEUR du
+ * flux. Cette mémoire survit au démontage : on peut sortir, revenir par
+ * « Chercher sur le web », et retrouver sa liste. Elle ne se vide qu'au
+ * rechargement de l'app (mémoire vive, jamais persistée) et quand une
+ * NOUVELLE recherche la remplace.
+ */
+let memoireRecherche: {
+  query: string;
+  resultats: UgSearchResult[] | null;
+  dernierChoisi: string;
+  filtreArtiste: string;
+  filtreType: string;
+  /** Aperçus de contenu déjà récupérés (b477/C-9), par URL de résultat. */
+  apercus: Record<string, string>;
+} | null = null;
+
+/** Types de la source en clair (b477/C-9) : « Chords »/« Tabs » bruts ne
+ *  disaient pas ce qu'on allait obtenir. Traduits au rendu (t()). */
+const TYPES_LISIBLES: Record<string, string> = {
+  Chords: 'Accords',
+  Tabs: 'Tablature',
+  'Bass Tabs': 'Basse (tablature)',
+  'Ukulele Chords': 'Ukulélé (accords)',
+  'Drum Tabs': 'Batterie (tablature)',
+};
+const typeLisible = (type: string) => TYPES_LISIBLES[type] ?? type;
+
 export function Compose({ draftId }: { draftId: string | null }) {
   const { songs, saveSong, purgeBrouillon } = useStore();
   // Plafond du plan (b390) : créer, c'est ajouter — même garde que le ＋.
@@ -73,7 +105,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
     [songs, draftId],
   );
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(() => memoireRecherche?.query ?? '');
   const [colle, setColle] = useState('');
   // Champs éditables de l'aperçu (pré-remplis par le parsing ; la
   // validation vaut confirmation — pas de dialogue intermédiaire).
@@ -86,16 +118,86 @@ export function Compose({ draftId }: { draftId: string | null }) {
   const validees = useMemo(() => songs.filter((s) => !estBrouillon(s)), [songs]);
 
   /* ── Étape 1 : recherche → résultats DANS l'app (b334) ──────────── */
-  const [resultats, setResultats] = useState<UgSearchResult[] | null>(null);
+  const [resultats, setResultats] = useState<UgSearchResult[] | null>(
+    () => memoireRecherche?.resultats ?? null,
+  );
   const [rechercheEnCours, setRechercheEnCours] = useState(false);
   const [choixEnCours, setChoixEnCours] = useState('');
   // b472 (point 4) : le dernier résultat ouvert reste marqué ✓ — au retour
   // dans la liste, on retrouve où l'on en était (et la ligne est recadrée).
-  const [dernierChoisi, setDernierChoisi] = useState('');
+  const [dernierChoisi, setDernierChoisi] = useState(
+    () => memoireRecherche?.dernierChoisi ?? '',
+  );
   // b472 (point 5) : filtre par artiste SUR la liste — quand une recherche
   // rend vingt versions (« sweet dreams » : Eurythmics, Marilyn Manson…),
   // un appui isole celles de l'artiste voulu. Simple vue filtrée, locale.
-  const [filtreArtiste, setFiltreArtiste] = useState('');
+  const [filtreArtiste, setFiltreArtiste] = useState(
+    () => memoireRecherche?.filtreArtiste ?? '',
+  );
+  // b477 (C-9) : filtre par TYPE (accords / tablature…) sur la liste.
+  const [filtreType, setFiltreType] = useState(
+    () => memoireRecherche?.filtreType ?? '',
+  );
+  const typesDesResultats = useMemo(() => {
+    if (resultats === null) return [];
+    const vus: string[] = [];
+    for (const r of resultats) {
+      if (r.type !== '' && !vus.includes(r.type)) vus.push(r.type);
+    }
+    return vus;
+  }, [resultats]);
+  // b477 (C-9) : aperçus de contenu récupérés à la demande, par URL.
+  const [apercus, setApercus] = useState<Record<string, string>>(
+    () => memoireRecherche?.apercus ?? {},
+  );
+  const [apercuEnCours, setApercuEnCours] = useState('');
+  // La mémoire de module suit l'état : sortir du flux ne perd plus rien.
+  React.useEffect(() => {
+    memoireRecherche = {
+      query,
+      resultats,
+      dernierChoisi,
+      filtreArtiste,
+      filtreType,
+      apercus,
+    };
+  }, [query, resultats, dernierChoisi, filtreArtiste, filtreType, apercus]);
+
+  /** Aperçu de contenu À LA DEMANDE (b477/C-9) : un aperçu automatique de
+   *  tous les résultats coûterait une récupération de page PAR ligne — la
+   *  limite de débit de la source tuerait la recherche. Un tap = une
+   *  récupération (cache CDN 24 h côté serveur), gardée en mémoire de
+   *  session ; un second tap replie. */
+  async function chargerApercu(r: UgSearchResult) {
+    if (apercus[r.url] !== undefined) {
+      setApercus((a) => {
+        const { [r.url]: _lu, ...reste } = a;
+        void _lu;
+        return reste;
+      });
+      return;
+    }
+    if (apercuEnCours !== '') return;
+    setApercuEnCours(r.url);
+    try {
+      const tab = await fetchUgTab(r.url);
+      const lignes = ugContentToText(tab.content)
+        .split('\n')
+        .map((l) => l.trimEnd())
+        .filter((l) => l.trim() !== '');
+      setApercus((a) => ({
+        ...a,
+        [r.url]: lignes.slice(0, 3).join('\n') || t('(contenu vide)'),
+      }));
+    } catch {
+      setApercus((a) => ({
+        ...a,
+        [r.url]: t('Aperçu indisponible pour l’instant — réessaie dans un moment.'),
+      }));
+    } finally {
+      setApercuEnCours('');
+    }
+  }
   const artistesDesResultats = useMemo(() => {
     if (resultats === null) return [];
     const compte = new Map<string, number>();
@@ -110,9 +212,10 @@ export function Compose({ draftId }: { draftId: string | null }) {
   }, [resultats]);
   const resultatsAffiches = useMemo(() => {
     if (resultats === null) return null;
-    if (filtreArtiste === '') return resultats;
-    return resultats.filter((r) => r.artist === filtreArtiste);
-  }, [resultats, filtreArtiste]);
+    return resultats
+      .filter((r) => filtreArtiste === '' || r.artist === filtreArtiste)
+      .filter((r) => filtreType === '' || r.type === filtreType);
+  }, [resultats, filtreArtiste, filtreType]);
 
   async function lancerRecherche() {
     const q = query.trim();
@@ -120,9 +223,23 @@ export function Compose({ draftId }: { draftId: string | null }) {
     setRechercheEnCours(true);
     setResultats(null);
     setFiltreArtiste('');
+    setFiltreType('');
     setDernierChoisi('');
+    setApercus({});
     try {
-      setResultats(await searchUgTabs(q));
+      const bruts = await searchUgTabs(q);
+      // b477 (C-9) : doublons stricts (même titre, artiste, type, version)
+      // rendus par la pagination de la source — le mieux voté reste (la
+      // liste arrive triée par votes).
+      const vus = new Set<string>();
+      setResultats(
+        bruts.filter((r) => {
+          const k = `${r.title}|${r.artist}|${r.type}|${r.version}`;
+          if (vus.has(k)) return false;
+          vus.add(k);
+          return true;
+        }),
+      );
     } catch (e) {
       toast.show(e instanceof Error ? e.message : t('La recherche a échoué.'));
     } finally {
@@ -169,19 +286,17 @@ export function Compose({ draftId }: { draftId: string | null }) {
   /* ── Récupération de route (b323) : si le brouillon visé a disparu mais
      qu'un autre vit encore, on y ramène ; et l'écran ouvert SANS identifiant
      reprend le brouillon vivant au lieu de repartir de zéro. ─────────── */
-  React.useEffect(() => {
-    if (draft !== null) return;
-    /* b472 (point 4) : quand des RÉSULTATS vivent en mémoire, arriver sur
-       /creer sans identifiant est un CHOIX — le bouton « Retour aux
-       résultats » ou le geste retour du téléphone — pas une route perdue.
-       On ne rebondit donc pas vers le brouillon : la liste s'affiche, le
-       brouillon attend (en choisir un autre le remplace, comme toujours).
-       La récupération de b323 ne joue qu'au vrai rechargement, où l'état
-       de recherche n'existe plus. */
-    if (resultats !== null) return;
-    const vivant = songs.find((s) => estBrouillon(s));
-    if (vivant) navigate(`/creer/${vivant.id}`);
-  }, [draft, songs, resultats]);
+  /* b477 (audit N-1) : PLUS AUCUN REBOND AUTOMATIQUE vers le brouillon —
+     « Chercher sur le web » disait ouvrir la recherche et rouvrait le
+     dernier aperçu (la récupération b323 rebondissait dès qu'un brouillon
+     vivait). La reprise est désormais une ACTION EXPLICITE : une carte
+     « ↩ Reprendre : {titre} » s'affiche sur l'écran de recherche quand un
+     brouillon attend. Un vrai rechargement sur /creer/{id} rouvre toujours
+     le brouillon par sa route — la protection b323 qui compte. */
+  const brouillonVivant = useMemo(
+    () => (draft === null ? (songs.find((s) => estBrouillon(s)) ?? null) : null),
+    [draft, songs],
+  );
 
   // b472 (point 4) : au retour dans la liste, la ligne du résultat qu'on
   // vient de consulter est recadrée — on reprend l'exploration où on était.
@@ -353,31 +468,58 @@ export function Compose({ draftId }: { draftId: string | null }) {
           <p className="help">
             {t('Tape le titre (et l’artiste) : choisis une partition, elle se met en forme toute seule.')}
           </p>
-          <input
-            type="text"
-            value={query}
-            autoFocus
-            placeholder={t('Titre, artiste… (ex. hallelujah cohen)')}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void lancerRecherche();
+          {/* b477 (audit N-2) : un VRAI formulaire — Entrée et la touche
+              « rechercher » du clavier mobile lancent la requête (le
+              onKeyDown seul ne couvrait pas iOS), et le clavier se referme
+              à la soumission pour que les résultats s'affichent en plein. */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              (e.currentTarget.querySelector('input') as HTMLInputElement | null)?.blur();
+              void lancerRecherche();
             }}
-          />
-          <div className="spacer" />
-          <button
-            className="btn block"
-            disabled={query.trim() === '' || rechercheEnCours}
-            onClick={() => void lancerRecherche()}
           >
-            {rechercheEnCours
-              ? t('Recherche en cours…')
-              : (
-                  <>
-                    <Icon name="search" size={16} />{' '}
-                    {t('Chercher sur le web')}
-                  </>
-                )}
-          </button>
+            <input
+              type="search"
+              enterKeyHint="search"
+              value={query}
+              autoFocus
+              placeholder={t('Titre, artiste… (ex. hallelujah cohen)')}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <div className="spacer" />
+            <button
+              type="submit"
+              className="btn block"
+              disabled={query.trim() === '' || rechercheEnCours}
+            >
+              {rechercheEnCours
+                ? t('Recherche en cours…')
+                : (
+                    <>
+                      <Icon name="search" size={16} />{' '}
+                      {t('Chercher sur le web')}
+                    </>
+                  )}
+            </button>
+          </form>
+          {/* b477 (audit N-1) : la reprise d'un brouillon est une action
+              NOMMÉE — plus jamais un effet caché du bouton de recherche. */}
+          {brouillonVivant && (
+            <div className="card" style={{ marginTop: 'var(--sp-3)' }}>
+              <button
+                className="btn ghost block"
+                onClick={() => navigate(`/creer/${brouillonVivant.id}`)}
+              >
+                ↩{' '}
+                {t('Reprendre : {titre}', {
+                  titre: [brouillonVivant.title, brouillonVivant.artist]
+                    .filter((x) => x.trim() !== '')
+                    .join(' — ') || t('brouillon en cours'),
+                })}
+              </button>
+            </div>
+          )}
           {resultats !== null && resultats.length === 0 && (
             <p className="help">
               {t('Aucun résultat — précise le titre (et l’artiste).')}
@@ -410,6 +552,34 @@ export function Compose({ draftId }: { draftId: string | null }) {
               ))}
             </div>
           )}
+          {/* b477 (C-9) : filtre par TYPE quand plusieurs cohabitent —
+              « accords seuls » et « tablature » ne servent pas au même
+              musicien. */}
+          {resultats !== null && typesDesResultats.length > 1 && (
+            <div
+              className="chips scrollrow"
+              style={{ marginTop: 'var(--sp-2)', alignItems: 'center' }}
+            >
+              <span className="help" style={{ margin: 0 }}>
+                {t('Type :')}
+              </span>
+              <button
+                className={`chip ${filtreType === '' ? '' : 'off'}`}
+                onClick={() => setFiltreType('')}
+              >
+                {t('Tous')}
+              </button>
+              {typesDesResultats.map((ty) => (
+                <button
+                  key={ty}
+                  className={`chip ${filtreType === ty ? '' : 'off'}`}
+                  onClick={() => setFiltreType(filtreType === ty ? '' : ty)}
+                >
+                  {t(typeLisible(ty))}
+                </button>
+              ))}
+            </div>
+          )}
           {resultatsAffiches !== null && resultatsAffiches.length > 0 && (
             <div className="card" style={{ marginTop: 'var(--sp-3)', padding: 6 }}>
               {resultatsAffiches.map((r, i) => (
@@ -417,7 +587,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
                   className={`row ${r.url === dernierChoisi ? 'active' : ''}`}
                   key={i}
                   data-resultat={r.url === dernierChoisi ? 'choisi' : undefined}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', flexWrap: 'wrap' }}
                   onClick={() => void choisirResultat(r)}
                 >
                   <div className="grow" style={{ minWidth: 0 }}>
@@ -427,9 +597,11 @@ export function Compose({ draftId }: { draftId: string | null }) {
                       {r.version > 1 ? ` (v${r.version})` : ''}
                     </div>
                     <div className="sub">
+                      {/* b477 (C-9) : le type en CLAIR — « Accords » /
+                          « Tablature », pas les libellés bruts. */}
                       {[
                         r.artist,
-                        r.type,
+                        r.type !== '' ? t(typeLisible(r.type)) : '',
                         r.rating > 0 ? `★ ${r.rating}` : '',
                         r.votes > 0 ? t('{n} votes', { n: r.votes }) : '',
                       ]
@@ -437,8 +609,35 @@ export function Compose({ draftId }: { draftId: string | null }) {
                         .join(' · ')}
                     </div>
                   </div>
-                  {choixEnCours === r.url && (
+                  {choixEnCours === r.url ? (
                     <span className="help">{t('⏳ Récupération…')}</span>
+                  ) : (
+                    /* b477 (C-9) : aperçu du CONTENU à la demande — un tap,
+                       une récupération, pour trancher sans ouvrir. */
+                    <button
+                      className="btn ghost small"
+                      title={t('Voir les premières lignes de cette partition')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void chargerApercu(r);
+                      }}
+                    >
+                      {apercuEnCours === r.url ? '⏳' : `👁 ${t('Aperçu')}`}
+                    </button>
+                  )}
+                  {apercus[r.url] !== undefined && (
+                    <div
+                      className="help"
+                      style={{
+                        flexBasis: '100%',
+                        whiteSpace: 'pre-wrap',
+                        margin: '4px 0 2px',
+                        fontFamily:
+                          "ui-monospace, 'Cascadia Mono', Consolas, monospace",
+                      }}
+                    >
+                      {apercus[r.url]}
+                    </div>
                   )}
                 </div>
               ))}
@@ -575,25 +774,27 @@ export function Compose({ draftId }: { draftId: string | null }) {
               </button>
               <div className="spacer" />
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {/* b472 (point 4) : consulter un résultat ne coûte plus la
-                    recherche — la liste vit encore en mémoire, on y REVIENT
-                    (le brouillon attend ; en choisir un autre le remplace). */}
-                {resultats !== null && resultats.length > 0 && (
+                {/* b477 (audit C-4) : le libellé suit la PROVENANCE. Venu de
+                    la recherche → « Choisir un autre résultat » (qui EST le
+                    retour à la liste, b472/N-1). Venu du collage → l'ancien
+                    « Recoller un autre texte », qui redevient exact. */}
+                {resultats !== null && resultats.length > 0 ? (
                   <button className="btn ghost" onClick={() => navigate('/creer')}>
-                    ← {t('Retour aux résultats')}
+                    ← {t('Choisir un autre résultat')}
+                  </button>
+                ) : (
+                  /* Retour vers le collage : le brouillon est CONSERVÉ
+                     (l'utilisateur veut peut-être copier une autre version). */
+                  <button
+                    className="btn ghost"
+                    onClick={() => {
+                      saveSong({ ...draft, lyrics: '', status: 'draft' });
+                      setColle('');
+                    }}
+                  >
+                    ↩ {t('Recoller un autre texte')}
                   </button>
                 )}
-                {/* Retour vers le collage : le brouillon est CONSERVÉ
-                    (l'utilisateur veut peut-être copier une autre version). */}
-                <button
-                  className="btn ghost"
-                  onClick={() => {
-                    saveSong({ ...draft, lyrics: '', status: 'draft' });
-                    setColle('');
-                  }}
-                >
-                  ↩ {t('Recoller un autre texte')}
-                </button>
                 <button className="btn ghost" onClick={abandonner}>
                   {t('Annuler')}
                 </button>
