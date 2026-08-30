@@ -729,29 +729,38 @@ export function Compose({ draftId }: { draftId: string | null }) {
       {etape === 'apercu' && draft && (
         <>
           {/* Titre / artiste / tonalité éditables — pré-remplis par le
-              parsing, la validation vaut confirmation. */}
-          <div className="hstack" style={{ gap: 8, flexWrap: 'wrap' }}>
+              parsing, la validation vaut confirmation. b480 (audit C-7) :
+              des LIBELLÉS visibles (un placeholder disparaît dès qu'il y a
+              du contenu — un « C » seul ne disait pas « tonalité »), et le
+              titre sur sa propre ligne pleine largeur (il se tronquait). */}
+          <div className="field">
+            <label htmlFor="compose-titre">{t('Titre')}</label>
             <input
+              id="compose-titre"
               type="text"
-              style={{ flex: 2, minWidth: 140 }}
               value={titre ?? draft.title}
-              placeholder={t('Titre')}
               onChange={(e) => setTitre(e.target.value)}
             />
-            <input
-              type="text"
-              style={{ flex: 2, minWidth: 120 }}
-              value={artiste ?? draft.artist}
-              placeholder={t('Artiste')}
-              onChange={(e) => setArtiste(e.target.value)}
-            />
-            <input
-              type="text"
-              style={{ flex: 1, minWidth: 60 }}
-              value={tonalite ?? draft.key}
-              placeholder={t('Tonalité')}
-              onChange={(e) => setTonalite(e.target.value)}
-            />
+          </div>
+          <div className="hstack" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <div className="field" style={{ flex: 2, minWidth: 140, marginBottom: 0 }}>
+              <label htmlFor="compose-artiste">{t('Artiste')}</label>
+              <input
+                id="compose-artiste"
+                type="text"
+                value={artiste ?? draft.artist}
+                onChange={(e) => setArtiste(e.target.value)}
+              />
+            </div>
+            <div className="field" style={{ flex: 1, minWidth: 90, marginBottom: 0 }}>
+              <label htmlFor="compose-tonalite">{t('Tonalité')}</label>
+              <input
+                id="compose-tonalite"
+                type="text"
+                value={tonalite ?? draft.key}
+                onChange={(e) => setTonalite(e.target.value)}
+              />
+            </div>
           </div>
           <div className="spacer" />
           <div className="card importpreview">

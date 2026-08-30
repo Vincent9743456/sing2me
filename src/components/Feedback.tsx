@@ -11,12 +11,67 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
 
 import { t } from '../i18n';
 import { Icon, IconName } from './Icon';
+
+/** Pile des dialogues ouverts : seul celui du DESSUS répond à Échap —
+ *  une feuille ouverte par-dessus une modale ne ferme pas les deux. */
+const pileDialogues: symbol[] = [];
+
+/**
+ * ACCESSIBILITÉ DES DIALOGUES (b480, audit N-5) : Échap ferme, le focus
+ * entre dans le panneau à l'ouverture, Tab tourne DEDANS (piège de focus),
+ * et le déclencheur retrouve le focus à la fermeture. Un seul crochet pour
+ * les feuilles ET les modales — le même traitement partout.
+ */
+export function usePiegeModale(onClose: () => void) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const fermerRef = useRef(onClose);
+  fermerRef.current = onClose;
+  useEffect(() => {
+    const moi = Symbol('dialogue');
+    pileDialogues.push(moi);
+    const declencheur = document.activeElement as HTMLElement | null;
+    ref.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (pileDialogues[pileDialogues.length - 1] !== moi) return;
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        fermerRef.current();
+        return;
+      }
+      if (e.key !== 'Tab' || ref.current === null) return;
+      const focusables = ref.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const premier = focusables[0];
+      const dernier = focusables[focusables.length - 1];
+      const actif = document.activeElement;
+      if (e.shiftKey && (actif === premier || actif === ref.current)) {
+        e.preventDefault();
+        dernier.focus();
+      } else if (!e.shiftKey && actif === dernier) {
+        e.preventDefault();
+        premier.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      const i = pileDialogues.indexOf(moi);
+      if (i >= 0) pileDialogues.splice(i, 1);
+      declencheur?.focus?.();
+    };
+  }, []);
+  return ref;
+}
 
 export function Sheet({
   title,
@@ -27,6 +82,7 @@ export function Sheet({
   children: React.ReactNode;
   onClose: () => void;
 }) {
+  const ref = usePiegeModale(onClose);
   // Portalisée dans <body> (b300), même raison que la modale : ouverte depuis
   // le volet d'aperçu collant de la bibliothèque, elle passait sinon derrière
   // la barre d'outils.
@@ -37,8 +93,24 @@ export function Sheet({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="sheet" role="dialog" aria-modal="true">
+      <div
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        ref={ref}
+        tabIndex={-1}
+      >
         <div className="sheet-grab" aria-hidden="true" />
+        {/* b480 (audit N-5) : une fermeture VISIBLE — le clic à côté et le
+            glissement ne se devinent pas au clavier ni au lecteur d'écran. */}
+        <button
+          className="sheet-close"
+          aria-label={t('Fermer')}
+          onClick={onClose}
+        >
+          <Icon name="x" size={16} />
+        </button>
         {title && <h3 className="sheet-title">{title}</h3>}
         {children}
       </div>

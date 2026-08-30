@@ -25,6 +25,7 @@ import {
   Setlist,
   Song,
   songSeconds,
+  dureeHumaine,
 } from '../types';
 
 /** Couleurs des pastilles de groupe (tokens --band-*, stables par ordre). */
@@ -201,15 +202,10 @@ export function Setlists() {
    * minutes:secondes ou heures:minutes selon les gens). « ≈ 10 min » ne
    * s'interprète que d'une seule façon ; au-delà d'une heure, « 1 h 05 ».
    */
-  const dureeLisible = (sec: number): string => {
-    const min = Math.max(1, Math.round(sec / 60));
-    if (min < 60) return `${min} min`;
-    const h = Math.floor(min / 60);
-    const reste = min % 60;
-    return reste === 0
-      ? `${h} h`
-      : `${h} h ${reste.toString().padStart(2, '0')}`;
-  };
+  // b480 (audit C-1) : l'écriture vit dans types.dureeHumaine — partagée
+  // avec le détail et la vue d'ensemble, pour qu'une même setlist ne dise
+  // jamais « 1 h 23 » ici et « 82:30 » là.
+  const dureeLisible = dureeHumaine;
 
   /** Le ＋ crée directement dans le contexte affiché ; sans contexte
    *  choisi, il demande lequel (une action, un geste). */
@@ -409,7 +405,15 @@ export function Setlists() {
           leader passe ON AIR, la bannière LiveBanner invite les membres. */}
       <TopBar
         title={t('Setlists')}
-        right={<HeaderPlus label={t('Nouvelle setlist')} onClick={createHere} />}
+        right={
+          /* b480 (audit C-3) : même traitement que Morceaux — un mot
+             visible, pas un ＋ nu. */
+          <HeaderPlus
+            label={t('Nouvelle setlist')}
+            texte={t('Setlist')}
+            onClick={createHere}
+          />
+        }
       />
       <div className="page">
         <LiveBanner />

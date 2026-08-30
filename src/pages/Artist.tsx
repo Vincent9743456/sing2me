@@ -392,7 +392,12 @@ export function Artist() {
       <TopBar title={t('Artiste')} />
       <div className="page">
         <LiveBanner />
-        <AccountSection />
+        {/* b480 (audit D-5) : la VITRINE d'abord — le bloc compte (e-mail,
+            déconnexion) et l'entrée Réglages descendent en bas de page :
+            ce sont des réglages, pas l'identité publique. L'OFFRE reste
+            haute (arbitrage b459 de Vincent : « plus en évidence, au début
+            de la fiche artiste ») — elle ouvre la page, juste avant le
+            profil. */}
         {/* TON OFFRE en tête de page (b459, demande de Vincent : « plus en
             évidence, avec quelque chose de commercial »). La carte dit
             l'offre du compte et PROPOSE la suivante — tarifs compris
@@ -493,21 +498,6 @@ export function Artist() {
             </div>
           </>
         )}
-        <div className="spacer" />
-        <button className="bigrow" onClick={() => navigate('/reglages')}>
-          <span className="i" aria-hidden="true">
-            ⚙️
-          </span>
-          <div className="grow" style={{ minWidth: 0 }}>
-            <div className="ti">{t('Réglages')}</div>
-            <div className="su">
-              {t('Sauvegarde, langue, pédale MIDI, compte…')}
-            </div>
-          </div>
-          <span className="chev" aria-hidden="true">
-            ›
-          </span>
-        </button>
         <div className="spacer" />
 
         {editing && (
@@ -1281,6 +1271,26 @@ export function Artist() {
         </p>
           </>
         )}
+
+        {/* b480 (audit D-5) : le COMPTE et les RÉGLAGES en bas — deux
+            modèles mentaux séparés, la vitrine publique n'est plus
+            repoussée sous la plomberie. */}
+        <div className="spacer" />
+        <AccountSection />
+        <button className="bigrow" onClick={() => navigate('/reglages')}>
+          <span className="i" aria-hidden="true">
+            ⚙️
+          </span>
+          <div className="grow" style={{ minWidth: 0 }}>
+            <div className="ti">{t('Réglages')}</div>
+            <div className="su">
+              {t('Sauvegarde, langue, pédale MIDI, compte…')}
+            </div>
+          </div>
+          <span className="chev" aria-hidden="true">
+            ›
+          </span>
+        </button>
         <p
           className="help"
           style={{ textAlign: 'center', opacity: 0.6, marginTop: 24 }}
