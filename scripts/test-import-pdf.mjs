@@ -16,11 +16,13 @@ writeFileSync(
   `export { decoupeAccordsColles, estAnnotationDeGrille, estNumeroDePage, importText, retirerNumerosDePage } from '${racine}importer';\n` +
     `export { lireEnTeteDeSection } from '${racine}sections';\n` +
     `export { accordsPreserves, fusionMiseEnForme } from '${racine}aiFormat';\n` +
-    `export { accordAppauvri, appliquerRecuperation, verdictRecuperation } from '${racine}recupaccords';\n`,
+    `export { accordAppauvri, appliquerRecuperation, verdictRecuperation } from '${racine}recupaccords';\n` +
+    `export { parseContent } from '${racine}chordpro';\n`,
 );
 const out = join(dir, 'pont.mjs');
 buildSync({ entryPoints: [pont], bundle: true, format: 'esm', outfile: out });
 const {
+  parseContent,
   decoupeAccordsColles,
   estAnnotationDeGrille,
   estNumeroDePage,
@@ -270,6 +272,43 @@ egal(
 {
   const out = importText('Ma chanson\n\n[C]Premier vers\n3\n[G]Deuxième vers', 'x');
   egal('import sans numéro de page', out.song.lyrics.includes('\n3'), false);
+}
+
+/* ------------------------------------------------------------------ */
+/* b476 (audit S-3) — rendu des lignes d'accords instrumentales : les    */
+/* segments sans parole doivent être identifiables pour être espacés     */
+/* (« EmCGD/F# » soudé sur l'intro de Zombie).                           */
+/* ------------------------------------------------------------------ */
+{
+  // Partition avec intro ET pont instrumentaux, comme demandé par l'audit.
+  const lignes = parseContent(
+    'Intro :\n[Em][C][G][D/F#]    x4\n\n[Em]Another head [C]hangs lowly\n\nPont :\n[Em] [C] [G] [D/F#]',
+  );
+  // Intro « accords + annotation » : ligne MIXTE (pas chordsOnly), et tous
+  // les segments sauf le dernier sont sans parole → ils recevront la
+  // classe `vide` (l'écart) au rendu.
+  const intro = lignes[1];
+  egal('intro mixte : pas chordsOnly', intro.chordsOnly, false);
+  egal(
+    'intro mixte : accords dans l’ordre',
+    intro.segments.map((s) => s.chord),
+    ['Em', 'C', 'G', 'D/F#'],
+  );
+  egal(
+    'intro mixte : segments sans parole = à espacer',
+    intro.segments.map((s) => s.text.trim() === ''),
+    [true, true, true, false],
+  );
+  // Vers chanté : les segments portent leurs paroles, rien à espacer.
+  const vers = lignes[3];
+  egal(
+    'vers chanté : aucun segment vide',
+    vers.segments.every((s) => s.text.trim() !== ''),
+    true,
+  );
+  // Pont « accords seuls » : chordsOnly, l'écart vient du parent.
+  const pont2 = lignes[6];
+  egal('pont instrumental : chordsOnly', pont2.chordsOnly, true);
 }
 
 console.log(ko === 0 ? '\nTous les tests passent.' : `\n${ko} test(s) en échec.`);

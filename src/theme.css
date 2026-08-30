@@ -1274,6 +1274,12 @@ textarea.mono {
 .chordline.chordsonly {
   column-gap: 0.6em;
 }
+/* b476 (audit S-3) : sur une ligne mixte, un segment SANS parole (accords
+   consécutifs d'une intro, d'un pont) ne sépare rien — même écart que les
+   lignes d'accords seuls, la mise en page des vraies paroles ne bouge pas. */
+.chordline .seg.vide {
+  margin-right: 0.6em;
+}
 .chordline .chord {
   color: var(--chord);
   font-weight: 700;
