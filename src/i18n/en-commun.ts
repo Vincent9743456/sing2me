@@ -13,8 +13,8 @@ export const EN_COMMUN: Record<string, string> = {
   Retour: 'Back',
   'Modifications en attente': 'Unsaved changes',
   'Créer la setlist': 'Create setlist',
-  "🔕 Active « Ne pas déranger » sur ton téléphone : aucun appel ni notification pendant le concert. L'écran, lui, restera allumé automatiquement.":
-    '🔕 Turn on “Do Not Disturb” on your phone: no calls or notifications during the show. The screen itself will stay awake automatically.',
+  '🔕 Pense à « Ne pas déranger » : aucun appel pendant le concert. L’écran, lui, restera allumé tout seul.':
+    '🔕 Remember “Do Not Disturb”: no calls during the show. The screen itself will stay awake on its own.',
   // Réglages
   Réglages: 'Settings',
   'Langue de l’application': 'App language',

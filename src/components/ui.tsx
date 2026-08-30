@@ -8,31 +8,43 @@ import { Brand, LogoMark } from './Logo';
 import { LiveBadge, useLiveStatus } from './OnAir';
 
 /**
- * Astuce « mode concert », affichée une seule fois : l'écran reste allumé
- * automatiquement (anti-veille), mais seuls les réglages du téléphone
- * peuvent couper appels et notifications.
+ * Astuce « mode concert » — TOAST BAS, UNE SEULE FOIS PAR APPAREIL (b476,
+ * audit S-2). L'ancien encart occupait un tiers du haut de l'écran,
+ * masquait le titre du morceau et revenait à CHAQUE entrée en scène tant
+ * qu'on n'avait pas visé son « OK » (le seul geste qui le persistait) —
+ * avec la ✕ de sortie de scène juste à côté, qu'on prenait pour sa
+ * fermeture. Désormais : marqué « vu » dès le premier AFFICHAGE (même clé
+ * `sing2me/dndHint`, jamais renommée — qui a déjà dit OK ne le revoit
+ * pas), il disparaît seul après 8 s, un toucher l'écarte, et il ne
+ * recouvre ni le titre ni les paroles. Le wake lock, lui, ne change pas.
  */
 export function DndHint() {
-  const [seen, setSeen] = useState(
-    () => localStorage.getItem('sing2me/dndHint') === '1',
+  const [visible, setVisible] = useState(
+    () => localStorage.getItem('sing2me/dndHint') !== '1',
   );
-  if (seen) return null;
+  useEffect(() => {
+    if (!visible) return;
+    try {
+      localStorage.setItem('sing2me/dndHint', '1');
+    } catch {
+      /* stockage indisponible : l'astuce reviendra, tant pis */
+    }
+    const timer = window.setTimeout(() => setVisible(false), 8000);
+    return () => window.clearTimeout(timer);
+  }, [visible]);
+  if (!visible) return null;
   return (
-    <div className="dndhint">
+    <div
+      className="dndhint"
+      role="status"
+      title={t('Masquer')}
+      onClick={() => setVisible(false)}
+    >
       <span>
         {t(
-          "🔕 Active « Ne pas déranger » sur ton téléphone : aucun appel ni notification pendant le concert. L'écran, lui, restera allumé automatiquement.",
+          '🔕 Pense à « Ne pas déranger » : aucun appel pendant le concert. L’écran, lui, restera allumé tout seul.',
         )}
       </span>
-      <button
-        className="btn ghost small"
-        onClick={() => {
-          localStorage.setItem('sing2me/dndHint', '1');
-          setSeen(true);
-        }}
-      >
-        OK
-      </button>
     </div>
   );
 }

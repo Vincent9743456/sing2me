@@ -59,7 +59,16 @@ export function ChordLine({ line }: { line: ParsedLine }) {
     // l'espacement (sinon « Gm Bb Cm » s'affiche collé « GmBbCm »).
     <div className={`chordline${line.chordsOnly ? ' chordsonly' : ''}`}>
       {line.segments.map((seg, i) => (
-        <span className="seg" key={i}>
+        <span
+          // b476 (audit S-3) : sur une ligne MIXTE (« [Em][C][G][D/F#]  x4 »),
+          // un segment dont la parole est vide ne sépare RIEN — les accords
+          // se soudaient (« EmCGD/F# »). `vide` leur rend l'écart des
+          // lignes d'accords seuls.
+          className={`seg${
+            !line.chordsOnly && seg.text.trim() === '' ? ' vide' : ''
+          }`}
+          key={i}
+        >
           {hasChords && <span className="chord">{seg.chord ?? ' '}</span>}
           {!line.chordsOnly && (
             <span className="lyric">{seg.text === '' ? ' ' : seg.text}</span>

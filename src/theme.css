@@ -1274,6 +1274,12 @@ textarea.mono {
 .chordline.chordsonly {
   column-gap: 0.6em;
 }
+/* b476 (audit S-3) : sur une ligne mixte, un segment SANS parole (accords
+   consécutifs d'une intro, d'un pont) ne sépare rien — même écart que les
+   lignes d'accords seuls, la mise en page des vraies paroles ne bouge pas. */
+.chordline .seg.vide {
+  margin-right: 0.6em;
+}
 .chordline .chord {
   color: var(--chord);
   font-weight: 700;
@@ -2269,11 +2275,8 @@ textarea.mono {
 .stage ~ .onair {
   right: 68px;
 }
-/* L'astuce « Ne pas déranger » (premier lancement) laisse aussi le coin :
-   sans cette réserve, son bouton OK passait sous la ✕. */
-.stage .dndhint {
-  margin-right: 56px;
-}
+/* (b476 : l'astuce « Ne pas déranger » est devenue un toast BAS — plus
+   aucun conflit avec la ✕ du coin haut droit, la réserve a sauté.) */
 /* Groupes de la barre (b438) : navigation · performance · taille — un
    séparateur léger entre chaque groupe, rien d'autre ne change. */
 .stage .controls .ctrlgrp {
@@ -2292,7 +2295,17 @@ textarea.mono {
   right: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  /* b476 (audit S-1) : la barre DÉBORDAIT en 375 px (447 px de contenu,
+     A− coupé, A＋ hors écran — impossible d'agrandir les paroles sur un
+     iPhone standard). Elle passe en DEUX RANGÉES quand il le faut :
+     son contenu est dynamique (− ＋ de vitesse avec le défilement auto,
+     groupe navigation absent en morceau seul), un agencement compact
+     devrait viser le pire cas en permanence et écraserait les cibles
+     sous 44 px. Le wrap garde toutes les cibles pleines, de 320 à
+     430 px et au-delà. */
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 8px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   /* Opaque, sans flou (b183) : en mode scène on fait défiler les paroles
      sous cette barre — c'est le cas qui déclenche le repaint fautif iOS. */
@@ -2301,6 +2314,24 @@ textarea.mono {
 }
 .stage .controls .btn {
   padding: 10px 14px;
+  /* b476 (audit S-1) : cibles pleines SANS condition de pointeur — la
+     scène est un contexte tactile par nature, et la règle du bloc
+     pointer: coarse ne couvrait pas tous les navigateurs. */
+  min-height: 48px;
+  min-width: 44px;
+}
+/* Sous 430 px, un remplissage horizontal plus serré retarde le passage à
+   deux rangées — la cible reste ≥ 44 px par les min-width/min-height du
+   bloc (pointer: coarse) ci-dessous. Et la réserve de défilement du corps
+   grandit : deux rangées ne masquent jamais les dernières lignes. */
+@media (max-width: 430px) {
+  .stage .controls .btn {
+    padding: 10px 9px;
+    min-width: 44px;
+  }
+  .stage .body {
+    padding-bottom: 170px;
+  }
 }
 .stage .pos {
   color: var(--accent);
@@ -3508,19 +3539,31 @@ h2.pagetitle {
   padding-top: 8px;
 }
 
-/* ---------- Astuce mode concert (Ne pas déranger) ---------- */
+/* ---------- Astuce mode concert (Ne pas déranger) ----------
+   TOAST BAS non bloquant (b476, audit S-2) : posé au-dessus de la barre
+   de contrôles de la scène, il ne recouvre ni le titre ni les paroles,
+   et disparaît seul. Un toucher l'écarte. */
 .dndhint {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  z-index: 150;
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--surface);
+  background: var(--surface-high);
   border: 1px solid var(--border-soft);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius);
-  padding: 8px 12px;
-  margin-bottom: 12px;
+  padding: 10px 14px;
   font-size: 0.82rem;
   color: var(--text-dim);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  animation: fadein 0.2s ease;
+  max-width: 560px;
+  margin: 0 auto;
 }
 .dndhint span {
   flex: 1;
