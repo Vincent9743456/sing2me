@@ -1050,7 +1050,7 @@ export function Artist() {
                 )}
                 {screen.appInvite && (
                   <p className="help" style={{ textAlign: 'center' }}>
-                    {t('🎵 « Téléchargez mojosong — votre songbook, gratuit »')}
+                    {t('🎵 « Télécharge mojosong — ton songbook, gratuit »')}
                   </p>
                 )}
                 {previewMode === 'idle' && upcomingPublic.length > 0 && (

@@ -171,13 +171,28 @@ export function PublicArtist({ name }: { name: string }) {
           qu'on vérifie. */}
       <PublicPageView profile={profile} sorte={sorte} nomDeSecours={name} />
 
+      {/* ÉTAT D'ATTENTE QUI TRAVAILLE (b479, audit P-1) : hors concert, la
+          page disait le nom et plus rien — au moment exact où un spectateur
+          découvre le produit. On dit ce que cette page EST et ce qui va s'y
+          passer ; la veille (8 s) bascule toute seule vers les paroles. */}
+      <div className="card" style={{ textAlign: 'center' }}>
+        <p className="help" style={{ margin: 0 }}>
+          🎤{' '}
+          {t(
+            'Pas de concert en ce moment. Le soir venu, garde cette page ouverte : les paroles s’afficheront ici, toutes seules.',
+          )}
+        </p>
+      </div>
+
       <div className="footer">
         <a
           className="ctabanner"
           href={location.origin + location.pathname.replace(/[^/]*$/, '')}
         >
-          <LogoMark size={44} /> {t('Découvrez')} <strong>mojosong</strong>{' '}
-          {t('— votre songbook, gratuit')}
+          {/* b479 (audit P-2) : tutoiement — la voix de l'app — et bannière
+              DISCRÈTE en pied de page (logo réduit, une ligne centrée). */}
+          <LogoMark size={20} /> {t('Découvre')} <strong>mojosong</strong>{' '}
+          {t('— ton songbook, gratuit')}
         </a>
         <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
           <a href="/#/cgu" style={{ color: 'var(--text-dim)' }}>

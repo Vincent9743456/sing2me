@@ -21,6 +21,7 @@ import {
 } from './lib/normalizeTitle';
 import { monId } from './lib/auth';
 import { announceBandSong, quiPropose } from './lib/bands';
+import { brancherConcertsPublics } from './lib/publicPages';
 import {
   leverNouveauPourGroupe,
   lireNouveauPourGroupe,
@@ -247,6 +248,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // sans réexécuter d'effets dans l'updater — React peut le rejouer.
   const stateRef = useRef(state);
   stateRef.current = state;
+  // b479 (audit P-1) : toute publication de fiche publique embarque les
+  // dates publiques — la source est branchée UNE fois ici, aucun des neuf
+  // appelants de profilAPublier/ficheGroupe n'a à y penser (b202).
+  useEffect(() => {
+    brancherConcertsPublics(() => stateRef.current.concerts);
+  }, []);
 
   /**
    * Contenu témoin : deux morceaux d'exemple à la toute première ouverture.

@@ -714,8 +714,8 @@ export function Live({
       {!liveNow && role === 'public' && ps.appInvite && (
         <div className="footer">
           <a className="ctabanner" href={location.origin + '/'}>
-            <LogoMark size={44} /> {t('Téléchargez')} <strong>mojosong</strong>{' '}
-            {t('— votre songbook, gratuit')}
+            <LogoMark size={20} /> {t('Télécharge')} <strong>mojosong</strong>{' '}
+            {t('— ton songbook, gratuit')}
           </a>
           <p className="help" style={{ textAlign: 'center', marginTop: 6 }}>
             <a href="/#/cgu" style={{ color: 'var(--text-dim)' }}>
