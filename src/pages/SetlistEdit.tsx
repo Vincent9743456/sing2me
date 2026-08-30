@@ -433,14 +433,33 @@ export function SetlistEdit({ id }: { id: string | null }) {
         onBack={() => navigate('/setlists')}
         right={
           !isNew ? (
-            <button
-              className="btn icon"
-              title={t('Autres actions')}
-              aria-label={t('Autres actions')}
-              onClick={() => setHeadMenu(true)}
-            >
-              <Icon name="more" size={20} />
-            </button>
+            <>
+              {/* b476 (audit S-4) : « Mode scène » vivait sous la liste —
+                  17 titres à faire défiler pour le geste le plus pressé de
+                  l'app. « ▶ Scène » monte dans l'en-tête, EXACTEMENT comme
+                  sur la fiche morceau (même bouton, même place) : aucune
+                  barre collante à inventer, rien ne masque la liste. */}
+              {draft.items.length > 0 && (
+                <button
+                  className="btn small"
+                  title={t('Mode scène')}
+                  onClick={() => {
+                    saveSetlist(stamp(withValidatedMeta(draft)));
+                    navigate(`/stage/${draft.id}`);
+                  }}
+                >
+                  <Icon name="play" size={14} /> {t('Scène')}
+                </button>
+              )}
+              <button
+                className="btn icon"
+                title={t('Autres actions')}
+                aria-label={t('Autres actions')}
+                onClick={() => setHeadMenu(true)}
+              >
+                <Icon name="more" size={20} />
+              </button>
+            </>
           ) : undefined
         }
       />
@@ -729,15 +748,16 @@ export function SetlistEdit({ id }: { id: string | null }) {
           }}
         />
 
-        {/* Hiérarchie (b437, revue UX) : Mode scène est L'action de cet
-            écran — bouton plein (le seul ambre, règle de la charte). Les
-            deux vues « performance » (Mode scène, Régie) sont groupées ;
-            Imprimer, détaché à droite, reste secondaire. */}
+        {/* Hiérarchie (b437, amendée b476/S-4) : l'ambre « Scène » vit dans
+            l'EN-TÊTE, atteignable sans défiler — cette rangée sous la
+            liste reste pour qui vient de la relire, en fantôme (un seul
+            bouton ambre par écran, charte). Régie et Imprimer, secondaires,
+            ne bougent pas. */}
         <div className="rowactions">
           {draft.items.length > 0 && (
             <>
               <button
-                className="btn"
+                className="btn ghost"
                 onClick={() => {
                   saveSetlist(stamp(withValidatedMeta(draft)));
                   navigate(`/stage/${draft.id}`);
