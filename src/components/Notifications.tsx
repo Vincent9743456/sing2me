@@ -22,9 +22,15 @@ import {
   fetchBandMessages,
   departuresToShow,
   fetchBandDepartures,
+  fetchInvitesConsommees,
   fetchMyInvites,
 } from '../lib/bands';
-import { memePersonne, stampMemberIds } from '../lib/model';
+import {
+  dedupeBandMembers,
+  memePersonne,
+  resoudreInvitations,
+  stampMemberIds,
+} from '../lib/model';
 import { useStore } from '../store';
 import { BandMember, makeId } from '../types';
 import { t } from '../i18n';
@@ -352,7 +358,29 @@ export function NotificationsProvider({
               comptes.push({ user_id: s.userId, name: n });
             }
           }
-          const aJour = stampMemberIds({ ...band, members: merged }, comptes);
+          let aJour = stampMemberIds({ ...band, members: merged }, comptes);
+          // INVITATIONS PAR LIEN CONSOMMÉES (b475, constat de Marco) : la
+          // ligne « en attente » d'un lien n'a pas d'identifiant, et le
+          // rapprochement par le nom échoue quand l'invité s'inscrit sous
+          // un autre nom (« Chris » → « borelli.christophe » = 2 profils).
+          // L'invitation, elle, sait qui est venu (used_by, lisible par le
+          // créateur seul) : on pose l'identifiant et on fusionne. Requête
+          // seulement s'il reste une ligne à rapprocher.
+          if (
+            band.owned === true &&
+            aJour.members.some(
+              (m) => (m.userId ?? '') === '' && m.pending === true,
+            )
+          ) {
+            try {
+              const conso = await fetchInvitesConsommees(s, cid);
+              if (conso.length > 0) {
+                aJour = dedupeBandMembers(resoudreInvitations(aJour, conso));
+              }
+            } catch {
+              // invitations injoignables : au prochain cycle
+            }
+          }
           if (membersSignature(aJour.members) !== membersSignature(band.members)) {
             saveBandRef.current(aJour);
           }

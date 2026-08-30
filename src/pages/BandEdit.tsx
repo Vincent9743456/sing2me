@@ -39,6 +39,7 @@ import {
   fetchBandOwner,
   fetchBandMembers,
   fetchBandMessages,
+  fetchInvitesConsommees,
   inviteToBand,
   removeBandMember,
   searchProfiles,
@@ -47,12 +48,14 @@ import {
 import {
   bandToProfile,
   connusEnTete,
+  dedupeBandMembers,
   dedupeMusicians,
   musiciensDuGroupe,
   duplicateVersion,
   memeMusicien,
   musiciensConnus,
   memePersonne,
+  resoudreInvitations,
   stampMemberIds,
   removeVersion,
   sameMusician,
@@ -312,8 +315,33 @@ export function BandEdit({ id }: { id: string }) {
             name: m.name,
           }));
           if (own) comptes.push({ user_id: own.userId, name: own.name });
-          const estampille = stampMemberIds(band, comptes);
-          if (estampille !== band) saveBand(estampille);
+          let estampille = stampMemberIds(band, comptes);
+          // INVITATIONS PAR LIEN CONSOMMÉES (b475, constat de Marco :
+          // « Chris » invité par lien, arrivé sous « borelli.christophe »
+          // → deux profils). L'invitation porte le compte qui l'a
+          // utilisée : on pose l'identifiant sur la ligne « en attente »,
+          // et la fusion par identifiant fait le reste. Créateur seul
+          // (la RLS ne montre les invitations qu'à lui), et seulement
+          // s'il reste une ligne à rapprocher.
+          if (
+            own &&
+            own.userId === s.userId &&
+            estampille.members.some(
+              (m) => (m.userId ?? '') === '' && m.pending === true,
+            )
+          ) {
+            try {
+              const conso = await fetchInvitesConsommees(s, cid);
+              if (conso.length > 0) {
+                estampille = dedupeBandMembers(
+                  resoudreInvitations(estampille, conso),
+                );
+              }
+            } catch {
+              // invitations injoignables : le prochain passage réessaiera
+            }
+          }
+          if (!cancelled && estampille !== band) saveBand(estampille);
         }
         if (own && !cancelled) {
           setOwner(own);

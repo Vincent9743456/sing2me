@@ -152,15 +152,15 @@ export const EN_COMPTE: Record<string, string> = {
     'Your live is starting — online in a few seconds.',
   'Ta répétition démarre — en ligne dans quelques secondes.':
     'Your rehearsal is starting — online in a few seconds.',
-  'Le public voit les paroles du morceau en cours. Les musiciens qui se greffent voient paroles et accords. Une fois le live lancé, ouvre un morceau (ou ta setlist en mode scène) : c’est lui que le public lit.':
-    'The audience sees the lyrics of the current song. Musicians joining the jam see lyrics and chords. Once the live has started, open a song (or your setlist in stage mode): that’s what the audience reads.',
-  'Seuls les musiciens du groupe suivent. Une fois la répétition lancée, ouvre un morceau : c’est lui qu’ils suivent.':
-    'Only the band’s musicians follow along. Once the rehearsal has started, open a song: that’s what they follow.',
+  'Le public voit les paroles du morceau en cours. Les musiciens qui se greffent voient paroles et accords. Une fois le live lancé, ouvre un morceau (ou ta setlist) en mode scène : c’est lui que le public lit.':
+    'The audience sees the lyrics of the current song. Musicians joining the jam see lyrics and chords. Once the live has started, open a song (or your setlist) in stage mode: that’s what the audience reads.',
+  'Seuls les musiciens du groupe suivent. Une fois la répétition lancée, ouvre un morceau en mode scène : c’est lui qu’ils suivent.':
+    'Only the band’s musicians follow along. Once the rehearsal has started, open a song in stage mode: that’s what they follow.',
   // b472 (point 2) — mention « aucun morceau diffusé » du panneau live
-  'Aucun morceau diffusé pour l’instant — ouvre un morceau (ou ta setlist en mode scène) : le public lira ses paroles.':
-    'No song on air yet — open a song (or your setlist in stage mode): the audience will read its lyrics.',
-  'Aucun morceau diffusé pour l’instant — ouvre un morceau : tes musiciens le suivront.':
-    'No song on air yet — open a song: your musicians will follow it.',
+  'Aucun morceau diffusé pour l’instant — ouvre un morceau (ou ta setlist) en mode scène : le public lira ses paroles.':
+    'No song on air yet — open a song (or your setlist) in stage mode: the audience will read its lyrics.',
+  'Aucun morceau diffusé pour l’instant — ouvre un morceau en mode scène : tes musiciens le suivront.':
+    'No song on air yet — open a song in stage mode: your musicians will follow it.',
   'Démarrer la répétition': 'Start the rehearsal',
   'Démarrer le live': 'Start the live',
   'Les musiciens du groupe suivent automatiquement.':

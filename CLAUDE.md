@@ -977,6 +977,23 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     b323 ne joue qu'au vrai rechargement (résultats perdus).
   - **Vue du public pleine page** (`.pubpage`) — le cadre `.pubframe` ne
     sert plus qu'à l'aperçu de la modale « Page publique / QR ».
+- **UNE INVITATION PAR LIEN CONSOMMÉE SE RAPPROCHE PAR LE COMPTE** (b475,
+  constat de Marco : « j'ai invité "Chris"… il a créé son compte avec
+  borelli.christophe — du coup 2 profils »). La ligne « en attente » d'un
+  lien nominatif n'a pas d'identifiant (b251 : on ne sait pas qui viendra),
+  et le rapprochement à l'adhésion se faisait par le NOM — qui échoue dès
+  que l'invité s'inscrit sous un autre nom. Or l'INVITATION sait :
+  `band_invite_links` porte `invited_name` ET `used_by`, lisibles par le
+  créateur seul (RLS). `fetchInvitesConsommees` (bands) +
+  `resoudreInvitations` (model) posent l'identifiant sur la ligne en
+  attente, puis `dedupeBandMembers` fusionne — branchés dans la fiche du
+  groupe ET le sondage Notifications, seulement quand une ligne
+  `pending` sans identifiant reste à rapprocher. Prudences b249 : jamais
+  sur une ligne qui a un identifiant, deux homonymes n'attribuent rien.
+  Marco n'a qu'à rouvrir la fiche du groupe : la fusion se fait seule.
+  Même livraison : le texte du live dit « ouvre un morceau (ou ta
+  setlist) EN MODE SCÈNE » — le mode scène sort des parenthèses
+  (correction de Marco, relayée par Vincent).
 - **UN ITEM DE SETLIST ORPHELIN SE RÉPARE, IL NE MENT PAS** (b473, bug de
   Marco : « (morceau supprimé) » sur presque toute une setlist alors que
   les morceaux sont toujours dans sa bibliothèque). Cause — un problème de
