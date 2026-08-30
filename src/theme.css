@@ -2292,7 +2292,17 @@ textarea.mono {
   right: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  /* b476 (audit S-1) : la barre DÉBORDAIT en 375 px (447 px de contenu,
+     A− coupé, A＋ hors écran — impossible d'agrandir les paroles sur un
+     iPhone standard). Elle passe en DEUX RANGÉES quand il le faut :
+     son contenu est dynamique (− ＋ de vitesse avec le défilement auto,
+     groupe navigation absent en morceau seul), un agencement compact
+     devrait viser le pire cas en permanence et écraserait les cibles
+     sous 44 px. Le wrap garde toutes les cibles pleines, de 320 à
+     430 px et au-delà. */
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 8px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   /* Opaque, sans flou (b183) : en mode scène on fait défiler les paroles
      sous cette barre — c'est le cas qui déclenche le repaint fautif iOS. */
@@ -2301,6 +2311,19 @@ textarea.mono {
 }
 .stage .controls .btn {
   padding: 10px 14px;
+}
+/* Sous 430 px, un remplissage horizontal plus serré retarde le passage à
+   deux rangées — la cible reste ≥ 44 px par les min-width/min-height du
+   bloc (pointer: coarse) ci-dessous. Et la réserve de défilement du corps
+   grandit : deux rangées ne masquent jamais les dernières lignes. */
+@media (max-width: 430px) {
+  .stage .controls .btn {
+    padding: 10px 9px;
+    min-width: 44px;
+  }
+  .stage .body {
+    padding-bottom: 170px;
+  }
 }
 .stage .pos {
   color: var(--accent);
