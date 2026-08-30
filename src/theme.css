@@ -579,6 +579,16 @@ textarea.mono {
 .headerplus {
   gap: 4px;
 }
+/* Variante à MOT VISIBLE (b474) : une vraie pilule ambre « ＋ Ajouter » —
+   un ＋ nu passait inaperçu (retour de Vincent). Hauteur contenue pour
+   tenir dans la barre de titre sans la grandir. */
+.headerplus.plein {
+  padding: 8px 14px;
+  min-height: 40px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
 .headerplus-label {
   display: none;
   font-size: 0.9rem;
