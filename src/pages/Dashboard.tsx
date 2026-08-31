@@ -17,6 +17,20 @@ import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
 import { navigate } from '../router';
 
+/** Ligne de la vue par utilisateur (b485, demande de Marco). */
+interface LigneUtilisateur {
+  id: string;
+  email: string;
+  cree: string | null;
+  vu: string | null;
+  plan: string;
+  /** null tant qu'admin.sql (admin_user_songs) n'est pas rejoué. */
+  morceaux: number | null;
+  synchro: string | null;
+  lives: number;
+  dernierLive: string | null;
+}
+
 interface Stats {
   at: string;
   accounts: {
@@ -26,6 +40,15 @@ interface Stats {
     active7: number;
     active30: number;
   };
+  /** Vue par utilisateur (b485) — absente sur un serveur pas à jour. */
+  utilisateurs?: LigneUtilisateur[];
+  morceauxParCompte?: boolean;
+  enDirect?: {
+    artiste: string;
+    depuis: string | null;
+    statut: string;
+    spectateurs: number;
+  }[];
   /** Répartition des abonnements (b411) — les gratuits = total − le reste. */
   plans?: { musicien: number; scene: number; admin: number };
   bands: number;
@@ -78,6 +101,22 @@ const FN_LABEL: Record<string, string> = {
   clean: 'Nettoyage de partitions',
   setlist: 'Setlists par IA',
 };
+
+/** Étiquettes des plans (b485) — traduites au rendu. */
+const PLAN_LABEL: Record<string, string> = {
+  free: 'gratuit',
+  musicien: 'musicien',
+  scene: 'scène',
+  admin: 'fondateur',
+};
+
+/** Date compacte « 31/08 09:12 » — locale du lecteur, '—' si inconnue. */
+function quand(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return `${d.toLocaleDateString([], { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+}
 
 /**
  * DERNIERS CHIFFRES CONNUS (b455, « le chargement est assez long »,
@@ -268,6 +307,96 @@ export function Dashboard() {
                   },
                 )}
               </p>
+            )}
+
+            {/* LIVES EN COURS (b485, demande de Marco : « les lives qui
+                sont faits… personnes connectées ») : qui joue là, tout de
+                suite, avec la jauge de salle — même définition qu'api/live
+                (siège vu depuis moins de 2 min). */}
+            {stats.enDirect && stats.enDirect.length > 0 && (
+              <>
+                <h2 className="pagetitle">{t('En live maintenant')}</h2>
+                <div className="list">
+                  {stats.enDirect.map((l, i) => (
+                    <div className="row" key={i} style={{ cursor: 'default' }}>
+                      <div className="grow">
+                        <div className="title">
+                          {l.statut === 'paused' ? '⏸' : '🔴'}{' '}
+                          {l.artiste !== '' ? l.artiste : t('(sans nom)')}
+                        </div>
+                        <div className="sub">
+                          {t('depuis {heure}', { heure: quand(l.depuis) })}
+                        </div>
+                      </div>
+                      <span style={{ fontWeight: 700 }}>
+                        {l.spectateurs > 1
+                          ? t('{n} spectateurs', { n: l.spectateurs })
+                          : t('{n} spectateur', { n: l.spectateurs })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* VUE PAR UTILISATEUR (b485, demande de Marco : « voir les
+                utilisateurs, leur abonnement, dernière connexion, nb de
+                morceaux, nb de lives »). Nominatif — cet écran est déjà
+                réservé aux fondateurs, le serveur tranche (b160). */}
+            {stats.utilisateurs && (
+              <>
+                <h2 className="pagetitle">{t('Utilisateurs')}</h2>
+                {stats.morceauxParCompte !== true && (
+                  <p className="help" style={{ marginTop: -4 }}>
+                    {t(
+                      'Morceaux et synchro par compte indisponibles — exécute supabase/admin.sql dans le SQL Editor (fonction admin_user_songs).',
+                    )}
+                  </p>
+                )}
+                <div className="list">
+                  {stats.utilisateurs.map((u) => (
+                    <div className="row" key={u.id} style={{ cursor: 'default' }}>
+                      <div className="grow">
+                        <div className="title">
+                          {u.email !== '' ? u.email : u.id.slice(0, 8)}
+                          <span
+                            className="stauthor"
+                            style={
+                              u.plan !== 'free'
+                                ? { color: 'var(--accent)' }
+                                : undefined
+                            }
+                          >
+                            {' '}
+                            · {t(PLAN_LABEL[u.plan] ?? u.plan)}
+                          </span>
+                        </div>
+                        <div className="sub">
+                          {t('connexion {q}', { q: quand(u.vu) })}
+                          {' · '}
+                          {t('synchro {q}', { q: quand(u.synchro) })}
+                          {' · '}
+                          {u.morceaux === null
+                            ? t('morceaux : —')
+                            : u.morceaux > 1
+                              ? t('{n} morceaux', { n: u.morceaux })
+                              : t('{n} morceau', { n: u.morceaux })}
+                          {' · '}
+                          {u.lives > 1
+                            ? t('{n} lives', { n: u.lives })
+                            : t('{n} live', { n: u.lives })}
+                          {u.dernierLive !== null
+                            ? ` (${t('dernier {q}', { q: quand(u.dernierLive) })})`
+                            : ''}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {stats.utilisateurs.length === 0 && (
+                    <p className="help">{t('Aucun compte pour l’instant.')}</p>
+                  )}
+                </div>
+              </>
             )}
 
             <h2 className="pagetitle">{t('Usage')}</h2>

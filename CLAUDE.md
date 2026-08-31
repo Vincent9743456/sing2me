@@ -893,6 +893,13 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
 - **Tableau de bord fondateur (b160)** : `#/tableau-de-bord`, réservé aux
   e-mails de `ADMIN_EMAILS` (variable Vercel) — le SERVEUR tranche,
   l'app ne fait qu'afficher. Chiffres : comptes, activité, coût des IA.
+  **Depuis b485 (demande de Marco), il est aussi NOMINATIF** : liste des
+  utilisateurs (e-mail, abonnement, dernière connexion, dernière synchro,
+  nb de morceaux, nb de lives) + « En live maintenant » avec spectateurs
+  connectés (même définition de siège qu'api/live.js, sentinelle
+  `__salle_pleine__` exclue). Le nb de morceaux par compte est compté EN
+  BASE (RPC `admin_user_songs`, supabase/admin.sql — à rejouer) ; tant
+  qu'elle manque, les colonnes disent « — », jamais 0 (règle b245).
   Le coût est mesuré PAR NOUS à chaque appel (`server/meter.js` →
   table `ai_usage`) : ni Anthropic ni OpenAI n'exposent le solde restant
   par API. Le restant = rechargements saisis (`billing_topups`) moins la
