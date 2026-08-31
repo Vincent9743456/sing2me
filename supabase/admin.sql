@@ -130,3 +130,30 @@ as $$
 $$;
 
 revoke all on function public.admin_song_stats() from public, anon, authenticated;
+
+-- ------------------------------------------------------------
+-- Vue par UTILISATEUR du tableau de bord (b485, demande de Marco :
+-- « suivre la dernière connexion des users, nb de morceaux, nb de
+-- lives… »). Nombre de morceaux et dernière synchro, PAR COMPTE —
+-- compté EN BASE : rapatrier les blobs coûterait des mégaoctets à
+-- chaque affichage. Même filtre que admin_song_stats (hors
+-- propositions en attente et hors écartées). Réservé au service_role,
+-- comme tout le tableau de bord (le serveur tranche, b160).
+-- ------------------------------------------------------------
+create or replace function public.admin_user_songs()
+returns table (user_id uuid, morceaux bigint, synchro timestamptz)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    ul.id as user_id,
+    (select count(*)
+       from jsonb_array_elements(coalesce(ul.data->'songs', '[]'::jsonb)) as s
+      where coalesce(s->>'idea', 'false') <> 'true'
+        and coalesce(s->>'declined', 'false') <> 'true') as morceaux,
+    ul.updated_at as synchro
+  from public.user_library ul;
+$$;
+
+revoke all on function public.admin_user_songs() from public, anon, authenticated;

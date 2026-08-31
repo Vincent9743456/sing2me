@@ -114,6 +114,24 @@ export const EN_COMMUN: Record<string, string> = {
     "Signed in (7 d)",
   "Abonnements : {free} gratuits · {musicien} musicien · {scene} scène · {admin} fondateurs":
     "Plans: {free} free · {musicien} musician · {scene} stage · {admin} founders",
+  // b485 — vue par utilisateur et lives en cours (demande de Marco)
+  "En live maintenant": "Live right now",
+  "depuis {heure}": "since {heure}",
+  "{n} spectateur": "{n} viewer",
+  "Utilisateurs": "Users",
+  "Morceaux et synchro par compte indisponibles — exécute supabase/admin.sql dans le SQL Editor (fonction admin_user_songs).":
+    "Per-account songs and sync unavailable — run supabase/admin.sql in the SQL Editor (admin_user_songs function).",
+  "connexion {q}": "signed in {q}",
+  "synchro {q}": "sync {q}",
+  "morceaux : —": "songs: —",
+  "{n} lives": "{n} lives",
+  "{n} live": "{n} live",
+  "dernier {q}": "last {q}",
+  "Aucun compte pour l’instant.": "No account yet.",
+  "gratuit": "free",
+  "musicien": "musician",
+  "scène": "stage",
+  "fondateur": "founder",
   "Usage":
     "Usage",
   "Directs lancés":

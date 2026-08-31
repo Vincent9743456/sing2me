@@ -1,5 +1,9 @@
 /**
- * Tableau de bord fondateur (b160) — chiffres agrégés, rien de nominatif.
+ * Tableau de bord fondateur (b160) — chiffres agrégés, et depuis b485 la
+ * vue PAR UTILISATEUR (demande de Marco : dernière connexion, abonnement,
+ * nb de morceaux, nb de lives, spectateurs connectés). Nominatif, donc
+ * strictement réservé aux fondateurs (ADMIN_EMAILS) — rien de tout ça ne
+ * sort de cet endpoint.
  *
  * Renvoie : comptes créés, connexions récentes, directs, et surtout le
  * COÛT des IA embarquées, mesuré par nous (`ai_usage`) plutôt que
@@ -51,9 +55,12 @@ async function adminEmail(req) {
   }
 }
 
-/** Comptes : total, créations et connexions récentes. */
+/** Comptes : total, créations et connexions récentes — et depuis b485 la
+ *  LISTE des comptes (id, e-mail, dates), déjà parcourue ici de toute
+ *  façon : la vue par utilisateur ne coûte aucune requête de plus. */
 async function accounts() {
   const out = { total: 0, new7: 0, new30: 0, active7: 0, active30: 0 };
+  const rows = [];
   const now = Date.now();
   const days = (d) => now - d * 86400000;
   // L'API d'administration Supabase pagine à 1000 ; largement suffisant
@@ -74,10 +81,115 @@ async function accounts() {
       if (created > days(30)) out.new30++;
       if (seen > days(7)) out.active7++;
       if (seen > days(30)) out.active30++;
+      rows.push({
+        id: String(u.id ?? ''),
+        email: String(u.email ?? ''),
+        cree: u.created_at ?? null,
+        vu: u.last_sign_in_at ?? null,
+      });
     }
     if (users.length < 1000) break;
   }
-  return out;
+  return { stats: out, rows };
+}
+
+/** Morceaux et dernière synchro PAR COMPTE (b485) — compté en base par la
+ *  RPC admin_user_songs (supabase/admin.sql). `null` si la fonction n'est
+ *  pas encore installée : l'écran le dit au lieu d'afficher des zéros. */
+async function userSongs() {
+  try {
+    const r = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/rpc/admin_user_songs`,
+      { method: 'POST', headers: sbHeaders(), body: '{}' },
+    );
+    if (!r.ok) return null;
+    const rows = await r.json();
+    if (!Array.isArray(rows)) return null;
+    const map = {};
+    for (const row of rows) {
+      map[row.user_id] = {
+        morceaux: Number(row.morceaux) || 0,
+        synchro: row.synchro ?? null,
+      };
+    }
+    return map;
+  } catch {
+    return null;
+  }
+}
+
+/** Plan par compte (b485) — 'pro' (héritage b381) compte comme 'scene'. */
+async function plansParCompte() {
+  const map = {};
+  try {
+    const r = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/user_plans?select=user_id,plan`,
+      { headers: sbHeaders() },
+    );
+    if (!r.ok) return map;
+    for (const row of await r.json()) {
+      map[row.user_id] = row.plan === 'pro' ? 'scene' : String(row.plan ?? '');
+    }
+    return map;
+  } catch {
+    return map;
+  }
+}
+
+/**
+ * Lives par compte + lives EN COURS avec spectateurs connectés (b485).
+ * Un siège « connecté » = vu depuis moins de 2 minutes — la même
+ * définition que la jauge de salle (api/live.js) ; la sentinelle
+ * `__salle_pleine__` n'est pas un spectateur.
+ */
+async function livesParCompte() {
+  const parCompte = {};
+  const enDirect = [];
+  try {
+    const r = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/lives?select=id,owner_id,status,started_at,artist&order=started_at.desc`,
+      { headers: sbHeaders() },
+    );
+    if (!r.ok) return { parCompte, enDirect };
+    const rows = await r.json();
+    const ouverts = [];
+    for (const row of rows) {
+      const owner = row.owner_id ?? '';
+      if (owner !== '') {
+        const c = parCompte[owner] ?? { lives: 0, dernier: null };
+        c.lives++;
+        if (c.dernier === null) c.dernier = row.started_at ?? null;
+        parCompte[owner] = c;
+      }
+      if (row.status && row.status !== 'off') ouverts.push(row);
+    }
+    // Spectateurs des lives ouverts — une requête par live ouvert : il y en
+    // a zéro ou un la plupart du temps, jamais des dizaines.
+    const seuil = new Date(Date.now() - 2 * 60000).toISOString();
+    for (const live of ouverts.slice(0, 10)) {
+      let spectateurs = 0;
+      try {
+        const s = await fetch(
+          `${process.env.SUPABASE_URL}/rest/v1/live_seats?select=device_id&live_id=eq.${encodeURIComponent(live.id)}&last_seen=gte.${encodeURIComponent(seuil)}&device_id=neq.__salle_pleine__`,
+          { headers: { ...sbHeaders(), prefer: 'count=exact', range: '0-0' } },
+        );
+        const range = s.headers.get('content-range') ?? '';
+        spectateurs = Number(range.split('/')[1]) || 0;
+      } catch {
+        /* la jauge manque : on montre le live quand même */
+      }
+      enDirect.push({
+        artiste: String(live.artist?.name ?? ''),
+        ownerId: live.owner_id ?? '',
+        depuis: live.started_at ?? null,
+        statut: String(live.status ?? ''),
+        spectateurs,
+      });
+    }
+    return { parCompte, enDirect };
+  } catch {
+    return { parCompte, enDirect };
+  }
 }
 
 /**
@@ -281,7 +393,7 @@ export default async function handler(req, res) {
     // « Morceaux partagés en groupe » (band_library) est retiré (b411,
     // demande de Vincent : pas à jour, pas utile) au profit du compteur de
     // partitions des bibliothèques personnelles.
-    const [acc, spend, tops, bands, lives, plans, songs] =
+    const [acc, spend, tops, bands, lives, plans, songs, perSongs, perPlans, perLives] =
       await Promise.all([
         accounts(),
         aiSpend(),
@@ -290,6 +402,9 @@ export default async function handler(req, res) {
         countRows('lives'),
         plansBreakdown(),
         songStats(),
+        userSongs(),
+        plansParCompte(),
+        livesParCompte(),
       ]);
     // Diagnostic b161, sans requêtes dédiées (b455) : les lectures
     // ci-dessus ont déjà touché les deux tables de mesure — leur succès
@@ -308,9 +423,30 @@ export default async function handler(req, res) {
       remaining[p] = { paid, used, left: paid - used };
     }
 
+    // Vue par utilisateur (b485) : la liste des comptes vient du parcours
+    // déjà fait par accounts() — trié par dernière connexion, les jamais
+    // connectés en queue.
+    const utilisateurs = acc.rows
+      .map((u) => ({
+        ...u,
+        plan: perPlans[u.id] ?? 'free',
+        morceaux: perSongs?.[u.id]?.morceaux ?? null,
+        synchro: perSongs?.[u.id]?.synchro ?? null,
+        lives: perLives.parCompte[u.id]?.lives ?? 0,
+        dernierLive: perLives.parCompte[u.id]?.dernier ?? null,
+      }))
+      .sort(
+        (a, b) => (Date.parse(b.vu ?? '') || 0) - (Date.parse(a.vu ?? '') || 0),
+      );
+
     res.status(200).json({
       at: new Date().toISOString(),
-      accounts: acc,
+      accounts: acc.stats,
+      utilisateurs,
+      // `null` tant qu'admin.sql (admin_user_songs) n'est pas rejoué — les
+      // colonnes morceaux/synchro s'affichent alors « — », jamais 0.
+      morceauxParCompte: perSongs !== null,
+      enDirect: perLives.enDirect,
       plans,
       bands,
       lives,
