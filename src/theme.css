@@ -3264,6 +3264,27 @@ h2.pagetitle {
   }
 }
 
+/* Aperçu d'un résultat de recherche (b477/C-9, agrandi b484 — retour de
+   Marco : trois lignes ne permettaient de trancher sur rien). La partition
+   entière, dans une fenêtre défilante qui ne mange jamais tout l'écran. */
+.apercupartition {
+  flex-basis: 100%;
+  white-space: pre-wrap;
+  margin: 4px 0 2px;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-s);
+  padding: 10px 12px;
+  max-height: 46vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  cursor: auto;
+}
+
 /* ---------- Défilement : commande flottante sur le bord droit ---------- */
 .scrollfab {
   position: fixed;

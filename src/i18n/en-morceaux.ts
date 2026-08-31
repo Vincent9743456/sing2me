@@ -670,7 +670,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   'brouillon en cours': 'draft in progress',
   'Type :': 'Type:',
   Aperçu: 'Preview',
-  'Voir les premières lignes de cette partition': 'See the first lines of this chart',
+  'Voir la partition avant de choisir': 'See the chart before choosing',
   '(contenu vide)': '(empty content)',
   'Aperçu indisponible pour l’instant — réessaie dans un moment.':
     'Preview unavailable right now — try again in a moment.',
