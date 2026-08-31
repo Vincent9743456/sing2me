@@ -181,13 +181,18 @@ export function Compose({ draftId }: { draftId: string | null }) {
     setApercuEnCours(r.url);
     try {
       const tab = await fetchUgTab(r.url);
+      // b484 (retour de Marco : « il met que 10 lignes et ça sert à rien ») :
+      // l'aperçu montre la partition ENTIÈRE, dans une fenêtre défilante —
+      // trois lignes ne permettaient de trancher sur rien. On ne retire que
+      // les lignes vides en rafale pour la densité.
       const lignes = ugContentToText(tab.content)
         .split('\n')
-        .map((l) => l.trimEnd())
-        .filter((l) => l.trim() !== '');
+        .map((l) => l.trimEnd());
       setApercus((a) => ({
         ...a,
-        [r.url]: lignes.slice(0, 3).join('\n') || t('(contenu vide)'),
+        [r.url]:
+          lignes.join('\n').replace(/\n{3,}/g, '\n\n').trim() ||
+          t('(contenu vide)'),
       }));
     } catch {
       setApercus((a) => ({
@@ -616,7 +621,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
                        une récupération, pour trancher sans ouvrir. */
                     <button
                       className="btn ghost small"
-                      title={t('Voir les premières lignes de cette partition')}
+                      title={t('Voir la partition avant de choisir')}
                       onClick={(e) => {
                         e.stopPropagation();
                         void chargerApercu(r);
@@ -626,15 +631,12 @@ export function Compose({ draftId }: { draftId: string | null }) {
                     </button>
                   )}
                   {apercus[r.url] !== undefined && (
+                    /* b484 : fenêtre défilante pleine largeur — la partition
+                       entière, un tap sur 👁 replie. stopPropagation : faire
+                       défiler ou toucher l'aperçu ne choisit pas la ligne. */
                     <div
-                      className="help"
-                      style={{
-                        flexBasis: '100%',
-                        whiteSpace: 'pre-wrap',
-                        margin: '4px 0 2px',
-                        fontFamily:
-                          "ui-monospace, 'Cascadia Mono', Consolas, monospace",
-                      }}
+                      className="apercupartition"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {apercus[r.url]}
                     </div>
