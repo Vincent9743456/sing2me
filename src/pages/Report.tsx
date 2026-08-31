@@ -59,7 +59,7 @@ export function Report() {
             <h2 style={{ marginTop: 0 }}>{t('✅ Signalement transmis')}</h2>
             <p>
               {t(
-                "Merci. Nous examinons chaque signalement et retirons rapidement tout contenu qui doit l'être.",
+                "Merci. Chaque signalement est examiné : la diffusion publique d'un contenu qui ne devrait pas s'y trouver peut être coupée rapidement.",
               )}
             </p>
             <button className="btn block" onClick={() => navigate('/')}>
@@ -68,9 +68,13 @@ export function Report() {
           </div>
         ) : (
           <>
+            {/* b487 : le signalement porte sur ce qui est PUBLIC — mojosong
+                ne consulte pas les bibliothèques privées, il n'y a donc pas
+                de « retrait de contenu » à promettre : ce qu'on coupe, c'est
+                la DIFFUSION (page, direct, lien de partage). */}
             <p className="help">
               {t(
-                "Repère un contenu qui ne devrait pas être là (droits d'auteur, contenu inapproprié…) ? Signale-le : nous nous engageons à examiner chaque demande et à retirer rapidement ce qui doit l'être.",
+                "Un contenu accessible publiquement via mojosong pose problème (droits d'auteur, contenu inapproprié…) ? Signale-le avec son adresse : chaque demande est examinée, et la diffusion publique d'un contenu qui ne devrait pas s'y trouver peut être coupée rapidement.",
               )}
             </p>
             <div className="field">
