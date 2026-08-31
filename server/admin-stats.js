@@ -12,8 +12,10 @@
  * la main moins la dépense mesurée.
  *
  * Accès réservé : l'appelant doit présenter un jeton Supabase valide ET
- * son e-mail doit figurer dans ADMIN_EMAILS (liste séparée par des
- * virgules dans Vercel). Sans cette variable, l'endpoint est fermé.
+ * son e-mail doit figurer dans ADMIN_EMAILS (liste dans Vercel — virgule,
+ * point-virgule ou espaces, b486 : la variable réelle de Vincent était
+ * séparée par « ; » et le split(',') verrouillait les DEUX fondateurs
+ * dehors). Sans cette variable, l'endpoint est fermé.
  */
 
 function ready() {
@@ -32,7 +34,7 @@ function sbHeaders() {
 /** Vérifie le jeton de l'appelant et son appartenance à ADMIN_EMAILS. */
 async function adminEmail(req) {
   const allowed = String(process.env.ADMIN_EMAILS || '')
-    .split(',')
+    .split(/[,;\s]+/)
     .map((e) => e.trim().toLowerCase())
     .filter((e) => e !== '');
   if (allowed.length === 0) return null;
