@@ -422,15 +422,48 @@ export function Library() {
     [songs],
   );
   const [showIdeas, setShowIdeas] = useState(depart.showIdeas === true);
-  const ideaCount = useMemo(
+  const propositionIds = useMemo(
     // Les propositions ÉCARTÉES (b240) n'y sont pas : la pastille compte
     // EXACTEMENT ce que l'écran montrera (règle 11).
     () =>
-      songs.filter(
-        (s) => s.idea === true && s.declined !== true && !estBrouillon(s),
-      ).length,
+      songs
+        .filter(
+          (s) => s.idea === true && s.declined !== true && !estBrouillon(s),
+        )
+        .map((s) => s.id),
     [songs],
   );
+  const ideaCount = propositionIds.length;
+  /**
+   * BANNIÈRE « des morceaux t'attendent » (b488, demande de Vincent : « pour
+   * une personne ne connaissant pas, c'est difficile à voir et à
+   * comprendre »). La pastille 📥 de la barre (b427) est une icône sans mot :
+   * un invité qui reçoit son premier répertoire de groupe ne la voit pas.
+   * Cette carte EXPLIQUE et mène à la vue. Règle 11 des deux côtés : elle se
+   * lève seule quand il n'y a plus de proposition, et elle s'écarte d'un
+   * geste — le choix est gardé (`sing2me/propsVues`, les ids déjà signalés) ;
+   * une proposition NOUVELLE la fait revenir, sinon le problème du nouveau
+   * venu renaîtrait à chaque invitation.
+   */
+  const [propsVues, setPropsVues] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('sing2me/propsVues');
+      const v = raw !== null ? JSON.parse(raw) : [];
+      return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
+    } catch {
+      return [];
+    }
+  });
+  const banniereProps =
+    !showIdeas && propositionIds.some((id) => !propsVues.includes(id));
+  function marquerPropsVues() {
+    setPropsVues(propositionIds);
+    try {
+      localStorage.setItem('sing2me/propsVues', JSON.stringify(propositionIds));
+    } catch {
+      /* stockage indisponible : la mention reviendra, tant pis */
+    }
+  }
   // Propositions de groupe en attente d'acceptation (non importées tant
   // qu'on ne les a pas acceptées d'un clic).
   // La vue « Propositions » a disparu avec sa puce (b203). Les propositions
@@ -1384,6 +1417,54 @@ export function Library() {
         )}
         <Onboarding />
         <BackupNudge />
+        {/* b488 : les propositions en attente se DISENT — carte explicative,
+            pas seulement la pastille 📥. « Voir » marque les propositions
+            comme signalées : la carte ne reviendra que pour des nouvelles. */}
+        {banniereProps && (
+          <div className="card" style={{ marginBottom: 'var(--sp-3)' }}>
+            <div
+              className="hstack"
+              style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
+            >
+              <span style={{ flex: 1, minWidth: 200 }}>
+                <strong>
+                  {ideaCount > 1
+                    ? t('📥 {n} morceaux proposés t’attendent', {
+                        n: ideaCount,
+                      })
+                    : t('📥 Un morceau proposé t’attend')}
+                </strong>
+                <span
+                  className="help"
+                  style={{ display: 'block', margin: '3px 0 0' }}
+                >
+                  {t(
+                    'Proposé par un groupe ou gardé à un bœuf, un morceau n’entre dans ta bibliothèque que quand tu l’acceptes ✓.',
+                  )}
+                </span>
+              </span>
+              <button
+                className="btn ghost small"
+                onClick={() => {
+                  marquerPropsVues();
+                  setShowIdeas(true);
+                  setBandFilter(null);
+                  setShowCheck(false);
+                }}
+              >
+                {t('Voir les propositions')}
+              </button>
+              <button
+                className="btn ghost small"
+                aria-label={t('Masquer cette mention')}
+                title={t('Masquer cette mention')}
+                onClick={marquerPropsVues}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
         {/* Reprise d'une création en cours (b319) : un brouillon vivant se
             propose DISCRÈTEMENT — et la mention a une sortie (règle 11) :
             « Supprimer » la lève à la main, la validation ou le TTL 6 h la
