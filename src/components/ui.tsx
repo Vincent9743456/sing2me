@@ -296,7 +296,9 @@ export function TabBar({
             // b478 (audit N-3) : la barre navigue vers un écran NEUF —
             // taper « Morceaux » vide la mémoire de filtres, sinon un
             // détour oublié par un répertoire de groupe laissait croire
-            // que la moitié de la bibliothèque avait disparu.
+            // que la moitié de la bibliothèque avait disparu. Depuis b482,
+            // le vidage prévient aussi la bibliothèque déjà MONTÉE (on
+            // tape l'onglet en étant dessus) : elle défiltre sur place.
             if (tab.route === '/') viderFiltresLibrairie();
             navigate(tab.route);
           }}
