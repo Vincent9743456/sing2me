@@ -26,6 +26,23 @@ export interface FiltresLibrairie {
 
 let memo: Partial<FiltresLibrairie> = {};
 
+/* b482 (demande de Vincent) : taper l'onglet Morceaux ALORS QU'ON Y EST
+   déjà doit aussi tout défiltrer. La barre vidait bien la mémoire (b478),
+   mais l'écran déjà monté ne remontait pas — ses états locaux gardaient le
+   filtre et le réécrivaient aussitôt dans la mémoire. Le vidage PRÉVIENT
+   donc ses abonnés : la bibliothèque montée s'y accroche et remet ses
+   filtres à zéro. Sans abonné (on arrive d'un autre onglet), le vidage de
+   la mémoire suffit, comme avant. */
+const abonnes = new Set<() => void>();
+
+/** S'abonner au vidage des filtres. Renvoie la fonction de désabonnement. */
+export function surVidageFiltres(fn: () => void): () => void {
+  abonnes.add(fn);
+  return () => {
+    abonnes.delete(fn);
+  };
+}
+
 export function lireFiltresLibrairie(): Partial<FiltresLibrairie> {
   return memo;
 }
@@ -36,4 +53,5 @@ export function poserFiltresLibrairie(v: FiltresLibrairie): void {
 
 export function viderFiltresLibrairie(): void {
   memo = {};
+  abonnes.forEach((fn) => fn());
 }

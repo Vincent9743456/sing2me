@@ -25,6 +25,7 @@ import { t } from '../i18n';
 import {
   lireFiltresLibrairie,
   poserFiltresLibrairie,
+  surVidageFiltres,
 } from '../lib/filtreslib';
 import {
   leverNouveauPourGroupe,
@@ -490,6 +491,24 @@ export function Library() {
   useEffect(() => {
     poserFiltresLibrairie({ query, tag, bandFilter, showIdeas, showCheck });
   }, [query, tag, bandFilter, showIdeas, showCheck]);
+  // b482 (demande de Vincent) : le tap sur l'onglet Morceaux défiltre AUSSI
+  // quand on est déjà sur cet écran — la barre vide la mémoire (b478) et
+  // l'écran monté, prévenu ici, remet ses états à zéro. Retour en haut de
+  // liste dans la foulée : « Morceaux » ramène à la bibliothèque complète,
+  // pas au milieu d'une liste qui vient de changer sous le doigt.
+  useEffect(
+    () =>
+      surVidageFiltres(() => {
+        setQuery('');
+        setTag(null);
+        setBandFilter(null);
+        setShowIdeas(false);
+        setShowCheck(false);
+        setFiltersOpen(false);
+        window.scrollTo(0, 0);
+      }),
+    [],
+  );
   const [sort, setSort] = useState<SortMode>(() => {
     const saved = localStorage.getItem('sing2me/librarySort');
     return saved === 'artist' || saved === 'recent' ? saved : 'title';
