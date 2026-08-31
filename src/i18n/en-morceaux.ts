@@ -112,6 +112,13 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Aucun morceau sous ce filtre — « Tout afficher » ramène ta bibliothèque.':
     'No songs under this filter — “Show all” brings your library back.',
   '📥 Propositions': '📥 Proposals',
+  // b488 — bannière « des morceaux t'attendent »
+  '📥 {n} morceaux proposés t’attendent': '📥 {n} suggested songs are waiting for you',
+  '📥 Un morceau proposé t’attend': '📥 A suggested song is waiting for you',
+  'Proposé par un groupe ou gardé à un bœuf, un morceau n’entre dans ta bibliothèque que quand tu l’acceptes ✓.':
+    'Suggested by a band or kept at a jam, a song only joins your library once you accept it ✓.',
+  'Voir les propositions': 'See the suggestions',
+  'Masquer cette mention': 'Hide this notice',
   '🔎 À vérifier': '🔎 To check',
   Retirer: 'Remove',
   'Importe tes partitions': 'Import your charts',
