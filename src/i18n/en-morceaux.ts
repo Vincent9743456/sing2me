@@ -108,6 +108,9 @@ export const EN_MORCEAUX: Record<string, string> = {
   'Partitions ajoutées cette semaine — {n} morceau.': 'Charts added this week — {n} song.',
   'Filtre actif :': 'Active filter:',
   'Tout afficher': 'Show all',
+  'Ce répertoire est vide pour l’instant.': 'This repertoire is empty for now.',
+  'Aucun morceau sous ce filtre — « Tout afficher » ramène ta bibliothèque.':
+    'No songs under this filter — “Show all” brings your library back.',
   '📥 Propositions': '📥 Proposals',
   '🔎 À vérifier': '🔎 To check',
   Retirer: 'Remove',

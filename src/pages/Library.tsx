@@ -491,6 +491,18 @@ export function Library() {
   useEffect(() => {
     poserFiltresLibrairie({ query, tag, bandFilter, showIdeas, showCheck });
   }, [query, tag, bandFilter, showIdeas, showCheck]);
+  // b483 (capture de Vincent : « Filtre actif : 📥 Propositions — 0
+  // morceau ») : les ENTRÉES de ces vues sont gardées (la pastille 📥
+  // n'existe que si ideaCount > 0), mais une fois DEDANS, la dernière
+  // proposition qui disparaît (acceptée, retirée par le groupe, tri du
+  // plafond…) laissait le filtre posé sur un écran vide — la pastille
+  // envolée, plus rien n'expliquait l'état. Règle 11 : une mention se lève
+  // AUTOMATIQUEMENT quand son motif disparaît. Même cicatrice que le
+  // « 🔎 À vérifier » de b218, donc même filet pour les deux vues.
+  useEffect(() => {
+    if (showIdeas && ideaCount === 0) setShowIdeas(false);
+    if (showCheck && checkCount === 0) setShowCheck(false);
+  }, [showIdeas, ideaCount, showCheck, checkCount]);
   // b482 (demande de Vincent) : le tap sur l'onglet Morceaux défiltre AUSSI
   // quand on est déjà sur cet écran — la barre vide la mémoire (b478) et
   // l'écran monté, prévenu ici, remet ses états à zéro. Retour en haut de
@@ -1427,7 +1439,19 @@ export function Library() {
                   </div>
                 </Empty>
               ) : (
-                <Empty>{t('Aucun morceau ne correspond à ta recherche.')}</Empty>
+                <Empty>
+                  {/* b483 : le message dit la CAUSE réelle du vide — parler
+                      de « ta recherche » sans recherche tapée (capture de
+                      Vincent) faisait chercher un champ rempli qui n'existe
+                      pas. */}
+                  {query !== ''
+                    ? t('Aucun morceau ne correspond à ta recherche.')
+                    : bandFilter !== null
+                      ? t('Ce répertoire est vide pour l’instant.')
+                      : t(
+                          'Aucun morceau sous ce filtre — « Tout afficher » ramène ta bibliothèque.',
+                        )}
+                </Empty>
               )
             ) : (
               <div className="list">
