@@ -104,6 +104,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Envoyer': 'Send',
   'Espace du groupe': 'Band space',
   'Espace du groupe : discussion, répéts, concerts': 'Band space: chat, rehearsals, gigs',
+  'Messages non lus — ouvrir la discussion': 'Unread messages — open the chat',
   'Espace du groupe — discussion, répéts, concerts': 'Band space — chat, rehearsals, gigs',
   'Exporter en PDF': 'Export as PDF',
   'Fermer': 'Close',
