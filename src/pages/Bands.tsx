@@ -390,56 +390,69 @@ export function Bands() {
                 label={band.name || t('ce groupe')}
                 onDelete={() => setASupprimer(band)}
               >
-                {/* b489 (capture de Vincent : « on ne voit plus le nom des
-                    groupes ») : les libellés de b480 (« Visible du public »,
-                    textes à 0,875 rem) ont élargi les pastilles, qui
-                    écrasaient le nom en une seule rangée (« Za… »). La ligne
-                    passe en DEUX rangées : le nom d'abord, pleine largeur —
-                    c'est l'identité de la ligne —, les pastilles dessous. */}
-                <div className="grow" style={{ minWidth: 0 }}>
-                  <div
-                    className="hstack"
-                    style={{
-                      cursor: 'pointer',
-                      gap: 10,
-                      flexWrap: 'nowrap',
-                    }}
-                    onClick={() => navigate(`/band/${band.id}`)}
-                  >
-                    {band.photo !== '' ? (
-                      <img
-                        src={band.photo}
-                        alt=""
-                        style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          flexShrink: 0,
-                        }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: '1.4rem' }}>👥</span>
-                    )}
-                    <div className="grow" style={{ minWidth: 0 }}>
-                      <div className="title">
-                        {band.name || t('(sans nom)')}
-                      </div>
+                {/* b490 (demande de Vincent : « garder sur une ligne,
+                    supprimer Message pour gagner de la place » — remplace
+                    les deux rangées de b489) : UNE rangée — avatar, nom
+                    (pleine flexibilité, ellipse au besoin), pastille de
+                    visibilité, chevron. Le bouton « Discussion » est
+                    RETIRÉ : la discussion vit dans la fiche du groupe
+                    (tuile du hub, b444). Seul un « 💬 n » compact apparaît
+                    quand des messages NON LUS attendent — pastille
+                    calculée au rendu, règle 11. */}
+                <div
+                  className="hstack grow"
+                  style={{
+                    cursor: 'pointer',
+                    gap: 10,
+                    flexWrap: 'nowrap',
+                    minWidth: 0,
+                  }}
+                  onClick={() => navigate(`/band/${band.id}`)}
+                >
+                  {band.photo !== '' ? (
+                    <img
+                      src={band.photo}
+                      alt=""
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: '1.4rem' }}>👥</span>
+                  )}
+                  <div className="grow" style={{ minWidth: 0 }}>
+                    <div className="title">
+                      {band.name || t('(sans nom)')}
                     </div>
-                    <span className="chevron">›</span>
                   </div>
-                  <div
-                    className="hstack"
-                    style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}
-                  >
+                </div>
+                {band.cloudId != null &&
+                  (notifications.unreadByBand[band.cloudId] ?? 0) > 0 && (
+                    <button
+                      className="btn ghost small"
+                      style={{ minHeight: 36, flexShrink: 0 }}
+                      title={t('Messages non lus — ouvrir la discussion')}
+                      aria-label={t('Messages non lus — ouvrir la discussion')}
+                      onClick={() => navigate(`/band/${band.id}/chat`)}
+                    >
+                      <Icon name="message" size={15} />
+                      <span className="pillcount">
+                        {notifications.unreadByBand[band.cloudId]}
+                      </span>
+                    </button>
+                  )}
                 {/* UN SEUL élément porte l'ÉTAT et le CONTRÔLE de visibilité
                     (b442, revue UX — remplace le couple œil/singe emoji +
                     la ligne « public / privé » qui disaient deux fois la
-                    même chose) : icône vectorielle œil / œil barré + le mot
-                    « Visible » / « Masqué ». Un appui bascule, ici même
-                    (b228), l'état se relit immédiatement. Sens inchangé
-                    (b227) : masqué = absent de MA fiche publique et aucun
-                    live possible à son nom — choix personnel. */}
+                    même chose) : icône vectorielle œil / œil barré + le mot.
+                    Un appui bascule, ici même (b228), l'état se relit
+                    immédiatement. Sens inchangé (b227) : masqué = absent de
+                    MA fiche publique et aucun live possible à son nom —
+                    choix personnel. */}
                 <button
                   className="btn ghost small"
                   aria-pressed={band.hiddenFromPublic === true}
@@ -457,6 +470,7 @@ export function Bands() {
                   // voit le public, il ne se touche pas par erreur.
                   style={{
                     minHeight: 36,
+                    flexShrink: 0,
                     ...(band.hiddenFromPublic === true
                       ? { color: 'var(--text-faint)' }
                       : {}),
@@ -469,22 +483,13 @@ export function Bands() {
                   />{' '}
                   {band.hiddenFromPublic === true ? t('Masqué du public') : t('Visible du public')}
                 </button>
-                <button
-                  className="btn ghost small"
-                  style={{ minHeight: 36 }}
-                  title={t('Espace du groupe : discussion, répéts, concerts')}
-                  onClick={() => navigate(`/band/${band.id}/chat`)}
+                <span
+                  className="chevron"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/band/${band.id}`)}
                 >
-                  <Icon name="message" size={15} /> {t('Discussion')}
-                  {band.cloudId != null &&
-                    (notifications.unreadByBand[band.cloudId] ?? 0) > 0 && (
-                      <span className="pillcount">
-                        {notifications.unreadByBand[band.cloudId]}
-                      </span>
-                    )}
-                </button>
-                  </div>
-                </div>
+                  ›
+                </span>
               </SwipeRow>
             ))}
           </div>
