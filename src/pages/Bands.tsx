@@ -390,31 +390,48 @@ export function Bands() {
                 label={band.name || t('ce groupe')}
                 onDelete={() => setASupprimer(band)}
               >
-                <div
-                  className="hstack grow"
-                  style={{ cursor: 'pointer', gap: 10 }}
-                  onClick={() => navigate(`/band/${band.id}`)}
-                >
-                  {band.photo !== '' ? (
-                    <img
-                      src={band.photo}
-                      alt=""
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                      }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: '1.4rem' }}>👥</span>
-                  )}
-                  <div className="grow">
-                    <div className="title">
-                      {band.name || t('(sans nom)')}
+                {/* b489 (capture de Vincent : « on ne voit plus le nom des
+                    groupes ») : les libellés de b480 (« Visible du public »,
+                    textes à 0,875 rem) ont élargi les pastilles, qui
+                    écrasaient le nom en une seule rangée (« Za… »). La ligne
+                    passe en DEUX rangées : le nom d'abord, pleine largeur —
+                    c'est l'identité de la ligne —, les pastilles dessous. */}
+                <div className="grow" style={{ minWidth: 0 }}>
+                  <div
+                    className="hstack"
+                    style={{
+                      cursor: 'pointer',
+                      gap: 10,
+                      flexWrap: 'nowrap',
+                    }}
+                    onClick={() => navigate(`/band/${band.id}`)}
+                  >
+                    {band.photo !== '' ? (
+                      <img
+                        src={band.photo}
+                        alt=""
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '1.4rem' }}>👥</span>
+                    )}
+                    <div className="grow" style={{ minWidth: 0 }}>
+                      <div className="title">
+                        {band.name || t('(sans nom)')}
+                      </div>
                     </div>
+                    <span className="chevron">›</span>
                   </div>
-                </div>
+                  <div
+                    className="hstack"
+                    style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}
+                  >
                 {/* UN SEUL élément porte l'ÉTAT et le CONTRÔLE de visibilité
                     (b442, revue UX — remplace le couple œil/singe emoji +
                     la ligne « public / privé » qui disaient deux fois la
@@ -466,13 +483,8 @@ export function Bands() {
                       </span>
                     )}
                 </button>
-                <span
-                  className="chevron"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/band/${band.id}`)}
-                >
-                  ›
-                </span>
+                  </div>
+                </div>
               </SwipeRow>
             ))}
           </div>
