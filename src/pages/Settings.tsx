@@ -730,9 +730,9 @@ export function Settings() {
             est intéressant ») : « Enregistrer / Restaurer une sauvegarde »
             (fichier JSON) sont RETIRÉS de cet écran, avec le rappel
             BackupNudge qui y menait. La copie en ligne du compte reste le
-            chemin de récupération ; le PDF reste l'export lisible. Le
-            module lib/backup vit toujours — « Changer de plan » (b461)
-            propose encore le fichier avant un retour au gratuit. */}
+            chemin de récupération ; le PDF est l'export — « la promesse,
+            c'est de garder ses PDF uniquement » (b494) : le fichier JSON a
+            aussi quitté « Changer de plan », lib/backup est supprimé. */}
         <div className="spacer" />
         <h2 className="pagetitle">{t('Réinitialiser')}</h2>
         <p className="help">
