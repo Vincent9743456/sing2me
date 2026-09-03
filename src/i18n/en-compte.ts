@@ -25,8 +25,8 @@ export const EN_COMPTE: Record<string, string> = {
     '⚠ Your public address “{adresse}” will be released: QR codes already printed will no longer lead to you.',
   'Tu quitteras aussi {n} groupe(s) dont tu es membre — ceux-là continuent d’exister sans toi.':
     'You will also leave {n} band(s) you belong to — those keep existing without you.',
-  'Avant d’effacer : exporte ta sauvegarde (plus haut sur cet écran) si tu veux garder tes partitions.':
-    'Before erasing: export your backup (higher up on this screen) if you want to keep your songs.',
+  'Avant d’effacer : exporte ta bibliothèque en PDF (plus haut sur cet écran) si tu veux garder tes partitions.':
+    'Before erasing: export your library as a PDF (higher up on this screen) if you want to keep your songs.',
   'Pour confirmer, écris ton adresse : {email}': 'To confirm, type your address: {email}',
   'Supprimer définitivement': 'Delete permanently',
   'Supprimer définitivement le compte {email} ?': 'Permanently delete the account {email}?',
