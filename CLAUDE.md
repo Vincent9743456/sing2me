@@ -264,10 +264,12 @@ Simplification actée (spec ergonomie) — s'appliquent à tout nouveau code :
     Restaurer une sauvegarde », JSON) et le rappel `BackupNudge` de
     l'accueil (arbitrage Vincent : « seul l'export des partitions en PDF
     est intéressant »). La copie en ligne du compte est le chemin de
-    récupération ; le PDF reste l'export lisible. `lib/backup.ts` VIT
-    toujours : « Changer de plan » (b461) propose encore le fichier avant
-    un retour au gratuit, et les champs `lastBackupAt`/`backupSnoozeUntil`
-    restent inertes dans les données des installés.
+    récupération ; le PDF reste l'export lisible. **Étendu b494**
+    (« la promesse, c'est de garder ses PDF uniquement ») : le bouton
+    JSON de « Changer de plan » (b461) est retiré lui aussi — la sortie
+    avant downgrade est le carnet PDF — et `lib/backup.ts` est SUPPRIMÉ.
+    Les champs `lastBackupAt`/`backupSnoozeUntil` restent inertes dans
+    les données des installés.
   - **b396** : la **recherche de « meilleure version »** (demande de
     Vincent : « supprimer les boutons »). Les trois boutons (aperçu de
     Morceaux, haut de la fiche morceau, menu ⋯ des versions) et la modale

@@ -18,16 +18,13 @@
  */
 import React, { useState } from 'react';
 
-import { useToast } from '../components/Feedback';
 import { Icon } from '../components/Icon';
 import { TopBar } from '../components/ui';
 import { useLimits } from '../components/useLimits';
 import { t } from '../i18n';
-import { telechargerSauvegarde } from '../lib/backup';
 import { TARIFS } from '../lib/limites';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { APP_BUILD } from '../version';
 
 type Offre = 'free' | 'musicien' | 'scene';
 
@@ -40,45 +37,11 @@ function offreDuPlan(plan: string): Offre {
 
 export function Offres() {
   const store = useStore();
-  const toast = useToast();
   const limites = useLimits();
   const actuelle = offreDuPlan(limites.plan);
   // Une seule mention « bientôt » à la fois, sous l'offre touchée.
   const [choisie, setChoisie] = useState<Offre | null>(null);
 
-  /**
-   * SAUVEGARDE AVANT DOWNGRADE (b461, demande de Vincent : « prévenir
-   * qu'en cas de downgrade à gratuit les chansons seront limitées à 30,
-   * et proposer de télécharger ses partitions avant »). Même fichier que
-   * les Réglages (lib/backup), même effet sur le rappel discret.
-   */
-  function sauvegarder() {
-    try {
-      telechargerSauvegarde(
-        {
-          songs: store.songs,
-          setlists: store.setlists,
-          concerts: store.concerts,
-          bands: store.bands,
-          artist: store.artist,
-          prefs: store.prefs,
-          deleted: store.deleted,
-          bandRemovals: store.bandRemovals,
-          resetAt: store.resetAt,
-        },
-        APP_BUILD,
-      );
-      store.savePrefs({
-        ...store.prefs,
-        lastBackupAt: new Date().toISOString(),
-        lastBackupSongs: store.songs.filter((x) => x.idea !== true).length,
-        backupSnoozeUntil: undefined,
-      });
-      toast.show(t('Sauvegarde enregistrée ✓'));
-    } catch {
-      toast.show(t('La sauvegarde a échoué — réessaie.'));
-    }
-  }
 
   const OFFRES: {
     id: Offre;
@@ -183,9 +146,10 @@ export function Offres() {
                     {t('Choisir {offre}', { offre: o.nom })}
                   </button>
                   {choisie === o.id && o.id === 'free' && (
-                    /* DOWNGRADE VERS GRATUIT (b461) : on prévient AVANT,
-                       et on tend les deux sorties — la sauvegarde complète
-                       et le carnet PDF. Rien n'est pris en otage. */
+                    /* DOWNGRADE VERS GRATUIT (b461, resserré b494 —
+                       arbitrage Vincent : « la promesse, c'est de garder
+                       ses PDF uniquement ») : on prévient AVANT, et la
+                       sortie est le carnet PDF. Rien n'est pris en otage. */
                     <div aria-live="polite" style={{ marginTop: 8 }}>
                       <p className="help">
                         {t(
@@ -198,12 +162,6 @@ export function Offres() {
                             })
                           : ''}
                       </p>
-                      <button
-                        className="btn ghost block"
-                        onClick={sauvegarder}
-                      >
-                        {t('💾 Enregistrer une sauvegarde')}
-                      </button>
                       <button
                         className="btn ghost block"
                         onClick={() => navigate('/export-pdf')}
