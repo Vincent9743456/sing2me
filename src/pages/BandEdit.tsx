@@ -671,7 +671,14 @@ export function BandEdit({ id }: { id: string }) {
       view: 'paroles',
       invite: {
         band: band.name || t('notre groupe'),
-        from: prefs.userName || artist.name || t('Un musicien'),
+        // b491 (constat de Marco : l'invitation portait son ANCIEN nom) :
+        // le nom d'ARTISTE d'abord — c'est l'identité publique, celle
+        // qu'on modifie sur son profil. `prefs.userName` (nom de compte,
+        // souvent figé à l'inscription) ne sert qu'en repli — même ordre
+        // que l'annuaire (dirName, Account.tsx). NB : le nom est GRAVÉ
+        // dans le lien au moment de la génération — un vieux message
+        // transféré garde le vieux nom, il faut regénérer l'invitation.
+        from: artist.name || prefs.userName || t('Un musicien'),
         bandId: band.id,
         cloudId: cloudRef?.cloudId,
         // Jeton NOMINATIF et à usage unique (b251) — jamais celui du groupe.
