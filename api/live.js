@@ -635,6 +635,13 @@ function publicView(row, id = '') {
   };
 }
 
+// b492 (retour de Marco : « Supabase non connecté » au lancement d'un live,
+// angoissant) : un raté passager de la base se dit avec CALME et une
+// consigne — jamais un nom de prestataire ni un code. Le détail technique
+// voyage à part (`detail`), pour le diagnostic.
+const MSG_REESSAIE =
+  'Petit raté de connexion côté serveur — tout est prêt de ton côté, réessaie dans quelques secondes.';
+
 export default async function handler(req, res) {
   res.setHeader('cache-control', 'no-store');
   try {
@@ -825,7 +832,7 @@ export default async function handler(req, res) {
               body: JSON.stringify(patch),
             });
             if (!u.ok) {
-              res.status(502).json({ error: `Supabase a répondu ${u.status}` });
+              res.status(502).json({ error: MSG_REESSAIE, detail: `supabase ${u.status}` });
               return;
             }
             res.status(200).json({ ok: true });
@@ -890,7 +897,7 @@ export default async function handler(req, res) {
             body: JSON.stringify(patch),
           });
           if (!u.ok) {
-            res.status(502).json({ error: `Supabase a répondu ${u.status}` });
+            res.status(502).json({ error: MSG_REESSAIE, detail: `supabase ${u.status}` });
             return;
           }
           res.status(200).json({ ok: true, joinCode: row.join_code });
@@ -1000,7 +1007,7 @@ export default async function handler(req, res) {
             });
           }
           if (!lr.ok) {
-            res.status(502).json({ error: `Supabase a répondu ${lr.status}` });
+            res.status(502).json({ error: MSG_REESSAIE, detail: `supabase ${lr.status}` });
             return;
           }
           res.status(200).json({ ok: true });
@@ -1024,7 +1031,7 @@ export default async function handler(req, res) {
           headers: sbHeaders(),
           body: JSON.stringify({ band_song: body.bandSong ?? null }),
         });
-        res.status(u.ok ? 200 : 502).json(u.ok ? { ok: true } : { error: `Supabase a répondu ${u.status}` });
+        res.status(u.ok ? 200 : 502).json(u.ok ? { ok: true } : { error: MSG_REESSAIE, detail: `supabase ${u.status}` });
         return;
       }
       if (!('status' in body) && 'setlist' in body) {
@@ -1034,7 +1041,7 @@ export default async function handler(req, res) {
           headers: sbHeaders(),
           body: JSON.stringify({ setlist: list, setlist_count: list.length }),
         });
-        res.status(u.ok ? 200 : 502).json(u.ok ? { ok: true } : { error: `Supabase a répondu ${u.status}` });
+        res.status(u.ok ? 200 : 502).json(u.ok ? { ok: true } : { error: MSG_REESSAIE, detail: `supabase ${u.status}` });
         return;
       }
       const status = body.status;
@@ -1139,7 +1146,7 @@ export default async function handler(req, res) {
         });
       }
       if (!r.ok) {
-        res.status(502).json({ error: `Supabase a répondu ${r.status}` });
+        res.status(502).json({ error: MSG_REESSAIE, detail: `supabase ${r.status}` });
         return;
       }
       res.status(200).json({ ok: true });
@@ -1158,6 +1165,6 @@ export default async function handler(req, res) {
       });
       return;
     }
-    res.status(500).json({ error: 'Erreur inattendue côté serveur' });
+    res.status(500).json({ error: MSG_REESSAIE, detail: 'inattendue' });
   }
 }
