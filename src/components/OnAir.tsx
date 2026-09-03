@@ -661,7 +661,22 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('Action impossible.'));
+      // b492 (retour de Marco, relayé par Vincent : « Supabase non
+      // connecté » au lancement — angoissant) : un raté PASSAGER (réseau
+      // qui hoquette, base qui se réveille) se dit avec calme et une
+      // consigne. Les messages du serveur sont rédigés pour l'artiste
+      // (api/live.js, même lot) ; un message technique du fetch (anglais,
+      // « Failed to fetch »…) ne s'affiche jamais tel quel.
+      const brut = e instanceof Error ? e.message : '';
+      const technique =
+        brut === '' || /supabase|fetch|network|load|abort|json/i.test(brut);
+      setError(
+        technique
+          ? t(
+              'Petit raté de connexion — tout est prêt de ton côté, réessaie dans quelques secondes.',
+            )
+          : brut,
+      );
       // Un arrêt qui n'atteint pas le serveur ne doit PAS retenir l'artiste
       // (b216) : il coupe ici, et l'application rappellera le serveur toute
       // seule. À défaut, le direct se ferme de lui-même côté serveur (1 h
@@ -1007,8 +1022,19 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                 </div>
               </>
             )}
+            {/* b492 : un message qui invite à RÉESSAYER est un constat, pas
+                une alarme — ambre pâli (--warn, jamais un bouton) et ⏳. Le
+                rouge reste aux vraies erreurs (« Ce direct est terminé »). */}
             {error && (
-              <p style={{ color: 'var(--danger)', textAlign: 'center' }}>
+              <p
+                style={{
+                  color: /réessaie/.test(error)
+                    ? 'var(--warn)'
+                    : 'var(--danger)',
+                  textAlign: 'center',
+                }}
+              >
+                {/réessaie/.test(error) ? '⏳ ' : ''}
                 {error}
               </p>
             )}

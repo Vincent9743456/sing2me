@@ -163,6 +163,8 @@ export const EN_COMPTE: Record<string, string> = {
     'No song on air yet — open a song in stage mode: your musicians will follow it.',
   'Démarrer la répétition': 'Start the rehearsal',
   'Démarrer le live': 'Start the live',
+  'Petit raté de connexion — tout est prêt de ton côté, réessaie dans quelques secondes.':
+    'Small connection hiccup — everything is ready on your side, try again in a few seconds.',
   'Les musiciens du groupe suivent automatiquement.':
     'Band musicians follow along automatically.',
   'EN LIVE': 'LIVE',
