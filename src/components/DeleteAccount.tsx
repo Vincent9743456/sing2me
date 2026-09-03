@@ -166,7 +166,7 @@ export function DeleteAccount({ email }: { email: string }) {
 
       <p className="help">
         {t(
-          'Avant d’effacer : exporte ta sauvegarde (plus haut sur cet écran) si tu veux garder tes partitions.',
+          'Avant d’effacer : exporte ta bibliothèque en PDF (plus haut sur cet écran) si tu veux garder tes partitions.',
         )}
       </p>
 

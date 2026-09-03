@@ -49,13 +49,6 @@ import {
 import { LiveStatus, pushLive, pushSetlist } from '../lib/live';
 import { navigate } from '../router';
 import { AppState, ResetParts, useStore } from '../store';
-import {
-  decrireRestauration,
-  readBackup,
-  telechargerSauvegarde,
-} from '../lib/backup';
-import { mergeStates, SyncState } from '../lib/sync';
-import { APP_BUILD } from '../version';
 
 const RESET_CHOICES: {
   key: keyof ResetParts;
@@ -138,7 +131,6 @@ export function Settings() {
   const { songs, setlists, concerts, bands, resetData, prefs, savePrefs } =
     store;
   const toast = useToast();
-  const fichierRef = useRef<HTMLInputElement | null>(null);
 
   // Sortie de secours du cache hors ligne (b221).
   const [demandeCache, setDemandeCache] = useState(false);
@@ -394,75 +386,7 @@ export function Settings() {
     toast.show(parts.join(' · ') + '.');
   }
 
-  /** Compose l'état complet, dans la forme attendue par la restauration. */
-  function etatComplet(): AppState {
-    return {
-      songs: store.songs,
-      setlists: store.setlists,
-      concerts: store.concerts,
-      bands: store.bands,
-      artist: store.artist,
-      prefs: store.prefs,
-      deleted: store.deleted,
-      bandRemovals: store.bandRemovals,
-      resetAt: store.resetAt,
-    };
-  }
 
-  /**
-   * Écrit le fichier de sauvegarde. Passe par un lien de téléchargement :
-   * c'est le seul chemin qui marche partout, y compris dans l'app installée
-   * sur iPhone, où le fichier atterrit dans « Fichiers ».
-   */
-  function sauvegarder() {
-    try {
-      // Téléchargement mis en commun avec « Changer de plan » (b461).
-      telechargerSauvegarde(etatComplet(), APP_BUILD);
-      // On note la date : c'est ce qui fait TAIRE le rappel discret.
-      savePrefs({
-        ...store.prefs,
-        lastBackupAt: new Date().toISOString(),
-        lastBackupSongs: store.songs.filter((x) => x.idea !== true).length,
-        backupSnoozeUntil: undefined,
-      });
-      toast.show(
-        t('Sauvegarde enregistrée — {n} morceaux.', { n: store.songs.length }),
-      );
-    } catch {
-      toast.show(t('La sauvegarde n’a pas pu être écrite.'));
-    }
-  }
-
-  /**
-   * Relit un fichier et FUSIONNE. On ne remplace jamais : ce qui manque
-   * revient, ce qui existe des deux côtés garde sa version la plus récente.
-   * Restaurer une vieille sauvegarde ne peut donc pas effacer le travail
-   * d'hier — un filet, pas un piège.
-   */
-  async function restaurer(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (fichierRef.current) fichierRef.current.value = '';
-    if (!f) return;
-    const lu = readBackup(await f.text());
-    if (lu.ok !== true) {
-      toast.show(lu.raison);
-      return;
-    }
-    const avant = etatComplet();
-    const { nouveaux } = decrireRestauration(avant, lu.backup);
-    const fusionne = mergeStates(
-      avant as unknown as SyncState,
-      lu.backup.state as unknown as SyncState,
-    );
-    store.hydrate(fusionne as unknown as AppState);
-    toast.show(
-      nouveaux > 1
-        ? t('{n} morceaux retrouvés.', { n: nouveaux })
-        : nouveaux === 1
-          ? t('1 morceau retrouvé.')
-          : t('Rien à ajouter — tout y était déjà.'),
-    );
-  }
   const [picked, setPicked] = useState<Set<keyof ResetParts>>(new Set());
   const [confirming, setConfirming] = useState(false);
   // Tableau de bord fondateur (b160) : l'entrée n'apparaît que pour les
@@ -802,31 +726,13 @@ export function Settings() {
           }
           onClick={() => navigate('/export-pdf')}
         />
-        <AccordionNav
-          title={t('💾 Enregistrer une sauvegarde')}
-          sub={t(
-            'Un fichier que tu gardes chez toi — il se relit même sans nous',
-          )}
-          onClick={sauvegarder}
-        />
-        <AccordionNav
-          title={t('↩︎ Restaurer une sauvegarde')}
-          sub={t('Ajoute ce qui manque, n’écrase jamais ce qui est plus récent')}
-          onClick={() => fichierRef.current?.click()}
-        />
-        <input
-          ref={fichierRef}
-          type="file"
-          accept=".json,application/json"
-          style={{ display: 'none' }}
-          onChange={(e) => void restaurer(e)}
-        />
-        <p className="help">
-          {t(
-            'Ta bibliothèque vit sur ce téléphone ; la copie en ligne sert à la retrouver sur un autre appareil. Une sauvegarde te met à l’abri des deux à la fois.',
-          )}
-        </p>
-
+        {/* b493 (arbitrage Vincent : « seul l'export des partitions en PDF
+            est intéressant ») : « Enregistrer / Restaurer une sauvegarde »
+            (fichier JSON) sont RETIRÉS de cet écran, avec le rappel
+            BackupNudge qui y menait. La copie en ligne du compte reste le
+            chemin de récupération ; le PDF reste l'export lisible. Le
+            module lib/backup vit toujours — « Changer de plan » (b461)
+            propose encore le fichier avant un retour au gratuit. */}
         <div className="spacer" />
         <h2 className="pagetitle">{t('Réinitialiser')}</h2>
         <p className="help">

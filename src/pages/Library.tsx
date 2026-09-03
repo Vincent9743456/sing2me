@@ -14,7 +14,6 @@ import { AssignSheet, SongCollector } from '../components/SongPicker';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { ConfirmSheet, MenuSheet, useToast } from '../components/Feedback';
 import { Onboarding } from '../components/Onboarding';
-import { BackupNudge } from '../components/BackupNudge';
 import { signalerLimite } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
 import { useDepassement } from '../components/useDepassement';
@@ -1416,7 +1415,6 @@ export function Library() {
           </p>
         )}
         <Onboarding />
-        <BackupNudge />
         {/* b488 : les propositions en attente se DISENT — carte explicative,
             pas seulement la pastille 📥. « Voir » marque les propositions
             comme signalées : la carte ne reviendra que pour des nouvelles. */}
