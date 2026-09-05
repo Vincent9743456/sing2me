@@ -3747,9 +3747,13 @@ h2.pagetitle {
     align-items: center;
     min-height: 40px;
   }
+  /* b496 (audit iPad, U-4) : 40 px de large écrasait la base de 44 —
+     c'était LA mesure sous-dimensionnée des ▶ et « … » des listes. Le
+     glyphe ne grossit pas, seule la zone tactile. L'écart entre les deux
+     cibles est le gap de .row (10 px ≥ 8). */
   .btn.icon {
     min-height: 44px;
-    min-width: 40px;
+    min-width: 44px;
   }
   .onair {
     padding: 9px 14px;

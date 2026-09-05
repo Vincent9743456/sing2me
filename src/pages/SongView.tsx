@@ -40,6 +40,7 @@ import {
 } from '../components/Feedback';
 import { CoachMark } from '../components/CoachMark';
 import { t } from '../i18n';
+import { BAND_COLORS } from '../components/PointGroupe';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import {
@@ -52,16 +53,6 @@ import {
   ViewMode,
 } from '../types';
 
-/** Couleur de repérage par groupe (identique à la bibliothèque). */
-const BAND_COLORS = [
-  'var(--band-1)',
-  'var(--band-2)',
-  'var(--band-3)',
-  'var(--band-4)',
-  'var(--band-5)',
-  'var(--band-6)',
-  'var(--band-7)',
-];
 
 /** « aujourd'hui », « hier », sinon la date courte. */
 function relativeDay(iso: string): string {

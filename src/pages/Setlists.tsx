@@ -12,6 +12,7 @@ import { SwipeRow } from '../components/SwipeRow';
 import { Empty, Field, HeaderPlus, Modal, TopBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { t } from '../i18n';
+import { BAND_COLORS, PointGroupe } from '../components/PointGroupe';
 import { versionForBand } from '../lib/model';
 import { getValidSession } from '../lib/auth';
 import { prochainConcertSetlist } from '../lib/livenav';
@@ -28,16 +29,6 @@ import {
   dureeHumaine,
 } from '../types';
 
-/** Couleurs des pastilles de groupe (tokens --band-*, stables par ordre). */
-const BAND_COLORS = [
-  'var(--band-1)',
-  'var(--band-2)',
-  'var(--band-3)',
-  'var(--band-4)',
-  'var(--band-5)',
-  'var(--band-6)',
-  'var(--band-7)',
-];
 
 export function Setlists() {
   const {
@@ -307,24 +298,12 @@ export function Setlists() {
         </div>
         {sl.items.length > 0 && (
           <>
-            {/* « ⋮ » : icône-bouton nu (b436, audit UX) — le rectangle
-                bordé ressemblait à un champ désactivé. */}
-            <button
-              className="btn icon"
-              style={{ color: 'var(--text-dim)' }}
-              title={t('Plus d’actions')}
-              aria-label={t('Plus d’actions')}
-              onClick={(e) => {
-                e.stopPropagation();
-                setRowMenu(sl);
-              }}
-            >
-              <Icon name="more-v" size={18} />
-            </button>
-            {/* Mode scène en icône seule (b436) : le corps de la carte est
-                la navigation principale — six gros boutons identiques
-                noyaient la liste. Même vue que « Mode scène » de la page
-                setlist (vérifié : même route /stage/:id). */}
+            {/* Ordre unique dans toutes les listes (b496, passe de
+                cohérence) : l'action PRIMAIRE ▶ d'abord, le menu ensuite —
+                le même couple, dans le même ordre, que la ligne d'un
+                morceau. Mode scène en icône seule (b436) : le corps de la
+                carte est la navigation principale. Même vue que
+                « Mode scène » de la page setlist (même route /stage/:id). */}
             <button
               className="btn icon"
               title={t('Mode scène')}
@@ -335,6 +314,22 @@ export function Setlists() {
               }}
             >
               <Icon name="play" size={18} />
+            </button>
+            {/* Icône-bouton nu (b436) — le rectangle bordé ressemblait à un
+                champ désactivé. Glyphe « … » horizontal, le même que la
+                ligne d'un morceau (b496 — « ⋮ » était le seul vertical du
+                projet). */}
+            <button
+              className="btn icon"
+              style={{ color: 'var(--text-dim)' }}
+              title={t('Plus d’actions')}
+              aria-label={t('Plus d’actions')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setRowMenu(sl);
+              }}
+            >
+              <Icon name="more" size={20} />
             </button>
           </>
         )}
@@ -483,7 +478,7 @@ export function Setlists() {
               className={`chip ${ctxFilter === null ? '' : 'off'}`}
               onClick={() => setCtxFilter(null)}
             >
-              {t('Toutes')}
+              {t('Tout')}
             </button>
             {aDesSolos && (
               <button
@@ -506,21 +501,7 @@ export function Setlists() {
                     Couleur par POSITION dans la liste complète des groupes,
                     jamais dans la liste filtrée : les autres écrans donnent
                     la même teinte au même groupe. */}
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: 'inline-block',
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background:
-                      BAND_COLORS[
-                        Math.max(0, bands.findIndex((x) => x.id === b.id)) %
-                          BAND_COLORS.length
-                      ],
-                    marginRight: 2,
-                  }}
-                />
+                <PointGroupe bands={bands} bandId={b.id} />
                 {b.name !== '' ? (
                   b.name
                 ) : (

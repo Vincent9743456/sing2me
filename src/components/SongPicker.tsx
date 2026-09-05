@@ -28,18 +28,10 @@ import { Icon } from './Icon';
 import { useScrollLock } from './StageList';
 import { Modal } from './ui';
 import { t } from '../i18n';
+import { BAND_COLORS } from './PointGroupe';
 
 /* Les pastilles de groupe passent par les tokens (b233) : recopiées en dur,
    elles restaient les teintes du mode sombre sur un fond clair. */
-const BAND_COLORS = [
-  'var(--band-1)',
-  'var(--band-2)',
-  'var(--band-3)',
-  'var(--band-4)',
-  'var(--band-5)',
-  'var(--band-6)',
-  'var(--band-7)',
-];
 
 /* ------------------------------------------------------------------ */
 /* Sens 1 — depuis un morceau : « Ajouter à… »                         */

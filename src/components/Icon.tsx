@@ -43,7 +43,6 @@ export type IconName =
   | 'zap'
   | 'plug'
   | 'more'
-  | 'more-v'
   | 'eye-off'
   | 'bookmark'
   | 'note'
@@ -55,7 +54,6 @@ const FILLED: Partial<Record<IconName, boolean>> = {
   skip: true,
   grip: true,
   more: true,
-  'more-v': true,
   pause: true,
 };
 
@@ -208,13 +206,6 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <circle cx="5" cy="12" r="1.6" />
       <circle cx="12" cy="12" r="1.6" />
       <circle cx="19" cy="12" r="1.6" />
-    </>
-  ),
-  'more-v': (
-    <>
-      <circle cx="12" cy="5" r="1.6" />
-      <circle cx="12" cy="12" r="1.6" />
-      <circle cx="12" cy="19" r="1.6" />
     </>
   ),
   bookmark: <path d="M19 21 12 16.8 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />,
