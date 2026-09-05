@@ -78,6 +78,7 @@ export const EN_MORCEAUX: Record<string, string> = {
   Tri: 'Sort',
   Récents: 'Recent',
   'Tous les morceaux': 'All songs',
+  Tout: 'All',
   "Morceaux proposés par un groupe — à accepter avant qu'ils rejoignent ta bibliothèque":
     'Songs proposed by a band — accept them before they join your library',
   '📥 À valider': '📥 To approve',

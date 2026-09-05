@@ -18,7 +18,8 @@
  */
 export interface FiltresLibrairie {
   query: string;
-  tag: string | null;
+  /** Tags actifs — MULTI-sélection depuis b496, combinés en ET. */
+  tags: string[];
   bandFilter: string | null;
   showIdeas: boolean;
   showCheck: boolean;

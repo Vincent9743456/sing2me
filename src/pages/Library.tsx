@@ -20,6 +20,7 @@ import { useDepassement } from '../components/useDepassement';
 import { presDeLaLimite, propositionBloquee } from '../lib/limites';
 import { EXAMPLE_TAG } from '../seed';
 import { Empty, HeaderPlus, TopBar } from '../components/ui';
+import { BAND_COLORS, PointGroupe } from '../components/PointGroupe';
 import { t } from '../i18n';
 import {
   lireFiltresLibrairie,
@@ -218,16 +219,6 @@ type SortMode = 'title' | 'artist' | 'recent';
 // l'onglet Morceaux repartent de la bibliothèque complète.
 const litFiltres = lireFiltresLibrairie;
 
-/** Couleurs des pastilles de groupe (tokens --band-*, stables par ordre). */
-const BAND_COLORS = [
-  'var(--band-1)',
-  'var(--band-2)',
-  'var(--band-3)',
-  'var(--band-4)',
-  'var(--band-5)',
-  'var(--band-6)',
-  'var(--band-7)',
-];
 
 export function Library() {
   const {
@@ -254,7 +245,10 @@ export function Library() {
   // n'existe plus n'est pas restauré : il filtrerait sur du vide.
   const [depart] = useState(litFiltres);
   const [query, setQuery] = useState(depart.query ?? '');
-  const [tag, setTag] = useState<string | null>(depart.tag ?? null);
+  // Tags MULTI-sélection (b496, passe de cohérence) : combinés en ET —
+  // un morceau doit porter TOUS les tags actifs. Chaque pastille se
+  // désactive en la retapant ; « Tout » ne touche jamais aux tags.
+  const [tagsActifs, setTagsActifs] = useState<string[]>(depart.tags ?? []);
   // null = tous les morceaux · sinon id du répertoire de groupe
   const [bandFilter, setBandFilter] = useState<string | null>(() => {
     const b = depart.bandFilter ?? null;
@@ -521,8 +515,8 @@ export function Library() {
   // changement, relue au montage — le ← d'une partition retrouve la même
   // liste ; rechargement ou onglet Morceaux = bibliothèque complète.
   useEffect(() => {
-    poserFiltresLibrairie({ query, tag, bandFilter, showIdeas, showCheck });
-  }, [query, tag, bandFilter, showIdeas, showCheck]);
+    poserFiltresLibrairie({ query, tags: tagsActifs, bandFilter, showIdeas, showCheck });
+  }, [query, tagsActifs, bandFilter, showIdeas, showCheck]);
   // b483 (capture de Vincent : « Filtre actif : 📥 Propositions — 0
   // morceau ») : les ENTRÉES de ces vues sont gardées (la pastille 📥
   // n'existe que si ideaCount > 0), mais une fois DEDANS, la dernière
@@ -544,7 +538,7 @@ export function Library() {
     () =>
       surVidageFiltres(() => {
         setQuery('');
-        setTag(null);
+        setTagsActifs([]);
         setBandFilter(null);
         setShowIdeas(false);
         setShowCheck(false);
@@ -659,7 +653,8 @@ export function Library() {
         // programmer dans une setlist les fait entrer ici pour de bon.
         return s.idea !== true;
       })
-      .filter((s) => (tag ? s.tags.includes(tag) : true))
+      // ET, pas OU (b496) : un morceau doit porter TOUS les tags actifs.
+      .filter((s) => tagsActifs.every((tg) => s.tags.includes(tg)))
       .filter((s) => {
         if (bandFilter === null) return true;
         return membership.bandsBySong.get(s.id)?.has(bandFilter) ?? false;
@@ -674,7 +669,7 @@ export function Library() {
   }, [
     songs,
     query,
-    tag,
+    tagsActifs,
     sort,
     bandFilter,
     membership,
@@ -970,7 +965,7 @@ export function Library() {
   const activeFilters =
     (showCheck ? 1 : 0) +
     (bandFilter !== null ? 1 : 0) +
-    (tag !== null ? 1 : 0);
+    tagsActifs.length;
 
   return (
     <>
@@ -1229,12 +1224,12 @@ export function Library() {
                 · {t('Répertoire')} ({filtered.length})
               </button>
             )}
-            {(tag !== null || showIdeas || showCheck || bandFilter === null) && (
+            {(tagsActifs.length > 0 || showIdeas || showCheck || bandFilter === null) && (
               <span className="help" style={{ margin: 0, minWidth: 0 }}>
                 {t('Filtre actif :')}{' '}
                 <strong style={{ color: 'var(--accent)' }}>
                   {[
-                    tag !== null ? `#${tag}` : '',
+                    ...tagsActifs.map((tg) => `#${tg}`),
                     showIdeas ? t('📥 Propositions') : '',
                     showCheck ? t('🔎 À vérifier') : '',
                   ]
@@ -1253,7 +1248,7 @@ export function Library() {
               className="btn ghost small"
               onClick={() => {
                 setBandFilter(null);
-                setTag(null);
+                setTagsActifs([]);
                 setShowIdeas(false);
                 setShowCheck(false);
               }}
@@ -1282,17 +1277,23 @@ export function Library() {
           (bands.length > 0 || checkCount > 0) && (
           <>
             <div className="spacer" />
-            {/* Rangée 1 — VUES particulières (état des morceaux). */}
+            {/* UNE seule rangée (b496, passe de cohérence — la structure de
+                Setlists gagne) : [Tout] [À vérifier] [groupes], qui défile,
+                sans libellé « Groupes : » — une ligne de moins sur un écran
+                qui manque de hauteur. « Tout » réinitialise la RANGÉE
+                (groupe + vues), JAMAIS les tags : un tag ne se retire qu'en
+                le retapant. La sortie globale reste « Tout afficher »
+                (rangée Filtre actif, b414). */}
             <div className="chips filterchips scrollrow">
               <button
-                className={`chip ${bandFilter === null && !showIdeas ? '' : 'off'}`}
+                className={`chip ${bandFilter === null && !showIdeas && !showCheck ? '' : 'off'}`}
                 onClick={() => {
                   setBandFilter(null);
                   setShowIdeas(false);
                   setShowCheck(false);
                 }}
               >
-                {t('Tous les morceaux')}
+                {t('Tout')}
               </button>
               {checkCount > 0 && (
                 <button
@@ -1309,47 +1310,21 @@ export function Library() {
                   {t('🔎 À vérifier ({n})', { n: checkCount })}
                 </button>
               )}
+              {bands.map((b) => (
+                <button
+                  key={b.id}
+                  className={`chip ${bandFilter === b.id && !showIdeas ? '' : 'off'}`}
+                  onClick={() => {
+                    setBandFilter(bandFilter === b.id ? null : b.id);
+                    setShowIdeas(false);
+                    setShowCheck(false);
+                  }}
+                >
+                  <PointGroupe bands={bands} bandId={b.id} />
+                  {b.name || t('Groupe sans nom')}
+                </button>
+              ))}
             </div>
-            {/* Rangée 2 — vues par GROUPE. « Groupes : » et plus
-                « Répertoires : » (b347, demande de Vincent) : les pastilles
-                listent des groupes, l'étiquette dit ce qu'on lit. Le
-                répertoire « solo » a disparu (b293) — pour se faire un
-                répertoire perso, on crée un groupe dont on est seul membre. */}
-            {bands.length > 0 && (
-              <div
-                className="chips filterchips scrollrow"
-                style={{ marginTop: 'var(--sp-2)', alignItems: 'center' }}
-              >
-                <span className="help" style={{ margin: 0 }}>
-                  {t('Groupes :')}
-                </span>
-                {bands.map((b, i) => (
-                  <button
-                    key={b.id}
-                    className={`chip ${bandFilter === b.id && !showIdeas ? '' : 'off'}`}
-                    onClick={() => {
-                      setBandFilter(bandFilter === b.id ? null : b.id);
-                      setShowIdeas(false);
-                    }}
-                  >
-                    {/* La couleur du groupe = un point discret, pas une
-                        bordure (l'encadrement signale la sélection). */}
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        display: 'inline-block',
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        background: BAND_COLORS[i % BAND_COLORS.length],
-                        marginRight: 2,
-                      }}
-                    />
-                    {b.name || t('Groupe sans nom')}
-                  </button>
-                ))}
-              </div>
-            )}
           </>
         )}
         {/* Le résumé du filtre vit désormais DANS la barre collante (b414) :
@@ -1366,13 +1341,26 @@ export function Library() {
               <span className="help" style={{ margin: 0 }}>
                 {t('Tags :')}
               </span>
-              {allTags.map((t) => (
+              {/* MULTI-sélection (b496) : retaper une pastille la retire —
+                  c'est le seul moyen, « Tout » ne touche pas aux tags. Le ✓
+                  rend l'état lisible quand plusieurs sont actifs, et
+                  distingue un tag actif d'un groupe actif (qui porte, lui,
+                  son point de couleur). */}
+              {allTags.map((tg) => (
                 <button
-                  key={t}
-                  className={`chip ${tag === t ? '' : 'off'}`}
-                  onClick={() => setTag(tag === t ? null : t)}
+                  key={tg}
+                  className={`chip ${tagsActifs.includes(tg) ? '' : 'off'}`}
+                  aria-pressed={tagsActifs.includes(tg)}
+                  onClick={() =>
+                    setTagsActifs((actifs) =>
+                      actifs.includes(tg)
+                        ? actifs.filter((x) => x !== tg)
+                        : [...actifs, tg],
+                    )
+                  }
                 >
-                  {t}
+                  {tagsActifs.includes(tg) ? '✓ ' : ''}
+                  {tg}
                 </button>
               ))}
             </div>
