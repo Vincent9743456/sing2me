@@ -823,7 +823,7 @@ export async function pushLive(
 ): Promise<void> {
   if (key.trim() === '') {
     throw new Error(
-      'Le direct est momentanément indisponible — réessaie dans un instant.',
+      'Le live est momentanément indisponible — réessaie dans un instant.',
     );
   }
   const ref = currentLiveRef();

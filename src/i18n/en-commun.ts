@@ -141,8 +141,8 @@ export const EN_COMMUN: Record<string, string> = {
   "fondateur": "founder",
   "Usage":
     "Usage",
-  "Directs lancés":
-    "Live sessions started",
+  "Lives lancés":
+    "Lives started",
   "Partitions (uniques)":
     "Charts (unique)",
   "{total} partitions en comptant les copies des répertoires de groupe.":

@@ -890,7 +890,7 @@ export default async function handler(req, res) {
           const rows = r.ok ? await r.json() : [];
           const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
           if (!row || row.write_token !== String(body.writeToken ?? '')) {
-            res.status(403).json({ error: 'Ce direct ne t’appartient pas.' });
+            res.status(403).json({ error: 'Ce live ne t’appartient pas.' });
             return;
           }
           // bandSong seul / setlist seule (pendant le direct)
@@ -928,7 +928,7 @@ export default async function handler(req, res) {
           // On refuse : le client oublie sa référence périmée et ouvre un
           // NOUVEAU live — un live = un appui sur GO LIVE (b182).
           if (row.status === 'off' && status !== 'off') {
-            res.status(403).json({ error: 'Ce direct est terminé.' });
+            res.status(403).json({ error: 'Ce live est terminé.' });
             return;
           }
           if (status === 'off') {

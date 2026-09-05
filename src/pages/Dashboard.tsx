@@ -452,7 +452,7 @@ export function Dashboard() {
                 label={t('Partitions (uniques)')}
                 value={stats.songs ? stats.songs.uniques : '—'}
               />
-              <Stat label={t('Directs lancés')} value={stats.lives} />
+              <Stat label={t('Lives lancés')} value={stats.lives} />
             </div>
             {stats.songs ? (
               <p className="help" style={{ marginTop: -4 }}>

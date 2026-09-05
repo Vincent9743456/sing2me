@@ -41,7 +41,6 @@ export const EN_ARTISTE: Record<string, string> = {
   'Aperçu — ce que verra le public (QR)': 'Preview — what the audience will see (QR)',
   'Aperçu — ce que verra le public (la vidéo YouTube se regarde et le lien Spotify s\'écoute directement) :': 'Preview — what the audience will see (the YouTube video can be watched and the Spotify link listened to directly):',
   'Aucun concert planifié.': 'No gigs planned.',
-  'Aucun direct avec ce code — vérifie les 6 chiffres.': 'No live session with that code — check the 6 digits.',
   'Aucun morceau ne correspond à ta recherche.': 'No song matches your search.',
   'Aucun morceau validé dans la bibliothèque à exporter.': 'No validated songs in the library to export.',
   'Aucun musicien pour l\'instant.': 'No musicians yet.',
@@ -82,7 +81,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Date à définir': 'Date to be set',
   'Date, lieu, setlist : tout au même endroit pour préparer ta prochaine date.': 'Date, venue, setlist: everything in one place to prep your next gig.',
   'Description': 'Description',
-  'Direct en cours : le changement s’appliquera au prochain live.': 'Live session in progress: the change will apply at the next live.',
+  'Live en cours : le changement s’appliquera au prochain live.': 'Live session in progress: the change will apply at the next live.',
   'Mise à jour impossible pour l’instant — réessaie avec du réseau.':
     'Can’t update right now — try again when you have a connection.',
   'Discussion': 'Chat',
@@ -94,7 +93,7 @@ export const EN_ARTISTE: Record<string, string> = {
   'Concert privé': 'Private gig',
   'Déjà dans le répertoire du groupe': 'Already in the band\'s repertoire',
   'Déjà proposée': 'Already suggested',
-  'EN DIRECT': 'LIVE',
+  'EN LIVE': 'LIVE',
   'Emails partagés avec toi ({n}) :': 'Emails shared with you ({n}):',
   'En attente d\'acceptation': 'Waiting for acceptance',
   'Enregistrer': 'Save',
@@ -228,14 +227,12 @@ export const EN_ARTISTE: Record<string, string> = {
   'Les groupes ont désormais leur onglet dédié 👥 dans la barre de navigation — fiche, membres, répertoire partagé et discussion.': 'Bands now have their own tab 👥 in the navigation bar — profile, members, shared repertoire and chat.',
   'Les paroles du morceau joué\ns’affichent ici, en live,\nvers après vers…': 'The lyrics of the song being played\nshow up here, live,\nline after line…',
   'Les ❤ envoyés par le public, morceau par morceau, et l\'audience de tes concerts (spectateurs uniques).': 'The ❤ sent by your audience, song by song, and the audience of your gigs (unique viewers).',
-  'Les ❤ et messages reçus pendant ce concert (le direct doit avoir été lancé le jour du concert pour qu\'ils lui soient rattachés).': 'The ❤ and messages received during this gig (the live session must have been started on the day of the gig for them to be linked to it).',
   'Libre': 'Any amount',
   'Lien de pourboire (PayPal.me, Lydia…)': 'Tip link (PayPal.me, Lydia…)',
   'Lien public': 'Public link',
   'Lieu': 'Venue',
   'MESSAGES DU PUBLIC': 'MESSAGES FROM THE AUDIENCE',
   'MORCEAU PAR MORCEAU': 'SONG BY SONG',
-  'Tes directs': 'Your live sessions',
   'Chargement…': 'Loading…',
   'Chiffres indisponibles pour l’instant — ils reviendront.':
     'Figures unavailable right now — they’ll be back.',
@@ -326,16 +323,13 @@ export const EN_ARTISTE: Record<string, string> = {
   'Annuler l’invitation de {nom} ?': 'Cancel {nom}’s invitation?',
   'Son invitation sera annulée. Tu pourras la renvoyer plus tard.':
     'Their invitation will be cancelled. You can send it again later.',
-  'Rien pour ce concert (pas encore joué, ou direct lancé sans concert planifié ce jour-là).': 'Nothing for this gig yet (not played yet, or a live session started with no gig planned that day).',
   'Sauvegarde, langue, pédale MIDI, compte…':
     'Backup, language, MIDI pedal, account…',
   'Répertoire du groupe': 'Band repertoire',
-  'Saisis le code à 6 chiffres donné par la personne qui a lancé le direct (bœuf ou concert).': 'Enter the 6-digit code given by the person who started the live session (jam or gig).',
   'Setlist': 'Setlist',
   'Setlists du groupe': 'Band setlists',
   'mojosong — version du {build}': 'mojosong — version {build}',
   'Solo': 'Solo',
-  'Statistiques des directs': 'Live session stats',
   'Streaming & réseaux': 'Streaming & socials',
   'Suppression impossible.': 'Couldn\'t delete.',
   'Supprimer': 'Delete',
@@ -468,7 +462,6 @@ export const EN_ARTISTE: Record<string, string> = {
   '⭐ Suivre {nom}': '⭐ Follow {nom}',
   '🎵 « Télécharge mojosong — ton songbook, gratuit »': '🎵 "Get mojosong — your free songbook"',
   '🎶 Concert en cours — profitez du moment !': '🎶 Gig in progress — enjoy the moment!',
-  '🎸 Rejoindre un direct': '🎸 Join a live session',
   '💛 Pourboire : 2 € · 5 € · 10 € · libre': '💛 Tip: 2 € · 5 € · 10 € · any amount',
   '💛 Un pourboire pour {nom} ?': '💛 A tip for {nom}?',
   'Messages ({n})': 'Messages ({n})',
@@ -524,8 +517,6 @@ export const EN_ARTISTE: Record<string, string> = {
     'Cannot hand the band over right now.',
   // b216 — un arrêt de direct qui n'atteint pas le serveur.
   '⏹ Arrêter quand même': '⏹ Stop anyway',
-  'Le serveur n’a pas répondu. Tu peux couper ici : ton téléphone sort du direct, et l’application préviendra le serveur dès qu’elle y arrive.':
-    'The server did not answer. You can stop here: your phone leaves the live, and the app will tell the server as soon as it can.',
 
   // b230 — page publique du groupe + groupes masqués en transparence
   'Page publique du groupe': 'Public page of the band',
@@ -543,8 +534,6 @@ export const EN_ARTISTE: Record<string, string> = {
     'This band’s name cannot produce an address (3 letters or digits minimum). Give it one from “Edit”.',
   'Ce groupe n’a pas encore d’adresse publique. Son créateur peut lui en donner une.':
     'This band has no public address yet. Its creator can give it one.',
-  'Cette adresse montre la page de celui qui tient le groupe — c’est le même concert que ton QR pendant un direct.':
-    'This address shows the page of whoever holds the band — it is the same concert as your QR during a live.',
   'La page n’a pas pu être chargée. Elle existe peut-être quand même : réessaie avec du réseau.':
     'The page could not be loaded. It may exist all the same: try again with a connection.',
   '(aucune présentation)': '(no introduction)',
@@ -582,8 +571,6 @@ export const EN_ARTISTE: Record<string, string> = {
   'Ce groupe et le public': 'This band and the audience',
   'Une adresse à dicter (« tape {hote}legroupe »). Elle ouvre la page du groupe — sa photo, sa présentation, ses musiciens — et pendant un live du groupe, elle mène au concert, comme ton QR.':
     'An address you can say out loud (“type {hote}theband”). It opens the band’s page — photo, bio, musicians — and during a band show it leads to the gig, just like your QR.',
-  'Cette adresse ouvre la page du groupe. Pendant un direct du groupe, elle mène au concert — comme ton QR.':
-    'This address opens the band’s page. During a band show it leads to the gig — just like your QR.',
   'Pas encore d’adresse publique.': 'No public address yet.',
   'Recherche de l’adresse…': 'Looking up the address…',
   'QR code de ta page publique': 'QR code for your public page',

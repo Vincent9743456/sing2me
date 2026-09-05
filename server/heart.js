@@ -92,7 +92,7 @@ export default async function handler(req, res) {
       const rows2 = r2.ok ? await r2.json() : [];
       const row2 = Array.isArray(rows2) && rows2[0] ? rows2[0] : null;
       if (!row2 || row2.status !== 'on') {
-        res.status(409).json({ error: 'Aucun direct en cours' });
+        res.status(409).json({ error: 'Aucun live en cours' });
         return;
       }
       // Le titre vient de la ligne du live, pas du client.
@@ -135,7 +135,7 @@ export default async function handler(req, res) {
     const rows = await r.json();
     const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
     if (!row || row.status !== 'on') {
-      res.status(409).json({ error: 'Aucun direct en cours' });
+      res.status(409).json({ error: 'Aucun live en cours' });
       return;
     }
     const songKey = String(row.song?.title ?? '').slice(0, 200);

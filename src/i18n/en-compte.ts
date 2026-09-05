@@ -58,8 +58,6 @@ export const EN_COMPTE: Record<string, string> = {
   'Continuer avec Google': 'Continue with Google',
   'Copier le code': 'Copy the code',
   'Copier le lien': 'Copy the link',
-  'Dicte-le ou copie-le — musiciens et public le saisissent dans « Rejoindre un direct ».': 'Say it or copy it — musicians and the audience enter it under “Join a live session”.',
-  'Direct en cours — gérer': 'Live session in progress — manage',
   'Déjà pris — essaie {name}2 ou autre chose.': 'Already taken — try {name}2 or something else.',
   'Email': 'Email',
   'Entre ton email et touche « Recevoir mon code » : le code te connecte (et crée ton compte si besoin) — jamais de mot de passe. En créant un compte, tu acceptes les': 'Enter your email and tap “Get my code”: the code signs you in (and creates your account if needed) — never a password. By creating an account, you accept the',
@@ -144,8 +142,6 @@ export const EN_COMPTE: Record<string, string> = {
   '📤 Partager': '📤 Share',
   '🔗 Ton adresse publique': '🔗 Your public address',
   '🔴 Concert en cours': '🔴 Gig in progress',
-  '🔴 Démarrer le direct': '🔴 Start the live session',
-  '🔴 En direct — le public voit les paroles, les musiciens leur partition.': '🔴 Live — the audience sees the lyrics, musicians see their sheet.',
 
   // Refonte de la modale live (b345)
   'Le groupe': 'The band',
