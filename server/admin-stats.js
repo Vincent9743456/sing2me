@@ -357,6 +357,48 @@ export default async function handler(req, res) {
 
     // Enregistrer un rechargement (POST) plutôt que lire le tableau.
     if (req.method === 'POST') {
+      // CHANGER LE PLAN d'un compte (b497, demande de Vincent : « me
+      // permettre de changer le plan des users via mon tableau de bord »).
+      // Réservé aux fondateurs (adminEmail, déjà vérifié ci-dessus). Le
+      // plan vit dans user_plans (b381) ; 'pro' (héritage) ne se POSE plus.
+      // Repasser un compte en 'free' au-dessus du plafond ouvre la fenêtre
+      // b422 (30 jours) par le cron — rien de spécial à faire ici.
+      if (String(req.body?.action ?? '') === 'setPlan') {
+        const userId = String(req.body?.user_id ?? '');
+        const plan = String(req.body?.plan ?? '');
+        if (
+          !/^[0-9a-f-]{36}$/i.test(userId) ||
+          !['free', 'musicien', 'scene', 'admin'].includes(plan)
+        ) {
+          res.status(400).json({ error: 'Demande invalide.' });
+          return;
+        }
+        const r = await fetch(
+          `${process.env.SUPABASE_URL}/rest/v1/user_plans?on_conflict=user_id`,
+          {
+            method: 'POST',
+            headers: {
+              ...sbHeaders(),
+              prefer: 'resolution=merge-duplicates,return=minimal',
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              plan,
+              updated_at: new Date().toISOString(),
+            }),
+          },
+        );
+        if (!r.ok) {
+          const detail = await r.text().catch(() => '');
+          res.status(502).json({
+            error: "Le plan n'a pas pu être changé.",
+            detail: detail.slice(0, 200),
+          });
+          return;
+        }
+        res.status(200).json({ ok: true });
+        return;
+      }
       const provider = String(req.body?.provider ?? '');
       const amount = Number(req.body?.amount_usd ?? 0);
       if (!['anthropic', 'openai'].includes(provider) || !(amount > 0)) {

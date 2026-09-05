@@ -11,7 +11,7 @@
  */
 import React, { useEffect, useState } from 'react';
 
-import { PromptSheet, useToast } from '../components/Feedback';
+import { MenuSheet, PromptSheet, useToast } from '../components/Feedback';
 import { Empty, TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { getValidSession } from '../lib/auth';
@@ -144,6 +144,9 @@ export function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(() => statsLues());
   const [error, setError] = useState<string | null>(null);
   const [topup, setTopup] = useState<'anthropic' | 'openai' | null>(null);
+  // b497 (demande de Vincent) : changer le PLAN d'un compte depuis la
+  // vue utilisateurs — feuille de choix, écrit user_plans côté serveur.
+  const [planPour, setPlanPour] = useState<LigneUtilisateur | null>(null);
   const toast = useToast();
 
   // Un rafraîchissement qui échoue ne remplace JAMAIS des chiffres déjà
@@ -227,6 +230,26 @@ export function Dashboard() {
       // qu'un échec muet.
       const body = await r.json().catch(() => null);
       setError(body?.error ?? t("Le rechargement n'a pas pu être noté."));
+    }
+  }
+
+  async function changerPlan(u: LigneUtilisateur, plan: string) {
+    const s = await getValidSession();
+    if (!s) return;
+    const r = await fetch('/api/admin-stats', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${s.accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'setPlan', user_id: u.id, plan }),
+    });
+    if (r.ok) {
+      toast.show(t('Plan changé ✓'));
+      void load();
+    } else {
+      const body = await r.json().catch(() => null);
+      setError(body?.error ?? t("Le plan n'a pas pu être changé."));
     }
   }
 
@@ -356,7 +379,7 @@ export function Dashboard() {
                 <div className="list">
                   {stats.utilisateurs.map((u) => (
                     <div className="row" key={u.id} style={{ cursor: 'default' }}>
-                      <div className="grow">
+                      <div className="grow" style={{ minWidth: 0 }}>
                         <div className="title">
                           {u.email !== '' ? u.email : u.id.slice(0, 8)}
                           <span
@@ -390,6 +413,14 @@ export function Dashboard() {
                             : ''}
                         </div>
                       </div>
+                      <button
+                        className="btn ghost small"
+                        style={{ flexShrink: 0 }}
+                        title={t('Changer le plan de ce compte')}
+                        onClick={() => setPlanPour(u)}
+                      >
+                        {t('Plan…')}
+                      </button>
                     </div>
                   ))}
                   {stats.utilisateurs.length === 0 && (
@@ -512,6 +543,21 @@ export function Dashboard() {
         )}
       </div>
 
+      {planPour !== null && (
+        <MenuSheet
+          title={t('Plan de {email}', {
+            email: planPour.email || planPour.id.slice(0, 8),
+          })}
+          onClose={() => setPlanPour(null)}
+          items={['free', 'musicien', 'scene', 'admin'].map((p) => ({
+            label:
+              (planPour.plan === p ? '✓ ' : '') + t(PLAN_LABEL[p] ?? p),
+            onClick: () => {
+              if (planPour.plan !== p) void changerPlan(planPour, p);
+            },
+          }))}
+        />
+      )}
       {topup !== null && (
         <PromptSheet
           title={
