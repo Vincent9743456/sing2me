@@ -347,3 +347,110 @@ alter table live_hearts enable row level security;
 -- directement — il passe par /api/heart.
 
 create index if not exists live_hearts_live_idx on live_hearts (live_id);
+
+-- ------------------------------------------------------------
+-- MESURE DES LIVES CÔTÉ PUBLIC (b498, demande de Vincent — phase pilote).
+-- Cinq compteurs AGRÉGÉS portés par la session elle-même : des nombres,
+-- jamais une liste. `uniques`, `started_at` et `ended_at` existaient déjà.
+--   pic       : maximum de spectateurs connectés SIMULTANÉMENT, tenu à
+--               jour PENDANT la session (à chaque arrivée — le seul
+--               moment où il peut monter), jamais recalculé à la fin ;
+--   morceaux  : morceaux passés en mode scène (finalisé à la clôture,
+--               compté depuis live_stats) ;
+--   plein_at  : l'instant où la salle a été pleine pour la première fois
+--               (la « minute depuis le début » se dérive de started_at) ;
+--   refuses   : spectateurs supplémentaires refusés après le plein —
+--               dédupliqués par appareil, mais stockés en agrégat.
+-- ------------------------------------------------------------
+alter table live_sessions add column if not exists pic int not null default 0;
+alter table live_sessions add column if not exists morceaux int not null default 0;
+alter table live_sessions add column if not exists plein_at timestamptz;
+alter table live_sessions add column if not exists refuses int not null default 0;
+
+-- Salle pleine : incrément ATOMIQUE (deux refus simultanés ne se perdent
+-- pas) + premier instant. Service role seulement, comme tout le reste.
+create or replace function public.bump_salle_pleine(p_session uuid)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update live_sessions
+     set refuses = refuses + 1,
+         plein_at = coalesce(plein_at, now())
+   where id = p_session;
+$$;
+revoke all on function public.bump_salle_pleine(uuid) from public, anon, authenticated;
+
+-- ------------------------------------------------------------
+-- CLÔTURE DE SECOURS (b498) : l'auto-arrêt de api/live.js est PARESSEUX —
+-- il ne s'exécute que si quelqu'un LIT le live. Un live abandonné (artiste
+-- parti, plus aucun sondage) restait « on » pour toujours, sans ended_at :
+-- durées fausses. Ce balayage, appelé par le cron quotidien, clôt les
+-- lives expirés (mêmes seuils que liveExpired : 4 h après le début, ou
+-- 1 h sans partition) et date la fin AU MOMENT DE L'EXPIRATION, jamais au
+-- passage du cron. Il ne fait NI l'archive du morceau affiché au moment
+-- de l'abandon, NI l'e-mail « salle pleine » (pas d'e-mail depuis SQL) —
+-- deux pertes assumées sur un cas rare, dites dans la PR.
+-- ------------------------------------------------------------
+create or replace function public.balayer_lives_abandonnes()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  n integer := 0;
+  r record;
+begin
+  for r in
+    select id, session_id, started_at, last_song_at
+      from lives
+     where status <> 'off'
+       and (
+         started_at < now() - interval '4 hours'
+         or coalesce(last_song_at, started_at) < now() - interval '1 hour'
+       )
+  loop
+    update lives
+       set status = 'off',
+           song = null,
+           band_song = null,
+           setlist = null,
+           setlist_count = 0,
+           join_code = '',
+           last_song_at = null,
+           hearts = 0,
+           -- b314 : un live clos ne garde du profil que le nom.
+           artist = case
+             when artist->>'name' is not null
+               then jsonb_build_object('name', artist->>'name')
+             else null
+           end,
+           updated_at = now()
+     where id = r.id and status <> 'off';
+    if found then
+      n := n + 1;
+      if r.session_id is not null then
+        update live_sessions s
+           set ended_at = coalesce(
+                 s.ended_at,
+                 least(
+                   r.started_at + interval '4 hours',
+                   coalesce(r.last_song_at, r.started_at) + interval '1 hour'
+                 )
+               ),
+               uniques = greatest(s.uniques, coalesce((
+                 select count(*) from live_attendance a
+                  where a.session_id = r.session_id), 0)),
+               morceaux = greatest(s.morceaux, coalesce((
+                 select count(*) from live_stats st
+                  where st.session_id = r.session_id), 0))
+         where s.id = r.session_id;
+      end if;
+      delete from live_seats where live_id = r.id::text;
+    end if;
+  end loop;
+  return n;
+end $$;
+revoke all on function public.balayer_lives_abandonnes() from public, anon, authenticated;

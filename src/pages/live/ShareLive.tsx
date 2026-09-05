@@ -74,7 +74,7 @@ export default function ShareLive({
         </h2>
         <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
           {t(
-            'Fais scanner ce QR sur ton écran, ou envoie le lien : la personne arrive directement sur le direct.',
+            'Fais scanner ce QR sur ton écran, ou envoie le lien : la personne arrive directement sur le live.',
           )}
         </p>
         {qr && (

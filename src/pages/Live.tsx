@@ -500,7 +500,7 @@ export function Live({
       ) : fullNow ? (
         <>
           <div className="livebadge">
-            <span className="dot" /> {t('EN DIRECT')}
+            <span className="dot" /> {t('EN LIVE')}
           </div>
           {state.song?.title && (
             <>
@@ -523,7 +523,7 @@ export function Live({
       ) : liveNow && state.song ? (
         <>
           <div className="livebadge">
-            <span className="dot" /> {t('EN DIRECT')}
+            <span className="dot" /> {t('EN LIVE')}
             {ps.hearts && (
               <span className="livehearts">
                 ❤ {Math.max(state.hearts, localHearts)}
@@ -558,7 +558,7 @@ export function Live({
         <>
           {waitingNow ? (
             <div className="livebadge">
-              <span className="dot" /> {t('EN DIRECT')}
+              <span className="dot" /> {t('EN LIVE')}
             </div>
           ) : (
             <div className="livebadge pause">{t('⏸ PAUSE')}</div>

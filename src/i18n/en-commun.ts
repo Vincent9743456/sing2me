@@ -127,6 +127,8 @@ export const EN_COMMUN: Record<string, string> = {
   "{n} lives": "{n} lives",
   "{n} live": "{n} live",
   "dernier {q}": "last {q}",
+  "pic {n}": "peak {n}",
+  "🔴 salle pleine": "🔴 room full",
   "Aucun compte pour l’instant.": "No account yet.",
   "gratuit": "free",
   "Plan…": "Plan…",
@@ -139,8 +141,8 @@ export const EN_COMMUN: Record<string, string> = {
   "fondateur": "founder",
   "Usage":
     "Usage",
-  "Directs lancés":
-    "Live sessions started",
+  "Lives lancés":
+    "Lives started",
   "Partitions (uniques)":
     "Charts (unique)",
   "{total} partitions en comptant les copies des répertoires de groupe.":

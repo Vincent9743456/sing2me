@@ -141,10 +141,28 @@ async function finalizeSession(base, sessionId) {
   } catch {
     /* comptage best-effort */
   }
+  // b498 : nombre de morceaux passés pendant la session — un simple compte
+  // de l'archive (chaque changement de partition y écrit une ligne, le
+  // morceau en cours à la clôture compris : archivePlayedSong passe avant).
+  let morceaux = 0;
+  try {
+    const c2 = await fetchSb(
+      `${base}/rest/v1/live_stats?session_id=eq.${sessionId}&select=id`,
+      { headers: { ...sbHeaders(), prefer: 'count=exact' } },
+    );
+    const m2 = /\/(\d+)$/.exec(c2.headers.get('content-range') || '');
+    morceaux = m2 ? parseInt(m2[1], 10) : 0;
+  } catch {
+    /* comptage best-effort */
+  }
   await fetchSb(`${base}/rest/v1/live_sessions?id=eq.${sessionId}`, {
     method: 'PATCH',
     headers: sbHeaders(),
-    body: JSON.stringify({ ended_at: new Date().toISOString(), uniques }),
+    body: JSON.stringify({
+      ended_at: new Date().toISOString(),
+      uniques,
+      morceaux,
+    }),
   });
 }
 
@@ -192,9 +210,26 @@ function salleIllimitee(plan) {
   return plan === 'scene' || plan === 'admin' || plan === 'pro';
 }
 
-/** Tente d'asseoir cet appareil. Rend true si le spectateur entre. */
-async function reserverSiege(base, liveId, device) {
+/**
+ * Tente d'asseoir cet appareil. Rend true si le spectateur entre.
+ *
+ * b498 (mesure des lives) : les sièges deviennent le mécanisme UNIVERSEL
+ * de présence simultanée — écrits pour TOUS les plans, le cap n'étant
+ * APPLIQUÉ (`capActif`) qu'aux plans limités. Deux mesures en découlent,
+ * portées par la SESSION (des nombres, jamais une liste) :
+ *  • le PIC de connectés, tenu à jour à chaque NOUVELLE prise de siège —
+ *    le seul instant où il peut monter ; zéro écriture en régime constant,
+ *    et le chiffre reste exploitable même si la session ne se clôt jamais ;
+ *  • la SALLE PLEINE : premier instant + refusés, incrément atomique
+ *    (bump_salle_pleine), dédupliqué PAR APPAREIL via une ligne de siège
+ *    « à l'époque zéro » (jamais comptée comme occupée : le filtre
+ *    d'occupation exige un last_seen frais ; purgée à la clôture comme
+ *    tous les sièges) — sans quoi un même refusé, qui resonde toutes les
+ *    4 s, gonflerait le compteur de dizaines par minute.
+ */
+async function reserverSiege(base, row, device, capActif) {
   try {
+    const liveId = row.id;
     const lid = encodeURIComponent(liveId);
     const dev = encodeURIComponent(device);
     const now = Date.now();
@@ -219,7 +254,8 @@ async function reserverSiege(base, liveId, device) {
       }
       return true;
     }
-    // Pas de siège frais : reste-t-il une place ? (la sentinelle ne compte pas)
+    // Pas de siège frais : combien d'occupés ? (la sentinelle ne compte pas,
+    // ni les lignes « refusé » à l'époque zéro — le seuil les écarte)
     const seuil = new Date(now - SIEGE_TTL_MS).toISOString();
     const c = await fetchSb(
       `${base}/rest/v1/live_seats?live_id=eq.${lid}&last_seen=gt.${encodeURIComponent(seuil)}&device_id=neq.${SENTINELLE_PLEINE}&select=device_id`,
@@ -227,7 +263,7 @@ async function reserverSiege(base, liveId, device) {
     );
     const m = /\/(\d+)$/.exec(c.headers.get('content-range') || '');
     const occupes = m ? parseInt(m[1], 10) : 0;
-    if (occupes >= CAP_SALLE) {
+    if (capActif && occupes >= CAP_SALLE) {
       // On note UNE fois que la salle a été pleine (e-mail de clôture).
       await fetchSb(`${base}/rest/v1/live_seats`, {
         method: 'POST',
@@ -238,9 +274,34 @@ async function reserverSiege(base, liveId, device) {
           last_seen: new Date(0).toISOString(),
         }),
       });
+      // Refus MESURÉ (b498), une fois par appareil : l'insertion ne rend
+      // une ligne que si l'appareil n'en avait pas déjà une.
+      if (row.session_id) {
+        const premier = await fetchSb(`${base}/rest/v1/live_seats`, {
+          method: 'POST',
+          headers: {
+            ...sbHeaders(),
+            prefer: 'resolution=ignore-duplicates,return=representation',
+          },
+          body: JSON.stringify({
+            live_id: liveId,
+            device_id: device,
+            last_seen: new Date(0).toISOString(),
+          }),
+        });
+        const inseres = premier.ok ? await premier.json().catch(() => []) : [];
+        if (Array.isArray(inseres) && inseres.length > 0) {
+          await fetchSb(`${base}/rest/v1/rpc/bump_salle_pleine`, {
+            method: 'POST',
+            headers: sbHeaders(),
+            body: JSON.stringify({ p_session: row.session_id }),
+          });
+        }
+      }
       return false;
     }
-    // Une place : on s'assied (merge ranime un siège expiré du même appareil).
+    // Une place : on s'assied (merge ranime un siège expiré du même appareil
+    // — y compris une ligne « refusé » quand une place s'est libérée).
     await fetchSb(`${base}/rest/v1/live_seats`, {
       method: 'POST',
       headers: { ...sbHeaders(), prefer: 'resolution=merge-duplicates' },
@@ -250,6 +311,19 @@ async function reserverSiege(base, liveId, device) {
         last_seen: new Date(now).toISOString(),
       }),
     });
+    // Un arrivant de plus : le pic ne peut monter que MAINTENANT. Écriture
+    // conditionnelle (pic=lt) : deux arrivées simultanées ne se perdent pas.
+    if (row.session_id) {
+      const total = occupes + 1;
+      await fetchSb(
+        `${base}/rest/v1/live_sessions?id=eq.${encodeURIComponent(row.session_id)}&pic=lt.${total}`,
+        {
+          method: 'PATCH',
+          headers: sbHeaders(),
+          body: JSON.stringify({ pic: total }),
+        },
+      );
+    }
     return true;
   } catch {
     return true; // jamais de porte fermée sur une panne
@@ -701,18 +775,20 @@ export default async function handler(req, res) {
       ) {
         const dev = String(req.query?.dev ?? '').slice(0, 80);
         if (dev !== '' && dev !== SENTINELLE_PLEINE) {
+          // b498 : le siège s'écrit pour TOUS les plans (c'est la mesure du
+          // pic — et « En live maintenant » du tableau de bord cesse
+          // d'afficher 0 pour un live Scène) ; le CAP, lui, ne s'applique
+          // qu'aux plans limités, comme avant.
           const plan = await planDuProprio(base, row.owner_id);
-          if (!salleIllimitee(plan)) {
-            const assis = await reserverSiege(base, row.id, dev);
-            if (!assis) {
-              if (wantSetlist) {
-                // Pas de siège → pas de set en cache non plus.
-                res.status(200).json({ setlist: [] });
-                return;
-              }
-              res.status(200).json(fullView(row));
+          const assis = await reserverSiege(base, row, dev, !salleIllimitee(plan));
+          if (!assis) {
+            if (wantSetlist) {
+              // Pas de siège → pas de set en cache non plus.
+              res.status(200).json({ setlist: [] });
               return;
             }
+            res.status(200).json(fullView(row));
+            return;
           }
         }
       }
@@ -814,7 +890,7 @@ export default async function handler(req, res) {
           const rows = r.ok ? await r.json() : [];
           const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
           if (!row || row.write_token !== String(body.writeToken ?? '')) {
-            res.status(403).json({ error: 'Ce direct ne t’appartient pas.' });
+            res.status(403).json({ error: 'Ce live ne t’appartient pas.' });
             return;
           }
           // bandSong seul / setlist seule (pendant le direct)
@@ -852,7 +928,7 @@ export default async function handler(req, res) {
           // On refuse : le client oublie sa référence périmée et ouvre un
           // NOUVEAU live — un live = un appui sur GO LIVE (b182).
           if (row.status === 'off' && status !== 'off') {
-            res.status(403).json({ error: 'Ce direct est terminé.' });
+            res.status(403).json({ error: 'Ce live est terminé.' });
             return;
           }
           if (status === 'off') {

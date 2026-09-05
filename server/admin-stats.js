@@ -138,6 +138,34 @@ async function plansParCompte() {
   }
 }
 
+
+/**
+ * Mesure des lives par compte (b498) : pic de spectateurs le plus élevé et
+ * salle pleine au moins une fois. `null` (et pas des zéros trompeurs,
+ * règle b245) si les colonnes n'existent pas encore (live.sql à rejouer).
+ */
+async function sessionsParCompte() {
+  try {
+    const r = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/live_sessions?select=owner_id,pic,plein_at`,
+      { headers: sbHeaders() },
+    );
+    if (!r.ok) return null;
+    const map = {};
+    for (const row of await r.json()) {
+      const o = row.owner_id ?? '';
+      if (o === '') continue;
+      const c = map[o] ?? { pic: 0, sallePleine: false };
+      c.pic = Math.max(c.pic, Number(row.pic) || 0);
+      if (row.plein_at) c.sallePleine = true;
+      map[o] = c;
+    }
+    return map;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Lives par compte + lives EN COURS avec spectateurs connectés (b485).
  * Un siège « connecté » = vu depuis moins de 2 minutes — la même
@@ -437,7 +465,7 @@ export default async function handler(req, res) {
     // « Morceaux partagés en groupe » (band_library) est retiré (b411,
     // demande de Vincent : pas à jour, pas utile) au profit du compteur de
     // partitions des bibliothèques personnelles.
-    const [acc, spend, tops, bands, lives, plans, songs, perSongs, perPlans, perLives] =
+    const [acc, spend, tops, bands, lives, plans, songs, perSongs, perPlans, perLives, perSessions] =
       await Promise.all([
         accounts(),
         aiSpend(),
@@ -449,6 +477,7 @@ export default async function handler(req, res) {
         userSongs(),
         plansParCompte(),
         livesParCompte(),
+        sessionsParCompte(),
       ]);
     // Diagnostic b161, sans requêtes dédiées (b455) : les lectures
     // ci-dessus ont déjà touché les deux tables de mesure — leur succès
@@ -478,6 +507,10 @@ export default async function handler(req, res) {
         synchro: perSongs?.[u.id]?.synchro ?? null,
         lives: perLives.parCompte[u.id]?.lives ?? 0,
         dernierLive: perLives.parCompte[u.id]?.dernier ?? null,
+        // b498 : null tant que live.sql (colonnes de mesure) n'est pas rejoué.
+        pic: perSessions === null ? null : (perSessions[u.id]?.pic ?? 0),
+        sallePleine:
+          perSessions === null ? false : (perSessions[u.id]?.sallePleine ?? false),
       }))
       .sort(
         (a, b) => (Date.parse(b.vu ?? '') || 0) - (Date.parse(a.vu ?? '') || 0),

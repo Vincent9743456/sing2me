@@ -98,7 +98,7 @@ export async function identifie(req) {
 /** Refus commun, formulé pour l'app (jamais pour le public). */
 export function refuse(res) {
   res.status(403).json({
-    error: 'Connecte-toi pour accéder à tes directs.',
+    error: 'Connecte-toi pour accéder à tes lives.',
     code: 'auth',
   });
 }

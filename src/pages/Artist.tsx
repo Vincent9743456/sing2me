@@ -315,7 +315,7 @@ export function Artist() {
       setWhoMsg(
         onair !== 'off'
           ? t(
-              'Direct en cours : le changement s’appliquera au prochain live.',
+              'Live en cours : le changement s’appliquera au prochain live.',
             )
           : t(
               'Mise à jour impossible pour l’instant — réessaie avec du réseau.',
@@ -875,7 +875,7 @@ export function Artist() {
             {previewMode === 'live' ? (
               <>
                 <div className="livebadge">
-                  <span className="dot" /> {t('EN DIRECT')}
+                  <span className="dot" /> {t('EN LIVE')}
                   {screen.hearts && <span className="livehearts">❤ 27</span>}
                 </div>
                 {screen.songTitle && (
