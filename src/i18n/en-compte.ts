@@ -45,6 +45,8 @@ export const EN_COMPTE: Record<string, string> = {
   'Changer d\'adresse': 'Change address',
   'Changer mon adresse': 'Change my address',
   'Code de connexion': 'Sign-in code',
+  'Rien reçu au bout d’une minute ? Regarde tes spams — l’e-mail vient de mojosong.com. Si tu redemandes un code, seul le dernier reçu fonctionne. Et vérifie l’adresse ci-dessus : le code part vers elle, exactement.':
+    'Nothing after a minute? Check your spam folder — the email comes from mojosong.com. If you request another code, only the latest one works. And double-check the address above: the code goes there, exactly.',
   'Code pour rejoindre': 'Code to join',
   'Code refusé.': 'Code rejected.',
   'Concert : le public voit les paroles, un musicien (du groupe ou de passage) touche « 🎸 Je joue » pour sa partition. Répétition : seuls les musiciens voient le morceau. Hors session : ta page artiste.': 'Gig: the audience sees the lyrics, a musician (from the band or just passing through) taps “🎸 I\'m playing” for their sheet. Rehearsal: only musicians see the song. Off session: your artist page.',

@@ -1368,6 +1368,14 @@ export function AccountSection() {
               {t("Changer d'adresse")}
             </button>
           </div>
+          {/* b495 (cas Rodrigo : « il ne reçoit pas le code ») : les trois
+              causes réelles, écrites au moment où l'on attend — spams,
+              codes qui s'annulent entre eux, mauvaise adresse. */}
+          <p className="help" style={{ marginBottom: 0 }}>
+            {t(
+              'Rien reçu au bout d’une minute ? Regarde tes spams — l’e-mail vient de mojosong.com. Si tu redemandes un code, seul le dernier reçu fonctionne. Et vérifie l’adresse ci-dessus : le code part vers elle, exactement.',
+            )}
+          </p>
         </div>
       ) : (
         <Field label={t('Email')}>
