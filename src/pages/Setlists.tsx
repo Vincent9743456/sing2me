@@ -307,24 +307,12 @@ export function Setlists() {
         </div>
         {sl.items.length > 0 && (
           <>
-            {/* « ⋮ » : icône-bouton nu (b436, audit UX) — le rectangle
-                bordé ressemblait à un champ désactivé. */}
-            <button
-              className="btn icon"
-              style={{ color: 'var(--text-dim)' }}
-              title={t('Plus d’actions')}
-              aria-label={t('Plus d’actions')}
-              onClick={(e) => {
-                e.stopPropagation();
-                setRowMenu(sl);
-              }}
-            >
-              <Icon name="more-v" size={18} />
-            </button>
-            {/* Mode scène en icône seule (b436) : le corps de la carte est
-                la navigation principale — six gros boutons identiques
-                noyaient la liste. Même vue que « Mode scène » de la page
-                setlist (vérifié : même route /stage/:id). */}
+            {/* Ordre unique dans toutes les listes (b496, passe de
+                cohérence) : l'action PRIMAIRE ▶ d'abord, le menu ensuite —
+                le même couple, dans le même ordre, que la ligne d'un
+                morceau. Mode scène en icône seule (b436) : le corps de la
+                carte est la navigation principale. Même vue que
+                « Mode scène » de la page setlist (même route /stage/:id). */}
             <button
               className="btn icon"
               title={t('Mode scène')}
@@ -335,6 +323,22 @@ export function Setlists() {
               }}
             >
               <Icon name="play" size={18} />
+            </button>
+            {/* Icône-bouton nu (b436) — le rectangle bordé ressemblait à un
+                champ désactivé. Glyphe « … » horizontal, le même que la
+                ligne d'un morceau (b496 — « ⋮ » était le seul vertical du
+                projet). */}
+            <button
+              className="btn icon"
+              style={{ color: 'var(--text-dim)' }}
+              title={t('Plus d’actions')}
+              aria-label={t('Plus d’actions')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setRowMenu(sl);
+              }}
+            >
+              <Icon name="more" size={20} />
             </button>
           </>
         )}
