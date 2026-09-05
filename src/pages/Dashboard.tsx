@@ -29,6 +29,9 @@ interface LigneUtilisateur {
   synchro: string | null;
   lives: number;
   dernierLive: string | null;
+  /** b498 — null tant que live.sql (mesure des lives) n'est pas rejoué. */
+  pic?: number | null;
+  sallePleine?: boolean;
 }
 
 interface Stats {
@@ -411,6 +414,18 @@ export function Dashboard() {
                           {u.dernierLive !== null
                             ? ` (${t('dernier {q}', { q: quand(u.dernierLive) })})`
                             : ''}
+                          {/* b498 : pic de spectateurs le plus élevé, et
+                              mention si une salle a été pleine — seulement
+                              quand il y a eu des lives à mesurer. */}
+                          {u.lives > 0 && u.pic != null
+                            ? ' · ' + t('pic {n}', { n: u.pic })
+                            : ''}
+                          {u.sallePleine === true && (
+                            <span style={{ color: 'var(--warn)' }}>
+                              {' · '}
+                              {t('🔴 salle pleine')}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <button

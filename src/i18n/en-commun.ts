@@ -127,6 +127,8 @@ export const EN_COMMUN: Record<string, string> = {
   "{n} lives": "{n} lives",
   "{n} live": "{n} live",
   "dernier {q}": "last {q}",
+  "pic {n}": "peak {n}",
+  "🔴 salle pleine": "🔴 room full",
   "Aucun compte pour l’instant.": "No account yet.",
   "gratuit": "free",
   "Plan…": "Plan…",
