@@ -129,6 +129,22 @@ export default async function handler(req, res) {
     const enc = encodeURIComponent;
     const now = Date.now();
 
+    // 0. CLÔTURE DE SECOURS DES LIVES ABANDONNÉS (b498) : l'auto-arrêt
+    // d'api/live.js est paresseux (il n'agit qu'à la lecture) — un live que
+    // plus personne ne sonde restait « on » sans fin, durées fausses. Le
+    // balayage SQL clôt et date la fin AU MOMENT de l'expiration. Best-effort
+    // (RPC absente tant que live.sql n'est pas rejoué) : jamais bloquant.
+    let livesBalayes = null;
+    try {
+      const bal = await fetch(
+        `${base}/rest/v1/rpc/balayer_lives_abandonnes`,
+        { method: 'POST', headers: sbHeaders(), body: '{}' },
+      );
+      if (bal.ok) livesBalayes = await bal.json().catch(() => null);
+    } catch {
+      /* le reste du cron ne dépend pas du balayage */
+    }
+
     // 1. Les comptes gratuits au-dessus du plafond (RPC service_role).
     const rd = await fetch(`${base}/rest/v1/rpc/comptes_en_depassement`, {
       method: 'POST',
@@ -248,7 +264,7 @@ export default async function handler(req, res) {
 
     res
       .status(200)
-      .json({ over: surLeFil.size, sent: envoyes, failed: echecs, closed: fermes });
+      .json({ over: surLeFil.size, sent: envoyes, failed: echecs, closed: fermes, livesBalayes });
   } catch {
     res.status(200).json({ skipped: 'erreur inattendue' });
   }
