@@ -2,30 +2,25 @@ import React, { useEffect, useState } from 'react';
 
 import { BandeauPourGroupe } from '../components/BandeauPourGroupe';
 import { Icon } from '../components/Icon';
-import { MenuSheet } from '../components/Feedback';
+import { MenuSheet, useToast } from '../components/Feedback';
 import { Field, TopBar } from '../components/ui';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
 import { t } from '../i18n';
 import { KEY_CHOICES } from '../lib/chords';
 import { propositionBloquee } from '../lib/limites';
 import { useLimits } from '../components/useLimits';
-import { importText } from '../lib/importer';
+import { activeVersion, switchVersion } from '../lib/model';
 import {
-  activeVersion,
-  propagateMainKeyCapo,
-  switchVersion,
-  syncActiveVersion,
-} from '../lib/model';
+  bakeDraft,
+  ChampsEditeur,
+  editeurModifie,
+  enregistrementTexteSeul,
+  enregistrerSansGeler,
+  partitionChangee,
+} from '../lib/songedit';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import {
-  emptySong,
-  formatDuration,
-  makeId,
-  parseDuration,
-  Song,
-  StructureRow,
-} from '../types';
+import { emptySong, formatDuration, Song } from '../types';
 
 export function SongEdit({ id }: { id: string | null }) {
   const { songs, bands, saveSong } = useStore();
@@ -94,153 +89,72 @@ export function SongEdit({ id }: { id: string | null }) {
     setDraft((d) => ({ ...d, ...patch }));
   }
 
-  /** Fige les champs édités dans la version courante du brouillon.
-   *  L'originale (versions[0]) reste TOUJOURS personnelle (bandId '') : elle
-   *  ne peut jamais être rattachée à un groupe depuis l'éditeur. */
-  function bakeDraft(d: Song): Song {
-    const isOriginal = d.versions[0]?.id === d.activeVersionId;
-    return syncActiveVersion({
-      ...d,
-      versions: d.versions.map((v) =>
-        v.id === d.activeVersionId
-          ? {
-              ...v,
-              name: versionName.trim() || v.name,
-              bandId: isOriginal ? '' : versionBandId,
-            }
-          : v,
-      ),
-    });
+  /* Le calcul d'enregistrement vit dans src/lib/songedit.ts (b499) : pur,
+     testé, et ENCADRÉ — une exception ne peut plus geler l'écran en
+     silence. Ici ne restent que l'état d'écran et les gestes. */
+  const toast = useToast();
+  const [saveError, setSaveError] = useState<string | null>(null);
+  function champs(): ChampsEditeur {
+    return { draft, existing, durationText, tagsText, versionName, versionBandId };
   }
 
   /** Change la version ÉDITÉE (sans toucher au morceau enregistré). */
   function switchEditVersion(vid: string) {
     if (vid === draft.activeVersionId) return;
-    const d = switchVersion(bakeDraft(draft), vid);
+    const d = switchVersion(bakeDraft(draft, versionName, versionBandId), vid);
     setDraft(d);
     setVersionName(activeVersion(d).name);
     setVersionBandId(activeVersion(d).bandId);
   }
 
-  /** La partition (accords/paroles/tonalité…) de la version éditée a-t-elle
-   *  changé ? Sert à ne poser la question « toutes / cette version » que
-   *  quand c'est pertinent. */
-  function partitionChanged(): boolean {
-    if (!existing) return false;
-    const v = existing.versions.find((x) => x.id === draft.activeVersionId);
-    if (!v) return true;
-    return (
-      v.lyrics !== draft.lyrics ||
-      v.key !== draft.key ||
-      v.tempo !== draft.tempo ||
-      v.capo !== draft.capo ||
-      JSON.stringify(v.structure) !== JSON.stringify(draft.structure)
-    );
-  }
-
   /** Enregistre — puis quitte l'édition et revient EN HAUT de la partition.
-   *  `scope` = 'all' recopie la partition affichée dans toutes les versions. */
+   *  Un échec SE DIT (b499) : plus jamais un « Enregistrer » muet. */
   function commitSave(scope: 'current' | 'all') {
     setAskScope(false);
-    let base: Song = {
-      ...draft,
-      durationSec: parseDuration(durationText),
-      tags: tagsText
-        .split(/[,;]/)
-        .map((t) => t.trim())
-        .filter((t) => t !== ''),
-      structure: draft.structure.filter(
-        (r) =>
-          r.label.trim() !== '' ||
-          r.chords.trim() !== '' ||
-          r.comment.trim() !== '',
-      ),
-    };
-    if (scope === 'all') {
-      // La partition affichée remplace celle de TOUTES les versions —
-      // chacune est donc modifiée : on tamponne son `updatedAt` propre
-      // pour que la partition parte aussi vers le groupe à la synchro.
-      const now = new Date().toISOString();
-      base = {
-        ...base,
-        versions: base.versions.map((v) => ({
-          ...v,
-          key: base.key,
-          tempo: base.tempo,
-          capo: base.capo,
-          structure: base.structure.map((r) => ({ ...r, id: makeId() })),
-          lyrics: base.lyrics,
-          updatedAt: now,
-        })),
-      };
+    const r = enregistrerSansGeler(champs(), scope);
+    if (!r.ok) {
+      setSaveError(r.erreur);
+      return;
     }
-    let song: Song = bakeDraft(base);
-    // Version PRINCIPALE modifiée → sa tonalité/son capo se répercutent
-    // sur les versions qui la suivaient (et partent vers le groupe à la
-    // synchro). Les versions au réglage propre ne bougent pas.
-    if (
-      existing &&
-      existing.versions.length > 0 &&
-      draft.activeVersionId === existing.versions[0].id
-    ) {
-      song = propagateMainKeyCapo(
-        song,
-        existing.versions[0].key,
-        existing.versions[0].capo,
-      );
-    }
-    // L'édition ne détourne jamais la version par défaut du morceau :
-    // si on a édité une autre version, le morceau revient sur la sienne.
-    if (
-      existing &&
-      existing.activeVersionId !== song.activeVersionId &&
-      song.versions.some((v) => v.id === existing.activeVersionId)
-    ) {
-      song = switchVersion(song, existing.activeVersionId);
-    }
-    // RELIRE, C'EST VÉRIFIER. Un morceau que l'import avait marqué
-    // « à vérifier » sort de cette liste dès qu'on l'a modifié à la main :
-    // c'est le geste qui prouve qu'on l'a regardé. Sans cela le badge
-    // resterait à vie et il faudrait un bouton de plus pour l'enlever.
-    if (song.needsCheck) song = { ...song, needsCheck: undefined };
-    saveSong(song);
+    setSaveError(null);
+    saveSong(r.song);
     // On quitte l'édition et on revient EN HAUT de la partition.
-    navigate(`/song/${song.id}`);
+    navigate(`/song/${r.song.id}`);
+  }
+
+  /** La sortie de secours : le texte brut, tel quel, sans aucun calcul
+   *  annexe — on ne perd jamais une session d'édition (b499). */
+  function saveTexteSeul() {
+    try {
+      const song = enregistrementTexteSeul(champs());
+      saveSong(song);
+      navigate(`/song/${song.id}`);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : String(e));
+    }
   }
 
   function onSave() {
     if (draft.title.trim() === '') {
-      alert(t('Donne un titre à ton morceau.'));
+      // Toast, pas alert() (règle 10) : le natif est muet dans certaines
+      // installations iOS, et il bloquait le fil de l'app.
+      toast.show(t('Donne un titre à ton morceau.'));
       return;
     }
     // Plusieurs versions + partition modifiée → demander la portée.
-    if (existing && draft.versions.length > 1 && partitionChanged()) {
+    if (existing && draft.versions.length > 1 && partitionChangee(champs())) {
+      // On ferme le clavier AVANT d'ouvrir la feuille (b499) : ouverte
+      // par-dessus un clavier iPad, elle pouvait naître mal placée — un
+      // voile invisible qui bloque la page.
+      (document.activeElement as HTMLElement | null)?.blur?.();
       setAskScope(true);
       return;
     }
     commitSave('current');
   }
 
-  /** QUELQUE CHOSE a-t-il changé depuis l'ouverture de l'éditeur ? Tous les
-   *  champs édités comptent — pas seulement la partition. */
   function modifie(): boolean {
-    if (!existing) return true;
-    if (partitionChanged()) return true;
-    const v = existing.versions.find((x) => x.id === draft.activeVersionId);
-    const tagsDraft = tagsText
-      .split(/[,;]/)
-      .map((x) => x.trim())
-      .filter((x) => x !== '')
-      .join(',');
-    return (
-      draft.title !== existing.title ||
-      draft.artist !== existing.artist ||
-      (draft.structureNotes ?? '') !== (existing.structureNotes ?? '') ||
-      parseDuration(durationText) !== existing.durationSec ||
-      tagsDraft !== existing.tags.join(',') ||
-      (versionName.trim() !== '' && versionName.trim() !== (v?.name ?? '')) ||
-      versionBandId !== (v?.bandId ?? '')
-    );
+    return editeurModifie(champs());
   }
 
   /**
@@ -498,6 +412,28 @@ export function SongEdit({ id }: { id: string | null }) {
         <button className="btn block" onClick={onSave}>
           {t('Enregistrer')}
         </button>
+        {saveError !== null && (
+          <div
+            className="help"
+            role="alert"
+            style={{
+              border: '1px solid var(--danger)',
+              borderRadius: 'var(--radius-s)',
+              padding: 'var(--sp-3)',
+              marginTop: 'var(--sp-3)',
+            }}
+          >
+            <p style={{ margin: 0, color: 'var(--danger)' }}>
+              {t("L'enregistrement a rencontré un problème — tes paroles ne sont pas perdues.")}
+            </p>
+            <p style={{ margin: 'var(--sp-2) 0' }}>
+              {t('Détail technique : {detail}', { detail: saveError })}
+            </p>
+            <button className="btn ghost block" onClick={saveTexteSeul}>
+              {t('💾 Enregistrer le texte seul (titre, artiste, paroles)')}
+            </button>
+          </div>
+        )}
         {!isNew && (
           <>
             <div className="spacer" />

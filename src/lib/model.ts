@@ -1295,6 +1295,54 @@ export function migrateSong(raw: unknown): Song {
     };
   }
 
+  // LIGNES DE STRUCTURE GARANTIES (b499, lot 1 des tests du 05/09/2026).
+  // Une ligne à la forme ancienne (champ `comment`, `label` ou `chords`
+  // absent) faisait jeter la première `.trim()` venue — et comme la passe
+  // `structureNotes` de cette même migration s'exécute dans le try/catch de
+  // `loadState`, UNE seule ligne malformée faisait retomber TOUTE la
+  // bibliothèque sur l'état par défaut : l'app paraissait vide. On garantit
+  // donc chaque CHAMP, pas seulement le tableau — au chargement, une fois,
+  // et seulement si un défaut est présent (idempotent, no-op sinon).
+  const ligneSaine = (r: unknown): r is StructureRow => {
+    const x = r as Partial<StructureRow> | null;
+    return (
+      x != null &&
+      typeof x.id === 'string' &&
+      typeof x.label === 'string' &&
+      typeof x.chords === 'string' &&
+      typeof x.comment === 'string'
+    );
+  };
+  const reparerLignes = (rows: unknown): StructureRow[] =>
+    (Array.isArray(rows) ? rows : []).map((r) => {
+      if (ligneSaine(r)) return r;
+      const x = (r ?? {}) as Partial<StructureRow>;
+      return {
+        id: typeof x.id === 'string' ? x.id : makeId(),
+        label: typeof x.label === 'string' ? x.label : '',
+        chords: typeof x.chords === 'string' ? x.chords : '',
+        comment: typeof x.comment === 'string' ? x.comment : '',
+      };
+    });
+  if (!base.structure.every(ligneSaine)) {
+    base = { ...base, structure: reparerLignes(base.structure) };
+  }
+  if (
+    Array.isArray(base.versions) &&
+    base.versions.some(
+      (v) => !Array.isArray(v?.structure) || !v.structure.every(ligneSaine),
+    )
+  ) {
+    base = {
+      ...base,
+      versions: base.versions.map((v) =>
+        Array.isArray(v?.structure) && v.structure.every(ligneSaine)
+          ? v
+          : { ...v, structure: reparerLignes(v?.structure) },
+      ),
+    };
+  }
+
   // Versions : les anciens morceaux n'en avaient qu'une, implicite.
   if (!Array.isArray(base.versions) || base.versions.length === 0) {
     const versionId = makeId();
