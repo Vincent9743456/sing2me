@@ -199,14 +199,10 @@ export function SongEdit({ id }: { id: string | null }) {
    *  rien n'a changé — le haut et le bas ne peuvent pas diverger. */
   const enregistrable = existing ? modifie() : !draftVide;
 
-  /** « Voir la partition » enregistre d'abord (b348). */
-  function voirPartition() {
-    if (!modifie()) {
-      navigate(`/song/${draft.id}`);
-      return;
-    }
-    onSave();
-  }
+  /* « Voir la partition » (b348) est RETIRÉ en b501 (lot 3/M-2) : il
+     doublait la flèche ← — même destination. Sa raison d'être (ne pas
+     perdre les modifications en sortant) est reprise par la garde de
+     sortie ci-dessus, qui couvre TOUTES les sorties, pas ce seul bouton. */
 
   // La suppression passe par la feuille commune (b239) : c'est elle qui sait
   // qu'un morceau venu d'un groupe ne s'efface pas, et qu'un morceau
@@ -484,13 +480,11 @@ export function SongEdit({ id }: { id: string | null }) {
         )}
         {!isNew && (
           <>
-            <div className="spacer" />
-            <div style={{ textAlign: 'center' }}>
-              <button className="btn ghost small" onClick={voirPartition}>
-                👁 {t('Voir la partition')}
-              </button>
-            </div>
-            <div className="sheetsep" aria-hidden="true" style={{ margin: 'var(--sp-4) 0' }} />
+            {/* M-2 (b501) : « Voir la partition » retiré — il doublait la
+                flèche ←. Le trait garde « Supprimer » à distance de
+                « Enregistrer » : une action destructrice n'est jamais
+                adjacente à l'action principale. */}
+            <div className="sheetsep" aria-hidden="true" style={{ margin: 'var(--sp-5) 0 var(--sp-4)' }} />
             <button
               className="btn ghost block"
               style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
