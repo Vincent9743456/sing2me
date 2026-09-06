@@ -101,7 +101,27 @@ export function Stage({
     return Number.isFinite(saved) && saved > 0 ? saved : 1.25;
   });
   const [scroll, setScroll] = useState(false);
-  const [speed, setSpeed] = useState(30); // pixels par seconde
+  /**
+   * VITESSE DE DÉFILEMENT (b502, lot 4/S-6 — « les paroles passent plus
+   * vite qu'on ne les joue ») : l'ancienne valeur était 30 px/s, fixe et
+   * jamais retenue. Elle devient un RYTHME DE LECTURE : la valeur stockée
+   * vaut pour une police de 1 rem et est multipliée par la taille affichée
+   * — grossir le texte pour lire de loin garde le même rythme, pas le même
+   * nombre de pixels. Défaut abaissé à 12 (soit 15 px/s à la police par
+   * défaut de 1.25 — moitié de l'ancien rythme). Réglage PAR APPAREIL
+   * (localStorage, comme la police de scène — jamais dans prefs).
+   */
+  const [speed, setSpeed] = useState(() => {
+    const saved = parseFloat(localStorage.getItem('sing2me/stageSpeed') ?? '');
+    return Number.isFinite(saved) && saved > 0 ? saved : 12;
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('sing2me/stageSpeed', String(speed));
+    } catch {
+      /* stockage indisponible : le réglage vaut pour la session */
+    }
+  }, [speed]);
   /**
    * PARTITION / PAROLES (b502, lot 4/S-5, remonté par le chanteur du
    * groupe) : un chanteur ne lit pas les accords — ils écartent les lignes
@@ -239,7 +259,9 @@ export function Stage({
     const step = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
-      acc += speed * dt;
+      // Rythme de LECTURE (S-6) : la vitesse stockée vaut pour 1 rem, la
+      // taille affichée la multiplie — même rythme quel que soit le zoom.
+      acc += speed * fontSize * dt;
       if (acc >= 1) {
         const px = Math.floor(acc);
         acc -= px;
@@ -249,7 +271,7 @@ export function Stage({
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [scroll, speed, clamped]);
+  }, [scroll, speed, fontSize, clamped]);
 
   // Navigation clavier / PÉDALE BLUETOOTH. La plupart des pédales
   // « tourne-pages » (AirTurn, PageFlip, iRig BlueBoard, Donner…) se
@@ -289,11 +311,11 @@ export function Stage({
           break;
         case '+':
         case '=':
-          setSpeed((s) => Math.min(120, s + 10));
+          setSpeed((s) => Math.min(60, s + 4));
           break;
         case '-':
         case '_':
-          setSpeed((s) => Math.max(10, s - 10));
+          setSpeed((s) => Math.max(4, s - 4));
           break;
         case 'Escape':
           history.back();
@@ -318,9 +340,9 @@ export function Stage({
         setScroll((s) => !s);
       } else if (action === 'accelerer') {
         // Mêmes bornes que le clavier (+/−) : 10 → 120.
-        setSpeed((s) => Math.min(120, s + 10));
+        setSpeed((s) => Math.min(60, s + 4));
       } else if (action === 'ralentir') {
-        setSpeed((s) => Math.max(10, s - 10));
+        setSpeed((s) => Math.max(4, s - 4));
       }
     });
   }, [items.length]);
@@ -623,7 +645,7 @@ export function Stage({
                 className="btn ghost"
                 title={t('Moins vite')}
                 aria-label={t('Moins vite')}
-                onClick={() => setSpeed((s) => Math.max(10, s - 10))}
+                onClick={() => setSpeed((s) => Math.max(4, s - 4))}
               >
                 −
               </button>
@@ -631,7 +653,7 @@ export function Stage({
                 className="btn ghost"
                 title={t('Plus vite')}
                 aria-label={t('Plus vite')}
-                onClick={() => setSpeed((s) => Math.min(120, s + 10))}
+                onClick={() => setSpeed((s) => Math.min(60, s + 4))}
               >
                 ＋
               </button>
