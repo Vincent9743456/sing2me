@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { BandeauPourGroupe } from '../components/BandeauPourGroupe';
-import { Icon } from '../components/Icon';
 import { MenuSheet, useToast } from '../components/Feedback';
 import { Field, TopBar } from '../components/ui';
 import { SongDeleteSheet } from '../components/SongDeleteSheet';
@@ -9,6 +8,7 @@ import { t } from '../i18n';
 import { KEY_CHOICES } from '../lib/chords';
 import { propositionBloquee } from '../lib/limites';
 import { useLimits } from '../components/useLimits';
+import { leverGarde, poserGarde } from '../lib/gardebrouillon';
 import { activeVersion, switchVersion } from '../lib/model';
 import {
   bakeDraft,
@@ -118,7 +118,10 @@ export function SongEdit({ id }: { id: string | null }) {
     }
     setSaveError(null);
     saveSong(r.song);
+    // Confirmation brève (M-1) : on sait que l'enregistrement a eu lieu.
+    toast.show(t('Enregistré ✓'));
     // On quitte l'édition et on revient EN HAUT de la partition.
+    leverGarde();
     navigate(`/song/${r.song.id}`);
   }
 
@@ -128,6 +131,7 @@ export function SongEdit({ id }: { id: string | null }) {
     try {
       const song = enregistrementTexteSeul(champs());
       saveSong(song);
+      leverGarde();
       navigate(`/song/${song.id}`);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e));
@@ -158,21 +162,47 @@ export function SongEdit({ id }: { id: string | null }) {
   }
 
   /**
-   * « VOIR LA PARTITION » ENREGISTRE D'ABORD (b348, perte signalée par
-   * Vincent : modifier, ouvrir la partition sans « Enregistrer », fermer —
-   * les modifications étaient perdues en silence). Ce bouton emprunte le
-   * MÊME chemin qu'« Enregistrer » (titre requis, question de portée quand
-   * le morceau a plusieurs versions), qui se termine déjà sur la partition.
-   * Sans modification, on ne fait que consulter — et un bouton qui consulte
-   * n'écrit rien (b243).
+   * GARDE DE SORTIE (b501, lot 3/M-1 — et l'unification demandée en M-2) :
+   * quitter avec des modifications non enregistrées pose la question
+   * « Enregistrer tes modifications ? », comme la fiche artiste (b354).
+   * Le ← passe par navigate() vers un parent EXPLICITE (règle du projet —
+   * history.back() contournait la garde). Le bouton système du navigateur
+   * reste hors de portée, comme partout.
    */
-  function voirPartition() {
-    if (!modifie()) {
-      navigate(`/song/${draft.id}`);
-      return;
-    }
-    onSave();
-  }
+  const [questionSortie, setQuestionSortie] = useState<(() => void) | null>(
+    null,
+  );
+  const champsRef = useRef(champs());
+  champsRef.current = champs();
+  const draftVide =
+    draft.title.trim() === '' &&
+    draft.lyrics.trim() === '' &&
+    (draft.structureNotes ?? '').trim() === '';
+  useEffect(() => {
+    poserGarde({
+      // En création, une page encore vierge se quitte sans question.
+      actif: () =>
+        champsRef.current.existing
+          ? editeurModifie(champsRef.current)
+          : !(
+              champsRef.current.draft.title.trim() === '' &&
+              champsRef.current.draft.lyrics.trim() === '' &&
+              (champsRef.current.draft.structureNotes ?? '').trim() === ''
+            ),
+      demander: (continuer) => setQuestionSortie(() => continuer),
+    });
+    return () => leverGarde();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** L'état partagé des deux boutons Enregistrer (M-1) : inactifs tant que
+   *  rien n'a changé — le haut et le bas ne peuvent pas diverger. */
+  const enregistrable = existing ? modifie() : !draftVide;
+
+  /* « Voir la partition » (b348) est RETIRÉ en b501 (lot 3/M-2) : il
+     doublait la flèche ← — même destination. Sa raison d'être (ne pas
+     perdre les modifications en sortant) est reprise par la garde de
+     sortie ci-dessus, qui couvre TOUTES les sorties, pas ce seul bouton. */
 
   // La suppression passe par la feuille commune (b239) : c'est elle qui sait
   // qu'un morceau venu d'un groupe ne s'efface pas, et qu'un morceau
@@ -185,7 +215,23 @@ export function SongEdit({ id }: { id: string | null }) {
       <TopBar
         live={false}
         title={isNew ? t('Ajouter un morceau') : t('Modifier')}
-        onBack={() => history.back()}
+        /* Parent EXPLICITE (règle du projet — history.back() contournait en
+           plus la garde de sortie) : la fiche du morceau, ou l'écran
+           d'ajout en création. */
+        onBack={() =>
+          navigate(existing ? `/song/${existing.id}` : '/import')
+        }
+        /* M-1 (b501) : Enregistrer TOUJOURS atteignable — la barre du haut
+           est collante. Même état et même geste que le bouton du bas. */
+        right={
+          <button
+            className="btn small"
+            disabled={!enregistrable}
+            onClick={onSave}
+          >
+            {t('Enregistrer')}
+          </button>
+        }
       />
       <div className="page">
         {/* b472 (point 1) : « Écrire à la main » fait partie du trajet de
@@ -404,12 +450,10 @@ export function SongEdit({ id }: { id: string | null }) {
             "💬 Les notes de répétition (partagées ou personnelles, dictée vocale…) s'ajoutent depuis la page du morceau.",
           )}
         </p>
-        {/* HIÉRARCHIE (b429/C-1, passe UX de Vincent) : Enregistrer reste
-            la seule action pleine ; « Voir la partition » est de la
-            NAVIGATION (elle enregistre déjà avant de partir — on ne change
-            ni le label ni le comportement) ; « Supprimer » est démoté en
-            contour rouge, isolé par un trait — plus de fond plein criard. */}
-        <button className="btn block" onClick={onSave}>
+        {/* HIÉRARCHIE (b429/C-1) : Enregistrer reste la seule action pleine
+            — doublée dans l'en-tête collant (M-1), même état, même geste ;
+            « Supprimer » reste isolé par un trait, en contour rouge. */}
+        <button className="btn block" disabled={!enregistrable} onClick={onSave}>
           {t('Enregistrer')}
         </button>
         {saveError !== null && (
@@ -436,13 +480,11 @@ export function SongEdit({ id }: { id: string | null }) {
         )}
         {!isNew && (
           <>
-            <div className="spacer" />
-            <div style={{ textAlign: 'center' }}>
-              <button className="btn ghost small" onClick={voirPartition}>
-                <Icon name="eye" size={14} /> {t('Voir la partition')}
-              </button>
-            </div>
-            <div className="sheetsep" aria-hidden="true" style={{ margin: 'var(--sp-4) 0' }} />
+            {/* M-2 (b501) : « Voir la partition » retiré — il doublait la
+                flèche ←. Le trait garde « Supprimer » à distance de
+                « Enregistrer » : une action destructrice n'est jamais
+                adjacente à l'action principale. */}
+            <div className="sheetsep" aria-hidden="true" style={{ margin: 'var(--sp-5) 0 var(--sp-4)' }} />
             <button
               className="btn ghost block"
               style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
@@ -457,8 +499,41 @@ export function SongEdit({ id }: { id: string | null }) {
       {suppr && enBibliotheque && (
         <SongDeleteSheet
           song={enBibliotheque}
-          onDeleted={() => navigate('/')}
+          onDeleted={() => {
+            leverGarde();
+            navigate('/');
+          }}
           onClose={() => setSuppr(false)}
+        />
+      )}
+
+      {/* La question de sortie (M-1, même modèle que la fiche artiste b354) :
+          enregistrer, sortir sans, ou rester (fermer la feuille). */}
+      {questionSortie !== null && (
+        <MenuSheet
+          title={t('Enregistrer tes modifications ?')}
+          items={[
+            {
+              label: t('💾 Enregistrer et sortir'),
+              onClick: () => {
+                setQuestionSortie(null);
+                // onSave enregistre puis SORT vers la fiche (et pose la
+                // question de portée si le morceau a plusieurs versions).
+                onSave();
+              },
+            },
+            {
+              label: t('Sortir sans enregistrer'),
+              danger: true,
+              onClick: () => {
+                const suite = questionSortie;
+                setQuestionSortie(null);
+                leverGarde();
+                suite();
+              },
+            },
+          ]}
+          onClose={() => setQuestionSortie(null)}
         />
       )}
 
