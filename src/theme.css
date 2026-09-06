@@ -3755,6 +3755,12 @@ h2.pagetitle {
     min-height: 44px;
     min-width: 44px;
   }
+  /* b501 (lot 3/M-1) : l'« Enregistrer » de l'en-tête est l'action
+     principale de l'éditeur — pleine cible tactile (44), pas la cote
+     réduite des .small. */
+  .topbar .side.right .btn.small {
+    min-height: 44px;
+  }
   .onair {
     padding: 9px 14px;
   }
