@@ -2723,6 +2723,66 @@ textarea.mono {
   font-size: 1.6rem;
   margin: 0 0 4px;
 }
+/* ————— En-tête d'UNE ligne de l'écran des paroles (b503, lot 5/P-3) —————
+   Pastille EN LIVE + nom + photo, ~48 px : les paroles — la seule raison
+   d'être de cet écran — remontent au premier quart. Rien ne se superpose :
+   la photo vit DANS la ligne (fini le chevauchement de la rangée
+   « Tu es musicien ? »). */
+.livehead {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 48px;
+  margin: 0 0 var(--sp-2);
+}
+.livehead .livebadge {
+  margin: 0;
+  flex: none;
+}
+.livehead .lh-nom {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.livehead .lh-photo {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+  overflow: hidden;
+  cursor: pointer;
+}
+.livehead .lh-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.livehead .lh-photo span {
+  font-size: 1.2rem;
+}
+/* Titre + artiste compacts, une ligne — utile à qui arrive en cours de
+   morceau, sans coûter la place des paroles. */
+.livetitle.compact {
+  font-size: 1.15rem;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.livetitle.compact .lt-artiste {
+  color: var(--text-faint);
+  font-weight: 400;
+  font-size: 0.9em;
+}
 /* Paroles du PUBLIC (b219) — un composant, trois écrans : le direct, la
    setlist parcourue, l'aperçu de la fiche artiste. Chaque vers est sa propre
    ligne (le bloc `pre-wrap` d'avant traînait les espaces d'alignement des

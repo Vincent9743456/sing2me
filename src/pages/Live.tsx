@@ -162,6 +162,9 @@ export function Live({
   // Panneaux ouverts depuis la barre d'interaction (b172) : le pourboire et
   // le mot au groupe ne sont plus enfouis sous les paroles.
   const [tipOpen, setTipOpen] = useState(false);
+  // b503 (P-3) : feuille « ☰ Plus » de la barre du bas. Déclaré ICI, avant
+  // les retours anticipés — un crochet vit AVANT les gardes (règle projet).
+  const [plusOpen, setPlusOpen] = useState(false);
   const [wordOpen, setWordOpen] = useState(false);
   const lastTitle = useRef('');
   // Nombre de morceaux de la dernière setlist préchargée (re-précharge si change).
@@ -358,7 +361,14 @@ export function Live({
     role === 'public' &&
     liveNow &&
     state.song !== null &&
-    (ps.hearts || canTip || ps.messages);
+    (ps.hearts || canTip || ps.messages || canBrowse || canShare);
+  /* b503 (lot 5/P-3, option A validée par la préférence de Vincent) : sur
+     l'écran des PAROLES, les actions occasionnelles (setlist, inviter,
+     « suis avec les accords ») quittent le haut de l'écran pour la barre du
+     bas, derrière « ☰ Plus » — trois lignes d'interface rendues aux
+     paroles. Les autres états (pause, attente, salle pleine) gardent leurs
+     rangées : l'écran y est presque vide, les actions y sont à leur place. */
+  const enTeteCompacte = role === 'public' && liveNow;
   // Adresse à partager : celle où l'on se trouve déjà (b170). Quand la page
   // est ouverte sur /sonnom, c'est l'adresse STABLE de l'artiste — elle
   // survit à l'arrêt et au redémarrage du concert, contrairement à un code
@@ -398,6 +408,7 @@ export function Live({
           de l'artiste) en haut à droite — la fiche s'ouvre par-dessus les
           paroles, le retour est immédiat (grand bouton + tap à côté). */}
       {role === 'public' &&
+        !enTeteCompacte &&
         publicSession &&
         (state.status === 'on' || state.status === 'pause') &&
         state.artist &&
@@ -444,7 +455,7 @@ export function Live({
       )}
       {/* Bifurcation « bœuf » : un musicien de passage bascule sur la
           partition complète (accords, transposition perso), sans compte. */}
-      {role === 'public' && (
+      {role === 'public' && !enTeteCompacte && (
         <div style={{ textAlign: 'center', margin: '0 0 10px' }}>
           <button
             className="btn ghost small"
@@ -454,7 +465,7 @@ export function Live({
           </button>
         </div>
       )}
-      {(canBrowse || canShare) && (
+      {(canBrowse || canShare) && !enTeteCompacte && (
         <div
           className="rowactions"
           style={{ justifyContent: 'center', margin: '0 0 12px' }}
@@ -522,26 +533,44 @@ export function Live({
         </>
       ) : liveNow && state.song ? (
         <>
-          <div className="livebadge">
-            <span className="dot" /> {t('EN LIVE')}
-            {ps.hearts && (
-              <span className="livehearts">
-                ❤ {Math.max(state.hearts, localHearts)}
-              </span>
+          {/* P-3 (b503) : UNE ligne d'en-tête — pastille, nom, photo. Rien
+              ne se superpose : la photo vit DANS la ligne (elle ouvre la
+              même fiche artiste qu'avant). */}
+          <div className="livehead">
+            <div className="livebadge">
+              <span className="dot" /> {t('EN LIVE')}
+              {ps.hearts && (
+                <span className="livehearts">
+                  ❤ {Math.max(state.hearts, localHearts)}
+                </span>
+              )}
+            </div>
+            <span className="lh-nom">{state.artist?.name ?? ''}</span>
+            {state.artist && state.artist.name !== '' && ps.profile && (
+              <button
+                className="lh-photo"
+                aria-label={t('Voir la page de {name}', {
+                  name: state.artist.name,
+                })}
+                onClick={() => setArtistOpen(true)}
+              >
+                {state.artist.photo !== '' ? (
+                  <img src={state.artist.photo} alt="" />
+                ) : (
+                  <span aria-hidden="true">🎤</span>
+                )}
+              </button>
             )}
           </div>
           {ps.songTitle && (
-            <>
-              <h1 className="livetitle">{state.song.title}</h1>
+            /* Titre + artiste sur une ligne compacte : utile à qui arrive
+               en cours de morceau, sans coûter la place des paroles. */
+            <h1 className="livetitle compact">
+              {state.song.title}
               {state.song.artist !== '' && (
-                <p
-                  className="help"
-                  style={{ textAlign: 'center', marginTop: 0 }}
-                >
-                  {state.song.artist}
-                </p>
+                <span className="lt-artiste"> — {state.song.artist}</span>
               )}
-            </>
+            </h1>
           )}
           {ps.lyrics ? (
             <PublicLyrics text={decodeHtmlEntities(state.song.lyrics)} />
@@ -658,7 +687,56 @@ export function Live({
               <span>{t('Un mot')}</span>
             </button>
           )}
+          {/* P-3 (b503) : les actions occasionnelles déplacées du haut de
+              l'écran — un spectateur les fait au plus une fois par concert. */}
+          <button onClick={() => setPlusOpen(true)}>
+            <span className="ico" aria-hidden="true">
+              ☰
+            </span>
+            <span>{t('Plus')}</span>
+          </button>
         </div>
+      )}
+      {plusOpen && (
+        <StageList onClose={() => setPlusOpen(false)}>
+          <div className="inner">
+            <button className="btn block" onClick={() => setPlusOpen(false)}>
+              {t('← Revenir aux paroles')}
+            </button>
+            <div className="spacer" />
+            {canBrowse && (
+              <button
+                className="btn ghost block"
+                onClick={() => {
+                  setPlusOpen(false);
+                  void openBrowse();
+                }}
+              >
+                {t('📋 Voir la setlist ({n})', { n: browseCount })}
+              </button>
+            )}
+            {canShare && (
+              <button
+                className="btn ghost block"
+                onClick={() => {
+                  setPlusOpen(false);
+                  setShareOpen(true);
+                }}
+              >
+                {t('📣 Inviter')}
+              </button>
+            )}
+            <button
+              className="btn ghost block"
+              onClick={() => {
+                setPlusOpen(false);
+                switchRole('musicien');
+              }}
+            >
+              {t('🎸 Tu es musicien ? Suis avec les accords')}
+            </button>
+          </div>
+        </StageList>
       )}
       {tipOpen && (
         <StageList onClose={() => setTipOpen(false)}>
