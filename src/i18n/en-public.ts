@@ -38,6 +38,8 @@ export const EN_PUBLIC: Record<string, string> = {
   'Découvrir mojosong': 'Discover mojosong',
   'Décris le problème (contenu, droits, etc.)': 'Describe the issue (content, rights, etc.)',
   'EN LIVE': 'LIVE',
+  // b503 (lot 5/P-3) : les actions occasionnelles passent en bas, sous « Plus ».
+  'Plus': 'More',
   'Effets & réglages sono': 'Effects & sound settings',
   'Email ou nom': 'Email or name',
   'En attente de la session…': 'Waiting for the session…',
