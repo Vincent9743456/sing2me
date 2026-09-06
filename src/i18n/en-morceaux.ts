@@ -739,4 +739,10 @@ export const EN_MORCEAUX: Record<string, string> = {
   'non importé — bibliothèque gratuite pleine':
     'not imported — free library full',
   '{n} non importés (plan gratuit)': '{n} not imported (free plan)',
+  // b499 — un échec d'enregistrement se DIT, et le texte brut a une sortie.
+  "L'enregistrement a rencontré un problème — tes paroles ne sont pas perdues.":
+    'Saving hit a problem — your lyrics are not lost.',
+  'Détail technique : {detail}': 'Technical detail: {detail}',
+  '💾 Enregistrer le texte seul (titre, artiste, paroles)':
+    '💾 Save the text only (title, artist, lyrics)',
 };
