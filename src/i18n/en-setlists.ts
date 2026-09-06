@@ -218,4 +218,9 @@ export const EN_SETLISTS: Record<string, string> = {
   '▶ EN COURS': '▶ PLAYING',
   suivant: 'next',
   'Morceau suivant : {titre}': 'Next song: {titre}',
+  // b502 (lot 4/S-5) : bascule Partition / Paroles du mode scène.
+  'Paroles': 'Lyrics',
+  'Partition': 'Chart',
+  'Paroles seules (sans accords) / partition entière':
+    'Lyrics only (no chords) / full chart',
 };

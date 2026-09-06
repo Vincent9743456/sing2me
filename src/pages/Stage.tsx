@@ -80,7 +80,10 @@ export function Stage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [index, setIndex] = useState(startIndex);
-  const view = 'complete' as ViewMode; // partition entière pour tous
+  /* b502 (S-5) : « partition entière pour tous » reste la règle du modèle
+     (plus de vues par musicien) — ceci est un réglage d'AFFICHAGE local,
+     comme la taille de police, jamais une donnée du morceau. La valeur
+     vient de l'état `vueParoles`, déclaré plus bas avec sa persistance. */
   /* AU PLAFOND, UNE PROPOSITION NE S'OUVRE PAS — MÊME EN SCÈNE (b426).
      Les chemins normaux sont déjà gardés (Morceaux, fiche, aperçu) ; ici
      c'est le filet des accès directs. On renvoie vers la fiche, qui porte
@@ -99,6 +102,24 @@ export function Stage({
   });
   const [scroll, setScroll] = useState(false);
   const [speed, setSpeed] = useState(30); // pixels par seconde
+  /**
+   * PARTITION / PAROLES (b502, lot 4/S-5, remonté par le chanteur du
+   * groupe) : un chanteur ne lit pas les accords — ils écartent les lignes
+   * et divisent le nombre de vers visibles. La vue « paroles » réutilise le
+   * moule commun (stripChords, b219) : lignes d'accords REFERMÉES, accords
+   * inline retirés, en-têtes de sections conservés. Choix PAR APPAREIL.
+   */
+  const [vueParoles, setVueParoles] = useState(
+    () => localStorage.getItem('sing2me/stageVue') === 'paroles',
+  );
+  useEffect(() => {
+    try {
+      localStorage.setItem('sing2me/stageVue', vueParoles ? 'paroles' : '');
+    } catch {
+      /* stockage indisponible : le choix vaut pour la session */
+    }
+  }, [vueParoles]);
+  const view: ViewMode = vueParoles ? 'paroles' : 'complete';
   const [showList, setShowList] = useState(false);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -628,6 +649,18 @@ export function Stage({
           </button>
         </span>
         <span className="ctrlgrp">
+          {/* S-5 (b502) : bascule Partition / Paroles — un bouton qui
+              alterne (compact, la barre de 320 px n'accueille pas un
+              segmenté) et qui AFFICHE LA DESTINATION, comme « Défiler » :
+              en partition il propose « Paroles », et réciproquement. */}
+          <button
+            className={`btn ${vueParoles ? '' : 'ghost'}`}
+            title={t('Paroles seules (sans accords) / partition entière')}
+            aria-pressed={vueParoles}
+            onClick={() => setVueParoles((v) => !v)}
+          >
+            {vueParoles ? t('Partition') : t('Paroles')}
+          </button>
           <button
             className="btn ghost"
             onClick={() => setFontSize((f) => Math.max(0.9, +(f - 0.15).toFixed(2)))}
