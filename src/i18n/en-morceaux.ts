@@ -719,12 +719,16 @@ export const EN_MORCEAUX: Record<string, string> = {
   '« {titre} » existe déjà dans ton répertoire. Que veux-tu faire ?':
     '“{titre}” is already in your repertoire. What do you want to do?',
   'Ouvrir la partition existante': 'Open the existing chart',
-  'La remplacer par cette mise en forme': 'Replace it with this formatting',
+  // b500 (lot 2/I-1) : la boîte de doublon tient ses promesses.
+  'Remplacer sa partition de référence': 'Replace its reference chart',
   'Garder les deux': 'Keep both',
   '↩ Revenir à l’aperçu': '↩ Back to the preview',
-  'Nouvelle mise en forme': 'New formatting',
-  'La partition existante a été mise à jour.':
-    'The existing chart has been updated.',
+  'Remplacer la partition de référence ?': 'Replace the reference chart?',
+  'La partition de référence de « {titre} » sera écrasée par cette mise en forme — il n’y a pas de retour en arrière. Le reste de la fiche (titre, artiste, tags, notes, setlists) ne bouge pas.':
+    'The reference chart of “{titre}” will be overwritten by this formatting — there is no going back. The rest of the song (title, artist, tags, notes, setlists) stays untouched.',
+  'Partition de référence remplacée.': 'Reference chart replaced.',
+  'Enregistré sous « {titre} » pour distinguer les deux.':
+    'Saved as “{titre}” to tell the two apart.',
   'Reprendre la création de « {titre} » ?':
     'Resume creating “{titre}”?',
   'Reprendre': 'Resume',

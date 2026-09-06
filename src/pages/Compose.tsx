@@ -33,7 +33,8 @@
 import React, { useMemo, useState } from 'react';
 
 import { BandeauPourGroupe } from '../components/BandeauPourGroupe';
-import { useToast } from '../components/Feedback';
+import { ConfirmSheet, useToast } from '../components/Feedback';
+import { remplacerReference, titreDisponible } from '../lib/importdouble';
 import { signalerLimite } from '../components/UpgradeSheet';
 import { useLimits } from '../components/useLimits';
 import { Icon } from '../components/Icon';
@@ -41,7 +42,6 @@ import { SongBody } from '../components/SongBody';
 import { TopBar } from '../components/ui';
 import { t } from '../i18n';
 import { findSameSong, importText } from '../lib/importer';
-import { addSongAsVersion } from '../lib/model';
 import {
   fetchUgTab,
   searchUgTabs,
@@ -82,6 +82,7 @@ let memoireRecherche: {
   /** Aperçus de contenu déjà récupérés (b477/C-9), par URL de résultat. */
   apercus: Record<string, string>;
 } | null = null;
+
 
 /** Types de la source en clair (b477/C-9) : « Chords »/« Tabs » bruts ne
  *  disaient pas ce qu'on allait obtenir. Traduits au rendu (t()). */
@@ -394,7 +395,12 @@ export function Compose({ draftId }: { draftId: string | null }) {
     enregistrer(tFinal, aFinal, kFinal);
   }
 
-  function enregistrer(tFinal: string, aFinal: string, kFinal: string) {
+  function enregistrer(
+    tFinal: string,
+    aFinal: string,
+    kFinal: string,
+    message?: string,
+  ) {
     if (!draft) return;
     // La validation EFFACE `status` : la fiche entre dans le répertoire et
     // dans la synchro comme n'importe quel morceau.
@@ -407,25 +413,59 @@ export function Compose({ draftId }: { draftId: string | null }) {
       key: kFinal,
       updatedAt: new Date().toISOString(),
     });
-    toast.show(t('Partition enregistrée dans ta bibliothèque.'));
+    toast.show(message ?? t('Partition enregistrée dans ta bibliothèque.'));
     navigate(`/song/${draft.id}`);
   }
 
-  /** Doublon — choix « remplacer » : la nouvelle mise en forme devient une
-   *  version ACTIVE de la fiche existante (rien n'est détruit : l'ancien
-   *  contenu reste dans ses versions — cohérent avec l'import, b135). */
-  function remplacerExistante() {
-    if (!draft || !double) return;
-    const maj = addSongAsVersion(
-      double,
-      { ...draft, title: (titre ?? draft.title).trim() || draft.title },
-      t('Nouvelle mise en forme'),
-      true,
+  /**
+   * Doublon — « Garder les deux » (b500/I-1) : le second morceau reçoit un
+   * titre DISTINGUABLE (« Hallelujah (2) »). Au même titre + artiste, le
+   * dédoublonnage par contenu (b316) l'aurait enterré à la fusion suivante :
+   * l'action la plus rassurante de l'écran cassait sa promesse en silence.
+   */
+  function garderLesDeux() {
+    if (!draft) return;
+    const tVoulu = (titre ?? draft.title).trim() || draft.title;
+    const aFinal = (artiste ?? draft.artist).trim();
+    const tFinal = titreDisponible(validees, tVoulu, aFinal);
+    enregistrer(
+      tFinal,
+      aFinal,
+      (tonalite ?? draft.key).trim(),
+      tFinal !== tVoulu
+        ? t('Enregistré sous « {titre} » pour distinguer les deux.', {
+            titre: tFinal,
+          })
+        : undefined,
     );
+  }
+
+  /**
+   * Doublon — « Remplacer la partition de référence » (b500/I-1, arbitrage
+   * du lot 2) : REMPLACE vraiment — avant, la mise en forme s'AJOUTAIT en
+   * version active et l'ancienne partition restait dans les versions, ce
+   * qui était le comportement annoncé par « Garder les deux ». L'identité
+   * du morceau (id, titre, artiste, durée, tags, notes, setlists, groupes)
+   * ne bouge pas : c'est la partition qui est remplacée, pas le morceau.
+   * Confirmation obligatoire quand elle écrase une partition non vide —
+   * une action destructrice ne s'exécute pas en un seul clic.
+   */
+  const [confirmeRemplace, setConfirmeRemplace] = useState(false);
+  function remplacerReellement() {
+    if (!draft || !double) return;
+    const maj = remplacerReference(double, draft);
     saveSong(maj);
     purgeBrouillon(draft.id);
-    toast.show(t('La partition existante a été mise à jour.'));
+    toast.show(t('Partition de référence remplacée.'));
     navigate(`/song/${double.id}`);
+  }
+  function demanderRemplacement() {
+    if (!double) return;
+    if ((double.versions[0]?.lyrics ?? '').trim() === '') {
+      remplacerReellement();
+      return;
+    }
+    setConfirmeRemplace(true);
   }
 
   function abandonner() {
@@ -830,19 +870,10 @@ export function Compose({ draftId }: { draftId: string | null }) {
                 >
                   {t('Ouvrir la partition existante')}
                 </button>
-                <button className="btn ghost block" onClick={remplacerExistante}>
-                  {t('La remplacer par cette mise en forme')}
+                <button className="btn ghost block" onClick={demanderRemplacement}>
+                  {t('Remplacer sa partition de référence')}
                 </button>
-                <button
-                  className="btn ghost block"
-                  onClick={() =>
-                    enregistrer(
-                      (titre ?? draft.title).trim() || draft.title,
-                      (artiste ?? draft.artist).trim(),
-                      (tonalite ?? draft.key).trim(),
-                    )
-                  }
-                >
+                <button className="btn ghost block" onClick={garderLesDeux}>
                   {t('Garder les deux')}
                 </button>
                 <button className="btn ghost block" onClick={() => setDouble(null)}>
@@ -850,6 +881,19 @@ export function Compose({ draftId }: { draftId: string | null }) {
                 </button>
               </div>
             </div>
+          )}
+          {confirmeRemplace && double && (
+            <ConfirmSheet
+              title={t('Remplacer la partition de référence ?')}
+              message={t(
+                'La partition de référence de « {titre} » sera écrasée par cette mise en forme — il n’y a pas de retour en arrière. Le reste de la fiche (titre, artiste, tags, notes, setlists) ne bouge pas.',
+                { titre: double.title },
+              )}
+              confirmLabel="Remplacer"
+              danger
+              onConfirm={remplacerReellement}
+              onClose={() => setConfirmeRemplace(false)}
+            />
           )}
         </>
       )}
