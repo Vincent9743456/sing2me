@@ -83,6 +83,19 @@ let memoireRecherche: {
   apercus: Record<string, string>;
 } | null = null;
 
+/**
+ * FIN DU PARCOURS D'IMPORT (b500, I-3 — retour de Vincent : « le champ
+ * contient encore la requête précédente »). Un import qui ABOUTIT (enregistré,
+ * remplacé, ou « ouvrir l'existante ») clôt la session de recherche : champ
+ * vidé, résultats vidés — le prochain passage repart à neuf. La navigation À
+ * L'INTÉRIEUR d'une session (ouvrir un résultat, revenir à la liste, Annuler
+ * pour y revenir plus tard) ne vide rien, comme avant (b477/N-1).
+ */
+let rechercheClose = false;
+function cloreLaRecherche() {
+  memoireRecherche = null;
+  rechercheClose = true;
+}
 
 /** Types de la source en clair (b477/C-9) : « Chords »/« Tabs » bruts ne
  *  disaient pas ce qu'on allait obtenir. Traduits au rendu (t()). */
@@ -153,7 +166,10 @@ export function Compose({ draftId }: { draftId: string | null }) {
   );
   const [apercuEnCours, setApercuEnCours] = useState('');
   // La mémoire de module suit l'état : sortir du flux ne perd plus rien.
+  // Sauf une fois la session CLOSE (b500/I-3) : un rendu de politesse entre
+  // l'enregistrement et la navigation ne doit pas ressusciter la mémoire.
   React.useEffect(() => {
+    if (rechercheClose) return;
     memoireRecherche = {
       query,
       resultats,
@@ -226,6 +242,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
   async function lancerRecherche() {
     const q = query.trim();
     if (q === '' || rechercheEnCours) return;
+    rechercheClose = false; // une nouvelle session de recherche commence
     setRechercheEnCours(true);
     setResultats(null);
     setFiltreArtiste('');
@@ -413,6 +430,9 @@ export function Compose({ draftId }: { draftId: string | null }) {
       key: kFinal,
       updatedAt: new Date().toISOString(),
     });
+    // Un import ABOUTI clôt la session de recherche (b500/I-3) : au
+    // prochain « Chercher sur le web », champ et liste repartent à neuf.
+    cloreLaRecherche();
     toast.show(message ?? t('Partition enregistrée dans ta bibliothèque.'));
     navigate(`/song/${draft.id}`);
   }
@@ -456,6 +476,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
     const maj = remplacerReference(double, draft);
     saveSong(maj);
     purgeBrouillon(draft.id);
+    cloreLaRecherche();
     toast.show(t('Partition de référence remplacée.'));
     navigate(`/song/${double.id}`);
   }
@@ -865,6 +886,7 @@ export function Compose({ draftId }: { draftId: string | null }) {
                   className="btn ghost block"
                   onClick={() => {
                     purgeBrouillon(draft.id);
+                    cloreLaRecherche();
                     navigate(`/song/${double.id}`);
                   }}
                 >
