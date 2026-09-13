@@ -166,6 +166,9 @@ export const EN_COMPTE: Record<string, string> = {
   'Les musiciens du groupe suivent automatiquement.':
     'Band musicians follow along automatically.',
   'EN LIVE': 'LIVE',
+  // b504 — le suivi du lanceur ne répond plus : on le dit.
+  '⚠ Impossible de joindre le serveur — l’état affiché peut être ancien. Vérifie le réseau ; le suivi reprend tout seul.':
+    '⚠ Can’t reach the server — what you see may be stale. Check the network; tracking resumes on its own.',
   'EN PAUSE': 'PAUSED',
   'Les spectateurs restent connectés, l’affichage est vide.':
     'Viewers stay connected; the display is blank.',

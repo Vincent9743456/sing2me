@@ -228,6 +228,10 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
   const [copie, setCopie] = useState(false);
   const [dureeTxt, setDureeTxt] = useState('');
   const [viewers, setViewers] = useState<number | null>(null);
+  // b504 : sondages du lanceur en échec — compteur d'échecs consécutifs et
+  // mention « suivi interrompu » (l'écran EN LIVE est local, il peut mentir).
+  const sondagesRates = useRef(0);
+  const [suiviMuet, setSuiviMuet] = useState(false);
   // Nom public dictable, annoncé au micro pendant le concert
   // (« dis-leur livemyband.fr/tonnom ») — demande Vincent, b136.
   const [publicName, setPublicName] = useState(() => cachedPublicName());
@@ -290,6 +294,8 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
           ? await fetchLiveById(ref.liveId)
           : await fetchLive(ref?.joinCode ?? '');
         if (cancelled) return;
+        sondagesRates.current = 0;
+        setSuiviMuet(false);
         setHearts(s.hearts);
         setViewers(typeof s.viewers === 'number' ? s.viewers : null);
         // Le serveur peut couper un direct oublié (4 h, ou 1 h sans
@@ -302,7 +308,16 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
           window.setTimeout(() => void syncHeartsRef.current(), 1200);
         }
       } catch {
-        // silencieux
+        /* b504 (live « immortel » constaté par Vincent) : un échec de
+           sondage n'est plus TOTALEMENT muet. L'écran EN LIVE et son
+           chrono sont LOCAUX — sans ce repère, un téléphone qui ne joint
+           plus le serveur affiche un live à jamais, même coupé côté
+           serveur. Après ~30 s d'échecs consécutifs, le panneau le dit ;
+           la mention se lève seule au premier sondage réussi (règle 11). */
+        if (!cancelled) {
+          sondagesRates.current += 1;
+          if (sondagesRates.current >= 6) setSuiviMuet(true);
+        }
       }
     };
     void tick();
@@ -940,6 +955,18 @@ export function OnAirProvider({ children }: { children: React.ReactNode }) {
                       <span>{t('{n} spectateur', { n: viewers })}</span>
                     ))}
                 </div>
+                {/* b504 : le suivi ne répond plus — on le DIT au lieu de
+                    laisser le chrono (local) faire croire que tout va bien.
+                    La mention se lève seule au premier sondage réussi. */}
+                {status === 'on' && suiviMuet && (
+                  <p
+                    className="help"
+                    role="status"
+                    style={{ textAlign: 'center', marginTop: 0, color: 'var(--warn)' }}
+                  >
+                    {t('⚠ Impossible de joindre le serveur — l’état affiché peut être ancien. Vérifie le réseau ; le suivi reprend tout seul.')}
+                  </p>
+                )}
                 {status === 'pause' && (
                   <p className="help" style={{ textAlign: 'center', marginTop: 0 }}>
                     {t('Les spectateurs restent connectés, l’affichage est vide.')}

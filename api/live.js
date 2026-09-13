@@ -47,6 +47,21 @@ function liveExpired(row) {
   if (!Number.isNaN(started) && now - started > AUTO_STOP_MAX_MS) return true;
   const ref = !Number.isNaN(lastSong) ? lastSong : started;
   if (!Number.isNaN(ref) && now - ref > AUTO_STOP_IDLE_MS) return true;
+  /**
+   * b504 (live de 10 h 49 constaté par Vincent) : une ligne SANS repère
+   * temporel ne peut pas être IMMORTELLE. Si `started_at` et
+   * `last_song_at` manquent tous les deux (ligne écrite par un repli qui a
+   * dû retirer ces colonnes, vieille donnée), le verrou concluait « pas
+   * expiré » À CHAQUE lecture, pour toujours. Repli sur `updated_at` — qui
+   * existe partout — au seuil LONG (4 h : il bouge à chaque poussée d'état,
+   * on ne coupe pas un concert actif) ; et une ligne sans AUCUNE date est
+   * close d'office : on ne sert pas un direct dont on ne sait rien dater.
+   */
+  if (Number.isNaN(started) && Number.isNaN(lastSong)) {
+    const upd = row?.updated_at ? Date.parse(row.updated_at) : NaN;
+    if (Number.isNaN(upd)) return true;
+    if (now - upd > AUTO_STOP_MAX_MS) return true;
+  }
   return false;
 }
 
@@ -657,6 +672,48 @@ async function resolveLive(base, q) {
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
+/**
+ * CLÔTURE de la ligne legacy expirée (b504). Le repli la SERVAIT « off »
+ * sans jamais l'éteindre : la ligne restait `on` en base pour toujours —
+ * relue, recalculée et resservie à chaque sondage, et invisible du
+ * balayage b498 (qui ne parcourt que `lives`). Best-effort, comme tout le
+ * legacy ; on conserve started_at (b182, la ligne est la trace du live).
+ */
+async function closeLegacy(base) {
+  try {
+    const corps = {
+      status: 'off',
+      song: null,
+      band_song: null,
+      setlist: null,
+      setlist_count: 0,
+      last_song_at: null,
+      updated_at: new Date().toISOString(),
+    };
+    const r = await fetchSb(`${base}/rest/v1/live_state?id=eq.live&status=neq.off`, {
+      method: 'PATCH',
+      headers: sbHeaders(),
+      body: JSON.stringify(corps),
+    });
+    if (r.status === 400) {
+      // Colonne facultative absente (base jamais mise à niveau — le cas
+      // même qui rend la ligne éternelle) : on éteint au strict minimum.
+      const { last_song_at, setlist, setlist_count, band_song, ...minimum } = corps;
+      void last_song_at;
+      void setlist;
+      void setlist_count;
+      void band_song;
+      await fetchSb(`${base}/rest/v1/live_state?id=eq.live&status=neq.off`, {
+        method: 'PATCH',
+        headers: sbHeaders(),
+        body: JSON.stringify(minimum),
+      });
+    }
+  } catch {
+    /* la lecture a déjà répondu « off » — la prochaine retentera */
+  }
+}
+
 /** Ligne legacy live_state (vieux bundles encore en direct). */
 async function legacyRow(base) {
   try {
@@ -835,6 +892,11 @@ export default async function handler(req, res) {
         !req.query?.artist
       ) {
         const leg = await legacyRow(base);
+        // b504 : une ligne legacy EXPIRÉE se clôt — avant, elle était
+        // seulement passée sous silence et restait « on » pour toujours.
+        if (leg && leg.status && leg.status !== 'off' && liveExpired(leg)) {
+          await closeLegacy(base);
+        }
         if (leg && leg.status && leg.status !== 'off' && !liveExpired(leg)) {
           if (wantSetlist) {
             const visible = leg.mode !== 'repet';
