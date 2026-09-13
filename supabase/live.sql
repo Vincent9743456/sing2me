@@ -410,6 +410,11 @@ begin
        and (
          started_at < now() - interval '4 hours'
          or coalesce(last_song_at, started_at) < now() - interval '1 hour'
+         -- b504 : une ligne SANS repère temporel (started_at et
+         -- last_song_at NULL) échappait aux deux conditions — immortelle.
+         -- Repli sur updated_at, qui existe toujours, au seuil long.
+         or coalesce(started_at, last_song_at, updated_at)
+              < now() - interval '4 hours'
        )
   loop
     update lives
@@ -451,6 +456,29 @@ begin
       delete from live_seats where live_id = r.id::text;
     end if;
   end loop;
+  -- b504 : la ligne LEGACY (live_state, vieux bundles ou repli d'un GO LIVE
+  -- dont l'insertion multi-live a raté) se balaie AUSSI — elle n'était
+  -- couverte ni par la boucle ci-dessus ni par la clôture paresseuse (le
+  -- repli de lecture la passait sous silence sans l'éteindre).
+  update live_state
+     set status = 'off',
+         song = null,
+         band_song = null,
+         setlist = null,
+         setlist_count = 0,
+         last_song_at = null,
+         updated_at = now()
+   where id = 'live'
+     and status <> 'off'
+     and (
+       started_at < now() - interval '4 hours'
+       or coalesce(last_song_at, started_at) < now() - interval '1 hour'
+       or coalesce(started_at, last_song_at, updated_at)
+            < now() - interval '4 hours'
+     );
+  if found then
+    n := n + 1;
+  end if;
   return n;
 end $$;
 revoke all on function public.balayer_lives_abandonnes() from public, anon, authenticated;
